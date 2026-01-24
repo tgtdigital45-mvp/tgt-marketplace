@@ -1,39 +1,102 @@
-import React, { useState } from 'react';
-import { MOCK_COMPANIES } from '../../constants';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 import { Review } from '../../types';
 import Button from '../../components/ui/Button';
 import { useToast } from '../../contexts/ToastContext';
 
 interface ReviewWithReply extends Review {
     reply?: string;
+    clientId?: string;
 }
 
 const DashboardAvaliacoesPage: React.FC = () => {
-    const initialReviews = MOCK_COMPANIES[0].reviews.map(r => ({...r}));
-    const [reviews, setReviews] = useState<ReviewWithReply[]>(initialReviews);
+    const { user } = useAuth();
+    const [reviews, setReviews] = useState<ReviewWithReply[]>([]);
     const [replyingTo, setReplyingTo] = useState<string | null>(null);
     const [replyText, setReplyText] = useState('');
     const { addToast } = useToast();
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!user) return;
+
+        const fetchReviews = async () => {
+            setLoading(true);
+            try {
+                // 1. Get Company ID
+                const { data: companyData } = await supabase
+                    .from('companies')
+                    .select('id')
+                    .eq('profile_id', user.id)
+                    .single();
+
+                if (!companyData) return;
+
+                // 2. Fetch Reviews
+                const { data, error } = await supabase
+                    .from('reviews')
+                    .select('*')
+                    .eq('company_id', companyData.id)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                // Transform to UI format (mocking author name/avatar for now)
+                const formattedReviews: ReviewWithReply[] = data.map((r: any) => ({
+                    id: r.id,
+                    author: r.client_name || 'Cliente', // Ideally fetch from profiles
+                    avatar: `https://ui-avatars.com/api/?name=${r.client_id}&background=random`,
+                    rating: r.rating,
+                    comment: r.comment,
+                    date: new Date(r.created_at).toLocaleDateString(),
+                    reply: r.reply,
+                    clientId: r.client_id
+                }));
+
+                setReviews(formattedReviews);
+            } catch (err) {
+                console.error("Error fetching reviews:", err);
+                addToast("Erro ao carregar avaliações", "error");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchReviews();
+    }, [user]);
 
     const startReply = (reviewId: string) => {
         setReplyingTo(reviewId);
         const review = reviews.find(r => r.id === reviewId);
         setReplyText(review?.reply || '');
     };
-    
+
     const cancelReply = () => {
         setReplyingTo(null);
         setReplyText('');
     };
 
-    const submitReply = (reviewId: string) => {
-        setReviews(prevReviews => 
-            prevReviews.map(review => 
-                review.id === reviewId ? { ...review, reply: replyText } : review
-            )
-        );
-        addToast('Resposta enviada com sucesso!', 'success');
-        cancelReply();
+    const submitReply = async (reviewId: string) => {
+        try {
+            const { error } = await supabase
+                .from('reviews')
+                .update({ reply: replyText })
+                .eq('id', reviewId);
+
+            if (error) throw error;
+
+            setReviews(prevReviews =>
+                prevReviews.map(review =>
+                    review.id === reviewId ? { ...review, reply: replyText } : review
+                )
+            );
+            addToast('Resposta enviada com sucesso!', 'success');
+            cancelReply();
+        } catch (err) {
+            console.error(err);
+            addToast("Erro ao enviar resposta", "error");
+        }
     };
 
 
@@ -46,6 +109,9 @@ const DashboardAvaliacoesPage: React.FC = () => {
                 </p>
             </div>
             <div className="space-y-8">
+                {loading && <p className="text-center text-gray-500">Carregando...</p>}
+                {!loading && reviews.length === 0 && <p className="text-center text-gray-500">Nenhuma avaliação recebida ainda.</p>}
+
                 {reviews.map(review => (
                     <div key={review.id} className="p-4 border rounded-md bg-gray-50">
                         <div className="flex space-x-4">
@@ -87,7 +153,7 @@ const DashboardAvaliacoesPage: React.FC = () => {
                                 </div>
                             </div>
                         ) : !review.reply && (
-                             <div className="mt-2 ml-16">
+                            <div className="mt-2 ml-16">
                                 <Button type="button" variant="secondary" size="sm" onClick={() => startReply(review.id)}>Responder</Button>
                             </div>
                         )}

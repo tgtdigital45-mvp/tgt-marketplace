@@ -2,13 +2,16 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from './ui/Button';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
+import { useToast } from '../contexts/ToastContext';
+import { useNavigate } from 'react-router-dom';
 
 interface ReviewModalProps {
     isOpen: boolean;
     onClose: () => void;
     companyId: string;
     companyName: string;
-    onSubmitMock: (review: { rating: number; comment: string }) => void;
+    onSubmitMock?: (review: { rating: number; comment: string }) => void; // Optional now
 }
 
 const ReviewModal: React.FC<ReviewModalProps> = ({
@@ -16,27 +19,46 @@ const ReviewModal: React.FC<ReviewModalProps> = ({
     onClose,
     companyId,
     companyName,
-    onSubmitMock
 }) => {
     const [rating, setRating] = useState(0);
     const [hoverRating, setHoverRating] = useState(0);
     const [comment, setComment] = useState('');
     const [loading, setLoading] = useState(false);
     const { user } = useAuth();
-
-    if (!isOpen) return null;
+    const { addToast } = useToast();
+    const navigate = useNavigate();
 
     const [showSuccess, setShowSuccess] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    if (!isOpen) return null;
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!user) {
+            addToast("Você precisa estar logado para avaliar.", "info");
+            navigate('/auth/login');
+            return;
+        }
+
+        if (user.type !== 'client') {
+            addToast("Apenas clientes podem enviar avaliações.", "warning");
+            return;
+        }
+
         if (rating === 0) return;
 
         setLoading(true);
-        // Simulate API delay
-        setTimeout(() => {
-            onSubmitMock({ rating, comment });
-            setLoading(false);
+        try {
+            const { error } = await supabase.from('reviews').insert({
+                company_id: companyId,
+                client_id: user.id,
+                rating: rating,
+                comment: comment
+            });
+
+            if (error) throw error;
+
             setShowSuccess(true);
 
             // Close modal after showing success message
@@ -46,7 +68,13 @@ const ReviewModal: React.FC<ReviewModalProps> = ({
                 setRating(0);
                 setComment('');
             }, 1500);
-        }, 1000);
+
+        } catch (err) {
+            console.error("Error submitting review:", err);
+            addToast("Erro ao enviar avaliação.", "error");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (

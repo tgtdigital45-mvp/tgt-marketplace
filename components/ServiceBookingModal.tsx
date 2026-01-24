@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from './ui/Button';
-import { Service } from '../types';
+import { Service, Company } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { useToast } from '../contexts/ToastContext';
 
 interface ServiceBookingModalProps {
     isOpen: boolean;
@@ -20,7 +22,7 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
 }) => {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const [step, setStep] = useState(1);
+    const { addToast } = useToast();
     const [loading, setLoading] = useState(false);
 
     const [formData, setFormData] = useState({
@@ -33,23 +35,45 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!user) {
+            addToast("Você precisa estar logado para agendar.", "info");
+            navigate('/auth/login');
+            return;
+        }
+
+        if (user.type !== 'client') {
+            addToast("Apenas clientes podem solicitar agendamentos.", "warning");
+            return;
+        }
+
         setLoading(true);
 
-        // Simulate API call
-        setTimeout(() => {
-            setLoading(false);
-            onClose();
-            // Navigate to confirmation page (to be implemented)
-            console.log('Agendamento solicitado:', { service, companyName, ...formData });
-            navigate('/agendamento/confirmacao', {
-                state: {
-                    serviceName: service.title,
-                    companyName: companyName,
-                    date: formData.date,
-                    time: formData.time
-                }
+        try {
+            const { error } = await supabase.from('bookings').insert({
+                client_id: user.id,
+                company_id: service.company_id, // Ensure this exists in Service type!
+                service_title: service.title,
+                service_price: service.price,
+                booking_date: formData.date,
+                booking_time: formData.time,
+                notes: formData.notes,
+                status: 'pending'
             });
-        }, 1500);
+
+            if (error) throw error;
+
+            addToast("Solicitação enviada com sucesso!", "success");
+            onClose();
+            // Optional: Navigate to a "My Bookings" page or success page
+            // navigate('/client/agendamentos'); 
+
+        } catch (err: any) {
+            console.error("Booking error:", err);
+            addToast("Erro ao solicitar agendamento.", "error");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
