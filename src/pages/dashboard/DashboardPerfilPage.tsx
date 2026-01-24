@@ -77,7 +77,7 @@ const DashboardPerfilPage: React.FC = () => {
   };
 
   const uploadImage = async (file: File, bucket: string, path: string) => {
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from(bucket)
       .upload(path, file, { upsert: true });
 
