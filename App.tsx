@@ -1,4 +1,5 @@
 import React from 'react';
+import { HelmetProvider } from 'react-helmet-async';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Header from './components/layout/Header';
@@ -18,9 +19,11 @@ import DashboardConfiguracoesPage from './pages/dashboard/DashboardConfiguracoes
 import DashboardAdministradoresPage from './pages/dashboard/DashboardAdministradoresPage';
 import DashboardAvaliacoesPage from './pages/dashboard/DashboardAvaliacoesPage';
 import DashboardAgendamentosPage from './pages/dashboard/DashboardAgendamentosPage';
+import DashboardAgendaPage from './pages/dashboard/DashboardAgendaPage';
 import BookingConfirmationPage from './pages/BookingConfirmationPage';
 import ClientProfilePage from './pages/client/ClientProfilePage';
 import ClientMessagesPage from './pages/client/ClientMessagesPage';
+import ClientOrdersPage from './pages/client/ClientOrdersPage';
 import FavoritesPage from './pages/client/FavoritesPage';
 import { ToastProvider } from './contexts/ToastContext';
 import CompanyRegistrationPage from './pages/CompanyRegistrationPage';
@@ -40,6 +43,7 @@ import TermsPage from './pages/info/TermsPage';
 import { AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import PageTransition from './components/PageTransition';
+import ScrollToTop from './components/ScrollToTop';
 
 // Wrapper for animated routes
 const AnimatedElement = ({ children }: { children: React.ReactElement }) => (
@@ -51,7 +55,8 @@ const MainRoutes = () => {
 
   return (
     <AnimatePresence mode="wait">
-      <Routes location={location} {...({ key: location.pathname } as any)}>
+      {/* @ts-ignore - key is needed for AnimatePresence to restart animations on route change */}
+      <Routes location={location} key={location.pathname}>
         <Route path="/" element={<AnimatedElement><ClientLandingPage /></AnimatedElement>} />
         <Route path="/empresas" element={<AnimatedElement><CompaniesListPage /></AnimatedElement>} />
         <Route path="/empresa/:slug" element={<AnimatedElement><CompanyProfilePage /></AnimatedElement>} />
@@ -62,6 +67,7 @@ const MainRoutes = () => {
 
         {/* Client Routes */}
         <Route path="/perfil/cliente" element={<ProtectedRoute userType="client" element={<AnimatedElement><ClientProfilePage /></AnimatedElement>} />} />
+        <Route path="/perfil/pedidos" element={<ProtectedRoute userType="client" element={<AnimatedElement><ClientOrdersPage /></AnimatedElement>} />} />
         <Route path="/minhas-mensagens" element={<ProtectedRoute userType="client" element={<AnimatedElement><ClientMessagesPage /></AnimatedElement>} />} />
         <Route path="/favoritos" element={<ProtectedRoute userType="client" element={<AnimatedElement><FavoritesPage /></AnimatedElement>} />} />
 
@@ -74,6 +80,7 @@ const MainRoutes = () => {
           <Route path="portfolio" element={<AnimatedElement><DashboardPortfolioPage /></AnimatedElement>} />
           <Route path="avaliacoes" element={<AnimatedElement><DashboardAvaliacoesPage /></AnimatedElement>} />
           <Route path="agendamentos" element={<AnimatedElement><DashboardAgendamentosPage /></AnimatedElement>} />
+          <Route path="agenda" element={<AnimatedElement><DashboardAgendaPage /></AnimatedElement>} />
           <Route path="mensagens" element={<AnimatedElement><DashboardMensagensPage /></AnimatedElement>} />
           <Route path="configuracoes" element={<AnimatedElement><DashboardConfiguracoesPage /></AnimatedElement>} />
         </Route>
@@ -98,15 +105,23 @@ const App = (): React.ReactElement => {
       <MockProvider>
         <FavoritesProvider>
           <ToastProvider>
-            <HashRouter>
-              <div className="flex flex-col min-h-screen">
-                <Header />
-                <main className="flex-grow">
-                  <MainRoutes />
-                </main>
-                <Footer />
-              </div>
-            </HashRouter>
+            <HelmetProvider>
+              <HashRouter
+                future={{
+                  v7_startTransition: true,
+                  v7_relativeSplatPath: true,
+                }}
+              >
+                <ScrollToTop />
+                <div className="flex flex-col min-h-screen">
+                  <Header />
+                  <main className="flex-grow">
+                    <MainRoutes />
+                  </main>
+                  <Footer />
+                </div>
+              </HashRouter>
+            </HelmetProvider>
           </ToastProvider>
         </FavoritesProvider>
       </MockProvider>

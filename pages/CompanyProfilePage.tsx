@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
 import { MOCK_COMPANIES } from '../constants';
 import ServiceCard from '../components/ServiceCard';
@@ -69,6 +70,41 @@ const CompanyProfilePage: React.FC = () => {
 
   return (
     <div className="bg-white">
+      <Helmet>
+        <title>{company.companyName} | TGT - Guia de Negócios</title>
+        <meta name="description" content={`Confira os serviços, avaliações e localização de ${company.companyName} em ${company.address.city}, ${company.address.state}. Solicite um orçamento hoje mesmo!`} />
+
+        {/* GEO / AI Search Optimization */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "LocalBusiness",
+            "name": company.companyName,
+            "image": [company.coverImage, company.logo],
+            "description": company.description,
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": company.address.street,
+              "addressLocality": company.address.city,
+              "addressRegion": company.address.state,
+              "postalCode": company.address.zipCode,
+              "addressCountry": "BR"
+            },
+            "geo": {
+              "@type": "GeoCoordinates",
+              "latitude": company.location?.lat,
+              "longitude": company.location?.lng
+            },
+            "url": window.location.href,
+            "priceRange": "$$",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": company.rating,
+              "reviewCount": company.reviewCount
+            }
+          })}
+        </script>
+      </Helmet>
       {/* Cover Image and Header */}
       <div className={`relative h-64 md:h-80 bg-gray-200 ${heroImageError ? 'bg-gradient-to-r from-brand-primary to-brand-secondary' : ''}`}>
         {!heroImageError && (

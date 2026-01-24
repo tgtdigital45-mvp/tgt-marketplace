@@ -1,4 +1,3 @@
-
 import React from 'react';
 import InfoPageLayout from '../../components/layout/InfoPageLayout';
 import Input from '../../components/ui/Input';
@@ -6,24 +5,61 @@ import Button from '../../components/ui/Button';
 
 const ContactPage: React.FC = () => {
   return (
-    <InfoPageLayout title="Fale Conosco">
-      <p>Tem alguma dúvida, sugestão ou feedback? Adoraríamos ouvir de você. Preencha o formulário abaixo ou entre em contato através de nossos canais.</p>
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+    <InfoPageLayout
+      title="Fale Conosco"
+      subtitle="Tem alguma dúvida, sugestão ou feedback? Adoraríamos ouvir de você."
+    >
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
+        {/* Contact Info Column */}
         <div>
-          <h3 className="text-xl font-semibold mb-2">Informações de Contato</h3>
-          <p><strong>Email:</strong> contato@tgt.com</p>
-          <p><strong>Telefone:</strong> +55 (11) 4002-8922</p>
-          <p><strong>Endereço:</strong> Rua da Inovação, 567, São Paulo - SP</p>
-        </div>
-        <form className="space-y-4">
-          <Input label="Seu Nome" id="name" required />
-          <Input label="Seu Email" id="email" type="email" required />
-          <div>
-            <label htmlFor="message" className="block text-sm font-medium text-gray-700">Sua Mensagem</label>
-            <textarea id="message" name="message" rows={4} className="mt-1 shadow-sm block w-full sm:text-sm border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500" required></textarea>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Canais de Atendimento</h2>
+
+          <div className="space-y-6">
+            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+              <h3 className="font-bold text-gray-900 mb-2">Suporte Geral</h3>
+              <p className="text-gray-600 text-sm mb-3">Para dúvidas sobre cadastro, conta ou funcionalidades.</p>
+              <a href="mailto:suporte@tgt.com" className="text-brand-primary font-medium hover:underline">suporte@tgt.com</a>
+            </div>
+
+            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+              <h3 className="font-bold text-gray-900 mb-2">Comercial</h3>
+              <p className="text-gray-600 text-sm mb-3">Para parcerias, imprensa e grandes contas.</p>
+              <a href="mailto:comercial@tgt.com" className="text-brand-primary font-medium hover:underline">comercial@tgt.com</a>
+            </div>
+
+            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+              <h3 className="font-bold text-gray-900 mb-2">Telefone & WhatsApp</h3>
+              <p className="text-gray-600 text-sm mb-3">Seg a Sex, das 9h às 18h.</p>
+              <p className="text-gray-900 font-medium">+55 (11) 4002-8922</p>
+            </div>
           </div>
-          <Button type="submit">Enviar Mensagem</Button>
-        </form>
+
+          <div className="mt-8">
+            <h3 className="font-bold text-gray-900 mb-2">Endereço</h3>
+            <p className="text-gray-600">Rua da Inovação, 567, Vila Digital<br />São Paulo - SP</p>
+          </div>
+        </div>
+
+        {/* Form Column */}
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Envie uma mensagem</h2>
+          <form className="space-y-6">
+            <Input label="Seu Nome" id="name" placeholder="Ex: João Silva" required className="bg-gray-50 border-gray-200" />
+            <Input label="Seu Email" id="email" type="email" placeholder="Ex: joao@email.com" required className="bg-gray-50 border-gray-200" />
+            <div>
+              <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">Sua Mensagem</label>
+              <textarea
+                id="message"
+                name="message"
+                rows={5}
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all resize-none"
+                placeholder="Como podemos ajudar?"
+                required
+              ></textarea>
+            </div>
+            <Button type="submit" size="lg" className="w-full">Enviar Mensagem</Button>
+          </form>
+        </div>
       </div>
     </InfoPageLayout>
   );
