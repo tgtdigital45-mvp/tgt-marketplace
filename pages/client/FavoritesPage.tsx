@@ -1,13 +1,70 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useFavorites } from '../../contexts/FavoritesContext';
-import { MOCK_COMPANIES } from '../../constants';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 import CompanyCard from '../../components/CompanyCard';
 import Button from '../../components/ui/Button';
+import { Company } from '../../types';
 
 const FavoritesPage: React.FC = () => {
-  const { favorites } = useFavorites();
-  const favoriteCompanies = MOCK_COMPANIES.filter(company => favorites.includes(company.id));
+  const { user } = useAuth();
+  const [favoriteCompanies, setFavoriteCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchFavorites = async () => {
+      setLoading(true);
+      try {
+        // Fetch favorites joined with companies
+        const { data, error } = await supabase
+          .from('favorites')
+          .select(`
+            company_id,
+            companies:companies (*)
+          `)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        // Transform Supabase response to Company type
+        // Note: We need to ensure the joined data matches Company structure or map it
+        const companies = data.map((item: any) => {
+          const c = item.companies;
+          // Map flat Supabase structure to nested Company type
+          return {
+            id: c.id,
+            slug: c.slug,
+            companyName: c.company_name,
+            legalName: c.legal_name,
+            cnpj: c.cnpj,
+            logo: c.logo_url || 'https://via.placeholder.com/150',
+            coverImage: c.cover_image_url || 'https://via.placeholder.com/1200x400',
+            category: c.category,
+            rating: 5.0, // Should ideally be fetched properly
+            reviewCount: 0,
+            description: c.description,
+            address: c.address, // Correctly mapped if it's JSONB
+            phone: c.phone,
+            email: c.email,
+            website: c.website,
+            services: [], // Placeholder
+            portfolio: [],
+            reviews: []
+          } as Company;
+        });
+
+        setFavoriteCompanies(companies);
+      } catch (err) {
+        console.error("Error fetching favorites:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFavorites();
+  }, [user]);
 
   return (
     <div className="bg-gray-50 min-h-full">
@@ -16,7 +73,9 @@ const FavoritesPage: React.FC = () => {
           Minhas Empresas Favoritas
         </h1>
 
-        {favoriteCompanies.length > 0 ? (
+        {loading ? (
+          <div className="text-center py-12">Carregando...</div>
+        ) : favoriteCompanies.length > 0 ? (
           <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {favoriteCompanies.map(company => (
               <CompanyCard key={company.id} company={company} />
@@ -30,9 +89,9 @@ const FavoritesPage: React.FC = () => {
             <h3 className="mt-2 text-xl font-semibold text-gray-800">Sua lista de favoritos está vazia</h3>
             <p className="text-gray-500 mt-2">Adicione empresas aos seus favoritos para encontrá-las facilmente aqui.</p>
             <div className="mt-6">
-                <Link to="/empresas">
-                    <Button>Buscar Empresas</Button>
-                </Link>
+              <Link to="/empresas">
+                <Button>Buscar Empresas</Button>
+              </Link>
             </div>
           </div>
         )}

@@ -93,7 +93,7 @@ const Header: React.FC = () => {
                         <>
                           <Link to="/perfil/cliente" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">Meu Perfil</Link>
                           <Link to="/favoritos" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">Favoritos</Link>
-                          <Link to="/minhas-mensagens" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">Mensagens</Link>
+                          <Link to="/perfil/cliente" state={{ activeTab: 'messages' }} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">Mensagens</Link>
                         </>
                       )}
                       {user.type === 'company' && (

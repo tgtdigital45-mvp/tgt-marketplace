@@ -6,7 +6,7 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { useToast } from '../../contexts/ToastContext';
 import Badge from '../../components/ui/Badge';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 // Icons
 const UserIcon = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>;
@@ -17,8 +17,16 @@ const SignOutIcon = () => <svg className="w-5 h-5" fill="none" stroke="currentCo
 const ClientProfilePage: React.FC = () => {
   const { user, signOut } = useAuth();
   const { addToast } = useToast();
-  const [activeTab, setActiveTab] = useState<'profile' | 'bookings' | 'messages'>('bookings'); // Default to Bookings for utility
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState<'profile' | 'bookings' | 'messages'>('bookings');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const state = location.state as { activeTab?: 'profile' | 'bookings' | 'messages' };
+    if (state?.activeTab) {
+      setActiveTab(state.activeTab);
+    }
+  }, [location]);
 
   // Profile State
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
