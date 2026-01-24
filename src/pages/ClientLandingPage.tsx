@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import CompanyCard from '../components/CompanyCard';
 import { useMockData } from '../contexts/MockContext';
-import QuickSearch from '../components/QuickSearch';
+// import QuickSearch from '../components/QuickSearch'; // Unused
 import HeroSection from '../components/HeroSection';
 import OptimizedImage from '../components/ui/OptimizedImage';
 import AnimatedSection from '../components/ui/AnimatedSection';

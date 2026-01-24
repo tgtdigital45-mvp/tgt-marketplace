@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Badge from '../../components/ui/Badge';
+
 import Button from '../../components/ui/Button';
 
 // Mock Data
@@ -72,8 +72,8 @@ const ClientOrdersPage: React.FC = () => {
                             </div>
                             <div className="text-right">
                                 <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${order.status === 'confirmed' ? 'bg-blue-100 text-blue-700' :
-                                        order.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                            'bg-gray-100 text-gray-700'
+                                    order.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                        'bg-gray-100 text-gray-700'
                                     }`}>
                                     {order.status === 'confirmed' ? 'Agendado' : order.status}
                                 </span>

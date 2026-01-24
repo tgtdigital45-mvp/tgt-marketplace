@@ -34,6 +34,7 @@ export const FavoritesProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   useEffect(() => {
     if (user && user.type === 'client') {
+      // eslint-disable-next-line 
       setFavorites(getFavoritesFromStorage(user.id));
     } else {
       setFavorites([]);

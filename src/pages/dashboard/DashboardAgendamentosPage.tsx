@@ -53,7 +53,7 @@ const DashboardAgendamentosPage: React.FC = () => {
                 if (bookingsError) throw bookingsError;
 
                 // Placeholder for client names until we have profiles join fully working
-                const enrichedBookings = bookingsData?.map((b: any) => ({
+                const enrichedBookings = bookingsData?.map((b) => ({
                     ...b,
                     client_name: 'Cliente ' + b.client_id.slice(0, 4), // Fallback
                     client_email: ''
@@ -61,7 +61,7 @@ const DashboardAgendamentosPage: React.FC = () => {
 
                 setBookings(enrichedBookings);
 
-            } catch (err: any) {
+            } catch (err) {
                 console.error("Error fetching bookings:", err);
                 addToast("Erro ao carregar agendamentos.", "error");
             } finally {
@@ -70,7 +70,7 @@ const DashboardAgendamentosPage: React.FC = () => {
         };
 
         fetchBookings();
-    }, [user]);
+    }, [user, addToast]);
 
     const handleStatusUpdate = async (id: string, newStatus: string) => {
         try {
@@ -81,7 +81,7 @@ const DashboardAgendamentosPage: React.FC = () => {
 
             if (error) throw error;
 
-            setBookings(prev => prev.map(b => b.id === id ? { ...b, status: newStatus as any } : b));
+            setBookings(prev => prev.map(b => b.id === id ? { ...b, status: newStatus as Booking['status'] } : b));
             addToast(`Agendamento ${newStatus === 'confirmed' ? 'confirmado' : 'atualizado'}!`, 'success');
         } catch (err) {
             console.error(err);

@@ -30,17 +30,18 @@ const FavoritesPage: React.FC = () => {
 
         // Transform Supabase response to Company type
         // Note: We need to ensure the joined data matches Company structure or map it
-        const companies = data.map((item: any) => {
-          const c = item.companies;
+        const companies = data.map((item) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const c = item.companies as any; // Cast to any to access Supabase snake_case props
           // Map flat Supabase structure to nested Company type
           return {
             id: c.id,
             slug: c.slug,
-            companyName: c.company_name,
-            legalName: c.legal_name,
+            companyName: c.companyName || c.company_name, // Handle snake_case from DB
+            legalName: c.legalName || c.legal_name,
             cnpj: c.cnpj,
-            logo: c.logo_url || 'https://via.placeholder.com/150',
-            coverImage: c.cover_image_url || 'https://placehold.co/1200x400',
+            logo: c.logo || c.logo_url || 'https://via.placeholder.com/150',
+            coverImage: c.coverImage || c.cover_image_url || 'https://placehold.co/1200x400',
             category: c.category,
             rating: 5.0, // Should ideally be fetched properly
             reviewCount: 0,

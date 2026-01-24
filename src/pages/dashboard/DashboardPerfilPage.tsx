@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import Input from '../../components/ui/Input';
-import Button from '../../components/ui/Button';
-import FileUpload from '../../components/FileUpload';
+import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button';
+import FileUpload from '@/components/FileUpload';
 import { CATEGORIES } from '../../constants';
 import { useToast } from '../../contexts/ToastContext';
 import { useCompany } from '../../contexts/CompanyContext';

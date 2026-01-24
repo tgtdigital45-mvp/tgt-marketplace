@@ -1,8 +1,8 @@
 import React from 'react';
-import { render, screen, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
 import { NotificationProvider, useNotifications } from '../contexts/NotificationContext';
-import { AuthProvider } from '../contexts/AuthContext';
+// import { AuthProvider } from '../contexts/AuthContext'; // Unused
 import { BrowserRouter } from 'react-router-dom';
 
 // Mock Supabase

@@ -59,7 +59,7 @@ const RegisterPage: React.FC = () => {
         navigate('/auth/login');
       }
 
-    } catch (err: any) {
+    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       console.error('Registration error:', err);
       addToast(err.message || 'Erro ao criar conta.', 'error');
     } finally {

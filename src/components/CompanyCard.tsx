@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 import { Company } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useFavorites } from '../contexts/FavoritesContext';
-import OptimizedImage from './ui/OptimizedImage';
-import Badge from './ui/Badge';
+import OptimizedImage from '@/components/ui/OptimizedImage';
+import Badge from '@/components/ui/Badge';
 
 
 interface CompanyCardProps {

@@ -118,12 +118,12 @@ const CompanyRegistrationPage: React.FC = () => {
 
     try {
       let userId = '';
-      let emailContact = formData.adminEmail;
+      // let emailContact = formData.adminEmail;
 
       if (user) {
         // User is already logged in
         userId = user.id;
-        emailContact = user.email || formData.adminEmail;
+        // emailContact = user.email || formData.adminEmail; // Unused
 
         // Optional: Update user type to 'company' if they were 'client'
         // This depends on business logic. For now, we assume they can own a company.

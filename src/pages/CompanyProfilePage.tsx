@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
 import ServiceCard from '../components/ServiceCard';
-import MapEmbed from '../components/MapEmbed';
-import ImageGallery from '../components/ImageGallery';
+// import MapEmbed from '../components/MapEmbed'; // Unused
+// import ImageGallery from '../components/ImageGallery'; // Unused
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
 import { useFavorites } from '../contexts/FavoritesContext';
@@ -11,7 +11,7 @@ import MessageModal from '../components/MessageModal';
 import ServiceBookingModal from '../components/ServiceBookingModal';
 import ReviewModal from '../components/ReviewModal';
 import Badge from '../components/ui/Badge';
-import StatsGrid from '../components/ui/StatsGrid';
+// import StatsGrid from '../components/ui/StatsGrid'; // Unused
 import FAQSection from '../components/FAQSection';
 import { Service, Company } from '../types';
 import { supabase } from '../lib/supabase';
@@ -61,6 +61,7 @@ const CompanyProfilePage: React.FC = () => {
 
         // Construct Company object compatible with UI types
         // Note: Address is JSONB in DB but object in UI. Cast safely.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const address = companyData.address as any;
 
         const constructedCompany: Company = {
@@ -94,7 +95,7 @@ const CompanyProfilePage: React.FC = () => {
         };
 
         setCompany(constructedCompany);
-      } catch (err: any) {
+      } catch (err) {
         console.error("Error fetching company:", err);
         setError("Empresa não encontrada ou erro ao carregar.");
       } finally {
@@ -123,7 +124,7 @@ const CompanyProfilePage: React.FC = () => {
     setSelectedService(service);
     setIsBookingModalOpen(true);
   };
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleAddReview = (review: any) => {
     // Placeholder: Connect to DB later
     console.log("Adding review", review);

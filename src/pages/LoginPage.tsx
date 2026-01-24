@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'; // Import supabase client
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { useToast } from '../contexts/ToastContext';
-import { User } from '../types';
+// import { User } from '../types'; // Unused
 
 const GoogleIcon = () => (
   <svg className="w-5 h-5 mr-2" viewBox="0 0 48 48">
@@ -36,7 +36,7 @@ const LoginPage: React.FC = () => {
     setIsLoading(true);
     try {
       await signInWithGoogle();
-    } catch (error: any) {
+    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       console.error('Google login error:', error);
       addToast(error.message || "Erro ao conectar com Google. Tente novamente.", "error");
     } finally {
@@ -77,7 +77,7 @@ const LoginPage: React.FC = () => {
           navigate('/');
         }
       }
-    } catch (err: any) {
+    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       console.error('Login error:', err);
       addToast(err.message || 'Falha ao realizar login. Verifique suas credenciais.', 'error');
     } finally {

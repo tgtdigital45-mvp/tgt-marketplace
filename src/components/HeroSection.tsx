@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import QuickSearch from './QuickSearch';
-import AnimatedSection from './ui/AnimatedSection';
-import ParallaxLayer from './ui/ParallaxLayer'; // Assuming ParallaxLayer is a custom component
+import QuickSearch from '@/components/QuickSearch';
+import AnimatedSection from '@/components/ui/AnimatedSection';
+import ParallaxLayer from '@/components/ui/ParallaxLayer'; // Assuming ParallaxLayer is a custom component
 import { fadeInUp } from '../utils/animations';
 
 const HeroSection: React.FC = () => {

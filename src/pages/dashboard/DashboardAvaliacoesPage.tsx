@@ -43,6 +43,7 @@ const DashboardAvaliacoesPage: React.FC = () => {
                 if (error) throw error;
 
                 // Transform to UI format (mocking author name/avatar for now)
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const formattedReviews: ReviewWithReply[] = data.map((r: any) => ({
                     id: r.id,
                     author: r.client_name || 'Cliente', // Ideally fetch from profiles
@@ -64,7 +65,7 @@ const DashboardAvaliacoesPage: React.FC = () => {
         };
 
         fetchReviews();
-    }, [user]);
+    }, [user, addToast]);
 
     const startReply = (reviewId: string) => {
         setReplyingTo(reviewId);

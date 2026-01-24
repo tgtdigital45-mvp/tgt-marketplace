@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { UserProfile, Booking } from '../../types'; // Ensure Booking is exported or redefine
+import { UserProfile } from '../../types'; // Removed unused Booking
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { useToast } from '../../contexts/ToastContext';
@@ -32,9 +32,11 @@ const ClientProfilePage: React.FC = () => {
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
 
   // Bookings State
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [bookings, setBookings] = useState<any[]>([]);
 
   // Messages State (Simplified Conversation List)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [conversations, setConversations] = useState<any[]>([]);
 
   // -- FETCH DATA --
@@ -96,6 +98,7 @@ const ClientProfilePage: React.FC = () => {
 
             // Merge names
             const finalConvos = convos.map(c => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const comp = companies?.find((co: any) => co.profile_id === c.contactId);
               return { ...c, name: comp?.company_name || 'Empresa Desconhecida' };
             });
@@ -103,8 +106,6 @@ const ClientProfilePage: React.FC = () => {
           }
         }
 
-      } catch (error) {
-        console.error(error);
         addToast("Erro ao carregar dados.", "error");
       } finally {
         setLoading(false);
@@ -112,7 +113,7 @@ const ClientProfilePage: React.FC = () => {
     };
 
     fetchAllData();
-  }, [user]);
+  }, [user, addToast]);
 
   // -- PROFILE HANDLERS --
   const handleProfileUpdate = async (e: React.FormEvent) => {
@@ -130,7 +131,9 @@ const ClientProfilePage: React.FC = () => {
 
       if (error) throw error;
       addToast("Perfil atualizado!", "success");
+      addToast("Perfil atualizado!", "success");
     } catch (err) {
+      console.error(err);
       addToast("Erro ao atualizar.", "error");
     } finally {
       setLoading(false);
@@ -219,6 +222,7 @@ const ClientProfilePage: React.FC = () => {
               ) : (
                 <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                   <ul className="divide-y divide-gray-100">
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     {bookings.map((booking: any) => (
                       <li key={booking.id} className="p-6 hover:bg-gray-50 transition-colors">
                         <div className="flex items-center justify-between">
@@ -264,6 +268,7 @@ const ClientProfilePage: React.FC = () => {
               ) : (
                 <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                   <ul className="divide-y divide-gray-100">
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     {conversations.map((conv: any, idx) => (
                       <li key={idx} className="p-6 hover:bg-gray-50 transition-colors">
                         <Link to="/minhas-mensagens" className="block"> {/* In real app, link to specific chat */}

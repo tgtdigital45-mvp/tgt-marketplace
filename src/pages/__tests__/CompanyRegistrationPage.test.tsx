@@ -107,10 +107,6 @@ describe('CompanyRegistrationPage', () => {
         fireEvent.change(screen.getByLabelText(/Categoria/i), { target: { value: 'Tecnologia' } }); // Adjust value based on CATEGORIES constant
 
         // Mock file uploads
-        const file = new File(['(⌐□_□)'], 'chucknorris.png', { type: 'image/png' });
-        const logoInput = screen.getByLabelText(/Logo/i);
-        const coverInput = screen.getByLabelText(/Imagem de Capa/i);
-        const cnpjInput = screen.getByLabelText(/Comprovante de CNPJ/i);
 
         // Note: FileUpload component implementation details might make standard fireEvent.change tricky if it's a hidden input.
         // Assuming standard input type="file" is accessible or wrapped.

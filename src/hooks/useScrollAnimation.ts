@@ -1,6 +1,6 @@
 import { useAnimation, useInView, Variants } from 'framer-motion';
 import { useEffect, useRef } from 'react';
-import { fadeInUp, springTransition, staggerContainer } from '../utils/animations';
+import { fadeInUp, staggerContainer } from '../utils/animations';
 
 export type AnimationType = 'fadeInUp' | 'fadeIn' | 'stagger' | 'scaleUp';
 

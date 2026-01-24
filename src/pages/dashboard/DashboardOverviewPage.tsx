@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import AnimatedSection from '../../components/ui/AnimatedSection';
-import Badge from '../../components/ui/Badge';
+import AnimatedSection from '@/components/ui/AnimatedSection';
+import Badge from '@/components/ui/Badge';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 // Icons
@@ -18,7 +18,8 @@ const DashboardOverviewPage: React.FC = () => {
         { title: 'Agendamentos Pendentes', value: '0', change: '0', icon: <ChatIcon />, color: 'bg-green-500' },
         { title: 'Avaliação Média', value: '5.0', change: '0%', icon: <StarIcon />, color: 'bg-yellow-500' },
     ]);
-    const [recentBookings, setRecentBookings] = useState<any[]>([]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [recentBookings, setRecentBookings] = useState<any[]>([]); // TODO: Replace any with Booking type
 
     // Mock Data for Charts (Replace with API data later)
     const viewsData = [
