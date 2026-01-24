@@ -1,7 +1,7 @@
 
 export interface Company {
   id: string;
-  slug: string;
+  slug: string; // Used for URL routing (e.g. /empresa/nome-da-empresa)
   companyName: string;
   legalName: string;
   cnpj: string;
@@ -31,6 +31,7 @@ export interface Company {
 
 export interface Service {
   id: string;
+  company_id?: string; // Foreign key to company
   title: string;
   description: string;
   price?: number;
