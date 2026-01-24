@@ -1,80 +1,178 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Button from '../../components/ui/Button';
-import { useMockData } from '../../contexts/MockContext';
-import { MOCK_COMPANIES } from '../../constants';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
+
+interface Message {
+    id: string;
+    sender_id: string;
+    receiver_id: string;
+    content: string;
+    created_at: string;
+    read: boolean;
+}
 
 interface Conversation {
-    id: string; // Changed to string to match message schema
+    id: string; // The other user's ID
     name: string;
-    email: string; // Added email to identify conversation
-    lastMessage: string;
-    unread: boolean;
+    email: string;
     avatar: string;
-    messages: { from: 'user' | 'me', text: string, date: string }[];
+    lastMessage: string;
+    unreadCount: number;
 }
 
 const DashboardMensagensPage: React.FC = () => {
-    // For demo purposes, we assume logged in as the first company
-    const currentCompanyId = MOCK_COMPANIES[0].id;
-    const { getMessages, sendMessage } = useMockData();
-    const rawMessages = getMessages(currentCompanyId);
-
+    const { user } = useAuth();
+    const { addToast } = useToast();
+    const [conversations, setConversations] = useState<Conversation[]>([]);
     const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
+    const [messages, setMessages] = useState<Message[]>([]);
     const [replyText, setReplyText] = useState('');
+    const [loading, setLoading] = useState(true);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Group messages by sender (simple logic for MVP)
-    const conversations = useMemo(() => {
-        const groups: { [email: string]: Conversation } = {};
+    // 1. Load Conversations (Group by sender)
+    // In a real app we might have a 'conversations' table, but grouping messages works for MVP
+    useEffect(() => {
+        if (!user) return;
 
-        // Sort messages manually since they might come mixed
-        const sorted = [...rawMessages].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        const fetchConversations = async () => {
+            setLoading(true);
+            // Fetch all messages where I am the sender OR receiver
+            const { data, error } = await supabase
+                .from('messages')
+                .select('*')
+                .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+                .order('created_at', { ascending: false });
 
-        sorted.forEach(msg => {
-            const isMe = msg.senderEmail === 'me@tgt.com'; // Hypothetical "me"
-            const otherEmail = isMe ? 'unknown' : msg.senderEmail;
-            // In a real app, we'd group by thread ID or user ID. 
-            // Here, we group by senderEmail for incoming messages.
-
-            // Note: This logic is simplified for the demo where we only receive messages
-            // To support replies, we'd need a more complex schema.
-            // For this MVP, let's assume all messages in context are INCOMING from clients.
-
-            if (!groups[otherEmail]) {
-                groups[otherEmail] = {
-                    id: otherEmail, // Use email as ID for grouping
-                    name: msg.senderName,
-                    email: otherEmail,
-                    lastMessage: msg.content,
-                    unread: !msg.read,
-                    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName)}&background=random`,
-                    messages: []
-                };
+            if (error) {
+                console.error("Error fetching messages", error);
+                return;
             }
 
-            groups[otherEmail].messages.push({
-                from: 'user', // All generic messages are from 'user' in this view
-                text: msg.content,
-                date: msg.date
-            });
-            // Update last message
-            groups[otherEmail].lastMessage = msg.content;
-        });
+            const convMap = new Map<string, Conversation>();
 
-        return Object.values(groups);
-    }, [rawMessages]);
+            // Process messages to build conversation list
+            // We need to fetch user names if not stored. For MVP, we'll try to get from metadata or placeholder.
+            // A better approach is to expand/join with profiles table.
+
+            // To properly get names, we should ideally join with 'profiles'. 
+            // supabase-js supports this via: .select('*, sender:sender_id(full_name), receiver:receiver_id(full_name)')
+            // But let's keep it simple first or fetch profiles simply.
+
+            for (const msg of data || []) {
+                const isMe = msg.sender_id === user.id;
+                const otherId = isMe ? msg.receiver_id : msg.sender_id;
+
+                if (!convMap.has(otherId)) {
+                    convMap.set(otherId, {
+                        id: otherId,
+                        name: 'Usuário ' + otherId.slice(0, 4), // Placeholder until we fetch profile
+                        email: '',
+                        avatar: `https://ui-avatars.com/api/?name=${otherId}&background=random`,
+                        lastMessage: msg.content,
+                        unreadCount: (!isMe && !msg.read) ? 1 : 0
+                    });
+                } else {
+                    const conv = convMap.get(otherId)!;
+                    if (!isMe && !msg.read) {
+                        conv.unreadCount++;
+                    }
+                }
+            }
+            setConversations(Array.from(convMap.values()));
+            setLoading(false);
+        };
+
+        fetchConversations();
+
+        // Subscribe to NEW messages to update conversation list live
+        const channel = supabase
+            .channel('public:messages')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+                const newMessage = payload.new as Message;
+                if (newMessage.sender_id === user.id || newMessage.receiver_id === user.id) {
+                    fetchConversations(); // Re-fetch to update order/unread
+                }
+            })
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
+    }, [user]);
+
+
+    // 2. Load Messages for Selected Conversation
+    useEffect(() => {
+        if (!selectedConvId || !user) return;
+
+        const fetchMessages = async () => {
+            const { data, error } = await supabase
+                .from('messages')
+                .select('*')
+                .or(`and(sender_id.eq.${user.id},receiver_id.eq.${selectedConvId}),and(sender_id.eq.${selectedConvId},receiver_id.eq.${user.id})`)
+                .order('created_at', { ascending: true });
+
+            if (error) console.error(error);
+            else setMessages(data || []);
+
+            // Mark as read
+            await supabase
+                .from('messages')
+                .update({ read: true })
+                .eq('sender_id', selectedConvId)
+                .eq('receiver_id', user.id)
+                .eq('read', false);
+        };
+
+        fetchMessages();
+
+        // Subscribe to real-time messages for this chat
+        const channel = supabase
+            .channel(`chat:${selectedConvId}`)
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+                const newMsg = payload.new as Message;
+                if (
+                    (newMsg.sender_id === selectedConvId && newMsg.receiver_id === user.id) ||
+                    (newMsg.sender_id === user.id && newMsg.receiver_id === selectedConvId)
+                ) {
+                    setMessages(prev => [...prev, newMsg]);
+                    scrollToBottom();
+                }
+            })
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
+    }, [selectedConvId, user]);
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
+
+    const handleSendReply = async () => {
+        if (!replyText.trim() || !selectedConvId || !user) return;
+
+        try {
+            const { error } = await supabase.from('messages').insert({
+                sender_id: user.id,
+                receiver_id: selectedConvId,
+                content: replyText,
+                read: false
+            });
+
+            if (error) throw error;
+            setReplyText('');
+        } catch (err) {
+            console.error(err);
+            addToast("Erro ao enviar mensagem", "error");
+        }
+    };
 
     const selectedConv = conversations.find(c => c.id === selectedConvId);
-
-    const handleSendReply = () => {
-        if (!replyText.trim() || !selectedConv) return;
-
-        // In this mock MVP, we don't actually store "replies" in the same way 
-        // because the Message type is simple. We'll just alert for now 
-        // or simulating adding it to the local UI state if we wanted to be fancy.
-        // For the demo:
-        alert(`Resposta enviada para ${selectedConv.name} (Simulação)`);
-        setReplyText('');
-    };
 
     return (
         <div className="flex flex-1 min-h-[600px] border border-gray-200 rounded-lg overflow-hidden bg-white">
@@ -84,8 +182,9 @@ const DashboardMensagensPage: React.FC = () => {
                     <h3 className="text-lg font-medium text-gray-900">Mensagens</h3>
                 </div>
                 <ul className="overflow-y-auto flex-1 h-full">
-                    {conversations.length === 0 && (
-                        <li className="p-4 text-center text-gray-500 text-sm">Nenhuma mensagem recebida ainda.</li>
+                    {loading && <li className="p-4 text-center text-gray-500">Carregando...</li>}
+                    {!loading && conversations.length === 0 && (
+                        <li className="p-4 text-center text-gray-500 text-sm">Nenhuma conversa iniciada.</li>
                     )}
                     {conversations.map(conv => (
                         <li key={conv.id}
@@ -96,7 +195,7 @@ const DashboardMensagensPage: React.FC = () => {
                             <div className="flex-1 overflow-hidden">
                                 <div className="flex justify-between items-center">
                                     <span className="font-semibold text-gray-800 truncate">{conv.name}</span>
-                                    {conv.unread && <span className="w-2.5 h-2.5 bg-primary-500 rounded-full shrink-0 ml-2"></span>}
+                                    {conv.unreadCount > 0 && <span className="flex items-center justify-center w-5 h-5 bg-primary-500 text-white text-xs rounded-full shrink-0 ml-2">{conv.unreadCount}</span>}
                                 </div>
                                 <p className="text-sm text-gray-500 truncate">{conv.lastMessage}</p>
                             </div>
@@ -107,24 +206,26 @@ const DashboardMensagensPage: React.FC = () => {
 
             {/* Chat Area */}
             <div className="w-2/3 flex flex-col bg-gray-50">
-                {selectedConv ? (
+                {selectedConvId ? (
                     <>
                         <div className="p-4 border-b bg-white flex items-center shrink-0 shadow-sm">
-                            <img src={selectedConv.avatar} alt={selectedConv.name} className="w-10 h-10 rounded-full mr-3" />
+                            <img src={selectedConv?.avatar} alt={selectedConv?.name} className="w-10 h-10 rounded-full mr-3" />
                             <div>
-                                <h3 className="font-semibold text-gray-900">{selectedConv.name}</h3>
-                                <p className="text-xs text-gray-500">{selectedConv.email}</p>
+                                <h3 className="font-semibold text-gray-900">{selectedConv?.name || 'Chat'}</h3>
                             </div>
                         </div>
                         <div className="flex-1 p-6 overflow-y-auto space-y-4">
-                            {selectedConv.messages.map((msg, index) => (
-                                <div key={index} className={`flex ${msg.from === 'me' ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${msg.from === 'me' ? 'bg-primary-500 text-white' : 'bg-white text-gray-800 shadow-sm'}`}>
-                                        <p>{msg.text}</p>
-                                        <span className={`text-[10px] block mt-1 ${msg.from === 'me' ? 'text-primary-100' : 'text-gray-400'}`}>{msg.date}</span>
+                            {messages.map((msg) => (
+                                <div key={msg.id} className={`flex ${msg.sender_id === user?.id ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${msg.sender_id === user?.id ? 'bg-primary-500 text-white' : 'bg-white text-gray-800 shadow-sm'}`}>
+                                        <p>{msg.content}</p>
+                                        <span className={`text-[10px] block mt-1 ${msg.sender_id === user?.id ? 'text-primary-100' : 'text-gray-400'}`}>
+                                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
                                     </div>
                                 </div>
                             ))}
+                            <div ref={messagesEndRef} />
                         </div>
                         <div className="p-4 border-t bg-white shrink-0">
                             <div className="flex space-x-3">
