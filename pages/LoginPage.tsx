@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext'; // Import context, though we use direct supabase calls for login actions usually, or expose them in context.
+import { supabase } from '../lib/supabase'; // Import supabase client
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { useToast } from '../contexts/ToastContext';
@@ -27,56 +28,77 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [userType, setUserType] = useState<'client' | 'company'>('client');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
   const navigate = useNavigate();
   const { addToast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      // FIX: Explicitly type mockUser as User to satisfy the login function's parameter type.
-      const mockUser: User = {
-        id: userType === 'client' ? 'user123' : 'company1',
-        name: userType === 'client' ? 'João Silva' : 'Adega Vinho Sul',
-        email: email,
-        type: userType,
-      };
-      login(mockUser);
-      addToast('Login realizado com sucesso!', 'success');
-      setIsLoading(false);
-      if (userType === 'company') {
-        navigate('/dashboard/empresa');
-      } else {
-        navigate('/');
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      if (data.session) {
+        addToast('Login realizado com sucesso!', 'success');
+
+        // Redirect based on user type stored in metadata or default logic
+        const metadataType = data.session.user.user_metadata.type as string;
+
+        // If the user selected 'client' tab but is a 'company', we might want to warn or just redirect to company dashboard anyway.
+        // For now, we trust the metadata from the account.
+        if (metadataType === 'company') {
+          navigate('/dashboard/empresa');
+        } else {
+          // Default to home for clients
+          navigate('/');
+        }
       }
-    }, 1000);
+    } catch (err: any) {
+      console.error('Login error:', err);
+      addToast(err.message || 'Falha ao realizar login. Verifique suas credenciais.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleGoogleLogin = () => {
-    // Simulate Google Login
+  const handleGoogleLogin = async () => {
     setIsLoading(true);
-    setTimeout(() => {
-      // FIX: Explicitly type mockUser as User to satisfy the login function's parameter type.
-      const mockUser: User = { id: 'google-user-123', name: 'Maria Souza', email: 'maria.souza@google.com', type: 'client' };
-      login(mockUser);
-      addToast('Login com Google realizado com sucesso!', 'success');
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+          redirectTo: `${window.location.origin}/`, // Redirect back to home after login
+          data: {
+            type: 'client' // Assert google logins are clients by default? Or handle in callback.
+          }
+        },
+      });
+      if (error) throw error;
+      // Note: This will redirect away from the page, so no need to stop loading or navigate manually.
+    } catch (err: any) {
+      console.error('Google login error:', err);
+      addToast(err.message || 'Erro ao conectar com Google.', 'error');
       setIsLoading(false);
-      navigate('/');
-    }, 1000);
+    }
   }
 
   const handleCertificateLogin = () => {
-    // Simulate Certificate Login
+    // Certificate login is likely a custom flow or not supported by standard Supabase Auth out of the box in this tier.
+    // Keeping mock or redirecting to specific logic.
     setIsLoading(true);
     setTimeout(() => {
-      const mockUser: User = { id: 'cert-company-456', name: 'Tech Solutions', email: 'contato@techsolutions.com', type: 'company' };
-      login(mockUser);
-      addToast('Login com Certificado realizado com sucesso!', 'success');
+      // Placeholder for certificate logic
+      addToast('Login com Certificado ainda não implementado no backend Supabase.', 'info');
       setIsLoading(false);
-      navigate('/dashboard/empresa');
     }, 1000);
   }
 

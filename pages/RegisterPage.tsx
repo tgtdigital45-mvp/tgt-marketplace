@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { useToast } from '../contexts/ToastContext';
 import { validatePassword } from '../utils/validators';
+import { supabase } from '../lib/supabase';
 
 const RegisterPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -21,29 +21,52 @@ const RegisterPage: React.FC = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-  
+
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (formData.name.length < 2) newErrors.name = "Nome deve ter pelo menos 2 caracteres.";
     if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) newErrors.email = "Formato de email inválido.";
     if (!validatePassword(formData.password)) newErrors.password = "Senha deve conter ao menos 8 caracteres, incluindo letra e número.";
     if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "Senha e confirmação não conferem.";
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    
+
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-        setIsLoading(false);
-        addToast('Cadastro realizado com sucesso!', 'success');
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            name: formData.name,
+            type: 'client'
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        addToast('Conta criada com sucesso! Verifique seu email para confirmar.', 'success');
+        // Optionally, sign them in explicitly if email confirm is disabled, or let them wait.
+        // Usually with email confirm on, we redirect to login or a "verify email" page.
+        // Assuming confirmation is required by default.
         navigate('/auth/login');
-    }, 1500);
+      }
+
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      addToast(err.message || 'Erro ao criar conta.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
