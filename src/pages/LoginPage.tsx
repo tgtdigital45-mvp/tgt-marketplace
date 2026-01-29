@@ -66,7 +66,7 @@ const LoginPage: React.FC = () => {
             .from('companies')
             .select('slug')
             .eq('profile_id', data.session.user.id)
-            .single();
+            .maybeSingle();
 
           if (companyData?.slug) {
             navigate(`/dashboard/empresa/${companyData.slug}`);
@@ -159,9 +159,9 @@ const LoginPage: React.FC = () => {
               </svg>
               Conexão Segura
             </div>
-            <a href="#" className="font-medium text-brand-primary hover:text-brand-primary/80 min-h-[44px] flex items-center">
+            <Link to="/auth/forgot-password" className="font-medium text-brand-primary hover:text-brand-primary/80 min-h-[44px] flex items-center">
               Esqueceu sua senha?
-            </a>
+            </Link>
           </div>
 
           <div>

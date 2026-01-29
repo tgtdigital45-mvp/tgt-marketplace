@@ -3,7 +3,6 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import QuickSearch from '@/components/QuickSearch';
 import AnimatedSection from '@/components/ui/AnimatedSection';
 import ParallaxLayer from '@/components/ui/ParallaxLayer'; // Assuming ParallaxLayer is a custom component
-import { fadeInUp } from '../utils/animations';
 
 const HeroSection: React.FC = () => {
     const { scrollY } = useScroll();

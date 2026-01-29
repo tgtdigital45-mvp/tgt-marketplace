@@ -172,7 +172,7 @@ const HeaderOptimized: React.FC = () => {
                                             )}
                                             {user.type === 'company' && (
                                                 <>
-                                                    <Link to={user.companySlug ? `/dashboard/empresa/${user.companySlug}` : "/dashboard/empresa"} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                                    <Link to={user.companySlug ? `/dashboard/empresa/${user.companySlug}` : "/empresa/cadastro"} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                                                         Dashboard
                                                     </Link>
                                                     <Link to={company?.slug ? `/empresa/${company.slug}` : "/empresa/meu-negocio"} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
@@ -312,7 +312,7 @@ const HeaderOptimized: React.FC = () => {
                                                 </>
                                             ) : (
                                                 <>
-                                                    <Link to={user.companySlug ? `/dashboard/empresa/${user.companySlug}` : "/dashboard/empresa"} className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg min-h-[44px] flex items-center">
+                                                    <Link to={user.companySlug ? `/dashboard/empresa/${user.companySlug}` : "/empresa/cadastro"} className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg min-h-[44px] flex items-center">
                                                         Dashboard
                                                     </Link>
                                                 </>

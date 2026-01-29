@@ -19,10 +19,6 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ items }) => {
     setSelectedImage(null);
   };
 
-  if (!items || items.length === 0) {
-    return <p className="text-gray-500">Nenhuma imagem no portfólio.</p>;
-  }
-
   // Handle Escape key
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -33,6 +29,10 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ items }) => {
     }
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [lightboxOpen]);
+
+  if (!items || items.length === 0) {
+    return <p className="text-gray-500">Nenhuma imagem no portfólio.</p>;
+  }
 
   return (
     <>

@@ -56,7 +56,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [user]);
+    }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const fetchNotifications = async () => {
         if (!user) return;
@@ -126,6 +126,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useNotifications = () => {
     const context = useContext(NotificationContext);
     if (context === undefined) {

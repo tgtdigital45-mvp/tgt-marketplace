@@ -95,6 +95,35 @@ const CompanyRegistrationPage: React.FC = () => {
 
   const handleBack = () => setStep(prev => prev - 1);
 
+  const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
+    const cep = e.target.value.replace(/\D/g, '');
+    if (cep.length === 8) {
+      try {
+        setIsLoading(true);
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await response.json();
+
+        if (!data.erro) {
+          setFormData(prev => ({
+            ...prev,
+            street: data.logradouro,
+            district: data.bairro,
+            city: data.localidade,
+            state: data.uf
+          }));
+          setErrors(prev => ({ ...prev, cep: '' }));
+        } else {
+          setErrors(prev => ({ ...prev, cep: 'CEP não encontrado.' }));
+        }
+      } catch (error) {
+        console.error("Erro ao buscar CEP:", error);
+        setErrors(prev => ({ ...prev, cep: 'Erro ao buscar CEP.' }));
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
   const uploadFile = async (file: File, bucket: string, path: string) => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random()}.${fileExt}`;
@@ -110,7 +139,7 @@ const CompanyRegistrationPage: React.FC = () => {
     return data.publicUrl;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
     if (!validateStep3()) return;
 
@@ -265,10 +294,10 @@ const CompanyRegistrationPage: React.FC = () => {
         </div>
 
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={(e) => e.preventDefault()}>
           {step === 1 && (
             <div className="space-y-6">
-              <h2 className="text-xl font-semibold">1. Dados da Empresa</h2>
+              {/* ... fields ... */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Input label="Nome Fantasia" name="companyName" value={formData.companyName} onChange={handleChange} error={errors.companyName} required />
                 <Input label="Razão Social" name="legalName" value={formData.legalName} onChange={handleChange} error={errors.legalName} required />
@@ -313,7 +342,7 @@ const CompanyRegistrationPage: React.FC = () => {
             <div className="space-y-6">
               <h2 className="text-xl font-semibold">2. Endereço</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Input label="CEP" name="cep" value={formData.cep} onChange={handleChange} error={errors.cep} required />
+                <Input label="CEP" name="cep" value={formData.cep} onChange={handleChange} onBlur={handleCepBlur} error={errors.cep} required />
                 <Input label="Rua" name="street" value={formData.street} onChange={handleChange} error={errors.street} required />
                 <Input label="Número" name="number" value={formData.number} onChange={handleChange} error={errors.number} />
                 <Input label="Bairro" name="district" value={formData.district} onChange={handleChange} error={errors.district} />
@@ -348,7 +377,7 @@ const CompanyRegistrationPage: React.FC = () => {
             {step > 1 && <Button type="button" variant="secondary" onClick={handleBack}>Voltar</Button>}
             <div />
             {step < 3 && <Button type="button" onClick={handleNext}>Próximo</Button>}
-            {step === 3 && <Button type="submit" isLoading={isLoading}>Finalizar Cadastro</Button>}
+            {step === 3 && <Button type="button" onClick={(e) => handleSubmit(e)} isLoading={isLoading}>Finalizar Cadastro</Button>}
           </div>
         </form>
       </div>

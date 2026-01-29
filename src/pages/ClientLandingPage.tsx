@@ -23,11 +23,6 @@ const ClientLandingPage: React.FC = () => {
       {/* Hero Section */}
       <HeroSection />
 
-      {/* Reorder Carousel - New Feature */}
-      <div className="bg-gray-50 border-b border-gray-100">
-        <ReorderCarousel />
-      </div>
-
       {/* How it Works Section - Asymmetric Staggered Layout */}
       <section className="py-24 bg-white relative">
         <div className="container mx-auto px-4">

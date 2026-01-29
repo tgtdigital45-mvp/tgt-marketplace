@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
-
+import LoadingSkeleton from '../../components/ui/LoadingSkeleton';
 interface Booking {
     id: string;
     client_id: string;
@@ -52,12 +52,31 @@ const DashboardAgendamentosPage: React.FC = () => {
 
                 if (bookingsError) throw bookingsError;
 
-                // Placeholder for client names until we have profiles join fully working
-                const enrichedBookings = bookingsData?.map((b) => ({
-                    ...b,
-                    client_name: 'Cliente ' + b.client_id.slice(0, 4), // Fallback
-                    client_email: ''
-                })) || [];
+                // 3. Fetch Client Profiles
+                const clientIds = [...new Set(bookingsData?.map(b => b.client_id) || [])];
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const profilesMap: Record<string, any> = {};
+
+                if (clientIds.length > 0) {
+                    const { data: profiles, error: profilesError } = await supabase
+                        .from('profiles')
+                        .select('id, full_name, email')
+                        .in('id', clientIds);
+
+                    if (!profilesError && profiles) {
+                        profiles.forEach(p => profilesMap[p.id] = p);
+                    }
+                }
+
+                const enrichedBookings = bookingsData?.map((b) => {
+                    const profile = profilesMap[b.client_id];
+                    return {
+                        ...b,
+                        client_name: profile?.full_name || 'Cliente (s/ perfil)',
+                        client_email: profile?.email || ''
+                    };
+                }) || [];
 
                 setBookings(enrichedBookings);
 
@@ -147,7 +166,17 @@ const DashboardAgendamentosPage: React.FC = () => {
             {/* List */}
             <div className="bg-white shadow overflow-hidden sm:rounded-md">
                 <ul className="divide-y divide-gray-200">
-                    {loading && <li className="px-6 py-4 text-center text-gray-500">Carregando...</li>}
+                    {loading && (
+                        <li className="px-6 py-4">
+                            <div className="space-y-4">
+                                <div className="flex justify-between">
+                                    <LoadingSkeleton className="h-4 w-1/3" />
+                                    <LoadingSkeleton className="h-4 w-20" />
+                                </div>
+                                <LoadingSkeleton className="h-4 w-1/2" />
+                            </div>
+                        </li>
+                    )}
                     {!loading && filteredBookings.length === 0 && (
                         <li className="px-6 py-4 text-center text-gray-500">Nenhum agendamento encontrado.</li>
                     )}

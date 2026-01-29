@@ -16,7 +16,7 @@ export const FavoritesProvider: React.FC<{ children: ReactNode }> = ({ children 
   const { user } = useAuth();
   const { addToast } = useToast();
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false); // To prevent double actions
+  // const [loading, setLoading] = useState(false); // Removed unused loading state
 
   useEffect(() => {
     const fetchFavorites = async () => {
@@ -104,6 +104,7 @@ export const FavoritesProvider: React.FC<{ children: ReactNode }> = ({ children 
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useFavorites = () => {
   const context = useContext(FavoritesContext);
   if (context === undefined) {

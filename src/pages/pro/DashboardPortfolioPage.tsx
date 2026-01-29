@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Button from '../../components/ui/Button';
 import FileUpload from '../../components/FileUpload';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -105,7 +104,7 @@ const DashboardPortfolioPage: React.FC = () => {
         }
     };
 
-    const handleDelete = async (id: string, imageUrl: string) => {
+    const handleDelete = async (id: string) => {
         if (!window.confirm("Tem certeza que deseja excluir esta imagem?")) return;
 
         try {
@@ -162,7 +161,7 @@ const DashboardPortfolioPage: React.FC = () => {
                             <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
                             <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button
-                                    onClick={() => handleDelete(item.id, item.image_url)}
+                                    onClick={() => handleDelete(item.id)}
                                     className="text-white hover:text-red-400 transition-colors p-2 rounded-full bg-black/20"
                                     title="Excluir imagem"
                                 >

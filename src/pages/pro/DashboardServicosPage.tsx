@@ -56,11 +56,14 @@ const ServiceModal: React.FC<{
 };
 
 
+import LoadingSkeleton from '../../components/ui/LoadingSkeleton';
+
 const DashboardServicosPage: React.FC = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const [companyId, setCompanyId] = useState<string | null>(null);
   const { addToast } = useToast();
   const { user } = useAuth();
@@ -107,6 +110,8 @@ const DashboardServicosPage: React.FC = () => {
         const error = err as Error;
         console.error("Error fetching services:", error);
         addToast("Erro ao carregar serviços.", "error");
+      } finally {
+        setIsFetching(false);
       }
     };
 
@@ -223,7 +228,15 @@ const DashboardServicosPage: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {services.length === 0 ? (
+                    {isFetching ? (
+                      Array.from({ length: 3 }).map((_, i) => (
+                        <tr key={i}>
+                          <td className="px-6 py-4 whitespace-nowrap"><LoadingSkeleton className="h-4 w-32" /></td>
+                          <td className="px-6 py-4 whitespace-nowrap"><LoadingSkeleton className="h-4 w-16" /></td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right"><LoadingSkeleton className="h-4 w-20 ml-auto" /></td>
+                        </tr>
+                      ))
+                    ) : services.length === 0 ? (
                       <tr>
                         <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">Nenhum serviço cadastrado.</td>
                       </tr>

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
 import Button from './ui/Button';
 import Input from './ui/Input';
 import { useToast } from '../contexts/ToastContext';

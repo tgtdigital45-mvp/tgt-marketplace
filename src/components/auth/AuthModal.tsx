@@ -52,8 +52,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
                 addToast("Conta criada! Verifique seu email.", "success");
                 onSuccess(); // Or maybe wait for email verification? For MVP, often auto-login or "check email"
             }
-        } catch (error: any) {
-            addToast(error.message || "Erro na autenticação.", "error");
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : "Erro na autenticação.";
+            addToast(errorMessage, "error");
         } finally {
             setLoading(false);
         }
@@ -64,7 +65,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
             await signInWithGoogle();
             // Google login redirects, so we might not hit onSuccess purely here unless it's a popup flow implemented differently.
             // But usually validation happens on return.
-        } catch (e) {
+        } catch {
             // Toast handled in context catch or here
         }
     };

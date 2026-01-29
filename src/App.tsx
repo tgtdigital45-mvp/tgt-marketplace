@@ -12,16 +12,16 @@ import CompanyProfilePage from './pages/CompanyProfilePage';
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 import DashboardLayout from './components/layout/DashboardLayout';
-import DashboardOverviewPage from './pages/dashboard/DashboardOverviewPage';
-import DashboardPerfilPage from './pages/dashboard/DashboardPerfilPage';
-import DashboardServicosPage from './pages/dashboard/DashboardServicosPage';
-import DashboardPortfolioPage from './pages/dashboard/DashboardPortfolioPage';
-import DashboardMensagensPage from './pages/dashboard/DashboardMensagensPage';
-import DashboardConfiguracoesPage from './pages/dashboard/DashboardConfiguracoesPage';
-import DashboardAdministradoresPage from './pages/dashboard/DashboardAdministradoresPage';
-import DashboardAvaliacoesPage from './pages/dashboard/DashboardAvaliacoesPage';
-import DashboardAgendamentosPage from './pages/dashboard/DashboardAgendamentosPage';
-import DashboardAgendaPage from './pages/dashboard/DashboardAgendaPage';
+import DashboardOverviewPage from './pages/pro/DashboardOverviewPage';
+import DashboardPerfilPage from './pages/pro/DashboardPerfilPage';
+import DashboardServicosPage from './pages/pro/DashboardServicosPage';
+import DashboardPortfolioPage from './pages/pro/DashboardPortfolioPage';
+import DashboardMensagensPage from './pages/pro/DashboardMensagensPage';
+import DashboardConfiguracoesPage from './pages/pro/DashboardConfiguracoesPage';
+import DashboardAdministradoresPage from './pages/pro/DashboardAdministradoresPage';
+import DashboardAvaliacoesPage from './pages/pro/DashboardAvaliacoesPage';
+import DashboardAgendamentosPage from './pages/pro/DashboardAgendamentosPage';
+import DashboardAgendaPage from './pages/pro/DashboardAgendaPage';
 import BookingConfirmationPage from './pages/BookingConfirmationPage';
 import ClientProfilePage from './pages/client/ClientProfilePage';
 import ClientMessagesPage from './pages/client/ClientMessagesPage';
@@ -46,6 +46,11 @@ import { AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import PageTransition from './components/PageTransition';
 import ScrollToTop from './components/ScrollToTop';
+import { lazy, Suspense } from 'react'; // Ensure lazy/Suspense are imported
+import LoadingSpinner from './components/ui/LoadingSpinner'; // Assuming this exists or using simple fallback
+
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
 
 // Wrapper for animated routes
 const AnimatedElement = ({ children }: { children: React.ReactElement }) => (
@@ -57,13 +62,15 @@ const MainRoutes = () => {
 
   return (
     <AnimatePresence mode="wait">
-      {/* @ts-ignore - key is needed for AnimatePresence to restart animations on route change */}
+      {/* @ts-expect-error - key is needed for AnimatePresence to restart animations on route change */}
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<AnimatedElement><ClientLandingPage /></AnimatedElement>} />
         <Route path="/empresas" element={<AnimatedElement><CompaniesListPage /></AnimatedElement>} />
         <Route path="/empresa/:slug" element={<AnimatedElement><CompanyProfilePage /></AnimatedElement>} />
         <Route path="/auth/register" element={<AnimatedElement><RegisterPage /></AnimatedElement>} />
         <Route path="/auth/login" element={<AnimatedElement><LoginPage /></AnimatedElement>} />
+        <Route path="/auth/forgot-password" element={<AnimatedElement><ForgotPasswordPage /></AnimatedElement>} />
+        <Route path="/auth/reset-password" element={<AnimatedElement><ResetPasswordPage /></AnimatedElement>} />
         <Route path="/empresa/cadastro" element={<AnimatedElement><CompanyRegistrationPage /></AnimatedElement>} />
         <Route path="/agendamento/confirmacao" element={<AnimatedElement><BookingConfirmationPage /></AnimatedElement>} />
 
@@ -106,19 +113,19 @@ const MainRoutes = () => {
 
 const App = (): React.ReactElement => {
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <CompanyProvider>
-          <MockProvider>
-            <FavoritesProvider>
-              <ToastProvider>
-                <HelmetProvider>
-                  <HashRouter
-                    future={{
-                      v7_startTransition: true,
-                      v7_relativeSplatPath: true,
-                    }}
-                  >
+    <HelmetProvider>
+      <HashRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <AuthProvider>
+          <ToastProvider>
+            <NotificationProvider>
+              <CompanyProvider>
+                <MockProvider>
+                  <FavoritesProvider>
                     <ScrollToTop />
                     <div className="flex flex-col min-h-screen">
                       <Header />
@@ -127,14 +134,14 @@ const App = (): React.ReactElement => {
                       </main>
                       <Footer />
                     </div>
-                  </HashRouter>
-                </HelmetProvider>
-              </ToastProvider>
-            </FavoritesProvider>
-          </MockProvider>
-        </CompanyProvider>
-      </NotificationProvider>
-    </AuthProvider>
+                  </FavoritesProvider>
+                </MockProvider>
+              </CompanyProvider>
+            </NotificationProvider>
+          </ToastProvider>
+        </AuthProvider>
+      </HashRouter>
+    </HelmetProvider>
   );
 };
 

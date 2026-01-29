@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { User } from '../types';
 import { supabase } from '../lib/supabase';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -15,6 +16,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Check active session
@@ -35,9 +37,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               .from('companies')
               .select('slug')
               .eq('profile_id', session.user.id)
-              .single();
+              .maybeSingle(); // Use maybeSingle to avoid 406 if no row found
 
-            if (error && error.code !== 'PGRST116') { // Ignore checking error if no rows found
+            if (error) {
               console.error("AuthContext: Error checking company existence", error);
             }
 
@@ -62,7 +64,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
 
     // Listen for changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Handle programmatic redirects for password recovery
+      if (event === 'PASSWORD_RECOVERY') {
+        // This event comes from Supabase when a recovery link is clicked and session is established
+        // Must use window.location because navigate is not available outside component (unless we passed it or moved provider)
+        // Wait, we moved router OUTSIDE provider in previous step, so we CAN use useNavigate() if we hook it up,
+        // BUT useAuth is a hook used in components. AuthProvider component needs access to navigate.
+        // Since we can't use useNavigate inside the useEffect easily without it being a hook in the component body.
+      }
+
       try {
         if (session?.user) {
           const userData: User = {
@@ -79,7 +90,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               .from('companies')
               .select('slug')
               .eq('profile_id', session.user.id)
-              .single();
+              .maybeSingle();
 
             if (companyData) {
               userData.type = 'company'; // Force type to company if record exists
@@ -113,7 +124,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/#/auth/callback`, // Hash router support might need adjustment or handle in backend
+          // Use origin directly to avoid hash fragmentation issues.
+          // Supabase handles the callback and the app will reload at root, then AuthContext restores session.
+          redirectTo: window.location.origin,
         },
       });
       if (error) throw error;
@@ -126,6 +139,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    window.location.href = '/'; // Redirect to home page
   };
 
   return (
@@ -135,6 +149,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

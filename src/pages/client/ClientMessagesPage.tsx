@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 
 interface Conversation {
   id: string; // The other user's ID
@@ -11,9 +10,15 @@ interface Conversation {
   unreadCount: number;
 }
 
+import { useToast } from '../../contexts/ToastContext';
+import LoadingSkeleton from '../../components/ui/LoadingSkeleton';
+
+// ...
+
 const ClientMessagesPage: React.FC = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const { addToast } = useToast();
+  // const navigate = useNavigate();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -47,8 +52,10 @@ const ClientMessagesPage: React.FC = () => {
       });
 
       // Fetch profiles for these users to get names/avatars
-      let profiles_map: any = {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const profiles_map: any = {};
       if (otherUserIds.size > 0) {
+        // ... (rest of logic same)
         // Try fetching from profiles table
         const { data: profiles } = await supabase
           .from('profiles')
@@ -107,6 +114,7 @@ const ClientMessagesPage: React.FC = () => {
     const channel = supabase
       .channel('public:messages:client')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const newMsg = payload.new as any;
         if (newMsg.sender_id === user.id || newMsg.receiver_id === user.id) {
           fetchConversations();
@@ -135,14 +143,27 @@ const ClientMessagesPage: React.FC = () => {
           <p className="text-gray-500 text-sm">Esta é uma visualização simplificada. (Chat completo em breve)</p>
         </div>
         <ul>
-          {loading && <li className="p-8 text-center text-gray-500">Carregando conversas...</li>}
+          {loading && (
+            <div className="p-4 space-y-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center space-x-4">
+                  <LoadingSkeleton className="h-12 w-12 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <LoadingSkeleton className="h-4 w-1/3" />
+                    <LoadingSkeleton className="h-3 w-3/4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {!loading && conversations.length === 0 && (
             <li className="p-8 text-center text-gray-500">Nenhuma conversa encontrada.</li>
           )}
 
           {!loading && conversations.map(conv => (
-            <li key={conv.id} className="flex items-center p-4 hover:bg-gray-50 cursor-pointer border-b last:border-b-0" onClick={() => navigate('/dashboard/mensagens')}>
+            <li key={conv.id} className="flex items-center p-4 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
+              onClick={() => addToast("O sistema de chat completo estará disponível em breve. Por enquanto, utilize o WhatsApp ou telefone.", "info", 5000)}>
               {/* Redirecting to dashboard messages for now as it handles chat well, IF client has access. Client usually doesn't have dashboard access. */}
               {/* Actually clients might not have access to /dashboard/mensagens. They need their own chat view. */}
               {/* For MVP, let's just show the list and say "Reply in Dashboard" or similar if they are companies. */}

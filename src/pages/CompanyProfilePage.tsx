@@ -68,6 +68,7 @@ const CompanyProfilePage: React.FC = () => {
         if (reviewsError) throw reviewsError;
 
         // Fetch profiles for the reviews to get author names/avatars
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let enrichedReviews: any[] = [];
         if (reviewsData && reviewsData.length > 0) {
           const userIds = [...new Set(reviewsData.map(r => r.client_id))];
@@ -104,7 +105,7 @@ const CompanyProfilePage: React.FC = () => {
         }
 
         // Calculate Average Rating
-        const totalRating = enrichedReviews.reduce((acc, r) => acc + r.rating, 0);
+        const totalRating = enrichedReviews.reduce((acc: number, r: { rating: number }) => acc + r.rating, 0);
         const avgRating = enrichedReviews.length > 0 ? (totalRating / enrichedReviews.length) : 0; // Default to 0 if no reviews
 
         // Construct Company object compatible with UI types

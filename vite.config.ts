@@ -6,8 +6,11 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   return {
     server: {
-      port: 3000,
+      port: 3002, // Changed from 3000 to avoid "Cannot GET /" conflicts/zombies
       host: '0.0.0.0',
+      headers: {
+        "Content-Security-Policy": "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://*; connect-src 'self' http://localhost:* ws://localhost:* https://* wss://*;"
+      }
     },
     plugins: [react()],
     define: {
