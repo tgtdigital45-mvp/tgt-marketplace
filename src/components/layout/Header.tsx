@@ -13,13 +13,10 @@ const HeaderOptimized: React.FC = () => {
 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
-    const [isInfoDropdownOpen, setIsInfoDropdownOpen] = useState(false);
 
     const userDropdownRef = useRef<HTMLDivElement>(null);
-    const infoDropdownRef = useRef<HTMLDivElement>(null);
 
     useOnClickOutside(userDropdownRef, () => setIsUserDropdownOpen(false));
-    useOnClickOutside(infoDropdownRef, () => setIsInfoDropdownOpen(false));
 
     const handleLogout = () => {
         logout();
@@ -30,7 +27,6 @@ const HeaderOptimized: React.FC = () => {
     React.useEffect(() => {
         setIsMobileMenuOpen(false);
         setIsUserDropdownOpen(false);
-        setIsInfoDropdownOpen(false);
     }, [navigate]);
 
     return (
@@ -44,7 +40,7 @@ const HeaderOptimized: React.FC = () => {
                         </Link>
                     </div>
 
-                    {/* Desktop Navigation - OPTIMIZED (Max 7 items) */}
+                    {/* Desktop Navigation - OPTIMIZED */}
                     <nav className="hidden md:flex items-center space-x-6">
                         {/* 1. Buscar Empresas */}
                         <Link
@@ -61,54 +57,6 @@ const HeaderOptimized: React.FC = () => {
                         >
                             Para Empresas
                         </Link>
-
-                        {/* 3. Informações (Grouped Dropdown) */}
-                        <div className="relative" ref={infoDropdownRef}>
-                            <button
-                                onClick={() => setIsInfoDropdownOpen(!isInfoDropdownOpen)}
-                                className="flex items-center gap-1 text-gray-600 hover:text-brand-primary font-medium transition-colors text-sm"
-                            >
-                                Informações
-                                <svg className={`h-4 w-4 transition-transform ${isInfoDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-
-                            <AnimatePresence>
-                                {isInfoDropdownOpen && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        transition={{ duration: 0.1 }}
-                                        className="absolute left-0 mt-2 w-48 bg-white rounded-xl shadow-xl ring-1 ring-black/5 py-2 z-50"
-                                    >
-                                        <Link to="/sobre" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                            Sobre Nós
-                                        </Link>
-                                        <Link to="/para-clientes" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                            Para Clientes
-                                        </Link>
-                                        <Link to="/ajuda" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                            Ajuda
-                                        </Link>
-                                        <Link to="/contato" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                            Contato
-                                        </Link>
-                                        <div className="border-t border-gray-100 my-1"></div>
-                                        <Link to="/carreiras" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                            Carreiras
-                                        </Link>
-                                        <Link to="/privacidade" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                            Privacidade
-                                        </Link>
-                                        <Link to="/termos" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                            Termos de Uso
-                                        </Link>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
                     </nav>
 
                     {/* Desktop Actions */}
@@ -231,14 +179,14 @@ const HeaderOptimized: React.FC = () => {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30 md:hidden"
+                            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-45 md:hidden"
                         />
                         <motion.div
                             initial={{ x: '100%' }}
                             animate={{ x: 0 }}
                             exit={{ x: '100%' }}
                             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            className="fixed inset-y-0 right-0 w-full max-w-xs bg-white shadow-2xl z-40 md:hidden flex flex-col overflow-y-auto"
+                            className="fixed inset-y-0 right-0 w-full max-w-xs bg-white shadow-2xl z-50 md:hidden flex flex-col overflow-y-auto"
                         >
                             <div className="p-4 border-b border-gray-100 flex items-center justify-between min-h-[60px]">
                                 <span className="text-xl font-bold text-gray-900">Menu</span>
@@ -269,26 +217,26 @@ const HeaderOptimized: React.FC = () => {
                                 )}
 
                                 <nav className="space-y-1">
-                                    <Link to="/" className="block px-3 py-3 text-base font-medium text-gray-700 hover:text-brand-primary hover:bg-brand-primary/5 rounded-lg transition-colors min-h-[44px] flex items-center">
+                                    <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-3 text-base font-medium text-gray-700 hover:text-brand-primary hover:bg-brand-primary/5 rounded-lg transition-colors min-h-[44px] flex items-center">
                                         Início
                                     </Link>
-                                    <Link to="/empresas" className="block px-3 py-3 text-base font-medium text-gray-700 hover:text-brand-primary hover:bg-brand-primary/5 rounded-lg transition-colors min-h-[44px] flex items-center">
+                                    <Link to="/empresas" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-3 text-base font-medium text-gray-700 hover:text-brand-primary hover:bg-brand-primary/5 rounded-lg transition-colors min-h-[44px] flex items-center">
                                         Buscar Empresas
                                     </Link>
-                                    <Link to="/para-empresas" className="block px-3 py-3 text-base font-medium text-gray-700 hover:text-brand-primary hover:bg-brand-primary/5 rounded-lg transition-colors min-h-[44px] flex items-center">
+                                    <Link to="/para-empresas" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-3 text-base font-medium text-gray-700 hover:text-brand-primary hover:bg-brand-primary/5 rounded-lg transition-colors min-h-[44px] flex items-center">
                                         Para Empresas
                                     </Link>
 
                                     {/* Info Section */}
                                     <div className="pt-2">
                                         <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Informações</p>
-                                        <Link to="/sobre" className="block px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg min-h-[44px] flex items-center">
+                                        <Link to="/sobre" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg min-h-[44px] flex items-center">
                                             Sobre Nós
                                         </Link>
-                                        <Link to="/ajuda" className="block px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg min-h-[44px] flex items-center">
+                                        <Link to="/ajuda" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg min-h-[44px] flex items-center">
                                             Ajuda
                                         </Link>
-                                        <Link to="/contato" className="block px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg min-h-[44px] flex items-center">
+                                        <Link to="/contato" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg min-h-[44px] flex items-center">
                                             Contato
                                         </Link>
                                     </div>
@@ -300,19 +248,19 @@ const HeaderOptimized: React.FC = () => {
                                         <div className="space-y-1">
                                             {user.type === 'client' ? (
                                                 <>
-                                                    <Link to="/perfil/cliente" className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg min-h-[44px] flex items-center">
+                                                    <Link to="/perfil/cliente" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg min-h-[44px] flex items-center">
                                                         Meu Perfil
                                                     </Link>
-                                                    <Link to="/favoritos" className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg min-h-[44px] flex items-center">
+                                                    <Link to="/favoritos" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg min-h-[44px] flex items-center">
                                                         Favoritos
                                                     </Link>
-                                                    <Link to="/minhas-mensagens" className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg min-h-[44px] flex items-center">
+                                                    <Link to="/minhas-mensagens" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg min-h-[44px] flex items-center">
                                                         Mensagens
                                                     </Link>
                                                 </>
                                             ) : (
                                                 <>
-                                                    <Link to={user.companySlug ? `/dashboard/empresa/${user.companySlug}` : "/empresa/cadastro"} className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg min-h-[44px] flex items-center">
+                                                    <Link to={user.companySlug ? `/dashboard/empresa/${user.companySlug}` : "/empresa/cadastro"} onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg min-h-[44px] flex items-center">
                                                         Dashboard
                                                     </Link>
                                                 </>
@@ -326,10 +274,10 @@ const HeaderOptimized: React.FC = () => {
                                         </div>
                                     ) : (
                                         <div className="grid gap-3">
-                                            <Link to="/auth/login" className="flex items-center justify-center w-full px-4 py-3 border border-transparent rounded-xl shadow-sm text-base font-medium text-white bg-brand-primary hover:bg-brand-primary/90 min-h-[44px]">
+                                            <Link to="/auth/login" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center w-full px-4 py-3 border border-transparent rounded-xl shadow-sm text-base font-medium text-white bg-brand-primary hover:bg-brand-primary/90 min-h-[44px]">
                                                 Entrar
                                             </Link>
-                                            <Link to="/auth/register" className="flex items-center justify-center w-full px-4 py-3 border border-brand-primary text-brand-primary rounded-xl font-medium hover:bg-brand-primary/5 min-h-[44px]">
+                                            <Link to="/auth/register" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center w-full px-4 py-3 border border-brand-primary text-brand-primary rounded-xl font-medium hover:bg-brand-primary/5 min-h-[44px]">
                                                 Criar Conta
                                             </Link>
                                         </div>
