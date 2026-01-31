@@ -13,11 +13,17 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, onSubmit, is
     const [hoverRating, setHoverRating] = useState(0);
     const [comment, setComment] = useState('');
 
+    const [error, setError] = useState<string | null>(null);
+
     if (!isOpen) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (rating === 0) return;
+        if (rating === 0) {
+            setError('Please enter a review and a rating between 1 and 5');
+            return;
+        }
+        setError(null);
         await onSubmit(rating, comment);
         setRating(0);
         setComment('');
@@ -60,6 +66,7 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, onSubmit, is
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Comentário (opcional)
                             </label>
+                            {error && <p className="text-red-500 text-xs mb-2 transition-all">{error}</p>}
                             <textarea
                                 value={comment}
                                 onChange={(e) => setComment(e.target.value)}

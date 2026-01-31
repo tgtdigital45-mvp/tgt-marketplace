@@ -38,7 +38,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const { data: companyData, error } = await supabase
               .from('companies')
               .select('slug')
-              .eq('owner_id', session.user.id)
+              .eq('profile_id', session.user.id)
               .maybeSingle(); // Use maybeSingle to avoid 406 if no row found
 
             if (error) {
@@ -91,7 +91,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const { data: companyData } = await supabase
               .from('companies')
               .select('slug')
-              .eq('owner_id', session.user.id)
+              .eq('profile_id', session.user.id)
               .maybeSingle();
 
             if (companyData) {

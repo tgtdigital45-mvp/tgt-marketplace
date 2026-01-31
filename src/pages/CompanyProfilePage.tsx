@@ -13,6 +13,7 @@ import ReviewModal from '../components/ReviewModal';
 import Badge from '../components/ui/Badge';
 // import StatsGrid from '../components/ui/StatsGrid'; // Unused
 import FAQSection from '../components/FAQSection';
+import CompanyCard from '../components/CompanyCard';
 import { Service, Company } from '../types';
 import { supabase } from '../lib/supabase';
 
@@ -28,6 +29,7 @@ const CompanyProfilePage: React.FC = () => {
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
 
   const [company, setCompany] = useState<Company | null>(null);
+  const [similarCompanies, setSimilarCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,7 +83,8 @@ const CompanyProfilePage: React.FC = () => {
           if (!profilesError && profilesData) {
             const profilesMap = new Map(profilesData.map(p => [p.id, p]));
             enrichedReviews = reviewsData.map(r => {
-              const profile = profilesMap.get(r.client_id);
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const profile = profilesMap.get(r.client_id) as any;
               return {
                 id: r.id,
                 author: profile?.full_name || 'Usuário',
@@ -120,7 +123,7 @@ const CompanyProfilePage: React.FC = () => {
           companyName: companyData.company_name,
           legalName: companyData.legal_name,
           cnpj: companyData.cnpj,
-          logo: companyData.logo_url || 'https://via.placeholder.com/150',
+          logo: companyData.logo_url || 'https://placehold.co/150',
           coverImage: companyData.cover_image_url || 'https://placehold.co/1200x400',
           category: companyData.category,
           rating: parseFloat(avgRating.toFixed(1)),
@@ -145,6 +148,57 @@ const CompanyProfilePage: React.FC = () => {
         };
 
         setCompany(constructedCompany);
+
+        // Fetch Similar Companies
+        if (companyData.category) {
+          const { data: similarData, error: similarError } = await supabase
+            .from('companies')
+            .select('*, reviews(rating)')
+            .eq('category', companyData.category)
+            .neq('id', companyData.id)
+            .limit(3);
+
+          if (!similarError && similarData) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const constructedSimilar = similarData.map((comp: any) => {
+              const compAddress = comp.address || {};
+              const compReviews = comp.reviews || [];
+              const totalRating = compReviews.reduce((acc: number, r: { rating: number }) => acc + r.rating, 0);
+              const avgRating = compReviews.length > 0 ? (totalRating / compReviews.length) : 0;
+
+              return {
+                id: comp.id,
+                slug: comp.slug,
+                companyName: comp.company_name,
+                legalName: comp.legal_name,
+                cnpj: comp.cnpj,
+                logo: comp.logo_url || 'https://placehold.co/150',
+                coverImage: comp.cover_image_url || 'https://placehold.co/1200x400',
+                category: comp.category,
+                rating: parseFloat(avgRating.toFixed(1)),
+                reviewCount: compReviews.length,
+                description: comp.description || '',
+                address: {
+                  street: compAddress.street || '',
+                  number: compAddress.number || '',
+                  district: compAddress.district || '',
+                  city: compAddress.city || '',
+                  state: compAddress.state || '',
+                  cep: compAddress.cep || '',
+                  lat: compAddress.lat || -23.55052,
+                  lng: compAddress.lng || -46.63330
+                },
+                phone: comp.phone,
+                email: comp.email,
+                website: comp.website,
+                services: [], // Not needed for card
+                portfolio: [], // Not needed for card
+                reviews: [] // Not needed for card details
+              };
+            });
+            setSimilarCompanies(constructedSimilar);
+          }
+        }
       } catch (err) {
         console.error("Error fetching company:", err);
         setError("Empresa não encontrada ou erro ao carregar.");
@@ -431,6 +485,19 @@ const CompanyProfilePage: React.FC = () => {
                 }
               ]}
             />
+
+
+            {/* Similar Companies Section */}
+            {similarCompanies.length > 0 && (
+              <section id="similares" className="mt-12 pt-12 border-t">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Quem viu esta empresa também viu</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {similarCompanies.map((similarCompany) => (
+                    <CompanyCard key={similarCompany.id} company={similarCompany} />
+                  ))}
+                </div>
+              </section>
+            )}
 
           </div>
 

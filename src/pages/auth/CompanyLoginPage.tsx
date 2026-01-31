@@ -37,7 +37,9 @@ const CompanyLoginPage: React.FC = () => {
                 const { data: companyData } = await supabase
                     .from('companies')
                     .select('slug')
-                    .eq('owner_id', data.session.user.id)
+                    .eq('profile_id', data.session.user.id)
+                    .eq('profile_id', data.session.user.id)
+                    .limit(1)
                     .maybeSingle();
 
                 if (companyData?.slug) {

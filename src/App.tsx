@@ -27,6 +27,7 @@ import ClientOrdersPage from './pages/client/ClientOrdersPage';
 import FavoritesPage from './pages/client/FavoritesPage';
 import { ToastProvider } from './contexts/ToastContext';
 import CompanyRegistrationPage from './pages/CompanyRegistrationPage';
+import NotFoundPage from './pages/NotFoundPage';
 import { FavoritesProvider } from './contexts/FavoritesContext';
 import { MockProvider } from './contexts/MockContext';
 import ClientPostJobPage from './pages/client/ClientPostJobPage';
@@ -87,6 +88,8 @@ const MainRoutes = () => {
         {/* Legacy redirects */}
         <Route path="/auth/login" element={<Navigate to="/login/cliente" replace />} />
         <Route path="/auth/register" element={<Navigate to="/cadastro/cliente" replace />} />
+        <Route path="/client/dashboard" element={<Navigate to="/perfil/cliente" replace />} />
+        <Route path="/professional/dashboard" element={<Navigate to="/login/empresa" replace />} />
 
         {/* Common Auth */}
         <Route path="/auth/forgot-password" element={<AnimatedElement><Suspense fallback={<LoadingSpinner />}><ForgotPasswordPage /></Suspense></AnimatedElement>} />
@@ -129,6 +132,9 @@ const MainRoutes = () => {
         <Route path="/carreiras" element={<AnimatedElement><CareersPage /></AnimatedElement>} />
         <Route path="/privacidade" element={<AnimatedElement><PrivacyPage /></AnimatedElement>} />
         <Route path="/termos" element={<AnimatedElement><TermsPage /></AnimatedElement>} />
+
+        {/* 404 - Not Found */}
+        <Route path="*" element={<AnimatedElement><NotFoundPage /></AnimatedElement>} />
       </Routes>
     </AnimatePresence>
   );
@@ -176,10 +182,11 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ userType, element }: ProtectedRouteProps): React.ReactElement => {
   const { user, loading } = useAuth();
   if (loading) {
-    return <div>Carregando...</div>;
+    return <LoadingSpinner />;
   }
   if (!user || user.type !== userType) {
-    return <Navigate to="/auth/login" replace />;
+    const redirectPath = userType === 'company' ? "/login/empresa" : "/login/cliente";
+    return <Navigate to={redirectPath} replace />;
   }
   return element;
 };

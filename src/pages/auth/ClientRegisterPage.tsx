@@ -54,7 +54,11 @@ const ClientRegisterPage: React.FC = () => {
             if (error) throw error;
 
             if (data.user) {
-                addToast('Conta criada com sucesso! Faça login para continuar.', 'success');
+                addToast('Cadastro realizado com sucesso!', 'success');
+                navigate('/login/cliente');
+            } else {
+                // Fallback for cases where signUp succeeds but user is not returned (e.g. email already exists or confirmation needed)
+                addToast('Verifique seu e-mail para confirmar o cadastro ou tente fazer login.', 'success');
                 navigate('/login/cliente');
             }
 

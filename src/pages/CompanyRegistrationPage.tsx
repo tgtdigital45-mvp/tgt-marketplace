@@ -216,7 +216,7 @@ const CompanyRegistrationPage: React.FC = () => {
         .replace(/^-+|-+$/g, ''); // Trim hyphens
 
       const { error: dbError } = await supabase.from('companies').insert({
-        owner_id: userId,
+        profile_id: userId,
         slug: slug,
         company_name: formData.companyName,
         legal_name: formData.legalName,

@@ -18,6 +18,8 @@ const CompaniesListPage: React.FC = () => {
   const [sortBy, setSortBy] = useState('rating');
   const [priceRange, setPriceRange] = useState<'all' | 'low' | 'mid' | 'high'>('all');
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   // Dynamic SEO logic
   const getDynamicTitle = () => {
@@ -64,13 +66,11 @@ const CompaniesListPage: React.FC = () => {
         const mappedCompanies: Company[] = (data || []).map((c) => ({
           id: c.id,
           slug: c.slug,
-          companyName: c.name, // Fixed: company_name does not exist in schema, use name
-          legalName: c.legal_name, // Verify if exists, otherwise fallback or remove? Assuming legal_name might fail too if checked. Kept for now but suspect.
-          // legalName was not in the columns list I saw earlier (id, created_at, owner_id, name, slug, description, logo_url, cover_url, website, phone, email, address, city, state, category)
-          // Removing likely invalid columns safely:
+          companyName: c.company_name,
+          legalName: c.legal_name,
           cnpj: c.cnpj,
-          logo: c.logo_url || 'https://via.placeholder.com/150',
-          coverImage: c.cover_url || 'https://placehold.co/1200x400', // Fixed: cover_url based on schema
+          logo: c.logo_url || 'https://placehold.co/150',
+          coverImage: c.cover_image_url || 'https://placehold.co/1200x400',
           category: c.category,
           rating: 5.0, // Should be avg from reviews
           reviewCount: 0,
@@ -113,6 +113,7 @@ const CompaniesListPage: React.FC = () => {
       setUserCoords({ lat, lng });
       setSortBy('distance'); // Auto sort by distance if location provided
     }
+    setCurrentPage(1); // Reset to first page on search/filter change
   }, [searchParams]);
 
   // Update companies with distance when userCoords changes OR companies load
@@ -182,11 +183,26 @@ const CompaniesListPage: React.FC = () => {
       return 0;
     });
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredAndSortedCompanies.length / itemsPerPage);
+  const paginatedCompanies = filteredAndSortedCompanies.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className="bg-gray-50 min-h-screen">
       <Helmet>
         <title>{getDynamicTitle()}</title>
         <meta name="description" content={getDynamicDescription()} />
+        <meta property="og:title" content={getDynamicTitle()} />
+        <meta property="og:description" content={getDynamicDescription()} />
+        <meta property="og:image" content="https://tgt-guia-de-negocios.vercel.app/og-image.jpg" />
         <link rel="canonical" href={`https://tgt-guia-de-negocios.vercel.app/empresas${searchTerm ? `?q=${searchTerm}` : ''}${locationTerm ? `${searchTerm ? '&' : '?'}loc=${locationTerm}` : ''}`} />
 
         {/* Schema.org Organization Markup */}
@@ -320,7 +336,7 @@ const CompaniesListPage: React.FC = () => {
             </div>
           ) : filteredAndSortedCompanies.length > 0 ? (
             <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {filteredAndSortedCompanies.map(company => (
+              {paginatedCompanies.map(company => (
                 <CompanyCard key={company.id} company={company} />
               ))}
             </div>
@@ -361,6 +377,46 @@ const CompaniesListPage: React.FC = () => {
             </div>
           )
           }
+
+          {/* Pagination Controls */}
+          {!loading && totalPages > 1 && (
+            <div className="mt-12 flex justify-center items-center space-x-2" id="pagination-controls">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                aria-label="Página Anterior"
+              >
+                Anterior
+              </button>
+
+              <div className="flex space-x-1">
+                {[...Array(totalPages)].map((_, i) => (
+                  <button
+                    key={i + 1}
+                    onClick={() => handlePageChange(i + 1)}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${currentPage === i + 1
+                      ? 'bg-brand-primary text-white shadow-md'
+                      : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    aria-label={`Página ${i + 1}`}
+                    aria-current={currentPage === i + 1 ? 'page' : undefined}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                aria-label="Próxima Página"
+              >
+                Próxima
+              </button>
+            </div>
+          )}
         </div >
       </div >
     </div >

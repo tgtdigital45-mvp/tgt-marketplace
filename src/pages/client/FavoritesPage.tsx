@@ -40,7 +40,7 @@ const FavoritesPage: React.FC = () => {
             companyName: c.companyName || c.company_name, // Handle snake_case from DB
             legalName: c.legalName || c.legal_name,
             cnpj: c.cnpj,
-            logo: c.logo || c.logo_url || 'https://via.placeholder.com/150',
+            logo: c.logo || c.logo_url || 'https://placehold.co/150',
             coverImage: c.coverImage || c.cover_image_url || 'https://placehold.co/1200x400',
             category: c.category,
             rating: 5.0, // Should ideally be fetched properly

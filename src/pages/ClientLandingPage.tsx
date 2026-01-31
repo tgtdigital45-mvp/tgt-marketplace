@@ -27,6 +27,12 @@ const ClientLandingPage: React.FC = () => {
         <meta name="keywords" content="TGT, Contratto, empresas em cascavel, serviços cascavel, contabilidade cascavel, engenharia cascavel, cabelereiros cascavel" />
         <meta property="og:title" content="TGT Contratto | Guia de Negócios Locais" />
         <meta property="og:description" content="Encontre profissionais verificados em Cascavel. Qualidade e confiança perto de você." />
+        <meta property="og:image" content="https://tgt-guia-de-negocios.vercel.app/og-image.jpg" />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="TGT Contratto | Guia de Negócios Locais" />
+        <meta name="twitter:description" content="Encontre profissionais verificados em Cascavel. Qualidade e confiança perto de você." />
+        <meta name="twitter:image" content="https://tgt-guia-de-negocios.vercel.app/og-image.jpg" />
         <link rel="canonical" href="https://tgt-guia-de-negocios.vercel.app/" />
       </Helmet>
       {/* Hero Section */}

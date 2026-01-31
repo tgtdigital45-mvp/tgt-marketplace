@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useContext, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 
@@ -43,7 +43,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
     const [company, setCompany] = useState<CompanyData | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const fetchCompany = async () => {
+    const fetchCompany = useCallback(async () => {
         if (!user || user.type !== 'company') {
             setCompany(null);
             setLoading(false);
@@ -55,16 +55,14 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
                 .from('companies')
                 .select('*')
                 .eq('profile_id', user.id)
-                .single();
+                .limit(1)
+                .maybeSingle();
 
             if (error) {
                 console.error('Error fetching company:', error);
                 setCompany(null);
             } else {
                 // Map flat DB fields to nested Address object
-                // Note: The actual DB columns for address might be different based on SQL output:
-                // address, city, state are separate columns in the DB based on SQL inspection.
-                // We'll map them to the Address interface.
                 const addressData: Address = {
                     street: data.address?.street || '',
                     city: data.address?.city || '',
@@ -76,18 +74,22 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
 
                 const mappedCompany: CompanyData = {
                     ...data,
-                    // company_name and cover_image_url are already in data with correct keys
                     address: addressData,
                 };
                 setCompany(mappedCompany);
             }
-        } catch (err) {
+        } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+            const msg = err?.message || '';
+            const isAbort = msg.includes('aborted') || msg.includes('AbortError') || err?.name === 'AbortError';
+
+            if (isAbort) return;
+
             console.error('Error in fetchCompany:', err);
             setCompany(null);
         } finally {
             setLoading(false);
         }
-    };
+    }, [user]);
 
     const refreshCompany = async () => {
         setLoading(true);
@@ -95,27 +97,11 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
     };
 
     const updateCompany = async (data: Partial<CompanyData>) => {
+        // ... (existing update logic if needed, but we are only replacing the block from fetchCompany to useEffect end)
         if (!company) return;
 
         try {
             const updatePayload: Partial<CompanyData> = { ...data };
-
-            // If we are updating address, we need to construct the JSON object
-            // For now, we only update specific top-level fields passed in `data`
-            // If `data.address` is passed, we might need to merge it or replace it.
-            // But usually this method is called with partial flat data updates or full object.
-
-            // If data has address proper, use it.
-            // But we must ensure we don't send 'address' as an object if we want to update specific subfields? 
-            // No, Supabase updates JSONB by replacing it usually, or we use jsonb_set.
-            // Simplified: If address is present, send it as is.
-
-            // Remove derived/frontend-only fields that might be in `data` if it was a full object copy
-            // e.g. potentially any extra props.
-
-            // Fix field mapping if ANY legacy code calls this
-            // But we should use correct column names.
-
             const { error } = await supabase
                 .from('companies')
                 .update(updatePayload)
@@ -163,7 +149,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
                 subscription.unsubscribe();
             };
         }
-    }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [user, fetchCompany]); // Re-subscribe if user changes; fetchCompany update handled by useCallback
 
     return (
         <CompanyContext.Provider value={{ company, loading, refreshCompany, updateCompany }}>

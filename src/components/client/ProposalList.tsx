@@ -61,13 +61,13 @@ const ProposalList: React.FC<ProposalListProps> = ({ proposals, onProposalAccept
             // 4. Notify Company
             const { data: companyData } = await supabase
                 .from('companies')
-                .select('owner_id, slug')
+                .select('profile_id, slug')
                 .eq('id', proposal.company_id)
                 .single();
 
             if (companyData) {
                 await supabase.from('notifications').insert({
-                    user_id: companyData.owner_id,
+                    user_id: companyData.profile_id,
                     type: 'proposal_accepted',
                     title: 'Proposta Aceita!',
                     message: `Sua proposta foi aceita! Um novo agendamento foi criado.`,
