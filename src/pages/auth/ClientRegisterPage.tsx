@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Helmet } from 'react-helmet-async';
+import SEO from '../../components/SEO';
 import { Link, useNavigate } from 'react-router-dom';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
@@ -74,10 +74,10 @@ const ClientRegisterPage: React.FC = () => {
 
     return (
         <div className="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-            <Helmet>
-                <title>Cadastro de Cliente | TGT Contratto</title>
-                <meta name="description" content="Crie sua conta no TGT Contratto para contratar os melhores profissionais da sua região." />
-            </Helmet>
+            <SEO
+                title="Cadastro de Cliente | TGT Contratto"
+                description="Crie sua conta no TGT Contratto para contratar os melhores profissionais da sua região."
+            />
             <div className="max-w-md w-full space-y-8 p-10 bg-white shadow-lg rounded-lg">
                 <div>
                     <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">

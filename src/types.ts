@@ -1,4 +1,56 @@
 
+
+export type OrderStatus = 'pending_payment' | 'active' | 'in_review' | 'completed' | 'cancelled';
+
+export interface DbOrder {
+  id: string;
+  created_at: string;
+  buyer_id: string;
+  seller_id: string;
+  service_title: string;
+  service_id: string;
+  package_tier: 'basic' | 'standard' | 'premium';
+  price: number;
+  status: OrderStatus;
+  delivery_deadline: string;
+}
+
+export interface DbMessage {
+  id: string;
+  order_id: string;
+  sender_id: string;
+  content: string;
+  file_url?: string;
+  created_at: string;
+}
+
+export interface DbReview {
+  id: string;
+  order_id: string;
+  reviewer_id: string;
+  rating: number;
+  comment?: string;
+  created_at: string;
+  profiles?: DbProfile; // For joins
+}
+
+export interface DbWallet {
+  id: string;
+  user_id: string;
+  balance: number;
+  pending_balance: number;
+}
+
+export interface DbTransaction {
+  id: string;
+  wallet_id: string;
+  amount: number;
+  type: 'credit' | 'debit';
+  description: string;
+  order_id?: string;
+  created_at: string;
+}
+
 export interface Address {
   street: string;
   number: string;
@@ -39,28 +91,39 @@ export interface DbProfile {
   avatar_url: string | null;
 }
 
-export interface DbReview {
-  id: string;
-  rating: number;
-  comment: string;
-  created_at: string;
-  client_id: string;
-  profiles?: DbProfile; // Joined via client_id
+
+
+export interface ServicePackage {
+  name: 'Basic' | 'Standard' | 'Premium';
+  price: number;
+  delivery_time: number; // in days
+  revisions: number; // -1 for unlimited
+  features: string[];
+  description: string;
+}
+
+export interface ServicePackages {
+  basic?: ServicePackage;
+  standard?: ServicePackage;
+  premium?: ServicePackage;
 }
 
 export interface DbService {
   id: string;
   title: string;
   description: string;
-  price?: number;
+  price?: number; // kept for backward compatibility (basic price)
+  starting_price?: number; // New field for improved sorting
   duration?: string;
   company_id: string;
+  packages?: ServicePackages; // JSONB
+  gallery?: string[]; // Array of image URLs
 }
 
 export interface DbPortfolioItem {
   id: string;
   type: 'image' | 'video';
-  image_url: string; // Note: DB column is likely image_url based on previous code usually mapping to url in UI
+  image_url: string;
   caption?: string;
   company_id: string;
   created_at: string;
@@ -93,11 +156,14 @@ export interface DbCompany {
 
 export interface Service {
   id: string;
-  company_id?: string; // Foreign key to company
+  company_id?: string;
   title: string;
   description: string;
   price?: number;
+  starting_price?: number;
   duration?: string;
+  packages?: ServicePackages;
+  gallery?: string[];
 }
 
 export interface PortfolioItem {

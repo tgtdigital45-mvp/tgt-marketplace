@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Helmet } from 'react-helmet-async';
+import SEO from '../components/SEO';
 import { useNavigate } from 'react-router-dom';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
@@ -249,10 +249,10 @@ const CompanyRegistrationPage: React.FC = () => {
 
   return (
     <div className="container mx-auto max-w-4xl py-12 px-4">
-      <Helmet>
-        <title>Cadastro de Empresa | TGT Contratto</title>
-        <meta name="description" content="Cadastre sua empresa no TGT Contratto e encontre novos clientes na sua região." />
-      </Helmet>
+      <SEO
+        title="Cadastro de Empresa | TGT Contratto"
+        description="Cadastre sua empresa no TGT Contratto e encontre novos clientes na sua região."
+      />
       <div className="bg-white p-8 rounded-lg shadow-lg">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Cadastre sua Empresa</h1>
         <p className="text-gray-600 mb-8">Siga os passos para criar o perfil do seu negócio.</p>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import SEO from '../components/SEO';
 import { useParams } from 'react-router-dom';
 import ServiceCard from '../components/ServiceCard';
 // import MapEmbed from '../components/MapEmbed'; // Unused
@@ -181,9 +182,14 @@ const CompanyProfilePage: React.FC = () => {
 
   return (
     <main className="bg-white">
+      <SEO
+        title={`${company.companyName} | TGT - Guia de Negócios`}
+        description={`Confira os serviços e avaliações de ${company.companyName} em ${company.address.city}, ${company.address.state}.`}
+        url={`/empresa/${company.slug}`}
+        image={company.coverImage}
+      />
+
       <Helmet>
-        <title>{company.companyName} | TGT - Guia de Negócios</title>
-        <meta name="description" content={`Confira os serviços e avaliações de ${company.companyName} em ${company.address.city}, ${company.address.state}.`} />
         <link rel="canonical" href={window.location.origin + location.pathname} />
 
         {/* Schema.org LocalBusiness Markup */}

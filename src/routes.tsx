@@ -43,6 +43,12 @@ const DashboardAgendaPage = lazy(() => import('./pages/pro/DashboardAgendaPage')
 const DashboardMensagensPage = lazy(() => import('./pages/pro/DashboardMensagensPage'));
 const DashboardConfiguracoesPage = lazy(() => import('./pages/pro/DashboardConfiguracoesPage'));
 
+// Service Details
+const ServiceDetailsPage = lazy(() => import('./pages/service/ServiceDetailsPage'));
+const CheckoutPage = lazy(() => import('./pages/checkout/CheckoutPage'));
+const OrderRoomPage = lazy(() => import('./pages/orders/OrderRoomPage'));
+const WalletPage = lazy(() => import('./pages/dashboard/WalletPage'));
+
 // Info Pages
 const ForCompaniesPage = lazy(() => import('./pages/info/ForCompaniesPage'));
 const ForClientsPage = lazy(() => import('./pages/info/ForClientsPage'));
@@ -52,6 +58,7 @@ const AboutPage = lazy(() => import('./pages/info/AboutPage'));
 const CareersPage = lazy(() => import('./pages/info/CareersPage'));
 const PrivacyPage = lazy(() => import('./pages/info/PrivacyPage'));
 const TermsPage = lazy(() => import('./pages/info/TermsPage'));
+const PlansPage = lazy(() => import('./pages/PlansPage'));
 
 // Lazy loaded pages (if any were strictly lazy loaded in App.tsx, keeping consistency)
 // The original App.tsx had lazy imports for Forgot/Reset password but they weren't used in the Routes definitions in the file snippet I read!
@@ -91,6 +98,9 @@ const MainRoutes = () => {
                     <Route path="/" element={<AnimatedElement><ClientLandingPage /></AnimatedElement>} />
                     <Route path="/empresas" element={<AnimatedElement><CompaniesListPage /></AnimatedElement>} />
                     <Route path="/empresa/:slug" element={<AnimatedElement><CompanyProfilePage /></AnimatedElement>} />
+                    <Route path="/servico/:id" element={<AnimatedElement><ServiceDetailsPage /></AnimatedElement>} />
+                    <Route path="/checkout/:serviceId" element={<AnimatedElement><CheckoutPage /></AnimatedElement>} />
+                    <Route path="/orders/:orderId" element={<AnimatedElement><OrderRoomPage /></AnimatedElement>} />
 
                     {/* Auth Routes - Clients */}
                     <Route path="/login/cliente" element={<AnimatedElement><ClientLoginPage /></AnimatedElement>} />
@@ -131,6 +141,8 @@ const MainRoutes = () => {
                     {/* Redirect old dashboard route to new slug-based route */}
                     <Route path="/dashboard/empresa" element={<Navigate to="/" replace />} />
 
+                    <Route path="/dashboard/wallet" element={<ProtectedRoute userType="company" element={<AnimatedElement><WalletPage /></AnimatedElement>} />} />
+
                     {/* Info Pages Routes */}
                     <Route path="/para-empresas" element={<AnimatedElement><ForCompaniesPage /></AnimatedElement>} />
                     <Route path="/para-clientes" element={<AnimatedElement><ForClientsPage /></AnimatedElement>} />
@@ -140,6 +152,7 @@ const MainRoutes = () => {
                     <Route path="/carreiras" element={<AnimatedElement><CareersPage /></AnimatedElement>} />
                     <Route path="/privacidade" element={<AnimatedElement><PrivacyPage /></AnimatedElement>} />
                     <Route path="/termos" element={<AnimatedElement><TermsPage /></AnimatedElement>} />
+                    <Route path="/planos" element={<AnimatedElement><PlansPage /></AnimatedElement>} />
 
                     {/* 404 - Not Found */}
                     <Route path="*" element={<AnimatedElement><NotFoundPage /></AnimatedElement>} />

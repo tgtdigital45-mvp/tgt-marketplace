@@ -57,10 +57,12 @@ const ServiceModal: React.FC<{
 
 
 import LoadingSkeleton from '../../components/ui/LoadingSkeleton';
+import ServiceWizard from '@/components/dashboard/ServiceWizard';
 
 const DashboardServicosPage: React.FC = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
@@ -68,62 +70,67 @@ const DashboardServicosPage: React.FC = () => {
   const { addToast } = useToast();
   const { user } = useAuth();
 
+  const fetchServices = async () => {
+    if (!user) return;
+
+    try {
+      // 1. Get Company ID based on user auth ID
+      const { data: companyData, error: companyError } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('profile_id', user.id)
+        .single();
+
+      if (companyError) {
+        // Check for specific error codes or message, commonly "Row not found" (PGRST116)
+        if (companyError.code === 'PGRST116') {
+          console.warn("Company profile not found for this user.");
+          // Might happen if user is type 'client' or company registration failed.
+        } else {
+          throw companyError;
+        }
+        return;
+      }
+
+      if (companyData) {
+        setCompanyId(companyData.id);
+
+        // 2. Fetch Services
+        const { data: servicesData, error: servicesError } = await supabase
+          .from('services')
+          .select('*')
+          .eq('company_id', companyData.id)
+          .order('created_at', { ascending: false });
+
+        if (servicesError) throw servicesError;
+        setServices(servicesData || []);
+      }
+
+    } catch (err) {
+      const error = err as Error;
+      console.error("Error fetching services:", error);
+      addToast("Erro ao carregar serviços.", "error");
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
   // Fetch Company ID and Services
   useEffect(() => {
-    const fetchServices = async () => {
-      if (!user) return;
-
-      try {
-        // 1. Get Company ID based on user auth ID
-        const { data: companyData, error: companyError } = await supabase
-          .from('companies')
-          .select('id')
-          .eq('profile_id', user.id)
-          .single();
-
-        if (companyError) {
-          // Check for specific error codes or message, commonly "Row not found" (PGRST116)
-          if (companyError.code === 'PGRST116') {
-            console.warn("Company profile not found for this user.");
-            // Might happen if user is type 'client' or company registration failed.
-          } else {
-            throw companyError;
-          }
-          return;
-        }
-
-        if (companyData) {
-          setCompanyId(companyData.id);
-
-          // 2. Fetch Services
-          const { data: servicesData, error: servicesError } = await supabase
-            .from('services')
-            .select('*')
-            .eq('company_id', companyData.id)
-            .order('created_at', { ascending: false });
-
-          if (servicesError) throw servicesError;
-          setServices(servicesData || []);
-        }
-
-      } catch (err) {
-        const error = err as Error;
-        console.error("Error fetching services:", error);
-        addToast("Erro ao carregar serviços.", "error");
-      } finally {
-        setIsFetching(false);
-      }
-    };
-
     fetchServices();
   }, [user, addToast]);
 
-  const openModalToAdd = () => {
-    setEditingService(null);
-    setIsModalOpen(true);
+  const openWizard = () => {
+    setIsWizardOpen(true);
+  };
+
+  const closeWizard = () => {
+    setIsWizardOpen(false);
+    fetchServices(); // Refresh list after adding
   };
 
   const openModalToEdit = (service: Service) => {
+    // For now, editing uses old modal. In future, update Wizard to support editing.
     setEditingService(service);
     setIsModalOpen(true);
   };
@@ -169,24 +176,7 @@ const DashboardServicosPage: React.FC = () => {
         setServices(prev => prev.map(s => s.id === serviceData.id ? { ...s, ...serviceData } as Service : s));
         addToast("Serviço atualizado com sucesso!", 'success');
       } else {
-        // Add
-        const { data, error } = await supabase
-          .from('services')
-          .insert({
-            company_id: companyId,
-            title: serviceData.title,
-            description: serviceData.description,
-            price: serviceData.price,
-            duration: serviceData.duration
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-        if (data) {
-          setServices(prev => [data as Service, ...prev]);
-          addToast("Serviço adicionado com sucesso!", 'success');
-        }
+        // Add logic (Should not be called here since we use Wizard for add now, but kept for fallback or edit modal reuse errors)
       }
       setIsModalOpen(false);
     } catch (err) {
@@ -199,6 +189,10 @@ const DashboardServicosPage: React.FC = () => {
   };
 
 
+  if (isWizardOpen) {
+    return <ServiceWizard onCancel={closeWizard} />;
+  }
+
   return (
     <>
       <div className="space-y-6 p-6">
@@ -210,7 +204,7 @@ const DashboardServicosPage: React.FC = () => {
             </p>
           </div>
           <div className="mt-4 sm:mt-0">
-            <Button onClick={openModalToAdd} disabled={!companyId}>Adicionar Serviço</Button>
+            <Button onClick={openWizard} disabled={!companyId}>Adicionar Serviço</Button>
             {!companyId && <p className="text-xs text-red-500 mt-2">Você precisa completar o cadastro da empresa.</p>}
           </div>
         </div>
@@ -244,7 +238,7 @@ const DashboardServicosPage: React.FC = () => {
                       services.map(service => (
                         <tr key={service.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{service.title}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{service.price ? `R$ ${service.price.toFixed(2).replace('.', ',')}` : '-'}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{service.starting_price ? `A partir de R$ ${service.starting_price.toFixed(2).replace('.', ',')}` : service.price ? `R$ ${service.price.toFixed(2).replace('.', ',')}` : '-'}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <button onClick={() => openModalToEdit(service)} className="text-primary-600 hover:text-primary-900">Editar</button>
                             <button onClick={() => handleDelete(service.id)} className="ml-4 text-red-600 hover:text-red-900">Excluir</button>
@@ -270,5 +264,4 @@ const DashboardServicosPage: React.FC = () => {
     </>
   );
 };
-
 export default DashboardServicosPage;

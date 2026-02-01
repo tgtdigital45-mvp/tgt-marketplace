@@ -1,5 +1,5 @@
 import React from 'react';
-import { Helmet } from 'react-helmet-async';
+import SEO from '../components/SEO';
 import CompanyCard from '../components/CompanyCard';
 import { CATEGORIES } from '../constants';
 import { useCompanySearch } from '../hooks/useCompanySearch';
@@ -63,16 +63,11 @@ const CompaniesListPage: React.FC = () => {
 
   return (
     <main className="bg-gray-50 min-h-screen">
-      <Helmet>
-        <title>{getDynamicTitle()}</title>
-        <meta name="description" content={getDynamicDescription()} />
-        <link rel="canonical" href={window.location.origin + location.pathname} />
-        {/* Open Graph Tags */}
-        <meta property="og:title" content={getDynamicTitle()} />
-        <meta property="og:description" content={getDynamicDescription()} />
-        <meta property="og:url" content={window.location.origin + location.pathname} />
-        <meta property="og:type" content="website" />
-      </Helmet>
+      <SEO
+        title={getDynamicTitle()}
+        description={getDynamicDescription()}
+        url={location.pathname}
+      />
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center">
