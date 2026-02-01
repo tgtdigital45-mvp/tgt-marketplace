@@ -12,7 +12,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, onRequestQuote }) =>
 
   return (
     <div
-      className="group relative bg-white border border-gray-100 rounded-2xl p-6 flex flex-col transition-all duration-500 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1 overflow-hidden"
+      className="group relative bg-white border border-gray-100 rounded-[var(--radius-box)] p-6 flex flex-col transition-all duration-500 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1 overflow-hidden"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

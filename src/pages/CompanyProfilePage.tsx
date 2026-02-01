@@ -13,6 +13,7 @@ import ServiceBookingModal from '../components/ServiceBookingModal';
 import ReviewModal from '../components/ReviewModal';
 import Badge from '../components/ui/Badge';
 import CompanyCard from '../components/CompanyCard';
+import VerifiedBadge from '../components/VerifiedBadge';
 import { Service } from '../types';
 import { supabase } from '../lib/supabase';
 import { useCompanyProfile } from '../hooks/useCompanyProfile';
@@ -266,7 +267,10 @@ const CompanyProfilePage: React.FC = () => {
           <div className="container mx-auto flex flex-col md:flex-row items-center">
             <img src={company.logo} alt={`${company.companyName} logo`} className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white bg-white shadow-lg" />
             <div className="md:ml-6 text-center md:text-left mt-4 md:mt-0 flex-1">
-              <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">{company.companyName}</h1>
+              <div className="flex items-center justify-center md:justify-start gap-2">
+                <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">{company.companyName}</h1>
+                <VerifiedBadge />
+              </div>
               <p className="text-lg text-gray-200 mb-3">{company.category}</p>
 
               <div className="flex flex-wrap gap-2 justify-center md:justify-start">

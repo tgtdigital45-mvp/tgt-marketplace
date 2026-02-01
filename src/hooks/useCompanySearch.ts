@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
@@ -8,36 +8,58 @@ import { Company } from '../types';
 export const useCompanySearch = (itemsPerPage: number = 8) => {
     const [searchParams, setSearchParams] = useSearchParams();
 
-    // Filters from URL or State
-    // Using initial state from URL only once
-    const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
-    const [locationTerm, setLocationTerm] = useState(searchParams.get('loc') || '');
-    const [selectedCategory, setSelectedCategory] = useState(searchParams.get('cat') || 'all');
-    const [priceRange, setPriceRangeValue] = useState<'all' | 'low' | 'mid' | 'high'>('all');
-    const [sortBy, setSortBy] = useState(searchParams.get('sort') === 'distance' ? 'distance' : 'rating');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [userCoords, setUserCoords] = useState<{ lat: number, lng: number } | null>(() => {
+    // Getters from URL
+    const searchTerm = searchParams.get('q') || '';
+    const locationTerm = searchParams.get('loc') || '';
+    const selectedCategory = searchParams.get('cat') || 'all';
+    const sortBy = searchParams.get('sort') || 'rating';
+    const currentPage = parseInt(searchParams.get('page') || '1', 10);
+
+    // Price range is a bit special as it might strictly be client-side filtered in this architecture
+    // but we should still persist it.
+    const priceRange = (searchParams.get('price') as 'all' | 'low' | 'mid' | 'high') || 'all';
+
+    // Lat/Lng for distance sorting
+    const userCoords = useMemo(() => {
         const lat = parseFloat(searchParams.get('lat') || '');
         const lng = parseFloat(searchParams.get('lng') || '');
         return (!isNaN(lat) && !isNaN(lng)) ? { lat, lng } : null;
-    });
+    }, [searchParams]);
 
-    // Determine if we should include distance in dependencies (only if we have coords)
-    // const canSortByDistance = !!userCoords;
+    // Setters that update URL
+    const updateParams = (newParams: Record<string, string | null>) => {
+        setSearchParams(prev => {
+            const next = new URLSearchParams(prev);
+            Object.entries(newParams).forEach(([key, value]) => {
+                if (value === null || value === '' || value === 'all') {
+                    next.delete(key);
+                } else {
+                    next.set(key, value);
+                }
+            });
+            // Reset to page 1 on filter change unless page is explicitly set
+            if (!newParams.page && newParams.page !== null) {
+                // But wait, if we are just changing page, we don't want to reset it.
+                // The caller handles logic.
+            }
+            return next;
+        }, { replace: true });
+    };
 
-    // Sync URL with state
-    useEffect(() => {
-        const params: Record<string, string> = {};
-        if (searchTerm) params.q = searchTerm;
-        if (locationTerm) params.loc = locationTerm;
-        if (selectedCategory !== 'all') params.cat = selectedCategory;
-        if (sortBy === 'distance') params.sort = 'distance';
-        if (userCoords) {
-            params.lat = userCoords.lat.toString();
-            params.lng = userCoords.lng.toString();
+    const setSearchTerm = (term: string) => updateParams({ q: term, page: '1' });
+    const setLocationTerm = (term: string) => updateParams({ loc: term, page: '1' });
+    const setSelectedCategory = (cat: string) => updateParams({ cat, page: '1' });
+    const setPriceRangeValue = (price: 'all' | 'low' | 'mid' | 'high') => updateParams({ price, page: '1' });
+    const setSortBy = (sort: string) => updateParams({ sort, page: '1' });
+    const setCurrentPage = (page: number) => updateParams({ page: page.toString() });
+
+    const setUserCoords = (coords: { lat: number, lng: number } | null) => {
+        if (coords) {
+            updateParams({ lat: coords.lat.toString(), lng: coords.lng.toString() });
+        } else {
+            updateParams({ lat: null, lng: null });
         }
-        setSearchParams(params, { replace: true });
-    }, [searchTerm, locationTerm, selectedCategory, sortBy, userCoords, setSearchParams]);
+    };
 
     // Query Key based on ALL filters
     const queryKey = ['companies', currentPage, searchTerm, locationTerm, selectedCategory, sortBy, priceRange, userCoords];
@@ -55,7 +77,6 @@ export const useCompanySearch = (itemsPerPage: number = 8) => {
                   *,
                   services!inner (*)
                 `, { count: 'exact' });
-            // .eq('status', 'approved'); // allow all for MVP
 
             // 1. Text Search
             if (searchTerm) {
@@ -112,7 +133,7 @@ export const useCompanySearch = (itemsPerPage: number = 8) => {
             if (priceRange !== 'all') {
                 mappedCompanies = mappedCompanies.filter(c => {
                     const minPrice = c.services.length > 0
-                        ? Math.min(...c.services.map((s) => (typeof s === 'object' && s && 'price' in s ? Number(s.price) || 0 : 0)))
+                        ? Math.min(...c.services.map((s: any) => (typeof s === 'object' && s && 'price' in s ? Number(s.price) || 0 : 0)))
                         : 0;
                     if (priceRange === 'low') return minPrice < 100;
                     if (priceRange === 'mid') return minPrice >= 100 && minPrice < 300;

@@ -4,6 +4,8 @@ import CompanyCard from '../components/CompanyCard';
 import { CATEGORIES } from '../constants';
 import { useCompanySearch } from '../hooks/useCompanySearch';
 import Select from '../components/ui/Select';
+import EmptyState from '../components/EmptyState';
+import LoadingSkeleton from '../components/ui/LoadingSkeleton';
 
 const PRICE_OPTIONS = [
   { label: 'Todos os Preços', value: 'all' },
@@ -157,7 +159,9 @@ const CompaniesListPage: React.FC = () => {
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-64 bg-gray-100 rounded-lg animate-pulse" />
+                <div key={i} className="h-full">
+                  <LoadingSkeleton className="h-64 rounded-[var(--radius-box)]" />
+                </div>
               ))}
             </div>
           ) : companies.length > 0 ? (
@@ -167,8 +171,23 @@ const CompaniesListPage: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-24 bg-white rounded-2xl border border-gray-100">
-              <p className="text-gray-500 text-lg">Nenhum resultado encontrado.</p>
+            <div className="py-12">
+              <EmptyState
+                action={
+                  <button
+                    onClick={() => {
+                      setSearchTerm('');
+                      setSelectedCategory('all');
+                      setSortBy('rating');
+                      setCurrentPage(1);
+                      setPriceRangeValue('all');
+                    }}
+                    className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-brand-primary hover:bg-brand-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary"
+                  >
+                    Limpar todos os filtros
+                  </button>
+                }
+              />
             </div>
           )}
         </section>

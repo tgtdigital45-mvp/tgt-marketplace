@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import Button from '../../ui/Button';
 import { useOnClickOutside } from '../../../hooks/useOnClickOutside';
 
 const LoginDropdown: React.FC = () => {
@@ -11,15 +12,16 @@ const LoginDropdown: React.FC = () => {
 
     return (
         <div className="relative" ref={dropdownRef}>
-            <button
+            <Button
+                variant="outline"
                 onClick={() => setIsOpen(!isOpen)}
-                className="bg-brand-primary text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-brand-primary/90 transition-all shadow-md shadow-brand-primary/20 hover:shadow-lg hover:shadow-brand-primary/30 active:scale-95 min-h-[44px] flex items-center gap-2"
+                className="min-h-[44px] flex items-center gap-2"
             >
                 Entrar
                 <svg className={`h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
-            </button>
+            </Button>
 
             <AnimatePresence>
                 {isOpen && (

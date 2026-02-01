@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import Button from '../ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
 import NotificationsDropdown from './NotificationsDropdown';
 import UserDropdown from './header/UserDropdown';
@@ -34,11 +35,8 @@ const HeaderOptimized: React.FC = () => {
                     {/* Desktop Actions */}
                     <div className="hidden md:flex items-center gap-4">
                         {!user && (
-                            <Link
-                                to="/empresa/cadastro"
-                                className="text-sm font-medium text-brand-primary hover:text-brand-primary/80 transition-colors"
-                            >
-                                Publicar Grátis
+                            <Link to="/empresa/cadastro">
+                                <Button variant="primary">Publicar Grátis</Button>
                             </Link>
                         )}
 
