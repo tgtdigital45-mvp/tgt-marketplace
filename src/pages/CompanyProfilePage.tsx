@@ -179,11 +179,11 @@ const CompanyProfilePage: React.FC = () => {
   };
 
   return (
-    <div className="bg-white">
+    <main className="bg-white">
       <Helmet>
         <title>{company.companyName} | TGT - Guia de Negócios</title>
         <meta name="description" content={`Confira os serviços e avaliações de ${company.companyName} em ${company.address.city}, ${company.address.state}.`} />
-        <link rel="canonical" href={`https://tgt-guia-de-negocios.vercel.app/empresa/${company.slug}`} />
+        <link rel="canonical" href={window.location.origin + location.pathname} />
 
         {/* Schema.org LocalBusiness Markup */}
         <script type="application/ld+json">
@@ -314,7 +314,7 @@ const CompanyProfilePage: React.FC = () => {
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {company.portfolio.map((item, idx) => (
-                    <div key={item.id || idx} className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+                    <div key={item.id || idx} className="aspect-square rounded-[var(--radius-box)] overflow-hidden bg-gray-100">
                       <img
                         src={item.url}
                         alt={item.caption || `Portfolio ${idx}`}
@@ -348,7 +348,7 @@ const CompanyProfilePage: React.FC = () => {
               {company.reviews.length > 0 ? (
                 <div className="space-y-6">
                   {company.reviews.map((review) => (
-                    <div key={review.id} className="bg-gray-50 rounded-xl p-6">
+                    <div key={review.id} className="bg-gray-50 rounded-[var(--radius-box)] p-6">
                       <div className="flex items-start gap-4">
                         <OptimizedImage
                           src={review.avatar || ''}
@@ -375,7 +375,7 @@ const CompanyProfilePage: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                <div className="text-center py-8 bg-gray-50 rounded-[var(--radius-box)] border border-dashed border-gray-300">
                   <p className="text-gray-500 mb-4">Esta empresa ainda não possui avaliações.</p>
                   {user && user.type === 'client' && (
                     <Button variant="outline" size="sm" onClick={() => setIsReviewModalOpen(true)}>
@@ -403,7 +403,7 @@ const CompanyProfilePage: React.FC = () => {
           {/* Sidebar */}
           <aside className="lg:col-span-1">
             <div className="sticky top-24 space-y-8">
-              <div className="bg-gray-50 p-6 rounded-lg border">
+              <div className="bg-gray-50 p-6 rounded-[var(--radius-box)] border">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Informações de Contato</h3>
                 <ul className="space-y-3 text-gray-600">
                   <li className="flex items-start"><strong className="w-20 font-medium">Endereço:</strong> <span className="flex-1">{`${company.address.street}, ${company.address.number}, ${company.address.district}`} <br /> {`${company.address.city} - ${company.address.state}, ${company.address.cep}`}</span></li>
@@ -440,9 +440,9 @@ const CompanyProfilePage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-gray-50 p-6 rounded-lg border">
+              <div className="bg-gray-50 p-6 rounded-[var(--radius-box)] border">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Localização</h3>
-                <div className="aspect-w-16 aspect-h-9 bg-gray-200 rounded-md overflow-hidden">
+                <div className="aspect-w-16 aspect-h-9 bg-gray-200 rounded-[var(--radius-box)] overflow-hidden">
                   {company.address ? (
                     <iframe
                       title="Localização da Empresa"
@@ -485,7 +485,7 @@ const CompanyProfilePage: React.FC = () => {
         onSubmit={handleReviewSubmit}
         isLoading={submittingReview}
       />
-    </div>
+    </main>
   );
 };
 

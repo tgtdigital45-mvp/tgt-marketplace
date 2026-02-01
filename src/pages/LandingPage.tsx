@@ -3,6 +3,20 @@ import { Helmet } from 'react-helmet-async';
 import CompanyCard from '../components/CompanyCard';
 import { CATEGORIES } from '../constants';
 import { useCompanySearch } from '../hooks/useCompanySearch';
+import Select from '../components/ui/Select';
+
+const PRICE_OPTIONS = [
+  { label: 'Todos os Preços', value: 'all' },
+  { label: 'Até R$ 100', value: 'low' },
+  { label: 'R$ 100 - R$ 300', value: 'mid' },
+  { label: 'Acima de R$ 300', value: 'high' },
+];
+
+const SORT_OPTIONS = [
+  { label: 'Melhor Avaliação', value: 'rating' },
+  { label: 'Nome (A-Z)', value: 'name' },
+  { label: 'Mais Próximos', value: 'distance' },
+];
 
 const CompaniesListPage: React.FC = () => {
   const itemsPerPage = 8;
@@ -84,45 +98,33 @@ const CompaniesListPage: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700">Categoria</label>
-              <select
-                id="category"
+              <Select
+                label="Categoria"
                 value={selectedCategory}
-                onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
-                className="mt-1 block w-full bg-white border border-gray-300 rounded-[var(--radius-box)] shadow-sm py-3 px-4 focus:ring-primary-500 focus:border-primary-500"
-              >
-                <option value="all">Todas</option>
-                {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-              </select>
+                onChange={(val) => { setSelectedCategory(val); setCurrentPage(1); }}
+                options={[
+                  { label: 'Todas', value: 'all' },
+                  ...CATEGORIES.map(cat => ({ label: cat, value: cat }))
+                ]}
+              />
             </div>
 
             <div>
-              <label htmlFor="price" className="block text-sm font-medium text-gray-700">Faixa de Preço</label>
-              <select
-                id="price"
+              <Select
+                label="Faixa de Preço"
                 value={priceRange}
-                onChange={(e) => setPriceRangeValue(e.target.value as 'all' | 'low' | 'mid' | 'high')}
-                className="mt-1 block w-full bg-white border-none ring-1 ring-gray-100 rounded-[var(--radius-box)] shadow-sm py-4 pl-4 pr-10 text-base focus:outline-none focus:ring-2 focus:ring-primary-500 focus:shadow-lg transition-all sm:text-sm min-h-[48px]"
-              >
-                <option value="all">Todos os Preços</option>
-                <option value="low">Até R$ 100</option>
-                <option value="mid">R$ 100 - R$ 300</option>
-                <option value="high">Acima de R$ 300</option>
-              </select>
+                onChange={(val) => setPriceRangeValue(val as any)}
+                options={PRICE_OPTIONS}
+              />
             </div>
 
             <div>
-              <label htmlFor="sort" className="block text-sm font-medium text-gray-700">Ordenar por</label>
-              <select
-                id="sort"
+              <Select
+                label="Ordenar por"
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="mt-1 block w-full bg-white border border-gray-300 rounded-[var(--radius-box)] shadow-sm py-3 px-4 focus:ring-primary-500 focus:border-primary-500"
-              >
-                <option value="rating">Melhor Avaliação</option>
-                <option value="name">Nome (A-Z)</option>
-                <option value="distance">Mais Próximos</option>
-              </select>
+                onChange={(val) => setSortBy(val)}
+                options={SORT_OPTIONS}
+              />
             </div>
 
             {/* Clear Filters Button */}

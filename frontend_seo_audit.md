@@ -54,10 +54,10 @@ A aplicação sofre de inconsistência no arredondamento de bordas, transmitindo
 ## 3. Plano de Ação (Quick Wins)
 
 ### Imediato (High Impact, Low Effort)
-1.  [ ] **Padronizar Bordas:** Definir `--radius-box: 0.75rem;` no `index.css` e aplicar `rounded-[var(--radius-box)]` nos componentes globais.
-2.  [ ] **HTML Semântico:** Substituir as `div` principais por `main` e `section` na `LandingPage` e `CompanyProfilePage`.
-3.  [ ] **Canonical Tags:** Adicionar lógica de canonical no `Helmet` das páginas principais.
+1.  [x] **Padronizar Bordas:** Definir `--radius-box: 0.75rem;` no `index.css` e aplicar `rounded-[var(--radius-box)]` nos componentes globais.
+2.  [x] **HTML Semântico:** Substituir as `div` principais por `main` e `section` na `LandingPage` e `CompanyProfilePage`.
+3.  [x] **Canonical Tags:** Adicionar lógica de canonical no `Helmet` das páginas principais.
 
 ### Médio Prazo
-1.  [ ] **Manifest.json:** Criar e linkar o manifesto para suporte PWA básico.
-2.  [ ] **Select Customizado:** Substituir selects nativos por componentes estilizados.
+1.  [x] **Manifest.json:** Criar e linkar o manifesto para suporte PWA básico.
+2.  [x] **Select Customizado:** Substituir selects nativos por componentes estilizados.
