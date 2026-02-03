@@ -39,8 +39,11 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
         fetchNotifications();
 
         // Subscribe to realtime updates
+        const channelName = `notifications:user:${user.id}`;
+        console.log(`Subscribing to channel: ${channelName}`);
+
         const channel = supabase
-            .channel('notifications')
+            .channel(channelName)
             .on(
                 'postgres_changes',
                 {
@@ -51,6 +54,8 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
                 },
                 (payload) => {
                     if (!isMounted.current) return;
+                    console.log('Realtime notification received:', payload);
+
                     if (payload.eventType === 'INSERT') {
                         setNotifications((prev) => [payload.new as Notification, ...prev]);
                     } else if (payload.eventType === 'UPDATE') {
@@ -62,9 +67,18 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
                     }
                 }
             )
-            .subscribe();
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log(`Successfully subscribed to ${channelName}`);
+                } else if (status === 'CHANNEL_ERROR') {
+                    console.error(`Failed to subscribe to ${channelName}`);
+                } else if (status === 'TIMED_OUT') {
+                    console.error(`Subscription to ${channelName} timed out`);
+                }
+            });
 
         return () => {
+            console.log(`Unsubscribing from channel: ${channelName}`);
             supabase.removeChannel(channel);
         };
     }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps

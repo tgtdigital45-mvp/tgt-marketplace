@@ -1,14 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { Service } from '../../types';
+import { Service, ServicePackage } from '../../types';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import Button from '../../components/ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
-import { useToast } from '../../contexts/ToastContext';
+// import { useToast } from '../../contexts/ToastContext';
+
+interface PricingSelectorProps {
+    packages: Record<string, ServicePackage> | null;
+    onSelect: (tier: 'basic' | 'standard' | 'premium') => void;
+    selectedTier: 'basic' | 'standard' | 'premium';
+    onCheckout: (tier: string) => void;
+}
 
 // Pricing Selector Component
-const PricingSelector = ({ packages, onSelect, selectedTier }: any) => {
+const PricingSelector = ({ packages, onSelect, selectedTier, onCheckout }: PricingSelectorProps) => {
     if (!packages) return null;
 
     const tiers = ['basic', 'standard', 'premium'] as const;
@@ -22,8 +29,8 @@ const PricingSelector = ({ packages, onSelect, selectedTier }: any) => {
                         key={tier}
                         onClick={() => onSelect(tier)}
                         className={`flex-1 py-4 text-sm font-bold transition-colors ${selectedTier === tier
-                                ? 'bg-brand-primary/5 text-brand-primary border-b-2 border-brand-primary'
-                                : 'text-gray-500 hover:text-gray-700 bg-gray-50'
+                            ? 'bg-brand-primary/5 text-brand-primary border-b-2 border-brand-primary'
+                            : 'text-gray-500 hover:text-gray-700 bg-gray-50'
                             }`}
                     >
                         {tierLabels[tier]}
@@ -58,7 +65,11 @@ const PricingSelector = ({ packages, onSelect, selectedTier }: any) => {
                     {/* Add checks for features if they exist */}
                 </div>
 
-                <Button variant="primary" className="w-full py-3 text-lg shadow-lg shadow-brand-primary/20">
+                <Button
+                    variant="primary"
+                    className="w-full py-3 text-lg shadow-lg shadow-brand-primary/20"
+                    onClick={() => onCheckout(selectedTier)}
+                >
                     Continuar (R$ {packages[selectedTier]?.price})
                 </Button>
 
@@ -72,10 +83,12 @@ const PricingSelector = ({ packages, onSelect, selectedTier }: any) => {
 
 const ServiceDetailsPage = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [service, setService] = useState<Service | null>(null);
     const [loading, setLoading] = useState(true);
     const [selectedTier, setSelectedTier] = useState<'basic' | 'standard' | 'premium'>('basic');
     const [company, setCompany] = useState<any>(null); // To store company details
+    const [activeImageIndex, setActiveImageIndex] = useState(0);
 
     useEffect(() => {
         const fetchService = async () => {
@@ -90,7 +103,7 @@ const ServiceDetailsPage = () => {
                 if (error) throw error;
                 setService(data);
                 setCompany(data.company); // Assuming join works
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Error loading service", error);
             } finally {
                 setLoading(false);
@@ -99,10 +112,15 @@ const ServiceDetailsPage = () => {
         fetchService();
     }, [id]);
 
+    const handleCheckout = (tier: string) => {
+        navigate(`/checkout/${id}?tier=${tier}`);
+    };
+
     if (loading) return <div className="h-screen flex items-center justify-center"><LoadingSpinner /></div>;
     if (!service) return <div className="h-screen flex items-center justify-center">Serviço não encontrado.</div>;
 
-    const activeImage = service.gallery && service.gallery.length > 0 ? service.gallery[0] : null;
+    const gallery = service.gallery || [];
+    const activeImage = gallery.length > 0 ? gallery[activeImageIndex] : null;
 
     return (
         <div className="min-h-screen bg-gray-50 py-12">
@@ -111,17 +129,34 @@ const ServiceDetailsPage = () => {
                     {/* Left Column: Details */}
                     <div className="lg:col-span-2 space-y-8">
                         {/* Gallery */}
-                        <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
-                            {activeImage ? (
-                                <div className="aspect-video bg-gray-100">
-                                    <img src={activeImage} alt={service.title} className="w-full h-full object-cover" />
-                                </div>
-                            ) : (
-                                <div className="aspect-video bg-gray-100 flex items-center justify-center text-gray-400">
-                                    Sem imagem
+                        <div className="space-y-4">
+                            <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+                                {activeImage ? (
+                                    <div className="aspect-video bg-gray-100">
+                                        <img src={activeImage} alt={service.title} className="w-full h-full object-cover" />
+                                    </div>
+                                ) : (
+                                    <div className="aspect-video bg-gray-100 flex items-center justify-center text-gray-400">
+                                        Sem imagem
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Thumbnails */}
+                            {gallery.length > 1 && (
+                                <div className="flex space-x-2 overflow-x-auto pb-2">
+                                    {gallery.map((img, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => setActiveImageIndex(idx)}
+                                            className={`relative w-24 h-16 rounded-lg overflow-hidden border-2 flex-shrink-0 transition-all ${activeImageIndex === idx ? 'border-brand-primary ring-2 ring-brand-primary/20' : 'border-transparent hover:border-gray-300'
+                                                }`}
+                                        >
+                                            <img src={img} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+                                        </button>
+                                    ))}
                                 </div>
                             )}
-                            {/* Thumbnails would go here */}
                         </div>
 
                         {/* Title & Description */}
@@ -155,7 +190,7 @@ const ServiceDetailsPage = () => {
                                     <span className="font-bold text-gray-900 mr-1">{company?.rating || 5.0}</span>
                                     <span>({company?.review_count || 0} avaliações)</span>
                                 </div>
-                                <Button variant="secondary" size="sm">Ver Perfil</Button>
+                                <Button variant="secondary" size="sm" onClick={() => navigate(`/empresa/${company?.slug || company?.id}`)}>Ver Perfil</Button>
                             </div>
                         </div>
                     </div>
@@ -166,6 +201,7 @@ const ServiceDetailsPage = () => {
                             packages={service.packages}
                             selectedTier={selectedTier}
                             onSelect={setSelectedTier}
+                            onCheckout={handleCheckout}
                         />
                     </div>
                 </div>

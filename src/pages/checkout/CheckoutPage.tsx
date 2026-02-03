@@ -63,7 +63,8 @@ const CheckoutPage = () => {
                     price: price,
                     status: 'active', // Simulating instant approval
                     // Calculate deadline based on delivery_time
-                    delivery_deadline: new Date(Date.now() + (packageData?.delivery_time || 3) * 24 * 60 * 60 * 1000).toISOString()
+                    delivery_deadline: new Date(Date.now() + (packageData?.delivery_time || 3) * 24 * 60 * 60 * 1000).toISOString(),
+                    package_snapshot: packageData // [NEW] Snapshot of the package details
                 })
                 .select()
                 .single();

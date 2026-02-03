@@ -15,16 +15,16 @@ const TrustSection: React.FC = () => {
             <div className="container mx-auto px-6">
                 <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
                     <div>
-                        <span className="text-brand-primary font-bold tracking-wider uppercase text-sm mb-2 block">
+                        <span className="text-primary-600 font-bold tracking-widest uppercase text-xs mb-2 block">
                             Segurança em primeiro lugar
                         </span>
-                        <h2 className="text-4xl font-black text-gray-900 tracking-tight">
+                        <h2 className="text-4xl font-bold text-slate-900 tracking-tight">
                             Empresas Verificadas
                         </h2>
                     </div>
                     <Link
                         to="/empresas"
-                        className="group flex items-center gap-2 text-gray-600 font-bold hover:text-brand-primary transition-colors"
+                        className="group flex items-center gap-2 text-slate-500 font-bold hover:text-primary-600 transition-colors"
                     >
                         Ver todas as empresas <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                     </Link>

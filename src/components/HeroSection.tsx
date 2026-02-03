@@ -1,74 +1,113 @@
 import React from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 import QuickSearch from '@/components/QuickSearch';
-import AnimatedSection from '@/components/ui/AnimatedSection';
-import ParallaxLayer from '@/components/ui/ParallaxLayer'; // Assuming ParallaxLayer is a custom component
+import OptimizedImage from '@/components/ui/OptimizedImage';
+import { ShieldCheck, Star, Users } from 'lucide-react';
 
 const HeroSection: React.FC = () => {
-    const { scrollY } = useScroll();
-    const y1 = useTransform(scrollY, [0, 500], [0, 200]);
-    const y2 = useTransform(scrollY, [0, 500], [0, -150]);
-
     return (
-        <section className="relative min-h-[90vh] flex flex-col justify-end pb-20 overflow-hidden bg-brand-primary text-white grain-texture">
-            {/* Background Elements - Parallax */}
-            <div className="absolute top-0 right-0 w-full h-full opacity-20 pointer-events-none">
-                <motion.div style={{ y: y1 }} className="absolute top-[-20%] right-[-10%] w-[60vw] h-[60vw] bg-brand-accent rounded-full blur-[100px]" />
-                <motion.div style={{ y: y2 }} className="absolute bottom-[10%] left-[-10%] w-[40vw] h-[40vw] bg-brand-secondary rounded-full blur-[80px]" />
+        <section className="relative min-h-[85vh] flex items-center pt-24 overflow-hidden bg-slate-900">
+            {/* Background Image with Overlay */}
+            <div className="absolute inset-0 z-0">
+                <OptimizedImage
+                    src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=2000"
+                    alt="Corporate Hub"
+                    className="w-full h-full object-cover opacity-40"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
             </div>
 
-            <div className="container mx-auto px-4 relative z-10">
-                <div className="grid md:grid-cols-[65%_35%] gap-8 items-end">
+            <div className="container mx-auto px-6 relative z-10">
+                <div className="max-w-4xl mx-auto text-center">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8 }}
+                    >
+                        <span className="inline-block py-2 px-6 rounded-full bg-primary-600/20 text-primary-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-8 border border-primary-500/30 backdrop-blur-sm">
+                            Impulsionando o Futuro do Comércio Local
+                        </span>
 
-                    {/* Left Column: Massive Typography */}
-                    <div className="relative">
-                        <AnimatedSection className="mb-4">
-                            <ParallaxLayer offset={-50}>
-                                <h1 className="text-massive font-black leading-none tracking-tighter text-white mix-blend-overlay opacity-90">
-                                    TGT
-                                </h1>
-                            </ParallaxLayer>
-                            <ParallaxLayer offset={30}>
-                                <h2 className="text-6xl md:text-8xl font-bold leading-none mt-[-2rem] md:mt-[-4rem] ml-2 text-brand-secondary">
-                                    Local.
-                                </h2>
-                            </ParallaxLayer>
-                        </AnimatedSection>
-                    </div>
+                        <h1 className="text-5xl md:text-8xl font-bold text-white leading-[1.05] mb-10 tracking-tight">
+                            A conexão <span className="text-primary-500 italic">definitiva</span> entre quem precisa e quem resolve.
+                        </h1>
 
-                    {/* Right Column: Context & Action */}
-                    <div className="mb-8 md:mb-16">
-                        <AnimatedSection delay={0.2} className="bg-white/10 backdrop-blur-sm p-8 rounded-sharp border border-white/20 shadow-2xl">
-                            <p className="text-xl md:text-2xl font-medium mb-6 leading-relaxed">
-                                Conectamos você aos melhores profissionais da sua cidade. Sem burocracia, com energia local.
-                            </p>
+                        <p className="text-lg md:text-xl text-slate-300 mb-12 max-w-2xl mx-auto leading-relaxed">
+                            A maior rede de serviços e empresas verificadas da região. Segurança garantida, processos ágeis e transparência total em cada contrato.
+                        </p>
+                    </motion.div>
 
-                            <div className="bg-white rounded-sharp p-1 shadow-lg transform -rotate-1 hover:rotate-0 transition-transform duration-300">
-                                <QuickSearch />
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.8, delay: 0.2 }}
+                        className="bg-white p-2 rounded-[32px] shadow-2xl max-w-4xl mx-auto relative group"
+                    >
+                        <div className="absolute -inset-1 bg-gradient-to-r from-primary-600 to-primary-400 rounded-[34px] opacity-20 blur-xl group-hover:opacity-30 transition-opacity" />
+                        <div className="relative z-10">
+                            <QuickSearch />
+                        </div>
+                    </motion.div>
+
+                    {/* Quick Trust Badges */}
+                    <div className="mt-20 grid grid-cols-2 lg:grid-cols-4 gap-8 max-w-5xl mx-auto">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.4 }}
+                            className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-[24px] flex flex-col items-center gap-3"
+                        >
+                            <ShieldCheck className="text-primary-500" size={24} />
+                            <div className="text-center">
+                                <p className="text-white font-bold text-sm tracking-tight">100% Verificado</p>
+                                <p className="text-slate-400 text-[10px] uppercase font-medium">Auditoria Rigorosa</p>
                             </div>
+                        </motion.div>
 
-                            <div className="mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-6 text-sm font-medium">
-                                <div className="flex items-center gap-3">
-                                    <div className="flex -space-x-3">
-                                        {[1, 2, 3, 4].map(i => (
-                                            <div key={i} className="w-10 h-10 rounded-full bg-brand-accent border-2 border-brand-primary shadow-sm" />
-                                        ))}
-                                    </div>
-                                    <div className="text-left">
-                                        <div className="font-black text-lg leading-none">+12.483</div>
-                                        <div className="opacity-70 text-[10px] uppercase tracking-widest">Profissionais</div>
-                                    </div>
-                                </div>
-                                <div className="h-8 w-px bg-white/20 hidden sm:block" />
-                                <div className="flex items-center gap-2">
-                                    <div className="text-brand-accent text-xl">★★★★★</div>
-                                    <div className="text-xs opacity-80 underline">4.9/5 de satisfação</div>
-                                </div>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.5 }}
+                            className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-[24px] flex flex-col items-center gap-3"
+                        >
+                            <Users className="text-primary-500" size={24} />
+                            <div className="text-center">
+                                <p className="text-white font-bold text-sm tracking-tight">5k+ Empresas</p>
+                                <p className="text-slate-400 text-[10px] uppercase font-medium">Rede em Expansão</p>
                             </div>
-                        </AnimatedSection>
+                        </motion.div>
+
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.6 }}
+                            className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-[24px] flex flex-col items-center gap-3"
+                        >
+                            <Star className="text-primary-500" size={24} />
+                            <div className="text-center">
+                                <p className="text-white font-bold text-sm tracking-tight">4.9/5 Rating</p>
+                                <p className="text-slate-400 text-[10px] uppercase font-medium">Satisfação Total</p>
+                            </div>
+                        </motion.div>
+
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.7 }}
+                            className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-[24px] flex flex-col items-center gap-3"
+                        >
+                            <div className="font-bold text-primary-500 text-xl">24/7</div>
+                            <div className="text-center">
+                                <p className="text-white font-bold text-sm tracking-tight">Suporte Ativo</p>
+                                <p className="text-slate-400 text-[10px] uppercase font-medium">Sempre Disponível</p>
+                            </div>
+                        </motion.div>
                     </div>
                 </div>
             </div>
+
+            {/* Bottom Glow */}
+            <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-slate-900 to-transparent z-10" />
         </section>
     );
 };

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import { Company, DbCompany } from '../types';
+import { Company, DbCompany, DbProfile } from '../types';
 
 export const useCompanyProfile = (slug: string | undefined) => {
     return useQuery({
@@ -16,6 +16,7 @@ export const useCompanyProfile = (slug: string | undefined) => {
                 .select(`
           *,
           services (*),
+
           reviews (
             *,
             profiles:client_id (
@@ -31,6 +32,7 @@ export const useCompanyProfile = (slug: string | undefined) => {
             if (error) throw error;
             if (!data) return null;
 
+            // Type assertion to include the joined profile data
             const raw = data as unknown as DbCompany;
 
             // 2. Data Transformation (DB -> UI)
@@ -56,8 +58,10 @@ export const useCompanyProfile = (slug: string | undefined) => {
                 title: s.title,
                 description: s.description,
                 price: s.price,
+                starting_price: s.starting_price || s.price, // Map starting_price
                 duration: s.duration,
-                company_id: s.company_id
+                company_id: s.company_id,
+                gallery: s.gallery
             }));
 
             // Map Portfolio (fixing image_url vs url mismatch if needed)
@@ -67,6 +71,9 @@ export const useCompanyProfile = (slug: string | undefined) => {
                 url: p.image_url,
                 caption: p.caption || ''
             }));
+
+            // Map Owner Profile
+            const owner = undefined;
 
             // Construct Final Object
             const company: Company = {
@@ -100,7 +107,8 @@ export const useCompanyProfile = (slug: string | undefined) => {
 
                 services: services,
                 portfolio: portfolio,
-                reviews: reviews
+                reviews: reviews,
+                owner: owner
             };
 
             return company;

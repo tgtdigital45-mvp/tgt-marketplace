@@ -82,6 +82,17 @@ export interface Company {
   portfolio: PortfolioItem[];
   reviews: Review[];
   distance?: number; // Distance in km from user
+  owner?: {
+    id: string;
+    fullName: string;
+    avatar: string;
+    languages: { language: string; level: string }[];
+    skills: string[];
+    education: { institution: string; degree: string; year: string }[];
+    responseTime?: string;
+    memberSince: string;
+    location: string;
+  };
 }
 
 // Database Interfaces (Reflecting Supabase raw response)
@@ -89,6 +100,10 @@ export interface DbProfile {
   id: string;
   full_name: string | null;
   avatar_url: string | null;
+  languages?: { language: string; level: string }[];
+  skills?: string[];
+  education?: { institution: string; degree: string; year: string }[];
+  response_time?: string;
 }
 
 

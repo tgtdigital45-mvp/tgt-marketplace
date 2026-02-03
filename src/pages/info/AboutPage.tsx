@@ -3,6 +3,7 @@ import InfoPageLayout from '../../components/layout/InfoPageLayout';
 import OptimizedImage from '../../components/ui/OptimizedImage';
 import Button from '../../components/ui/Button';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 const AboutPage: React.FC = () => {
   return (
@@ -11,106 +12,113 @@ const AboutPage: React.FC = () => {
       subtitle="Na TGT, combinamos tecnologia de ponta e estratégia humana para redefinir o que é possível. Somos a True Growth Technologies."
     >
       {/* Mission Section */}
-      <div className="mb-20 text-center max-w-3xl mx-auto">
-        <h2 className="text-2xl font-bold text-brand-secondary mb-6 relative inline-block">
-          Nossa Missão
-          <span className="absolute bottom-0 left-0 w-full h-1 bg-brand-primary/30 rounded-full"></span>
+      <div className="mb-24 text-center max-w-3xl mx-auto">
+        <span className="inline-block py-1 px-3 rounded-full bg-primary-50 text-primary-600 text-[10px] font-bold uppercase tracking-widest mb-6 border border-primary-100">
+          NOSSA JORNADA
+        </span>
+        <h2 className="text-3xl font-bold text-slate-900 mb-8 tracking-tight">
+          Redefinindo o futuro do crescimento
         </h2>
-        <p className="text-xl text-gray-700 leading-relaxed font-medium">
-          "Nossa missão é descomplicar a inovação. Acreditamos que a Inteligência Artificial não é apenas uma ferramenta, mas o motor que impulsiona negócios para o próximo nível de eficiência e escala. Transformamos dados em decisões e potencial em performance real."
+        <p className="text-xl text-slate-500 leading-relaxed font-medium">
+          A TGT Contratto nasceu da necessidade de conectar excelência técnica a demandas reais. Acreditamos que a tecnologia deve ser a ponte, não a barreira. Transformamos dados em decisões e potencial em performance escalável.
         </p>
       </div>
 
       {/* Leadership Team */}
-      <div className="mb-24">
-        <h2 className="text-3xl font-black text-center text-gray-900 mb-12">Quem Somos</h2>
+      <div className="mb-32">
+        <h2 className="text-4xl font-bold text-center text-slate-900 mb-16 tracking-tight">Arquitetos da Inovação</h2>
 
         <div className="grid md:grid-cols-3 gap-8 md:gap-12">
           {/* Matheus Celso */}
-          <div className="group text-center">
-            <div className="relative w-48 h-48 mx-auto mb-6 rounded-full p-2 bg-gradient-to-br from-brand-primary to-brand-secondary shadow-xl overflow-hidden group-hover:scale-105 transition-transform duration-300">
+          <motion.div whileHover={{ y: -5 }} className="group text-center">
+            <div className="relative w-48 h-48 mx-auto mb-8 rounded-full p-1.5 bg-slate-100 shadow-soft overflow-hidden group-hover:bg-primary-600 transition-colors duration-300">
               <OptimizedImage
                 src="/matheus.celso.jpeg"
                 alt="Matheus Celso"
                 className="w-full h-full object-cover rounded-full border-4 border-white"
               />
             </div>
-            <h3 className="text-xl font-bold text-gray-900">Matheus Celso</h3>
-            <p className="text-brand-primary font-bold text-sm uppercase tracking-wider mb-4">CFO (Chief Financial Officer)</p>
-            <p className="text-gray-600 text-sm leading-relaxed text-justify px-2">
-              Como Diretor Financeiro, Matheus é a âncora estratégica da TGT. Com uma visão analítica aguçada, ele garante que cada passo inovador da empresa esteja alicerçado em solidez financeira. Sua responsabilidade vai além dos números: ele desenha a arquitetura de crescimento sustentável que permite à TGT e aos seus clientes escalarem com segurança e previsibilidade.
+            <h3 className="text-xl font-bold text-slate-900">Matheus Celso</h3>
+            <p className="text-primary-600 font-bold text-xs uppercase tracking-widest mb-4">CFO & Strategy</p>
+            <p className="text-slate-500 text-sm leading-relaxed text-justify px-2">
+              Diretor Financeiro focado na arquitetura de crescimento sustentável. Sua visão garante que a inovação da TGT esteja sempre alicerçada em solidez e previsibilidade financeira.
             </p>
-          </div>
+          </motion.div>
 
           {/* Eduardo Bombonatto */}
-          <div className="group text-center">
-            <div className="relative w-48 h-48 mx-auto mb-6 rounded-full p-2 bg-gradient-to-br from-brand-primary to-brand-secondary shadow-xl overflow-hidden group-hover:scale-105 transition-transform duration-300">
+          <motion.div whileHover={{ y: -5 }} className="group text-center">
+            <div className="relative w-48 h-48 mx-auto mb-8 rounded-full p-1.5 bg-slate-100 shadow-soft overflow-hidden group-hover:bg-primary-600 transition-colors duration-300">
               <OptimizedImage
                 src="/eduardo,bombonatto.jpeg"
                 alt="Eduardo Bombonatto"
                 className="w-full h-full object-cover rounded-full border-4 border-white"
               />
             </div>
-            <h3 className="text-xl font-bold text-gray-900">Eduardo Bombonatto</h3>
-            <p className="text-brand-primary font-bold text-sm uppercase tracking-wider mb-4">CTO (Chief Technology Officer)</p>
-            <p className="text-gray-600 text-sm leading-relaxed text-justify px-2">
-              Eduardo lidera a visão tecnológica da TGT. Como CTO, ele é o arquiteto por trás das nossas soluções de IA e automação. Sua paixão por transformar códigos complexos em ferramentas intuitivas garante que a TGT esteja sempre na vanguarda da inovação, desenvolvendo produtos que não apenas acompanham o mercado, mas ditam as tendências do futuro.
+            <h3 className="text-xl font-bold text-slate-900">Eduardo Bombonatto</h3>
+            <p className="text-primary-600 font-bold text-xs uppercase tracking-widest mb-4">CTO & Technology</p>
+            <p className="text-slate-500 text-sm leading-relaxed text-justify px-2">
+              Lidera a visão tecnológica da TGT. Como CTO, ele é o arquiteto por trás das nossas soluções de IA, garantindo escalabilidade e ferramentas intuitivas para o mercado.
             </p>
-          </div>
+          </motion.div>
 
           {/* Lucas Maciel */}
-          <div className="group text-center">
-            <div className="relative w-48 h-48 mx-auto mb-6 rounded-full p-2 bg-gradient-to-br from-brand-primary to-brand-secondary shadow-xl overflow-hidden group-hover:scale-105 transition-transform duration-300">
+          <motion.div whileHover={{ y: -5 }} className="group text-center">
+            <div className="relative w-48 h-48 mx-auto mb-8 rounded-full p-1.5 bg-slate-100 shadow-soft overflow-hidden group-hover:bg-primary-600 transition-colors duration-300">
               <OptimizedImage
                 src="/lucas.maciel.jpeg"
                 alt="Lucas Maciel"
                 className="w-full h-full object-cover rounded-full border-4 border-white"
               />
             </div>
-            <h3 className="text-xl font-bold text-gray-900">Lucas Maciel</h3>
-            <p className="text-brand-primary font-bold text-sm uppercase tracking-wider mb-4">CRO (Chief Revenue Officer)</p>
-            <p className="text-gray-600 text-sm leading-relaxed text-justify px-2">
-              Lucas é a força motriz por trás da expansão da TGT. Como Diretor de Receita, seu foco é alinhar marketing, vendas e sucesso do cliente em uma única estratégia coesa. Ele é especialista em identificar oportunidades ocultas no mercado e traduzir o valor das nossas tecnologias em resultados tangíveis e crescimento acelerado para nossos parceiros.
+            <h3 className="text-xl font-bold text-slate-900">Lucas Maciel</h3>
+            <p className="text-primary-600 font-bold text-xs uppercase tracking-widest mb-4">CRO & Revenue</p>
+            <p className="text-slate-500 text-sm leading-relaxed text-justify px-2">
+              Responsável pela expansão e alinhamento estratégico de mercado. Identifica oportunidades e traduz valor tecnológico em resultados tangíveis para nossos parceiros.
             </p>
-          </div>
+          </motion.div>
         </div>
       </div>
 
       {/* Values */}
-      <div className="mb-20 bg-gray-50 rounded-3xl p-8 md:p-12">
-        <h2 className="text-3xl font-black text-center text-gray-900 mb-12">O DNA da TGT</h2>
+      <div className="mb-24 bg-slate-50 rounded-[32px] p-8 md:p-16 border border-slate-100 shadow-soft">
+        <h2 className="text-3xl font-bold text-center text-slate-900 mb-16 tracking-tight">O DNA da TGT</h2>
         <div className="grid md:grid-cols-3 gap-8">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center hover:shadow-md transition-shadow">
-            <div className="w-12 h-12 mx-auto bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center text-2xl mb-4">🚀</div>
-            <h3 className="font-bold text-gray-900 mb-2">Inovação Pragmática</h3>
-            <p className="text-gray-600 text-sm">Tecnologia que resolve problemas reais.</p>
+          <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 text-center hover:shadow-soft transition-all duration-300">
+            <div className="w-14 h-14 mx-auto bg-primary-50 text-primary-600 rounded-2xl flex items-center justify-center text-2xl mb-6">🚀</div>
+            <h3 className="font-bold text-slate-900 mb-3 tracking-tight">Inovação Pragmática</h3>
+            <p className="text-slate-500 text-sm leading-relaxed">Tecnologia desenhada para resolver problemas complexos com simplicidade.</p>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center hover:shadow-md transition-shadow">
-            <div className="w-12 h-12 mx-auto bg-green-100 text-green-600 rounded-xl flex items-center justify-center text-2xl mb-4">🔍</div>
-            <h3 className="font-bold text-gray-900 mb-2">Transparência Radical</h3>
-            <p className="text-gray-600 text-sm">Clareza nos dados, nos processos e nas relações.</p>
+          <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 text-center hover:shadow-soft transition-all duration-300">
+            <div className="w-14 h-14 mx-auto bg-primary-50 text-primary-600 rounded-2xl flex items-center justify-center text-2xl mb-6">🔍</div>
+            <h3 className="font-bold text-slate-900 mb-3 tracking-tight">Transparência Radical</h3>
+            <p className="text-slate-500 text-sm leading-relaxed">Clareza nos processos e governança em todas as nossas operações.</p>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center hover:shadow-md transition-shadow">
-            <div className="w-12 h-12 mx-auto bg-teal-100 text-teal-600 rounded-xl flex items-center justify-center text-2xl mb-4">📈</div>
-            <h3 className="font-bold text-gray-900 mb-2">Crescimento Verdadeiro</h3>
-            <p className="text-gray-600 text-sm">Focamos em métricas que importam, não em métricas de vaidade.</p>
+          <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 text-center hover:shadow-soft transition-all duration-300">
+            <div className="w-14 h-14 mx-auto bg-primary-50 text-primary-600 rounded-2xl flex items-center justify-center text-2xl mb-6">📈</div>
+            <h3 className="font-bold text-slate-900 mb-3 tracking-tight">Crescimento Factual</h3>
+            <p className="text-slate-500 text-sm leading-relaxed">Foco em métricas reais de performance e valor de mercado de longo prazo.</p>
           </div>
         </div>
       </div>
 
       {/* CTA */}
-      <div className="text-center bg-brand-secondary text-white rounded-3xl p-12 relative overflow-hidden">
+      <div className="text-center bg-slate-900 text-white rounded-[32px] p-16 relative overflow-hidden shadow-2xl">
         <div className="relative z-10">
-          <h2 className="text-3xl font-bold mb-6">Pronto para crescer com a gente?</h2>
-          <Link to="/contato">
-            <Button size="lg" className="bg-brand-primary text-white border-none hover:bg-brand-accent hover:text-brand-secondary">
-              Fale com um Especialista
-            </Button>
-          </Link>
+          <h2 className="text-4xl font-bold mb-6 tracking-tight">Pronto para o próximo nível?</h2>
+          <p className="text-slate-400 max-w-xl mx-auto mb-10 text-lg leading-relaxed">
+            Seja como parceiro ou cliente, a TGT é o ambiente onde o crescimento encontra a tecnologia.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link to="/contato">
+              <Button size="lg" className="bg-primary-600 text-white border-none px-10 shadow-xl hover:bg-primary-700">
+                Falar com Consultor
+              </Button>
+            </Link>
+          </div>
         </div>
         {/* Decorative circle */}
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-brand-primary/20 rounded-full blur-3xl"></div>
+        <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-slate-100/5 rounded-full blur-3xl"></div>
       </div>
     </InfoPageLayout>
   );

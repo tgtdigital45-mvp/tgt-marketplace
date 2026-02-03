@@ -19,12 +19,12 @@ const HeaderOptimized: React.FC = () => {
     }, [navigate]);
 
     return (
-        <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-40 border-b border-gray-100">
+        <header className="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-40 border-b border-slate-200">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between h-16">
+                <div className="flex items-center justify-between h-20">
                     {/* Logo */}
                     <div className="flex-shrink-0 flex items-center gap-2">
-                        <Link to="/" className="text-2xl font-black text-brand-primary tracking-tighter hover:opacity-80 transition-opacity">
+                        <Link to="/" className="text-2xl font-bold text-slate-900 tracking-tighter hover:opacity-80 transition-opacity">
                             TGT
                         </Link>
                     </div>

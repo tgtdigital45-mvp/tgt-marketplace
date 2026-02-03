@@ -76,7 +76,7 @@ const QuickSearch: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="O que você procura?"
             aria-label="Campo de busca por serviço ou profissional"
-            className="w-full min-h-[48px] bg-transparent border-none rounded-xl py-3 pl-10 pr-4 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-0"
+            className="w-full min-h-[48px] bg-transparent border-none rounded-xl py-3 pl-10 pr-4 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-0 truncate"
           />
         </div>
 
@@ -86,9 +86,9 @@ const QuickSearch: React.FC = () => {
             type="button"
             onClick={handleGeolocation}
             className={`absolute inset-y-0 left-0 w-12 flex items-center justify-center transition-all cursor-pointer ${locLoading ? 'text-blue-500' :
-                coords ? 'text-green-600 hover:text-green-700' :
-                  locError ? 'text-red-500' :
-                    'text-gray-400 hover:text-brand-primary'
+              coords ? 'text-green-600 hover:text-green-700' :
+                locError ? 'text-red-500' :
+                  'text-gray-400 hover:text-brand-primary'
               }`}
             title="Usar minha localização atual"
             aria-label="Obter localização atual via GPS"
@@ -121,7 +121,7 @@ const QuickSearch: React.FC = () => {
             }}
             placeholder="Cidade ou Bairro"
             aria-label="Campo de localização"
-            className={`w-full min-h-[48px] bg-transparent border-none rounded-xl py-3 pl-12 pr-4 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-0 transition-colors ${coords ? 'text-green-700 font-medium' : ''
+            className={`w-full min-h-[48px] bg-transparent border-none rounded-xl py-3 pl-12 pr-4 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-0 transition-colors truncate ${coords ? 'text-green-700 font-medium' : ''
               }`}
           />
 

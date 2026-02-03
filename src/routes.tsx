@@ -7,10 +7,12 @@ import LoadingSpinner from './components/ui/LoadingSpinner';
 // Layouts & Global Components
 import PageTransition from './components/PageTransition';
 import DashboardLayout from './components/layout/DashboardLayout';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Pages
 const ClientLandingPage = lazy(() => import('./pages/ClientLandingPage'));
 const CompaniesListPage = lazy(() => import('./pages/LandingPage'));
+
 const CompanyProfilePage = lazy(() => import('./pages/CompanyProfilePage'));
 const BookingConfirmationPage = lazy(() => import('./pages/BookingConfirmationPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
@@ -19,7 +21,7 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const ClientLoginPage = lazy(() => import('./pages/auth/ClientLoginPage'));
 const CompanyLoginPage = lazy(() => import('./pages/auth/CompanyLoginPage'));
 const ClientRegisterPage = lazy(() => import('./pages/auth/ClientRegisterPage'));
-const CompanyRegisterPage = lazy(() => import('./pages/auth/CompanyRegisterPage'));
+// const CompanyRegisterPage = lazy(() => import('./pages/auth/CompanyRegisterPage')); // Unused
 const CompanyRegistrationPage = lazy(() => import('./pages/CompanyRegistrationPage'));
 
 // Client Pages
@@ -91,74 +93,77 @@ const MainRoutes = () => {
     const location = useLocation();
 
     return (
-        <React.Suspense fallback={<LoadingSpinner />}>
-            <AnimatePresence mode="wait">
-                {/* @ts-expect-error - key is needed for AnimatePresence to restart animations on route change */}
-                <Routes location={location} key={location.pathname}>
-                    <Route path="/" element={<AnimatedElement><ClientLandingPage /></AnimatedElement>} />
-                    <Route path="/empresas" element={<AnimatedElement><CompaniesListPage /></AnimatedElement>} />
-                    <Route path="/empresa/:slug" element={<AnimatedElement><CompanyProfilePage /></AnimatedElement>} />
-                    <Route path="/servico/:id" element={<AnimatedElement><ServiceDetailsPage /></AnimatedElement>} />
-                    <Route path="/checkout/:serviceId" element={<AnimatedElement><CheckoutPage /></AnimatedElement>} />
-                    <Route path="/orders/:orderId" element={<AnimatedElement><OrderRoomPage /></AnimatedElement>} />
+        <ErrorBoundary>
+            <React.Suspense fallback={<LoadingSpinner />}>
+                <AnimatePresence mode="wait">
+                    {/* @ts-expect-error - key is needed for AnimatePresence to restart animations on route change */}
+                    <Routes location={location} key={location.pathname}>
+                        <Route path="/" element={<AnimatedElement><ClientLandingPage /></AnimatedElement>} />
+                        <Route path="/empresas" element={<AnimatedElement><CompaniesListPage /></AnimatedElement>} />
 
-                    {/* Auth Routes - Clients */}
-                    <Route path="/login/cliente" element={<AnimatedElement><ClientLoginPage /></AnimatedElement>} />
-                    <Route path="/cadastro/cliente" element={<AnimatedElement><ClientRegisterPage /></AnimatedElement>} />
+                        <Route path="/empresa/:slug" element={<AnimatedElement><CompanyProfilePage /></AnimatedElement>} />
+                        <Route path="/servico/:id" element={<AnimatedElement><ServiceDetailsPage /></AnimatedElement>} />
+                        <Route path="/checkout/:serviceId" element={<AnimatedElement><CheckoutPage /></AnimatedElement>} />
+                        <Route path="/orders/:orderId" element={<AnimatedElement><OrderRoomPage /></AnimatedElement>} />
 
-                    {/* Auth Routes - Companies */}
-                    <Route path="/login/empresa" element={<AnimatedElement><CompanyLoginPage /></AnimatedElement>} />
-                    <Route path="/login/company" element={<AnimatedElement><CompanyLoginPage /></AnimatedElement>} /> {/* Explicit Login Route */}
-                    <Route path="/empresa/cadastro" element={<AnimatedElement><CompanyRegistrationPage /></AnimatedElement>} />
+                        {/* Auth Routes - Clients */}
+                        <Route path="/login/cliente" element={<AnimatedElement><ClientLoginPage /></AnimatedElement>} />
+                        <Route path="/cadastro/cliente" element={<AnimatedElement><ClientRegisterPage /></AnimatedElement>} />
 
-                    {/* Redirect old company registration route to canonical path */}
-                    <Route path="/cadastro/empresa" element={<Navigate to="/empresa/cadastro" replace />} />
-                    <Route path="/agendamento/confirmacao" element={<AnimatedElement><BookingConfirmationPage /></AnimatedElement>} />
+                        {/* Auth Routes - Companies */}
+                        <Route path="/login/empresa" element={<AnimatedElement><CompanyLoginPage /></AnimatedElement>} />
+                        <Route path="/login/company" element={<AnimatedElement><CompanyLoginPage /></AnimatedElement>} /> {/* Explicit Login Route */}
+                        <Route path="/empresa/cadastro" element={<AnimatedElement><CompanyRegistrationPage /></AnimatedElement>} />
 
-                    {/* Client Routes */}
-                    <Route path="/perfil/cliente" element={<ProtectedRoute userType="client" element={<AnimatedElement><ClientProfilePage /></AnimatedElement>} />} />
-                    <Route path="/perfil/pedidos" element={<ProtectedRoute userType="client" element={<AnimatedElement><ClientOrdersPage /></AnimatedElement>} />} />
-                    <Route path="/minhas-mensagens" element={<ProtectedRoute userType="client" element={<AnimatedElement><ClientMessagesPage /></AnimatedElement>} />} />
-                    <Route path="/favoritos" element={<ProtectedRoute userType="client" element={<AnimatedElement><FavoritesPage /></AnimatedElement>} />} />
-                    <Route path="/cliente/novo-pedido" element={<ProtectedRoute userType="client" element={<AnimatedElement><ClientPostJobPage /></AnimatedElement>} />} />
+                        {/* Redirect old company registration route to canonical path */}
+                        <Route path="/cadastro/empresa" element={<Navigate to="/empresa/cadastro" replace />} />
+                        <Route path="/agendamento/confirmacao" element={<AnimatedElement><BookingConfirmationPage /></AnimatedElement>} />
 
-                    {/* Company Dashboard Routes - DashboardLayout handles its own outlet, maybe animate layout entry? */}
-                    <Route path="/dashboard/empresa/:slug" element={<DashboardLayout />}>
-                        <Route index element={<AnimatedElement><DashboardOverviewPage /></AnimatedElement>} />
-                        <Route path="oportunidades" element={<AnimatedElement><ProFindJobsPage /></AnimatedElement>} />
-                        <Route path="oportunidades/:id" element={<AnimatedElement><ProJobDetailsPage /></AnimatedElement>} /> {/* [NEW] */}
-                        <Route path="perfil" element={<AnimatedElement><DashboardPerfilPage /></AnimatedElement>} />
-                        <Route path="administradores" element={<AnimatedElement><DashboardAdministradoresPage /></AnimatedElement>} />
-                        <Route path="servicos" element={<AnimatedElement><DashboardServicosPage /></AnimatedElement>} />
-                        <Route path="portfolio" element={<AnimatedElement><DashboardPortfolioPage /></AnimatedElement>} />
-                        <Route path="avaliacoes" element={<AnimatedElement><DashboardAvaliacoesPage /></AnimatedElement>} />
-                        <Route path="agendamentos" element={<AnimatedElement><DashboardAgendamentosPage /></AnimatedElement>} />
-                        <Route path="agenda" element={<AnimatedElement><DashboardAgendaPage /></AnimatedElement>} />
-                        <Route path="mensagens" element={<AnimatedElement><DashboardMensagensPage /></AnimatedElement>} />
-                        <Route path="configuracoes" element={<AnimatedElement><DashboardConfiguracoesPage /></AnimatedElement>} />
-                    </Route>
+                        {/* Client Routes */}
+                        <Route path="/perfil/cliente" element={<ProtectedRoute userType="client" element={<AnimatedElement><ClientProfilePage /></AnimatedElement>} />} />
+                        <Route path="/perfil/pedidos" element={<ProtectedRoute userType="client" element={<AnimatedElement><ClientOrdersPage /></AnimatedElement>} />} />
+                        <Route path="/minhas-mensagens" element={<ProtectedRoute userType="client" element={<AnimatedElement><ClientMessagesPage /></AnimatedElement>} />} />
+                        <Route path="/favoritos" element={<ProtectedRoute userType="client" element={<AnimatedElement><FavoritesPage /></AnimatedElement>} />} />
+                        <Route path="/cliente/novo-pedido" element={<ProtectedRoute userType="client" element={<AnimatedElement><ClientPostJobPage /></AnimatedElement>} />} />
 
-                    {/* Redirect old dashboard route to new slug-based route */}
-                    <Route path="/dashboard/empresa" element={<Navigate to="/" replace />} />
+                        {/* Company Dashboard Routes - DashboardLayout handles its own outlet, maybe animate layout entry? */}
+                        <Route path="/dashboard/empresa/:slug" element={<DashboardLayout />}>
+                            <Route index element={<AnimatedElement><DashboardOverviewPage /></AnimatedElement>} />
+                            <Route path="oportunidades" element={<AnimatedElement><ProFindJobsPage /></AnimatedElement>} />
+                            <Route path="oportunidades/:id" element={<AnimatedElement><ProJobDetailsPage /></AnimatedElement>} /> {/* [NEW] */}
+                            <Route path="perfil" element={<AnimatedElement><DashboardPerfilPage /></AnimatedElement>} />
+                            <Route path="administradores" element={<AnimatedElement><DashboardAdministradoresPage /></AnimatedElement>} />
+                            <Route path="servicos" element={<AnimatedElement><DashboardServicosPage /></AnimatedElement>} />
+                            <Route path="portfolio" element={<AnimatedElement><DashboardPortfolioPage /></AnimatedElement>} />
+                            <Route path="avaliacoes" element={<AnimatedElement><DashboardAvaliacoesPage /></AnimatedElement>} />
+                            <Route path="agendamentos" element={<AnimatedElement><DashboardAgendamentosPage /></AnimatedElement>} />
+                            <Route path="agenda" element={<AnimatedElement><DashboardAgendaPage /></AnimatedElement>} />
+                            <Route path="mensagens" element={<AnimatedElement><DashboardMensagensPage /></AnimatedElement>} />
+                            <Route path="configuracoes" element={<AnimatedElement><DashboardConfiguracoesPage /></AnimatedElement>} />
+                        </Route>
 
-                    <Route path="/dashboard/wallet" element={<ProtectedRoute userType="company" element={<AnimatedElement><WalletPage /></AnimatedElement>} />} />
+                        {/* Redirect old dashboard route to new slug-based route */}
+                        <Route path="/dashboard/empresa" element={<Navigate to="/" replace />} />
 
-                    {/* Info Pages Routes */}
-                    <Route path="/para-empresas" element={<AnimatedElement><ForCompaniesPage /></AnimatedElement>} />
-                    <Route path="/para-clientes" element={<AnimatedElement><ForClientsPage /></AnimatedElement>} />
-                    <Route path="/ajuda" element={<AnimatedElement><HelpPage /></AnimatedElement>} />
-                    <Route path="/contato" element={<AnimatedElement><ContactPage /></AnimatedElement>} />
-                    <Route path="/sobre" element={<AnimatedElement><AboutPage /></AnimatedElement>} />
-                    <Route path="/carreiras" element={<AnimatedElement><CareersPage /></AnimatedElement>} />
-                    <Route path="/privacidade" element={<AnimatedElement><PrivacyPage /></AnimatedElement>} />
-                    <Route path="/termos" element={<AnimatedElement><TermsPage /></AnimatedElement>} />
-                    <Route path="/planos" element={<AnimatedElement><PlansPage /></AnimatedElement>} />
+                        <Route path="/dashboard/wallet" element={<ProtectedRoute userType="company" element={<AnimatedElement><WalletPage /></AnimatedElement>} />} />
 
-                    {/* 404 - Not Found */}
-                    <Route path="*" element={<AnimatedElement><NotFoundPage /></AnimatedElement>} />
-                </Routes>
-            </AnimatePresence>
-        </React.Suspense>
+                        {/* Info Pages Routes */}
+                        <Route path="/para-empresas" element={<AnimatedElement><ForCompaniesPage /></AnimatedElement>} />
+                        <Route path="/para-clientes" element={<AnimatedElement><ForClientsPage /></AnimatedElement>} />
+                        <Route path="/ajuda" element={<AnimatedElement><HelpPage /></AnimatedElement>} />
+                        <Route path="/contato" element={<AnimatedElement><ContactPage /></AnimatedElement>} />
+                        <Route path="/sobre" element={<AnimatedElement><AboutPage /></AnimatedElement>} />
+                        <Route path="/carreiras" element={<AnimatedElement><CareersPage /></AnimatedElement>} />
+                        <Route path="/privacidade" element={<AnimatedElement><PrivacyPage /></AnimatedElement>} />
+                        <Route path="/termos" element={<AnimatedElement><TermsPage /></AnimatedElement>} />
+                        <Route path="/planos" element={<AnimatedElement><PlansPage /></AnimatedElement>} />
+
+                        {/* 404 - Not Found */}
+                        <Route path="*" element={<AnimatedElement><NotFoundPage /></AnimatedElement>} />
+                    </Routes>
+                </AnimatePresence>
+            </React.Suspense>
+        </ErrorBoundary>
     );
 };
 

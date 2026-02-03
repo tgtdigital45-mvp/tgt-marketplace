@@ -1,153 +1,267 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import {
+  Building2,
+  Star,
+  MessageSquare,
+  BarChart3,
+  Check
+} from 'lucide-react';
 import Button from '../../components/ui/Button';
-
-// Placeholder icons (using SVG paths)
-const ProfileIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>;
-const StarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>;
-const ChatIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>;
-const ChartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>;
-const CheckIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>;
+import { motion } from 'framer-motion';
 
 
 const ForCompaniesPage: React.FC = () => {
   return (
-    <div className="bg-gray-50 text-gray-800">
+    <div className="bg-white text-slate-900">
       {/* Hero Section */}
-      <section className="relative bg-primary-800 text-white text-center py-20 px-4">
-        <div className="absolute inset-0 bg-black opacity-30"></div>
-        <div className="relative container mx-auto">
-          <h1 className="text-4xl md:text-6xl font-extrabold leading-tight">Conecte-se com Milhares de Clientes e Faça seu Negócio Decolar.</h1>
-          <p className="mt-4 text-lg md:text-xl max-w-3xl mx-auto text-primary-200">
-            A TGT é a vitrine digital que sua empresa precisa para alcançar mais pessoas, gerenciar sua reputação e aumentar suas vendas.
-          </p>
-          <Link to="/empresa/cadastro" className="mt-8 inline-block">
-            <Button className="text-lg px-8 py-3 transform hover:scale-105 transition-transform">
-              Comece a Vender Mais Agora
-            </Button>
-          </Link>
+      <section className="relative pt-32 pb-24 overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+          <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-primary-600/5 rounded-full blur-[120px]" />
+          <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-slate-900/5 rounded-full blur-[100px]" />
+        </div>
+
+        <div className="container mx-auto px-6 relative z-10 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <span className="inline-block py-1.5 px-4 rounded-full bg-primary-50 text-primary-600 text-xs font-bold uppercase tracking-widest mb-6 border border-primary-100">
+              SOLUÇÕES CORPORATIVAS
+            </span>
+            <h1 className="text-5xl md:text-7xl font-bold text-slate-900 leading-[1.1] mb-8 tracking-tight max-w-4xl mx-auto">
+              Sua vitrine profissional no <br />
+              <span className="text-primary-600 font-extrabold italic">Marketplace TGT Contratto.</span>
+            </h1>
+            <p className="text-xl text-slate-500 mb-10 max-w-2xl mx-auto leading-relaxed">
+              Expanda seu alcance, gerencie sua reputação e conecte-se com clientes que buscam excelência. A plataforma completa para o crescimento do seu negócio.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link to="/empresa/cadastro">
+                <Button size="lg" className="px-8 shadow-soft hover:scale-105 transition-all">
+                  Cadastrar minha Empresa
+                </Button>
+              </Link>
+              <Link to="/planos">
+                <Button size="lg" variant="outline" className="px-8">
+                  Ver Planos e Preços
+                </Button>
+              </Link>
+            </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-2">Por que escolher a TGT?</h2>
-          <p className="text-gray-600 mb-12 max-w-2xl mx-auto">Ferramentas poderosas para você gerenciar e expandir sua presença online sem complicações.</p>
+      <section className="py-24 bg-slate-50/50">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-slate-900 mb-4 tracking-tight">O motor de crescimento da sua empresa</h2>
+            <p className="text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed">
+              Ferramentas de ponta desenhadas para simplificar sua gestão e maximizar sua conversão de leads.
+            </p>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="p-6">
-              <div className="bg-primary-500 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4"><ProfileIcon /></div>
-              <h3 className="text-xl font-semibold mb-2">Perfil Detalhado</h3>
-              <p className="text-gray-600">Mostre o melhor do seu negócio com galeria de fotos, serviços, horários e mais.</p>
-            </div>
-            <div className="p-6">
-              <div className="bg-primary-500 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4"><StarIcon /></div>
-              <h3 className="text-xl font-semibold mb-2">Gestão de Avaliações</h3>
-              <p className="text-gray-600">Receba e responda avaliações de clientes para construir uma reputação de confiança.</p>
-            </div>
-             <div className="p-6">
-              <div className="bg-primary-500 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4"><ChatIcon /></div>
-              <h3 className="text-xl font-semibold mb-2">Canal de Mensagens</h3>
-              <p className="text-gray-600">Comunique-se diretamente com seus clientes para tirar dúvidas e fechar negócios.</p>
-            </div>
-             <div className="p-6">
-              <div className="bg-primary-500 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4"><ChartIcon /></div>
-              <h3 className="text-xl font-semibold mb-2">Dashboard Intuitivo</h3>
-              <p className="text-gray-600">Gerencie todas as informações do seu perfil de forma simples e rápida.</p>
-            </div>
+            <motion.div
+              whileHover={{ y: -5 }}
+              className="bg-white p-8 rounded-3xl shadow-soft border border-slate-200"
+            >
+              <div className="w-14 h-14 bg-primary-50 rounded-2xl flex items-center justify-center mb-6 text-primary-600">
+                <Building2 size={28} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3 tracking-tight">Presença Digital</h3>
+              <p className="text-slate-500 leading-relaxed text-sm">Perfil otimizado com portfólio, serviços e geolocalização estratégica.</p>
+            </motion.div>
+            <motion.div
+              whileHover={{ y: -5 }}
+              className="bg-white p-8 rounded-3xl shadow-soft border border-slate-200"
+            >
+              <div className="w-14 h-14 bg-primary-50 rounded-2xl flex items-center justify-center mb-6 text-primary-600">
+                <Star size={28} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3 tracking-tight">Autoridade Social</h3>
+              <p className="text-slate-500 leading-relaxed text-sm">Sistema de avaliações verificado para transformar sua reputação em vendas.</p>
+            </motion.div>
+            <motion.div
+              whileHover={{ y: -5 }}
+              className="bg-white p-8 rounded-3xl shadow-soft border border-slate-200"
+            >
+              <div className="w-14 h-14 bg-primary-50 rounded-2xl flex items-center justify-center mb-6 text-primary-600">
+                <MessageSquare size={28} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3 tracking-tight">Vendas Diretas</h3>
+              <p className="text-slate-500 leading-relaxed text-sm">Canal direto de negociação e fechamento sem intermediários complexos.</p>
+            </motion.div>
+            <motion.div
+              whileHover={{ y: -5 }}
+              className="bg-white p-8 rounded-3xl shadow-soft border border-slate-200"
+            >
+              <div className="w-14 h-14 bg-primary-50 rounded-2xl flex items-center justify-center mb-6 text-primary-600">
+                <BarChart3 size={28} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3 tracking-tight">Insights de Gestão</h3>
+              <p className="text-slate-500 leading-relaxed text-sm">Dados reais sobre visualizações e desempenho do seu perfil na região.</p>
+            </motion.div>
           </div>
         </div>
       </section>
 
       {/* Pricing Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 text-center">
-           <h2 className="text-3xl font-bold mb-2">Planos que se adaptam ao seu negócio</h2>
-           <p className="text-gray-600 mb-12 max-w-2xl mx-auto">Comece gratuitamente e evolua conforme seu negócio cresce. Sem contratos de longo prazo.</p>
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-             {/* Plan 1: Básico */}
-            <div className="border rounded-lg p-8 bg-white shadow-lg flex flex-col">
-              <h3 className="text-2xl font-bold">Básico</h3>
-              <p className="text-gray-500 mt-2">Ideal para começar</p>
-              <p className="text-4xl font-extrabold my-6">Grátis</p>
-              <ul className="space-y-4 text-left text-gray-600 flex-grow">
-                <li className="flex items-center"><CheckIcon /><span className="ml-2">Perfil da Empresa</span></li>
-                <li className="flex items-center"><CheckIcon /><span className="ml-2">Até 5 fotos na galeria</span></li>
-                <li className="flex items-center"><CheckIcon /><span className="ml-2">Receber avaliações</span></li>
+      <section className="py-24 bg-white">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-slate-900 mb-4 tracking-tight">Planos para todas as fases</h2>
+            <p className="text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed">
+              De profissionais independentes a grandes empresas, temos a estrutura certa.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Plan 1: Free */}
+            <motion.div
+              whileHover={{ y: -5 }}
+              className="border border-slate-200 rounded-3xl p-10 bg-white shadow-soft flex flex-col"
+            >
+              <h3 className="text-2xl font-bold text-slate-900">Básico</h3>
+              <p className="text-slate-500 mt-2 font-medium">Essencial para sua entrada</p>
+              <div className="my-8">
+                <p className="text-4xl font-bold text-slate-900 leading-none">Grátis</p>
+                <p className="text-slate-400 text-sm mt-2">Para sempre</p>
+              </div>
+              <ul className="space-y-4 text-left text-slate-600 mb-10 flex-grow">
+                <li className="flex items-center gap-3"><Check className="text-primary-600" size={20} /><span className="text-sm font-medium">Perfil da Empresa Standard</span></li>
+                <li className="flex items-center gap-3"><Check className="text-primary-600" size={20} /><span className="text-sm font-medium">Até 5 fotos na galeria</span></li>
+                <li className="flex items-center gap-3"><Check className="text-primary-600" size={20} /><span className="text-sm font-medium">Receber avaliações</span></li>
               </ul>
-              <Link to="/empresa/cadastro" className="mt-8"><Button variant="secondary" className="w-full">Começar Agora</Button></Link>
-            </div>
-             {/* Plan 2: Profissional */}
-            <div className="border-2 border-primary-500 rounded-lg p-8 bg-white shadow-2xl relative flex flex-col transform md:scale-105">
-                <span className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-primary-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase">Mais Popular</span>
-              <h3 className="text-2xl font-bold text-primary-600">Profissional</h3>
-              <p className="text-gray-500 mt-2">Para negócios em crescimento</p>
-              <p className="text-4xl font-extrabold my-6">R$ 49<span className="text-lg font-medium text-gray-500">/mês</span></p>
-              <ul className="space-y-4 text-left text-gray-600 flex-grow">
-                <li className="flex items-center"><CheckIcon /><span className="ml-2">Tudo do Básico</span></li>
-                <li className="flex items-center"><CheckIcon /><span className="ml-2">Galeria com até 20 mídias</span></li>
-                <li className="flex items-center"><CheckIcon /><span className="ml-2">Responder avaliações</span></li>
-                 <li className="flex items-center"><CheckIcon /><span className="ml-2">Perfil destacado na busca</span></li>
-                 <li className="flex items-center"><CheckIcon /><span className="ml-2">Suporte prioritário</span></li>
+              <Link to="/empresa/cadastro">
+                <Button variant="outline" className="w-full py-4 text-sm font-bold">Começar Agora</Button>
+              </Link>
+            </motion.div>
+
+            {/* Plan 2: Pro */}
+            <motion.div
+              whileHover={{ y: -5 }}
+              className="border-2 border-primary-600 rounded-3xl p-10 bg-slate-900 shadow-xl relative flex flex-col md:scale-105"
+            >
+              <span className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-primary-600 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">Recomendado</span>
+              <h3 className="text-2xl font-bold text-white">Profissional</h3>
+              <p className="text-slate-400 mt-2 font-medium">Tração e destaque total</p>
+              <div className="my-8">
+                <div className="flex items-baseline gap-1">
+                  <p className="text-4xl font-bold text-white">R$ 49</p>
+                  <p className="text-slate-400 text-sm font-medium">/mês</p>
+                </div>
+                <p className="text-primary-400 text-[10px] font-bold uppercase mt-2">Destaque na sua região</p>
+              </div>
+              <ul className="space-y-4 text-left text-slate-300 mb-10 flex-grow">
+                <li className="flex items-center gap-3"><Check className="text-primary-400" size={20} /><span className="text-sm font-medium">Galeria com até 20 mídias</span></li>
+                <li className="flex items-center gap-3"><Check className="text-primary-400" size={20} /><span className="text-sm font-medium">Responder avaliações</span></li>
+                <li className="flex items-center gap-3"><Check className="text-primary-400" size={20} /><span className="text-sm font-medium">Selo de Verificado</span></li>
+                <li className="flex items-center gap-3"><Check className="text-primary-400" size={20} /><span className="text-sm font-medium">Prioridade nos resultados</span></li>
               </ul>
-              <Link to="/empresa/cadastro" className="mt-8"><Button className="w-full">Escolher Plano Pro</Button></Link>
-            </div>
-             {/* Plan 3: Premium */}
-             <div className="border rounded-lg p-8 bg-white shadow-lg flex flex-col">
-              <h3 className="text-2xl font-bold">Premium</h3>
-              <p className="text-gray-500 mt-2">Para máxima performance</p>
-              <p className="text-4xl font-extrabold my-6">R$ 99<span className="text-lg font-medium text-gray-500">/mês</span></p>
-              <ul className="space-y-4 text-left text-gray-600 flex-grow">
-                <li className="flex items-center"><CheckIcon /><span className="ml-2">Tudo do Profissional</span></li>
-                <li className="flex items-center"><CheckIcon /><span className="ml-2">Galeria ilimitada</span></li>
-                <li className="flex items-center"><CheckIcon /><span className="ml-2">Relatórios de Acesso</span></li>
-                <li className="flex items-center"><CheckIcon /><span className="ml-2">Gerente de conta dedicado</span></li>
+              <Link to="/empresa/cadastro">
+                <Button className="w-full py-4 text-sm font-bold bg-primary-600 hover:bg-primary-700">Escolher Plano Pro</Button>
+              </Link>
+            </motion.div>
+
+            {/* Plan 3: Enterprise */}
+            <motion.div
+              whileHover={{ y: -5 }}
+              className="border border-slate-200 rounded-3xl p-10 bg-white shadow-soft flex flex-col"
+            >
+              <h3 className="text-2xl font-bold text-slate-900">Premium</h3>
+              <p className="text-slate-500 mt-2 font-medium">Escala e exclusividade</p>
+              <div className="my-8">
+                <div className="flex items-baseline gap-1">
+                  <p className="text-4xl font-bold text-slate-900">R$ 99</p>
+                  <p className="text-slate-400 text-sm font-medium">/mês</p>
+                </div>
+                <p className="text-slate-400 text-sm mt-2">Solução corporativa</p>
+              </div>
+              <ul className="space-y-4 text-left text-slate-600 mb-10 flex-grow">
+                <li className="flex items-center gap-3"><Check className="text-primary-600" size={20} /><span className="text-sm font-medium">Galeria de mídia ilimitada</span></li>
+                <li className="flex items-center gap-3"><Check className="text-primary-600" size={20} /><span className="text-sm font-medium">Análise de dados detalhada</span></li>
+                <li className="flex items-center gap-3"><Check className="text-primary-600" size={20} /><span className="text-sm font-medium">Gerente de conta dedicado</span></li>
+                <li className="flex items-center gap-3"><Check className="text-primary-600" size={20} /><span className="text-sm font-medium">Checkout personalizado</span></li>
               </ul>
-              <Link to="/empresa/cadastro" className="mt-8"><Button variant="secondary" className="w-full">Fale Conosco</Button></Link>
-            </div>
-           </div>
+              <Link to="/contato">
+                <Button variant="outline" className="w-full py-4 text-sm font-bold">Falar com Consultor</Button>
+              </Link>
+            </motion.div>
+          </div>
         </div>
       </section>
 
-       {/* Testimonials Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">O que nossos parceiros dizem</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <div className="bg-gray-100 p-8 rounded-lg border">
-              <p className="text-gray-600 italic">"Desde que cadastramos nossa adega na TGT, vimos um aumento de 30% nas ligações e visitas. A plataforma é intuitiva e o suporte é excelente!"</p>
-              <div className="mt-4 flex items-center">
-                <img src="https://picsum.photos/seed/adega/100/100" className="w-12 h-12 rounded-full" alt="Adega Vinho Sul" />
-                <div className="ml-4">
-                  <p className="font-semibold">Roberto Mendes</p>
-                  <p className="text-sm text-gray-500">Sócio, Adega Vinho Sul</p>
+      {/* Testimonials Section */}
+      <section className="py-24 bg-slate-50/50 border-y border-slate-100">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-slate-900 mb-4 tracking-tight">Confiança de quem já cresce conosco</h2>
+            <p className="text-slate-500 max-w-2xl mx-auto">Mais do que uma plataforma, somos o parceiro estratégico do seu negócio.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="bg-white p-10 rounded-3xl border border-slate-200 shadow-soft"
+            >
+              <p className="text-slate-600 italic text-lg leading-relaxed mb-8">
+                "Desde que cadastramos nossa operação na TGT, vimos um aumento de 30% nas consultas diretas. A plataforma é intuitiva e o suporte é verdadeiramente corporativo."
+              </p>
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-full bg-slate-100 p-1 border border-slate-200">
+                  <img src="https://picsum.photos/seed/adega/100/100" className="w-full h-full rounded-full object-cover" alt="Roberto Mendes" />
+                </div>
+                <div>
+                  <p className="font-bold text-slate-900">Roberto Mendes</p>
+                  <p className="text-sm text-slate-500 font-medium tracking-wide">Diretor, Adega Vinho Sul</p>
                 </div>
               </div>
-            </div>
-            <div className="bg-gray-100 p-8 rounded-lg border">
-              <p className="text-gray-600 italic">"A TGT nos conectou com clientes que realmente buscavam por desenvolvimento de software de qualidade. É a melhor ferramenta de marketing digital para nosso nicho."</p>
-              <div className="mt-4 flex items-center">
-                 <img src="https://picsum.photos/seed/tech/100/100" className="w-12 h-12 rounded-full" alt="Tech Solutions" />
-                <div className="ml-4">
-                  <p className="font-semibold">Carla Dias</p>
-                  <p className="text-sm text-gray-500">CEO, Tech Solutions</p>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="bg-white p-10 rounded-3xl border border-slate-200 shadow-soft"
+            >
+              <p className="text-slate-600 italic text-lg leading-relaxed mb-8">
+                "A TGT nos conectou com clientes qualificados que buscam valor, não apenas preço. É a melhor ferramenta de marketing para prestadores de serviço de alto nível."
+              </p>
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-full bg-slate-100 p-1 border border-slate-200">
+                  <img src="https://picsum.photos/seed/tech/100/100" className="w-full h-full rounded-full object-cover" alt="Carla Dias" />
+                </div>
+                <div>
+                  <p className="font-bold text-slate-900">Carla Dias</p>
+                  <p className="text-sm text-slate-500 font-medium tracking-wide">Managing Partner, Tech Solutions</p>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
       {/* Final CTA */}
-      <section className="bg-primary-600 text-white">
-        <div className="container mx-auto px-4 py-16 text-center">
-          <h2 className="text-3xl font-bold">Pronto para dar o próximo passo?</h2>
-          <p className="mt-2 text-primary-200 max-w-2xl mx-auto">Junte-se a centenas de empresas que estão crescendo com a TGT. O cadastro é rápido e fácil.</p>
-          <Link to="/empresa/cadastro" className="mt-8 inline-block">
-            <Button variant="secondary" className="text-lg px-8 py-3 transform hover:scale-105 transition-transform">
-              Cadastre sua Empresa Gratuitamente
-            </Button>
-          </Link>
+      <section className="bg-slate-900 text-white overflow-hidden relative">
+        <div className="absolute inset-0 bg-primary-600/10" />
+        <div className="container mx-auto px-6 py-24 text-center relative z-10">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-4xl font-bold mb-6 tracking-tight">O futuro do seu negócio começa aqui.</h2>
+            <p className="mt-2 text-slate-300 max-w-2xl mx-auto mb-10 text-lg">
+              Deixe a TGT cuidar da sua vitrine tecnológica enquanto você foca no que faz de melhor: entregar resultados.
+            </p>
+            <Link to="/empresa/cadastro">
+              <Button size="lg" className="px-10 bg-primary-600 hover:bg-primary-700 text-white border-none shadow-xl transform hover:-translate-y-1 transition-all">
+                Criar minha Conta Profissional
+              </Button>
+            </Link>
+          </motion.div>
         </div>
       </section>
     </div>

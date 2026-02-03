@@ -6,13 +6,13 @@ const DesktopNav: React.FC = () => {
         <nav className="hidden md:flex items-center space-x-6">
             <Link
                 to="/empresas"
-                className="text-gray-600 hover:text-brand-primary font-medium transition-colors text-sm"
+                className="text-slate-600 hover:text-primary-600 font-medium transition-colors text-sm"
             >
                 Buscar Empresas
             </Link>
             <Link
                 to="/para-empresas"
-                className="text-gray-600 hover:text-brand-primary font-medium transition-colors text-sm"
+                className="text-slate-600 hover:text-primary-600 font-medium transition-colors text-sm"
             >
                 Para Empresas
             </Link>
