@@ -21,6 +21,7 @@ import LoadingSkeleton from '../components/ui/LoadingSkeleton';
 import ProfileSidebar from '../components/ProfileSidebar';
 import ReviewsList from '../components/ReviewsList';
 import SellerBadge, { SellerLevel } from '../components/SellerBadge';
+import OptimizedImage from '../components/ui/OptimizedImage';
 
 const CompanyProfilePage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -166,6 +167,19 @@ const CompanyProfilePage: React.FC = () => {
           <div className="lg:col-span-8 order-1 lg:order-2 space-y-8">
 
 
+
+            {/* Cover Image Banner */}
+            <div className="rounded-[var(--radius-box)] overflow-hidden h-48 md:h-64 shadow-md relative group bg-gray-200">
+              <OptimizedImage
+                src={company.coverImage}
+                alt={`Capa de ${company.companyName}`}
+                className="w-full h-full object-cover"
+                fallbackSrc="https://placehold.co/1200x400/f1f5f9/94a3b8?text=Capa+da+Empresa"
+                optimizedWidth={1200}
+                quality={85}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
+            </div>
 
             <section className="bg-white p-6 md:p-8 rounded-[var(--radius-box)] border border-gray-100 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
