@@ -30,6 +30,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             name: session.user.user_metadata.name || session.user.email?.split('@')[0] || 'User',
             email: session.user.email || '',
             type: (session.user.user_metadata.type as 'client' | 'company') || 'client',
+            role: 'user', // Default role
             avatar: session.user.user_metadata.avatar_url,
           };
 
@@ -48,6 +49,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (mounted && companyData) {
               userData.type = 'company'; // Force type to company if record exists
               userData.companySlug = companyData.slug;
+            }
+
+            // Buscar role do usuário
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', session.user.id)
+              .single();
+
+            if (profileData?.role) {
+              userData.role = profileData.role as 'user' | 'admin' | 'moderator';
             }
           } catch (companyError) {
             console.error("AuthContext: Failed to fetch company data", companyError);

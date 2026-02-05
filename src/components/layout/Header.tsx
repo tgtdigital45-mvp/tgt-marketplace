@@ -7,6 +7,7 @@ import UserDropdown from './header/UserDropdown';
 import LoginDropdown from './header/LoginDropdown';
 import DesktopNav from './header/DesktopNav';
 import MobileMenu from './header/MobileMenu';
+import { usePrefetchCriticalRoutes } from '../../hooks/usePrefetch';
 
 const HeaderOptimized: React.FC = () => {
     const { user } = useAuth();
@@ -34,18 +35,25 @@ const HeaderOptimized: React.FC = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    // Prefetch critical routes after 2s (user is engaged)
+    usePrefetchCriticalRoutes([
+        '/empresas',
+        '/login/cliente',
+        '/empresa/cadastro',
+    ], 2000);
+
     // Check if we are on a dashboard page to possibly adjust styling (optional, keeping consistent for now)
     const isDashboard = location.pathname.includes('/dashboard');
 
     return (
         <header
-            className={`sticky top-0 z-40 transition-all duration-300 ease-in-out ${scrolled
-                    ? 'py-2 bg-white/80 backdrop-blur-xl shadow-soft-xl border-b border-white/20'
-                    : 'py-4 bg-transparent border-b border-transparent'
+            className={`sticky top-0 z-30 transition-all duration-300 ease-in-out ${scrolled
+                ? 'py-2 bg-white/80 backdrop-blur-xl shadow-soft-xl border-b border-white/20'
+                : 'py-4 bg-transparent border-b border-transparent'
                 }`}
         >
             <div className={`container mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-300 ${scrolled ? 'max-w-7xl' : 'max-w-7xl'}`}>
-                <div className={`bg-white/50 backdrop-blur-md rounded-2xl px-6 flex items-center justify-between h-20 transition-all duration-300 ${scrolled ? 'shadow-none bg-transparent backdrop-blur-none px-0' : 'shadow-blur'}`}>
+                <div className={`flex items-center justify-between h-20 transition-all duration-300 ${scrolled ? 'px-0' : 'bg-white/50 backdrop-blur-md rounded-2xl px-6 shadow-blur'}`}>
 
                     {/* Logo */}
                     <div className="flex-shrink-0 flex items-center gap-2">

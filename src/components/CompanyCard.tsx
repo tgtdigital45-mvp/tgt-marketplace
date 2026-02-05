@@ -38,7 +38,14 @@ const CompanyCard: React.FC<CompanyCardProps> = ({ company }) => {
         <article className="group relative">
             <Link to={`/empresa/${company.slug}`} className="block bg-white rounded-[var(--radius-box)] shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ring-1 ring-gray-100 hover:ring-brand-primary">
                 <div className="relative w-full h-48 bg-gray-200">
-                    <OptimizedImage src={company.coverImage} alt={company.companyName} className="w-full h-full object-cover" />
+                    <OptimizedImage
+                        src={company.coverImage}
+                        alt={company.companyName}
+                        aspectRatio="16/9"
+                        optimizedWidth={1200}
+                        quality={75}
+                        className="w-full h-48 object-cover"
+                    />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
 
                     {/* Availability Badge */}
@@ -48,8 +55,16 @@ const CompanyCard: React.FC<CompanyCardProps> = ({ company }) => {
                         </Badge>
                     </div>
 
-                    <div className="absolute bottom-2 left-2 w-16 h-16 rounded-full border-2 border-white bg-white shadow-md overflow-hidden">
-                        <OptimizedImage src={company.logo} alt={`${company.companyName} logo`} className="w-full h-full object-cover" />
+                    {/* Logo Badge */}
+                    <div className="absolute -bottom-8 left-6 z-10">
+                        <OptimizedImage
+                            src={company.logo}
+                            alt={`${company.companyName} logo`}
+                            aspectRatio="1/1"
+                            optimizedWidth={150}
+                            quality={80}
+                            className="w-16 h-16 rounded-full border-4 border-white shadow-lg object-cover"
+                        />
                     </div>
                 </div>
                 <div className="p-4">

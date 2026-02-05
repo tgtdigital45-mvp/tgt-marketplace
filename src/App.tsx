@@ -16,8 +16,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 60, // 1 hora - dados considerados "frescos" por 1h
+      gcTime: 1000 * 60 * 60 * 24, // 24 horas - garbage collection após 24h
+      refetchOnWindowFocus: false, // Não refetch ao focar janela
+      retry: 1, // Apenas 1 retry em caso de erro
     },
   },
 });

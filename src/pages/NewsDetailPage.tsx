@@ -1,6 +1,8 @@
 import React from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import SEO from '../components/SEO';
 import { MOCK_NEWS } from '../data/news';
 import OptimizedImage from '../components/ui/OptimizedImage';
@@ -83,21 +85,25 @@ const NewsDetailPage: React.FC = () => {
                     </div>
 
                     {/* Content */}
-                    <article className="prose prose-slate prose-lg max-w-none mb-20 text-slate-600 leading-relaxed
+                    <article className="prose prose-slate prose-lg max-w-none mb-20
                         prose-headings:text-slate-900 prose-headings:font-bold prose-headings:tracking-tight
-                        prose-p:mb-8 prose-strong:text-slate-900
+                        prose-h1:text-4xl prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-6
+                        prose-h3:text-2xl prose-h3:mt-8 prose-h3:mb-4
+                        prose-p:text-slate-600 prose-p:leading-relaxed prose-p:mb-6
+                        prose-strong:text-slate-900 prose-strong:font-bold
+                        prose-ul:my-6 prose-li:text-slate-600 prose-li:my-2
+                        prose-code:text-primary-600 prose-code:bg-primary-50 prose-code:px-2 prose-code:py-1 prose-code:rounded
+                        prose-pre:bg-slate-900 prose-pre:text-slate-100
+                        prose-blockquote:border-l-4 prose-blockquote:border-primary-600 prose-blockquote:pl-6 prose-blockquote:italic
                     ">
-                        <div dangerouslySetInnerHTML={{ __html: post.content }} />
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {post.content || post.excerpt}
+                        </ReactMarkdown>
                     </article>
 
                     {/* Footer / Sharing */}
                     <footer className="pt-12 border-t border-slate-100">
                         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-                            <div className="flex gap-2">
-                                {post.tags.map(tag => (
-                                    <span key={tag} className="px-4 py-2 bg-slate-50 text-slate-500 rounded-xl text-xs font-bold">#{tag}</span>
-                                ))}
-                            </div>
                             <div className="flex items-center gap-6">
                                 <span className="text-xs font-black uppercase tracking-widest text-slate-300">Compartilhar:</span>
                                 <div className="flex gap-4">
@@ -113,8 +119,8 @@ const NewsDetailPage: React.FC = () => {
                     <section className="mt-32">
                         <h3 className="text-2xl font-bold text-slate-900 mb-10 tracking-tight">Leia também</h3>
                         <div className="grid md:grid-cols-2 gap-8">
-                            {MOCK_NEWS.filter(p => p.id !== post.id).slice(0, 2).map(r => (
-                                <Link key={r.id} to={`/noticias/${r.slug}`} className="group block">
+                            {MOCK_NEWS.filter(p => p.slug !== post.slug).slice(0, 2).map(r => (
+                                <Link key={r.slug} to={`/noticias/${r.slug}`} className="group block">
                                     <div className="aspect-[4/3] rounded-[40px] overflow-hidden mb-6 shadow-lg">
                                         <OptimizedImage src={r.image} alt={r.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                     </div>

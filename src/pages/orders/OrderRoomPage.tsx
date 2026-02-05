@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { DbOrder, Service, User } from '../../types';
@@ -8,8 +8,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import OrderChat from '../../components/orders/OrderChat';
 
-import DeliveryModal from '../../components/orders/DeliveryModal';
-import ReviewModal from '../../components/orders/ReviewModal';
+// Lazy load modals (only load when user opens them)
+const DeliveryModal = lazy(() => import('../../components/orders/DeliveryModal'));
+const ReviewModal = lazy(() => import('../../components/orders/ReviewModal'));
 
 // Simple Countdown Component
 const Countdown = ({ deadline }: { deadline: string }) => {
@@ -278,24 +279,41 @@ const OrderRoomPage = () => {
                         )}
                     </div>
                 </div>
-        </div>
+            </main>
 
-            </main >
-            <DeliveryModal
-                orderId={order.id}
-                isOpen={isDeliveryModalOpen}
-                onClose={() => setIsDeliveryModalOpen(false)}
-                onSuccess={fetchOrder}
-            />
-            <ReviewModal
-                orderId={order.id}
-                reviewerId={order.buyer_id}
-                revieweeId={order.seller_id}
-                isOpen={isReviewModalOpen}
-                onClose={() => setIsReviewModalOpen(false)}
-                onSuccess={fetchOrder}
-            />
-        </div >
+            {/* Lazy load modals with Suspense */}
+            {isDeliveryModalOpen && (
+                <Suspense fallback={
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                        <LoadingSpinner />
+                    </div>
+                }>
+                    <DeliveryModal
+                        orderId={order.id}
+                        isOpen={isDeliveryModalOpen}
+                        onClose={() => setIsDeliveryModalOpen(false)}
+                        onSuccess={fetchOrder}
+                    />
+                </Suspense>
+            )}
+
+            {isReviewModalOpen && (
+                <Suspense fallback={
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                        <LoadingSpinner />
+                    </div>
+                }>
+                    <ReviewModal
+                        orderId={order.id}
+                        reviewerId={order.buyer_id}
+                        revieweeId={order.seller_id}
+                        isOpen={isReviewModalOpen}
+                        onClose={() => setIsReviewModalOpen(false)}
+                        onSuccess={fetchOrder}
+                    />
+                </Suspense>
+            )}
+        </div>
     );
 };
 

@@ -5,13 +5,9 @@ import SEO from '../components/SEO';
 import HeroSection from '../components/HeroSection';
 import BenefitsBar from '../components/landing/BenefitsBar';
 import IntroSection from '../components/landing/IntroSection';
-import LogoCloud from '../components/landing/LogoCloud';
-import CategoriesSection from '../components/landing/CategoriesSection';
 import FeaturedProfessional from '../components/landing/FeaturedProfessional';
 import ProfessionalGallery from '../components/landing/ProfessionalGallery';
-import MatchedInterests from '../components/landing/MatchedInterests';
 import PricingSection from '../components/landing/PricingSection';
-import TestimonialsSection from '../components/landing/TestimonialsSection';
 import BlogSection from '../components/landing/BlogSection';
 import SpecialistCTA from '../components/landing/SpecialistCTA';
 import CompanyCard from '../components/CompanyCard';
@@ -38,13 +34,7 @@ const ClientLandingPage: React.FC = () => {
       {/* 3. Introduction Section */}
       <IntroSection />
 
-      {/* 4. Logo Cloud */}
-      <LogoCloud />
-
-      {/* 5. Categories Grid */}
-      <CategoriesSection />
-
-      {/* 6. Featured Companies (Success Grid) */}
+      {/* 4. Featured Companies (Success Grid) */}
       <section className="py-24 bg-slate-50">
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
@@ -75,25 +65,19 @@ const ClientLandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 7. Featured Program/Professional */}
+      {/* 5. Featured Program/Professional */}
       <FeaturedProfessional />
 
-      {/* 8. Expert Gallery */}
+      {/* 6. Expert Gallery */}
       <ProfessionalGallery />
 
-      {/* 9. Interest Match Grid */}
-      <MatchedInterests />
-
-      {/* 10. Pricing Section */}
+      {/* 7. Pricing Section */}
       <PricingSection />
 
-      {/* 11. Testimonials Section */}
-      <TestimonialsSection />
-
-      {/* 12. Blog Section */}
+      {/* 8. Blog Section */}
       <BlogSection />
 
-      {/* 13. Final Specialist CTA */}
+      {/* 9. Final Specialist CTA */}
       <SpecialistCTA />
 
     </div>

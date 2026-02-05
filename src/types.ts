@@ -200,6 +200,7 @@ export interface User {
   name: string;
   email: string;
   type: 'client' | 'company';
+  role?: 'user' | 'admin' | 'moderator'; // RBAC role
   avatar?: string;
   companySlug?: string; // For company users, used in URL routing
 }

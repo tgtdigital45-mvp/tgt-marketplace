@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Service } from '../types';
 import Button from './ui/Button';
 import SellerBadge, { SellerLevel } from './SellerBadge';
+import { getOptimizedImageUrl } from '@/utils/supabase-image-loader';
 
 interface ServiceCardProps {
   service: Service;
@@ -23,8 +24,13 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, onRequestQuote }) =>
       <div className="relative z-10 flex flex-col h-full">
         {/* Service Image (First Image) */}
         {service.gallery && service.gallery.length > 0 && (
-          <div className="w-full h-40 mb-4 rounded-lg overflow-hidden bg-gray-100">
-            <img src={service.gallery[0]} alt={service.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <div className="relative aspect-video w-full mb-4 rounded-lg overflow-hidden bg-gray-100">
+            <img
+              src={getOptimizedImageUrl(service.gallery[0], 800, 75)}
+              alt={service.title}
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              loading="lazy"
+            />
           </div>
         )}
 
@@ -32,7 +38,14 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, onRequestQuote }) =>
         {company && (
           <div className="flex items-center mb-3 space-x-2">
             <div className="w-6 h-6 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
-              {company.logo_url && <img src={company.logo_url} alt={company.company_name} className="w-full h-full object-cover" />}
+              {company.logo_url && (
+                <img
+                  src={getOptimizedImageUrl(company.logo_url, 100, 80)}
+                  alt={company.company_name}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              )}
             </div>
 
 

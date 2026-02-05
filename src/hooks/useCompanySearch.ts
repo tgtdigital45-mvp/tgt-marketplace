@@ -161,6 +161,8 @@ export const useCompanySearch = (itemsPerPage: number = 8) => {
 
             return { companies: mappedCompanies, count: count || 0 };
         },
+        staleTime: 1000 * 60 * 60, // 1 hora - dados de empresas são relativamente estáticos
+        gcTime: 1000 * 60 * 60 * 2, // 2 horas - garbage collection após 2h
         placeholderData: (previousData) => previousData, // Keep previous data while fetching new (better UX)
     });
 

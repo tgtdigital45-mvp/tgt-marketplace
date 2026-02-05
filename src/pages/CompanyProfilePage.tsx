@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { Helmet } from 'react-helmet-async';
 import SEO from '../components/SEO';
 import { useParams } from 'react-router-dom';
@@ -7,9 +7,11 @@ import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
 import { useFavorites } from '../contexts/FavoritesContext';
 import { useToast } from '../contexts/ToastContext';
-import MessageModal from '../components/MessageModal';
-import ServiceBookingModal from '../components/ServiceBookingModal';
-import ReviewModal from '../components/ReviewModal';
+
+// Lazy load modals (only load when user opens them)
+const MessageModal = lazy(() => import('../components/MessageModal'));
+const ServiceBookingModal = lazy(() => import('../components/ServiceBookingModal'));
+const ReviewModal = lazy(() => import('../components/ReviewModal'));
 import CompanyCard from '../components/CompanyCard';
 import { Service } from '../types';
 import { supabase } from '../lib/supabase';
@@ -237,26 +239,51 @@ const CompanyProfilePage: React.FC = () => {
         </div>
       </div>
 
-      <MessageModal
-        isOpen={isMessageModalOpen}
-        onClose={() => setIsMessageModalOpen(false)}
-        companyId={company.id}
-        companyName={company.companyName}
-      />
+      {/* Lazy load modals with Suspense */}
+      {isMessageModalOpen && (
+        <Suspense fallback={
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <LoadingSkeleton className="w-96 h-64 rounded-xl" />
+          </div>
+        }>
+          <MessageModal
+            isOpen={isMessageModalOpen}
+            onClose={() => setIsMessageModalOpen(false)}
+            companyId={company.id}
+            companyName={company.companyName}
+          />
+        </Suspense>
+      )}
 
-      <ServiceBookingModal
-        isOpen={isBookingModalOpen}
-        onClose={() => setIsBookingModalOpen(false)}
-        service={selectedService}
-        companyName={company.companyName}
-      />
+      {isBookingModalOpen && (
+        <Suspense fallback={
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <LoadingSkeleton className="w-96 h-96 rounded-xl" />
+          </div>
+        }>
+          <ServiceBookingModal
+            isOpen={isBookingModalOpen}
+            onClose={() => setIsBookingModalOpen(false)}
+            service={selectedService}
+            companyName={company.companyName}
+          />
+        </Suspense>
+      )}
 
-      <ReviewModal
-        isOpen={isReviewModalOpen}
-        onClose={() => setIsReviewModalOpen(false)}
-        onSubmit={handleReviewSubmit}
-        isLoading={submittingReview}
-      />
+      {isReviewModalOpen && (
+        <Suspense fallback={
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <LoadingSkeleton className="w-96 h-64 rounded-xl" />
+          </div>
+        }>
+          <ReviewModal
+            isOpen={isReviewModalOpen}
+            onClose={() => setIsReviewModalOpen(false)}
+            onSubmit={handleReviewSubmit}
+            isLoading={submittingReview}
+          />
+        </Suspense>
+      )}
     </main>
   );
 };

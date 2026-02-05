@@ -9,6 +9,7 @@ import PageTransition from './components/PageTransition';
 import DashboardLayout from './components/layout/DashboardLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 import InstitutionalLayout from './components/layout/InstitutionalLayout';
+import AdminGuard from './components/AdminGuard';
 
 // Pages
 const ClientLandingPage = lazy(() => import('./pages/ClientLandingPage'));
@@ -46,6 +47,9 @@ const DashboardAgendaPage = lazy(() => import('./pages/pro/DashboardAgendaPage')
 const DashboardMensagensPage = lazy(() => import('./pages/pro/DashboardMensagensPage'));
 const DashboardConfiguracoesPage = lazy(() => import('./pages/pro/DashboardConfiguracoesPage'));
 
+// Admin Pages
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+
 // Service Details
 const ServiceDetailsPage = lazy(() => import('./pages/service/ServiceDetailsPage'));
 const CheckoutPage = lazy(() => import('./pages/checkout/CheckoutPage'));
@@ -65,6 +69,7 @@ const CareersPage = lazy(() => import('./pages/info/CareersPage'));
 const PrivacyPage = lazy(() => import('./pages/info/PrivacyPage'));
 const TermsPage = lazy(() => import('./pages/info/TermsPage'));
 const PlansPage = lazy(() => import('./pages/PlansPage'));
+const NewsDetailPage = lazy(() => import('./pages/NewsDetailPage'));
 
 // Wrapper for animated routes
 const AnimatedElement = ({ children }: { children: React.ReactElement }) => (
@@ -162,12 +167,20 @@ const MainRoutes = () => {
                         {/* Redirects for old routes */}
                         <Route path="/sobre" element={<Navigate to="/institucional/sobre" replace />} />
                         <Route path="/noticias" element={<Navigate to="/institucional/noticias" replace />} />
+                        <Route path="/noticias/:slug" element={<AnimatedElement><NewsDetailPage /></AnimatedElement>} />
                         <Route path="/blog" element={<Navigate to="/institucional/blog" replace />} />
 
                         <Route path="/carreiras" element={<AnimatedElement><CareersPage /></AnimatedElement>} />
                         <Route path="/privacidade" element={<AnimatedElement><PrivacyPage /></AnimatedElement>} />
                         <Route path="/termos" element={<AnimatedElement><TermsPage /></AnimatedElement>} />
                         <Route path="/planos" element={<AnimatedElement><PlansPage /></AnimatedElement>} />
+
+                        {/* Admin Route - Protected */}
+                        <Route path="/admin" element={
+                            <AdminGuard>
+                                <AnimatedElement><AdminDashboard /></AnimatedElement>
+                            </AdminGuard>
+                        } />
 
                         {/* 404 - Not Found */}
                         <Route path="*" element={<AnimatedElement><NotFoundPage /></AnimatedElement>} />
