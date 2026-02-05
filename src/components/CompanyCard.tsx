@@ -44,6 +44,7 @@ const CompanyCard: React.FC<CompanyCardProps> = ({ company }) => {
                         aspectRatio="16/9"
                         optimizedWidth={1200}
                         quality={75}
+                        fallbackSrc="https://placehold.co/1200x675/f1f5f9/94a3b8?text=TGT+Service"
                         className="w-full h-48 object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
@@ -63,12 +64,13 @@ const CompanyCard: React.FC<CompanyCardProps> = ({ company }) => {
                             aspectRatio="1/1"
                             optimizedWidth={150}
                             quality={80}
-                            className="w-16 h-16 rounded-full border-4 border-white shadow-lg object-cover"
+                            fallbackSrc="https://placehold.co/150x150/f1f5f9/94a3b8?text=Logo"
+                            className="w-16 h-16 rounded-full border-4 border-white shadow-lg object-cover bg-white"
                         />
                     </div>
                 </div>
-                <div className="p-4">
-                    <p className="text-xs font-bold text-brand-primary uppercase tracking-wider">{company.category}</p>
+                <div className="p-4 pt-10">
+                    <p className="text-xs font-bold text-brand-primary uppercase tracking-wider">{company.category || 'Serviços'}</p>
                     <p className="block mt-1 text-lg font-bold text-gray-900 group-hover:text-brand-primary transition-colors">{company.companyName}</p>
                     <div className="mt-2 flex items-center">
                         <div className="flex items-center">
