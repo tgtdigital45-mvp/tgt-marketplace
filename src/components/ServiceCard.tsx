@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Service } from '../types';
 import Button from './ui/Button';
 import SellerBadge, { SellerLevel } from './SellerBadge';
@@ -11,6 +12,7 @@ interface ServiceCardProps {
 
 const ServiceCard: React.FC<ServiceCardProps> = ({ service, onRequestQuote }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const navigate = useNavigate();
   const company = (service as any).company; // Assuming joined data
 
   return (
@@ -92,7 +94,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, onRequestQuote }) =>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onRequestQuote?.(service)}
+            onClick={() => navigate(`/servico/${service.id}`)}
             className={`transform transition-all duration-300 ${isHovered ? 'bg-brand-primary text-white border-brand-primary' : ''}`}
           >
             Ver Detalhes
