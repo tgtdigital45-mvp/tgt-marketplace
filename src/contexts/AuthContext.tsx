@@ -36,17 +36,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
           // Always check if user has a company to ensure type consistency and get slug
           try {
-            const { data: companyData, error } = await supabase
+            const { data: companyData, error: companyError } = await supabase
               .from('companies')
               .select('slug')
               .eq('profile_id', session.user.id)
-              .maybeSingle(); // Use maybeSingle to avoid 406 if no row found
+              .limit(1)
+              .maybeSingle();
 
-            if (error) {
-              console.error("AuthContext: Error checking company existence", error);
-            }
+            if (companyError) {
+              console.warn("AuthContext: Error checking company existence", companyError);
+              // Fallback: attempts to get any company associated if maybeSingle fails (though limit 1 should prevent 406)
+              if (companyError.code === 'PGRST116' || companyError.code === '406') {
+                const { data: fallbackData } = await supabase
+                  .from('companies')
+                  .select('slug')
+                  .eq('profile_id', session.user.id)
+                  .limit(1);
 
-            if (mounted && companyData) {
+                if (fallbackData && Array.isArray(fallbackData) && fallbackData.length > 0) {
+                  userData.type = 'company';
+                  userData.companySlug = fallbackData[0].slug;
+                }
+              }
+            } else if (companyData) {
               userData.type = 'company'; // Force type to company if record exists
               userData.companySlug = companyData.slug;
             }
@@ -56,7 +68,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               .from('profiles')
               .select('role')
               .eq('id', session.user.id)
-              .single();
+              .maybeSingle();
 
             if (profileError) {
               console.error('[AuthContext] Error fetching profile role:', profileError);
@@ -109,13 +121,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
           try {
             // Always check if user has a company
-            const { data: companyData } = await supabase
+            const { data: companyData, error: companyError } = await supabase
               .from('companies')
               .select('slug')
               .eq('profile_id', session.user.id)
+              .limit(1)
               .maybeSingle();
 
-            if (companyData) {
+            if (companyError) {
+              console.warn("AuthContext (Subscription): Error checking company existence", companyError);
+              if (companyError.code === 'PGRST116' || companyError.code === '406') {
+                const { data: fallbackData } = await supabase
+                  .from('companies')
+                  .select('slug')
+                  .eq('profile_id', session.user.id)
+                  .limit(1);
+
+                if (fallbackData && Array.isArray(fallbackData) && fallbackData.length > 0) {
+                  userData.type = 'company';
+                  userData.companySlug = fallbackData[0].slug;
+                }
+              }
+            } else if (companyData) {
               userData.type = 'company'; // Force type to company if record exists
               userData.companySlug = companyData.slug;
             }
@@ -125,7 +152,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               .from('profiles')
               .select('role')
               .eq('id', session.user.id)
-              .single();
+              .maybeSingle();
 
             if (profileData?.role) {
               userData.role = profileData.role as 'user' | 'admin' | 'moderator';
@@ -207,9 +234,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    window.location.href = '/'; // Redirect to home page
+    try {
+      setLoading(true);
+      // 1. Immediate UI clear to prevent ghost state
+      setUser(null);
+
+      // 2. Clear Supabase session
+      await supabase.auth.signOut();
+
+      // 3. Force hard redirect to clear all application state/cache
+      window.location.replace('/login');
+    } catch (error) {
+      console.error("Error during logout:", error);
+      // Fallback: Force redirect even if Supabase errors
+      window.location.replace('/login');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

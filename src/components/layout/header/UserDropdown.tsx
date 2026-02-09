@@ -73,10 +73,10 @@ const UserDropdown: React.FC = () => {
                         )}
                         {user.type === 'company' && (
                             <>
-                                <Link to={user.companySlug ? `/dashboard/empresa/${user.companySlug}` : "/empresa/cadastro"} onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                <Link to="/dashboard" onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                                     Dashboard
                                 </Link>
-                                <Link to={company?.slug ? `/empresa/${company.slug}` : "/empresa/meu-negocio"} onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                <Link to={(company?.slug || user.companySlug) ? `/empresa/${company?.slug || user.companySlug}` : "/empresa/meu-negocio"} onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                                     Ver Página Pública
                                 </Link>
                             </>

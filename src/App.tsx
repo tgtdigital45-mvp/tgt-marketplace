@@ -8,7 +8,6 @@ import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import { ToastProvider } from './contexts/ToastContext';
 import { FavoritesProvider } from './contexts/FavoritesContext';
-import { MockProvider } from './contexts/MockContext';
 import ScrollToTop from './components/ScrollToTop';
 import MainRoutes from './routes';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -38,18 +37,16 @@ const App: React.FC = () => {
             <ToastProvider>
               <NotificationProvider>
                 <CompanyProvider>
-                  <MockProvider>
-                    <FavoritesProvider>
-                      <ScrollToTop />
-                      <div className="flex flex-col min-h-screen">
-                        <Header />
-                        <main className="flex-grow" style={{ minHeight: 'calc(100vh - 80px - 200px)' }}>
-                          <MainRoutes />
-                        </main>
-                        <Footer />
-                      </div>
-                    </FavoritesProvider>
-                  </MockProvider>
+                  <FavoritesProvider>
+                    <ScrollToTop />
+                    <div className="flex flex-col min-h-screen">
+                      <Header />
+                      <main className="flex-grow" style={{ minHeight: 'calc(100vh - 80px - 200px)' }}>
+                        <MainRoutes />
+                      </main>
+                      <Footer />
+                    </div>
+                  </FavoritesProvider>
                 </CompanyProvider>
               </NotificationProvider>
             </ToastProvider>
@@ -61,4 +58,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-

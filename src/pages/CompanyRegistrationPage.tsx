@@ -147,6 +147,7 @@ const CompanyRegistrationPage: React.FC = () => {
     e.preventDefault();
     if (!validateStep3()) return;
 
+    if (isLoading) return; // Prevent double clicks
     setIsLoading(true);
 
     try {
@@ -163,10 +164,6 @@ const CompanyRegistrationPage: React.FC = () => {
       });
 
       if (authError) throw authError;
-
-      if (authData.session) {
-        await supabase.auth.signOut();
-      }
 
       if (!authData.user) throw new Error("Erro ao criar usuário.");
 
@@ -215,15 +212,23 @@ const CompanyRegistrationPage: React.FC = () => {
         logo_url: logoUrl,
         cover_image_url: coverUrl,
         cnpj_document_url: cnpjUrl,
-        status: 'pending'
+        status: 'active'
       });
 
       if (dbError) {
         console.error("Database Insert Error:", dbError);
       }
 
-      addToast('Cadastro realizado com sucesso! Por favor, faça login para continuar.', 'success');
-      navigate('/login/company');
+      if (authData.session) {
+        await supabase.auth.signOut();
+      }
+
+      addToast('Cadastro realizado com sucesso! Redirecionando...', 'success');
+
+      // Delay for UX
+      setTimeout(() => {
+        navigate('/login/empresa', { replace: true });
+      }, 1500);
 
     } catch (err) {
       console.error("Registration Error", err);
@@ -473,8 +478,8 @@ const CompanyRegistrationPage: React.FC = () => {
                     Próximo Passo <ChevronRight className="w-4 h-4 ml-1" />
                   </Button>
                 ) : (
-                  <Button type="button" onClick={(e) => handleSubmit(e)} isLoading={isLoading} size="lg" className="px-8">
-                    Finalizar Cadastro
+                  <Button type="button" onClick={(e) => handleSubmit(e)} isLoading={isLoading} disabled={isLoading} size="lg" className="px-8">
+                    {isLoading ? 'Criando conta...' : 'Finalizar Cadastro'}
                   </Button>
                 )}
               </div>

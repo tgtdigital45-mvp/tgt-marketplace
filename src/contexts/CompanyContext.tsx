@@ -60,24 +60,25 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
                 .from('companies')
                 .select('*')
                 .eq('profile_id', profileId)
-                .limit(1)
-                .maybeSingle();
+                .limit(1);
 
             if (error) throw error;
-            if (!data) return null;
+            if (!data || data.length === 0) return null;
+
+            const companyRecord = data[0];
 
             // Map flat DB fields to nested Address object
             const addressData: Address = {
-                street: data.address?.street || '',
-                city: data.address?.city || '',
-                state: data.address?.state || '',
-                cep: data.address?.cep || '',
-                number: data.address?.number || '',
-                district: data.address?.district || ''
+                street: companyRecord.address?.street || '',
+                city: companyRecord.address?.city || '',
+                state: companyRecord.address?.state || '',
+                cep: companyRecord.address?.cep || '',
+                number: companyRecord.address?.number || '',
+                district: companyRecord.address?.district || ''
             };
 
             return {
-                ...data,
+                ...companyRecord,
                 address: addressData,
             } as CompanyData;
         },

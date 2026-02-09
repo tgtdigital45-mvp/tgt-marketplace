@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useMockData } from '../contexts/MockContext';
+import { useFeaturedCompanies } from '../hooks/useFeaturedCompanies';
 import SEO from '../components/SEO';
 import HeroSection from '../components/HeroSection';
 import BenefitsBar from '../components/landing/BenefitsBar';
@@ -13,9 +13,10 @@ import SpecialistCTA from '../components/landing/SpecialistCTA';
 import CompanyCard from '../components/CompanyCard';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
 
 const ClientLandingPage: React.FC = () => {
-  const { companies: featuredCompanies } = useMockData();
+  const { data: featuredCompanies = [], isLoading } = useFeaturedCompanies();
 
   return (
     <div className="bg-white text-gray-800">
@@ -49,19 +50,27 @@ const ClientLandingPage: React.FC = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {featuredCompanies.slice(0, 3).map((company, index) => (
-              <motion.div
-                key={company.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <CompanyCard company={company} />
-              </motion.div>
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+              <LoadingSkeleton className="h-96 w-full rounded-2xl" />
+              <LoadingSkeleton className="h-96 w-full rounded-2xl" />
+              <LoadingSkeleton className="h-96 w-full rounded-2xl" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+              {featuredCompanies.map((company, index) => (
+                <motion.div
+                  key={company.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <CompanyCard company={company} />
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

@@ -52,17 +52,21 @@ const AdminGuard = ({ children }: { children: React.ReactElement }) => {
             // Not admin or loading
             setIsMfaVerified(true); // Let the role check handle it below
         }
-            </div >
-        );
+    }, [user, loading]);
+
+    if (loading || isMfaVerified === null) {
+        return <LoadingSpinner />;
     }
 
-// Não renderizar nada se não for admin (redirecionamento em andamento)
-if (!user || user.role !== 'admin') {
-    return null;
-}
+    if (!user || user.role !== 'admin') {
+        return <Navigate to="/login/company" replace />;
+    }
 
-// Renderizar conteúdo protegido
-return <>{children}</>;
+    if (isMfaVerified === false) {
+        return <Navigate to="/admin/verify-2fa" replace />;
+    }
+
+    return <>{children}</>;
 };
 
 export default AdminGuard;

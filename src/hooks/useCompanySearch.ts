@@ -75,7 +75,7 @@ export const useCompanySearch = (itemsPerPage: number = 8) => {
                 .from('companies')
                 .select(`
                   *,
-                  services!inner (*)
+                  services (*)
                 `, { count: 'exact' });
 
             // 1. Text Search

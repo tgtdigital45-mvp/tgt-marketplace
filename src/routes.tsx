@@ -2,6 +2,7 @@ import React, { lazy } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { useAuth } from './contexts/AuthContext';
+import { useCompany } from './contexts/CompanyContext';
 import LoadingSpinner from './components/ui/LoadingSpinner';
 
 // Layouts & Global Components
@@ -95,6 +96,27 @@ const ProtectedRoute = ({ userType, element }: ProtectedRouteProps): React.React
     return element;
 };
 
+const DashboardRedirect = () => {
+    const { user, loading } = useAuth();
+    const { company, loading: companyLoading } = useCompany();
+
+    if (loading || companyLoading) return <LoadingSpinner />;
+
+    if (!user) return <Navigate to="/login/company" replace />;
+
+    if (user.type !== 'company') {
+        // Clients don't have a "dashboard" in the same sense, redirect to profile or orders
+        return <Navigate to="/perfil/cliente" replace />;
+    }
+
+    if (company?.slug) {
+        return <Navigate to={`/dashboard/empresa/${company.slug}`} replace />;
+    }
+
+    // Is company user but no company record -> Go to registration
+    return <Navigate to="/empresa/cadastro" replace />;
+};
+
 const MainRoutes = () => {
     const location = useLocation();
 
@@ -148,8 +170,11 @@ const MainRoutes = () => {
                             <Route path="configuracoes" element={<AnimatedElement><DashboardConfiguracoesPage /></AnimatedElement>} />
                         </Route>
 
+                        {/* Smart Dashboard Redirect */}
+                        <Route path="/dashboard" element={<DashboardRedirect />} />
+
                         {/* Redirect old dashboard route to new slug-based route */}
-                        <Route path="/dashboard/empresa" element={<Navigate to="/" replace />} />
+                        <Route path="/dashboard/empresa" element={<Navigate to="/dashboard" replace />} />
 
                         <Route path="/dashboard/wallet" element={<ProtectedRoute userType="company" element={<AnimatedElement><WalletPage /></AnimatedElement>} />} />
 
@@ -178,9 +203,10 @@ const MainRoutes = () => {
                         <Route path="/planos" element={<AnimatedElement><PlansPage /></AnimatedElement>} />
 
                         {/* Admin Route - Protected */}
-                        <AdminGuard>
-                            <AnimatedElement><AdminDashboard /></AnimatedElement>
-                        </AdminGuard>
+                        <Route path="/admin" element={
+                            <AdminGuard>
+                                <AnimatedElement><AdminDashboard /></AnimatedElement>
+                            </AdminGuard>
                         } />
                         <Route path="/admin/security" element={
                             <AdminGuard>
