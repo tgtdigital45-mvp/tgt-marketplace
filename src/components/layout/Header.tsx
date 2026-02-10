@@ -16,6 +16,10 @@ const HeaderOptimized: React.FC = () => {
     const [scrolled, setScrolled] = useState(false);
     const location = useLocation();
 
+    // Pages that should have a transparent header at the top (Dark Hero background)
+    const transparentHeaderPages = ['/', '/landing-client'];
+    const isTransparentPage = transparentHeaderPages.includes(location.pathname);
+
     // Close menu on route change
     useEffect(() => {
         setIsMobileMenuOpen(false);
@@ -25,54 +29,60 @@ const HeaderOptimized: React.FC = () => {
     useEffect(() => {
         const handleScroll = () => {
             const offset = window.scrollY;
-            if (offset > 10) {
+            if (offset > 20) {
                 setScrolled(true);
             } else {
                 setScrolled(false);
             }
         };
-        window.addEventListener('scroll', handleScroll);
+
+        handleScroll();
+        window.addEventListener('scroll', handleScroll, { passive: true });
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    // Prefetch critical routes after 2s (user is engaged)
-    usePrefetchCriticalRoutes([
-        '/empresas',
-        '/login/cliente',
-        '/empresa/cadastro',
-    ], 2000);
+    usePrefetchCriticalRoutes(['/empresas', '/login/cliente', '/empresa/cadastro'], 2000);
 
-    // Check if we are on a dashboard page to possibly adjust styling (optional, keeping consistent for now)
-    const isDashboard = location.pathname.includes('/dashboard');
+    // Calculate transparency state:
+    // It is "Transparent Mode" only if: We are on a transparent page AND we haven't scrolled yet.
+    const isTransparentMode = isTransparentPage && !scrolled;
 
     return (
         <header
-            className={`sticky top-0 z-30 transition-all duration-300 ease-in-out ${scrolled
-                ? 'py-2 bg-white/80 backdrop-blur-xl shadow-soft-xl border-b border-white/20'
-                : 'py-4 bg-transparent border-b border-transparent'
+            className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ease-in-out ${scrolled || !isTransparentPage
+                ? 'py-3 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100'
+                : 'py-5 bg-transparent border-b border-white/5'
                 }`}
         >
-            <div className={`container mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-300 ${scrolled ? 'max-w-7xl' : 'max-w-7xl'}`}>
-                <div className={`flex items-center justify-between h-20 transition-all duration-300 ${scrolled ? 'px-0' : 'bg-white/50 backdrop-blur-md rounded-2xl px-6 shadow-blur'}`}>
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-300">
+                <div className={`flex items-center justify-between transition-all duration-300 ${scrolled ? 'h-16' : 'h-20'}`}>
 
                     {/* Logo */}
                     <div className="flex-shrink-0 flex items-center gap-2">
-                        <Link to="/" className="text-2xl font-bold text-gray-800 tracking-tighter hover:opacity-80 transition-opacity flex items-center gap-2">
-                            <div className="bg-brand-primary/10 p-2 rounded-xl">
-                                <span className="text-brand-primary">TGT</span>
+                        <Link to="/" className="text-2xl font-bold tracking-tighter hover:opacity-80 transition-opacity flex items-center gap-2 group">
+                            <div className={`transition-all duration-300 p-2 rounded-xl ${isTransparentMode ? 'bg-white/10' : 'bg-brand-primary/10'}`}>
+                                <span className={isTransparentMode ? 'text-white' : 'text-brand-primary'}>TGT</span>
                             </div>
-                            <span className={`${scrolled ? 'text-gray-800' : 'text-gray-800'}`}>Contratto</span>
+                            <span className={`transition-colors duration-300 group-hover:text-brand-primary ${isTransparentMode ? 'text-white' : 'text-gray-800'}`}>
+                                Contratto
+                            </span>
                         </Link>
                     </div>
 
                     {/* Desktop Navigation */}
-                    <DesktopNav />
+                    <DesktopNav isScrolled={scrolled || !isTransparentPage} isTransparent={isTransparentPage} />
 
                     {/* Desktop Actions */}
                     <div className="hidden md:flex items-center gap-4">
                         {!user && (
                             <Link to="/empresa/cadastro">
-                                <Button variant="primary" className="shadow-brand-md hover:shadow-brand-lg transition-all rounded-xl px-6">
+                                <Button
+                                    variant={isTransparentMode ? 'outline' : 'primary'}
+                                    className={`transition-all duration-300 rounded-xl px-6 ${isTransparentMode
+                                        ? 'border-white/30 text-white hover:bg-white hover:text-brand-primary hover:border-white'
+                                        : 'shadow-brand-md hover:shadow-brand-lg'
+                                        } ${scrolled ? 'py-2 text-sm' : 'py-2.5'}`}
+                                >
                                     Publicar Grátis
                                 </Button>
                             </Link>
@@ -81,20 +91,23 @@ const HeaderOptimized: React.FC = () => {
                         {user ? (
                             <div className="flex items-center gap-4">
                                 <NotificationsDropdown />
-                                <UserDropdown />
+                                <UserDropdown isTransparentMode={isTransparentMode} />
                             </div>
                         ) : (
                             <LoginDropdown />
                         )}
                     </div>
 
-                    {/* Mobile Actions (Notifications + Burger) */}
+                    {/* Mobile Actions */}
                     <div className="md:hidden flex items-center gap-2">
                         {user && <NotificationsDropdown />}
 
                         <button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="p-2 rounded-xl text-gray-600 hover:bg-white hover:shadow-soft-md hover:text-brand-primary focus:outline-none transition-all min-h-[44px] min-w-[44px]"
+                            className={`p-2 rounded-xl focus:outline-none transition-all min-h-[44px] min-w-[44px] active:scale-95 ${isTransparentMode
+                                ? 'text-white hover:bg-white/10'
+                                : 'text-gray-600 hover:bg-gray-100 hover:text-brand-primary'
+                                }`}
                             aria-label="Menu principal"
                         >
                             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -109,10 +122,10 @@ const HeaderOptimized: React.FC = () => {
                 </div>
             </div>
 
-            {/* Mobile Menu Overlay */}
             <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
         </header>
     );
 };
 
 export default HeaderOptimized;
+

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { Service, ServicePackage } from '../../types';
+import { Service } from '../../types';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import Button from '../../components/ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
+import { useCheckout } from '../../hooks/useCheckout';
 
 const CheckoutPage = () => {
     const { serviceId } = useParams();
@@ -13,13 +14,13 @@ const CheckoutPage = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
     const { addToast } = useToast();
+    const { redirectToCheckout, isLoading: isCheckoutLoading } = useCheckout();
 
     const tier = (searchParams.get('tier') || 'basic') as 'basic' | 'standard' | 'premium';
 
     const [service, setService] = useState<Service | null>(null);
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
-    const [company, setCompany] = useState<any>(null);
 
     useEffect(() => {
         const fetchService = async () => {
@@ -32,8 +33,9 @@ const CheckoutPage = () => {
                     .single();
 
                 if (error) throw error;
+                console.log("Service loaded:", data);
+                console.log("Company loaded:", data.company);
                 setService(data);
-                setCompany(data.company);
             } catch (error) {
                 console.error("Error loading service", error);
                 addToast("Erro ao carregar serviço.", "error");
@@ -49,40 +51,44 @@ const CheckoutPage = () => {
 
         setProcessing(true);
         try {
-            // Secure Payment Flow via Edge Function
-            const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-                body: {
+            const selectedPackage = service.packages?.[tier];
+            const price = selectedPackage?.price || service.price || 0;
+
+            // 1. Create PRELIMINARY Order (Status: pending)
+            console.log("Service Object for Payment:", service);
+            const companyData = (service as any).company || (service as any).companies;
+            // Schema correction: 'profile_id' is the correct column for the owner, not 'owner_id'
+            const sellerId = companyData?.profile_id;
+            console.log("Extracted Seller ID:", sellerId, "From company data:", companyData);
+
+            if (!sellerId) throw new Error("ID do vendedor não encontrado. A empresa não possui um profile_id vinculado.");
+
+            const { data: order, error: orderError } = await supabase
+                .from('orders')
+                .insert({
+                    buyer_id: user.id,
+                    seller_id: sellerId,
                     service_id: service.id,
+                    service_title: service.title,
                     package_tier: tier,
-                    user_id: user.id
-                }
-            });
+                    price: price,
+                    agreed_price: price,
+                    status: 'pending', // IMPORTANT: Start as 'pending'
+                    package_snapshot: service.packages,
+                    payment_status: 'pending'
+                })
+                .select()
+                .single();
 
-            if (error) throw error;
+            if (orderError) throw new Error(`Erro ao criar pedido: ${orderError.message}`);
 
-            if (data?.paymentUrl) {
-                addToast("Sessão criada! Redirecionando para pagamento...", "success");
-                // In a real app, this goes to Stripe/Gateway. 
-                // For MVP, our mock function returns a URL. 
-                // If it's a mock URL, we might want to simulate the webhook trigger or just go there.
-                // Our mock URL: https://mock-payment-provider.com/pay...
-                // Since it's a mock, we can't actually "pay". 
-                // BUT, for the flow to work "end-to-end", we need the Order to be created.
-                // The Webhook creates the order.
-                // So the "Mock Payment Provider" should probably call the webhook?
-                // OR, for this test, we can simulate the webhook call manually or via a "Success Page" that triggers it.
-                // Given the requirement "Redirect to the URL", I will implement the redirect.
-                // *Self-correction*: If the URL is external/mock, the user leaves the app.
-                // Ideally, the Edge Function returns a URL that works.
-
-                window.location.href = data.paymentUrl;
-            } else {
-                throw new Error("URL de pagamento não recebida.");
-            }
+            // 2. Redirect to Stripe Checkout using the Order ID
+            await redirectToCheckout({ order_id: order.id });
 
         } catch (error: any) {
-            console.error("Payment error:", error);
-            addToast("Erro ao iniciar pagamento: " + error.message, "error");
+            console.error("Payment initiation error:", error);
+            addToast(error.message || "Erro ao iniciar pagamento.", "error");
+        } finally {
             setProcessing(false);
         }
     };
@@ -104,10 +110,10 @@ const CheckoutPage = () => {
                             <h2 className="text-xl font-semibold mb-4">Método de Pagamento</h2>
 
                             {/* Mock Credit Card Form */}
-                            <div className="space-y-4 opacity-75 pointer-events-none"> {/* Mocked visual */}
+                            <div className="space-y-4 opacity-75 pointer-events-none">
                                 <div className="border p-4 rounded-lg flex items-center bg-gray-50">
                                     <div className="w-4 h-4 rounded-full border-2 border-brand-primary mr-3 bg-brand-primary"></div>
-                                    <span className="font-medium">Cartão de Crédito</span>
+                                    <span className="font-medium">Cartão de Crédito (Stripe)</span>
                                     <div className="ml-auto flex space-x-2">
                                         <div className="w-8 h-5 bg-gray-300 rounded"></div>
                                         <div className="w-8 h-5 bg-gray-300 rounded"></div>
@@ -118,7 +124,9 @@ const CheckoutPage = () => {
                                     <div className="h-10 bg-gray-100 rounded"></div>
                                 </div>
                             </div>
-                            <p className="text-xs text-gray-400 mt-4 text-center">Ambiente de Teste: Nenhuma cobrança real será feita.</p>
+                            <p className="text-xs text-gray-400 mt-4 text-center">
+                                Você será redirecionado para o ambiente seguro do Stripe.
+                            </p>
                         </div>
                     </div>
 
@@ -156,9 +164,9 @@ const CheckoutPage = () => {
                                 variant="primary"
                                 className="w-full py-3 text-lg"
                                 onClick={handleConfirmPayment}
-                                isLoading={processing}
+                                isLoading={processing || isCheckoutLoading}
                             >
-                                Confirmar e Pagar
+                                Pagar com Stripe
                             </Button>
 
                             <p className="text-xs text-gray-400 mt-4 text-center">

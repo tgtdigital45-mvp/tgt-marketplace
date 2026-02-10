@@ -204,8 +204,7 @@ const ServiceDetailsPage = () => {
                     .select(`
                         *,
                         company:companies (
-                            *,
-                            owner:profiles (id, full_name, avatar_url)
+                            *
                         )
                     `)
                     .eq('id', id)

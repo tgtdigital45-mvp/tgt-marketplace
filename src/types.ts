@@ -1,6 +1,6 @@
 
 
-export type OrderStatus = 'pending_payment' | 'active' | 'in_review' | 'completed' | 'cancelled';
+export type OrderStatus = 'pending_payment' | 'active' | 'in_review' | 'in_progress' | 'delivered' | 'completed' | 'cancelled';
 
 export interface DbOrder {
   id: string;
@@ -13,6 +13,7 @@ export interface DbOrder {
   price: number;
   status: OrderStatus;
   delivery_deadline: string;
+  package_snapshot?: any;
 }
 
 export interface DbMessage {

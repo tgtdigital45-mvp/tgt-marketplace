@@ -1,5 +1,5 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { DbOrder, Service, User } from '../../types';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
@@ -45,6 +45,8 @@ const OrderRoomPage = () => {
     const { orderId } = useParams();
     const { user } = useAuth();
     const { addToast } = useToast();
+    const location = useLocation();
+    const navigate = useNavigate();
 
     const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
     const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -90,6 +92,42 @@ const OrderRoomPage = () => {
     useEffect(() => {
         fetchOrder();
     }, [orderId]);
+
+    // Handle Payment Success & Polling
+    useEffect(() => {
+        const queryParams = new URLSearchParams(location.search);
+        const isSuccess = queryParams.get('success') === 'true';
+
+        if (isSuccess && orderId) {
+            addToast("Pagamento realizado com sucesso! Atualizando pedido...", "success");
+
+            // Remove the query param to prevent re-toast on refresh
+            navigate(location.pathname, { replace: true });
+
+            // Start polling for status update (webhook latency)
+            const pollInterval = setInterval(async () => {
+                const { data: updatedOrder } = await supabase
+                    .from('orders')
+                    .select('status')
+                    .eq('id', orderId)
+                    .single();
+
+                if (updatedOrder && (updatedOrder.status === 'paid' || updatedOrder.status === 'in_progress' || updatedOrder.status === 'active')) {
+                    // Status updated! Stop polling and refresh full data
+                    clearInterval(pollInterval);
+                    fetchOrder();
+                    addToast("Status do pedido atualizado!", "success");
+                }
+            }, 3000); // Check every 3 seconds
+
+            // Stop polling after 30 seconds to avoid infinite loop
+            setTimeout(() => {
+                clearInterval(pollInterval);
+            }, 30000);
+
+            return () => clearInterval(pollInterval);
+        }
+    }, [location.search, orderId, addToast, navigate]);
 
     const updateStatus = async (newStatus: string) => {
         if (!order) return;

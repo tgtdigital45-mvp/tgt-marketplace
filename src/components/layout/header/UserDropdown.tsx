@@ -6,7 +6,11 @@ import { useCompany } from '../../../contexts/CompanyContext';
 import OptimizedImage from '../../ui/OptimizedImage';
 import { useOnClickOutside } from '../../../hooks/useOnClickOutside';
 
-const UserDropdown: React.FC = () => {
+interface UserDropdownProps {
+    isTransparentMode?: boolean;
+}
+
+const UserDropdown: React.FC<UserDropdownProps> = ({ isTransparentMode = false }) => {
     const { user, logout } = useAuth();
     const { company } = useCompany();
     const navigate = useNavigate();
@@ -22,6 +26,9 @@ const UserDropdown: React.FC = () => {
 
     if (!user) return null;
 
+    const textColor = isTransparentMode ? 'text-white/90 group-hover:text-white' : 'text-gray-700 group-hover:text-gray-900';
+    const iconColor = isTransparentMode ? 'text-white/80' : 'text-gray-400';
+
     return (
         <div className="relative" ref={dropdownRef}>
             <button
@@ -34,10 +41,10 @@ const UserDropdown: React.FC = () => {
                     src={(user.type === 'company' && company?.logo_url) || user.avatar || `https://i.pravatar.cc/150?u=${user.id}`}
                     alt={(user.type === 'company' && company?.company_name) || user.name}
                 />
-                <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors max-w-[100px] truncate">
+                <span className={`text-sm font-medium transition-colors max-w-[100px] truncate ${textColor}`}>
                     {(user.type === 'company' && company?.company_name) || user.name.split(' ')[0]}
                 </span>
-                <svg className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className={`h-4 w-4 transition-transform duration-200 ${iconColor} ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
             </button>

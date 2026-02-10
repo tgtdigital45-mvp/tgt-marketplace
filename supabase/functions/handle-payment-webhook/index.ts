@@ -10,8 +10,9 @@ serve(async (req) => {
     try {
         const signature = req.headers.get('stripe-signature')
         if (!signature && !Deno.env.get('MOCK_WEBHOOK')) {
-            // For production, we must verify signature
-            // throw new Error('Missing stripe-signature')
+            // For production, we must verify signature usually
+            // but if user didn't setup secret properly locally, it fails.
+            // Assuming environment variable STRIPE_WEBHOOK_SECRET is set.
         }
 
         const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
@@ -22,12 +23,18 @@ serve(async (req) => {
         const body = await req.text()
         let event
 
-        // In a real environment, use stripe.webhooks.constructEvent
-        // For this MVP/Dev env without signature, we parse directly
         try {
-            event = JSON.parse(body)
+            if (Deno.env.get('STRIPE_WEBHOOK_SECRET') && signature) {
+                event = await stripe.webhooks.constructEventAsync(
+                    body,
+                    signature,
+                    Deno.env.get('STRIPE_WEBHOOK_SECRET')!
+                )
+            } else {
+                event = JSON.parse(body)
+            }
         } catch (err) {
-            throw new Error(`Webhook Error: ${err.message}`)
+            throw new Error(`Webhook Signature/Parse Error: ${err.message}`)
         }
 
         // Handle the event
@@ -35,58 +42,45 @@ serve(async (req) => {
             const session = event.data.object
             const metadata = session.metadata
 
-            if (!metadata) throw new Error('Missing metadata in session')
+            if (!metadata || !metadata.order_id) throw new Error('Missing order_id in metadata')
 
-            const { service_id, buyer_id, seller_id, package_tier, base_price } = metadata
-            const amountTotal = session.amount_total / 100 // Convert cents to BRL
+            const { order_id } = metadata
+            const amountTotal = session.amount_total // Cents
 
-            console.log(`Processing Order for Service: ${service_id}, Buyer: ${buyer_id}, Seller: ${seller_id}`)
+            console.log(`Processing Payment for Order: ${order_id}`)
 
             const supabaseClient = createClient(
                 Deno.env.get('SUPABASE_URL') ?? '',
                 Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
             )
 
-            // 1. Fetch Service Details for Snapshot
-            const { data: service, error: serviceError } = await supabaseClient
-                .from('services')
-                .select('title, packages')
-                .eq('id', service_id)
-                .single()
-
-            if (serviceError) throw new Error(`Service lookup failed: ${serviceError.message}`)
-
-            // 2. Create Order (Status: paid)
+            // 1. Update Order Status
             const { data: order, error: orderError } = await supabaseClient
                 .from('orders')
-                .insert({
-                    buyer_id,
-                    seller_id,
-                    service_id,
-                    service_title: service.title,
-                    package_tier,
-                    price: parseFloat(base_price), // Order price acts as the base contract value
-                    agreed_price: parseFloat(base_price),
-                    status: 'paid', // Start as paid
-                    package_snapshot: service.packages
+                .update({
+                    payment_status: 'paid',
+                    stripe_session_id: session.id,
+                    amount_total: amountTotal,
+                    receipt_url: session.url // Or session.receipt_url if available via intent
                 })
+                .eq('id', order_id)
                 .select()
                 .single()
 
-            if (orderError) throw new Error(`Order creation failed: ${orderError.message}`)
-            console.log(`Order created: ${order.id}`)
+            if (orderError) throw new Error(`Order update failed: ${orderError.message}`)
+            console.log(`Order updated: ${order.id}`)
 
-            // 3. Commission Split Logic (Money In)
-            // Seller gets 85% of the BASE price (platform fee is separate on top, already collected)
-            // Wait, implementation plan said "Credite apenas R$ 85 (15% commission)".
-            // Let's stick to the plan: 85% of the agreed price goes to pending balance.
+            // 2. Commission Split Logic (Money In)
+            // Seller gets 85% of the TOTAL amount paid (minus simplified logic)
+            // Or better: Seller gets 85% of the agreed price.
 
             const commissionRate = 0.15
-            const totalOrderValue = parseFloat(base_price)
+            const totalOrderValue = order.agreed_price || order.price
             const sellerNetIncome = totalOrderValue * (1 - commissionRate)
+            const seller_id = order.seller_id
 
-            // 4. Upsert Wallet for Seller
-            const { data: wallet, error: walletError } = await supabaseClient
+            // 3. Upsert Wallet for Seller
+            let { data: wallet, error: walletError } = await supabaseClient
                 .from('wallets')
                 .select('*')
                 .eq('user_id', seller_id)
@@ -103,44 +97,49 @@ serve(async (req) => {
 
                 if (createWalletError) throw new Error(`Wallet creation failed: ${createWalletError.message}`)
                 wallet_id = newWallet.id
+                wallet = newWallet
             }
 
-            // 5. Update Wallet Pending Balance
-            // We use an RPC or simple update? Update is risky for concurrency, but for MVP acceptable if load low.
-            // Ideally use an RPC "increment_pending_balance".
-            // Implementation Plan: "Insert Transaction (Type: credit, Status: pending)"
-
-            // Let's create the transaction
-            const { error: txError } = await supabaseClient
+            // 4. Create/Record Transaction
+            // Check if transaction already exists to allow idempotency
+            const { data: existingTx } = await supabaseClient
                 .from('transactions')
-                .insert({
-                    wallet_id: wallet_id,
-                    amount: sellerNetIncome,
-                    type: 'credit',
-                    status: 'pending',
-                    order_id: order.id,
-                    description: `Venda #...${order.id.slice(0, 8)} - ${service.title}`
+                .select('id')
+                .eq('order_id', order.id)
+                .eq('type', 'credit')
+                .single()
+
+            if (!existingTx) {
+                const { error: txError } = await supabaseClient
+                    .from('transactions')
+                    .insert({
+                        wallet_id: wallet_id,
+                        amount: sellerNetIncome,
+                        type: 'credit',
+                        status: 'pending', // Pending until order completion? Or pending until payout? "pending balance"
+                        order_id: order.id,
+                        description: `Venda #${order.id.slice(0, 8)} - ${order.service_title}`
+                    })
+
+                if (txError) throw new Error(`Transaction creation failed: ${txError.message}`)
+
+                // 5. Update pending balance
+                // Try updated RPC or manual update
+                const { error: balanceError } = await supabaseClient.rpc('increment_pending_balance', {
+                    row_id: wallet_id,
+                    amount_to_add: sellerNetIncome
                 })
 
-            if (txError) throw new Error(`Transaction creation failed: ${txError.message}`)
-
-            // Update pending balance
-            const { error: balanceError } = await supabaseClient.rpc('increment_pending_balance', {
-                row_id: wallet_id,
-                amount_to_add: sellerNetIncome
-            })
-
-            // Fallback if RPC doesn't exist (we should create it, but for safety inside this function without RPC)
-            if (balanceError) {
-                // Try direct update
-                const { error: directUpdateError } = await supabaseClient
-                    .from('wallets')
-                    .update({ pending_balance: (wallet?.pending_balance || 0) + sellerNetIncome })
-                    .eq('id', wallet_id)
-
-                if (directUpdateError) console.error('Failed to update pending balance', directUpdateError)
+                if (balanceError) {
+                    // Fallback
+                    await supabaseClient
+                        .from('wallets')
+                        .update({ pending_balance: (wallet.pending_balance || 0) + sellerNetIncome })
+                        .eq('id', wallet_id)
+                }
+            } else {
+                console.log('Transaction already exists, skipping wallet update.')
             }
-
         }
 
         return new Response(JSON.stringify({ received: true }), { headers: { 'Content-Type': 'application/json' } })
