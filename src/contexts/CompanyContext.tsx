@@ -28,6 +28,8 @@ interface CompanyData {
     website: string | null;
     status: string;
     profile_id: string;
+    current_plan_tier?: 'starter' | 'pro' | 'agency';
+    subscription_status?: string;
 }
 
 interface CompanyContextType {

@@ -46,6 +46,7 @@ const DashboardAvaliacoesPage = lazy(() => import('./pages/pro/DashboardAvaliaco
 const DashboardAgendamentosPage = lazy(() => import('./pages/pro/DashboardAgendamentosPage'));
 const DashboardAgendaPage = lazy(() => import('./pages/pro/DashboardAgendaPage'));
 const DashboardMensagensPage = lazy(() => import('./pages/pro/DashboardMensagensPage'));
+const SubscriptionPage = lazy(() => import('./pages/dashboard/SubscriptionPage'));
 const DashboardConfiguracoesPage = lazy(() => import('./pages/pro/DashboardConfiguracoesPage'));
 
 // Admin Pages
@@ -124,7 +125,6 @@ const MainRoutes = () => {
         <ErrorBoundary>
             <React.Suspense fallback={<LoadingSpinner />}>
                 <AnimatePresence mode="wait">
-                    {/* @ts-expect-error - key is needed for AnimatePresence to restart animations on route change */}
                     <Routes location={location} key={location.pathname}>
                         <Route path="/" element={<AnimatedElement><ClientLandingPage /></AnimatedElement>} />
                         <Route path="/empresas" element={<AnimatedElement><CompaniesListPage /></AnimatedElement>} />
@@ -167,6 +167,7 @@ const MainRoutes = () => {
                             <Route path="agendamentos" element={<AnimatedElement><DashboardAgendamentosPage /></AnimatedElement>} />
                             <Route path="agenda" element={<AnimatedElement><DashboardAgendaPage /></AnimatedElement>} />
                             <Route path="mensagens" element={<AnimatedElement><DashboardMensagensPage /></AnimatedElement>} />
+                            <Route path="assinatura" element={<AnimatedElement><SubscriptionPage /></AnimatedElement>} />
                             <Route path="configuracoes" element={<AnimatedElement><DashboardConfiguracoesPage /></AnimatedElement>} />
                         </Route>
 

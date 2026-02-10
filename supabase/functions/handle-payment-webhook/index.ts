@@ -190,7 +190,8 @@ serve(async (req) => {
                 // ============================================================
                 // STEP 6: COMMISSION SPLIT & WALLET UPDATE
                 // ============================================================
-                const commissionRate = 0.15
+                // Use commission rate from metadata, fallback to default 20%
+                const commissionRate = session.metadata?.commission_rate ? parseFloat(session.metadata.commission_rate) : 0.20
                 const totalOrderValue = order.agreed_price || order.price
                 const sellerNetIncome = totalOrderValue * (1 - commissionRate)
                 const seller_id = order.seller_id
@@ -311,9 +312,74 @@ serve(async (req) => {
                     { status: 500, headers: { 'Content-Type': 'application/json' } }
                 )
             }
+        } else if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
+            const subscription = event.data.object
+            const customerId = subscription.customer
+            const status = subscription.status
+            const priceId = subscription.items.data[0].price.id
+            const productId = subscription.items.data[0].price.product
+
+            logStructured('info', `Processing ${event.type}`, {
+                customer_id: customerId,
+                status: status,
+                price_id: priceId
+            })
+
+            const supabaseClient = createClient(
+                Deno.env.get('SUPABASE_URL') ?? '',
+                Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+            )
+
+            // Determine Plan Tier and Commission Rate
+            let planTier = 'starter'
+            let commissionRate = 0.20
+
+            // TODO: Map your actual Stripe Product IDs here
+            const PRO_PRODUCT_ID = Deno.env.get('STRIPE_PRODUCT_ID_PRO') || 'prod_pro_placeholder'
+            const AGENCY_PRODUCT_ID = Deno.env.get('STRIPE_PRODUCT_ID_AGENCY') || 'prod_agency_placeholder'
+
+            if (status === 'active' || status === 'trialing') {
+                if (productId === AGENCY_PRODUCT_ID) {
+                    planTier = 'agency'
+                    commissionRate = 0.08
+                } else if (productId === PRO_PRODUCT_ID) {
+                    planTier = 'pro'
+                    commissionRate = 0.12
+                }
+            } else {
+                // canceled, unpaid, etc -> revert to free/starter
+                planTier = 'starter'
+                commissionRate = 0.20
+            }
+
+            // Update Company
+            const { error: companyError } = await supabaseClient
+                .from('companies')
+                .update({
+                    subscription_status: status,
+                    stripe_subscription_id: subscription.id,
+                    current_plan_tier: planTier,
+                    commission_rate: commissionRate
+                })
+                .eq('stripe_customer_id', customerId)
+
+            if (companyError) {
+                logStructured('error', 'Failed to update company subscription', {
+                    error: companyError.message,
+                    customer_id: customerId
+                })
+                throw new Error(`Company update failed: ${companyError.message}`)
+            }
+
+            logStructured('info', 'Company subscription updated', {
+                customer_id: customerId,
+                plan_tier: planTier,
+                commission_rate: commissionRate
+            })
+
         } else {
             // Other event types - log and acknowledge
-            logStructured('info', 'Received non-checkout event', {
+            logStructured('info', 'Received event', {
                 event_type: event.type
             })
         }

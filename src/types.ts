@@ -84,6 +84,8 @@ export interface Company {
   portfolio: PortfolioItem[];
   reviews: Review[];
   distance?: number; // Distance in km from user
+  current_plan_tier?: 'starter' | 'pro' | 'agency';
+  subscription_status?: string;
   owner?: {
     id: string;
     fullName: string;
@@ -166,6 +168,8 @@ export interface DbCompany {
   status?: string;
   verified?: boolean;
   level?: 'Iniciante' | 'Nível 1' | 'Pro';
+  current_plan_tier?: 'starter' | 'pro' | 'agency';
+  subscription_status?: string;
 }
 
 export interface Service {

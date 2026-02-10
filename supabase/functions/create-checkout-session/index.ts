@@ -43,7 +43,7 @@ serve(async (req) => {
         // 1. Fetch Order Details & Verify Ownership
         const { data: order, error: orderError } = await supabaseClient
             .from('orders')
-            .select('*, services(*, companies(id, profile_id, company_name))') // Expanded select for service/company info
+            .select('*, services(*, companies(id, profile_id, company_name, commission_rate))') // Expanded select for service/company info
             .eq('id', order_id)
             .single()
 
@@ -74,15 +74,15 @@ serve(async (req) => {
 
         if (!priceFromDb) throw new Error('Order price is invalid')
 
-        // 3. Calculate Fee (5% Platform Fee, assuming price includes fee or added on top?)
-        // Standard flow: Price is total. We take fee from it later (in webhook split), or add it now?
-        // The prompt says "Nós recebemos o valor total e repassamos depois".
-        // Let's assume order.price is the total amount the buyer agreed to pay.
+        // 3. Calculate Fee (Dynamic Take Rate)
+        const sellerCompany = service.companies
+        const commissionRate = sellerCompany.commission_rate !== undefined ? sellerCompany.commission_rate : 0.20
+        const applicationFeeAmount = Math.round(unitAmount * commissionRate)
 
         // Stripe expects cents
         const unitAmount = Math.round(priceFromDb * 100)
 
-        console.log(`Creating session for Order: ${order.id}. Total: ${unitAmount / 100}`)
+        console.log(`Creating session for Order: ${order.id}. Total: ${unitAmount / 100}. Fee: ${applicationFeeAmount / 100} (${commissionRate * 100}%)`)
 
         // 4. Create Stripe Checkout Session
         const session = await stripe.checkout.sessions.create({
@@ -108,9 +108,10 @@ serve(async (req) => {
             success_url: `${req.headers.get('origin')}/orders/${order.id}?success=true&session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${req.headers.get('origin')}/orders/${order.id}?canceled=true`,
             metadata: {
-                order_id: order.id,
                 buyer_id: user.id,
-                service_id: service.id
+                service_id: service.id,
+                application_fee_amount: applicationFeeAmount,
+                commission_rate: commissionRate
             },
         })
 
