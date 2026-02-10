@@ -1,0 +1,92 @@
+### ============================================================================
+### Stripe Webhook Simulation - REST Client
+### ============================================================================
+### Uso: VS Code REST Client Extension ou similar
+### Nota: Para testes reais, use Stripe CLI (test-webhook-local.sh)
+### ============================================================================
+
+### 1. Simular Webhook Válido (Desenvolvimento)
+POST http://localhost:54321/functions/v1/handle-payment-webhook
+Content-Type: application/json
+stripe-signature: whsec_test_fake_signature_for_dev
+
+{
+  "type": "checkout.session.completed",
+  "data": {
+    "object": {
+      "id": "cs_test_a1b2c3d4e5f6g7h8",
+      "amount_total": 10000,
+      "url": "https://checkout.stripe.com/receipt/test",
+      "metadata": {
+        "order_id": "SUBSTITUA_COM_UUID_REAL_DO_PEDIDO"
+      }
+    }
+  }
+}
+
+### 2. Testar Idempotência (Enviar 2x o mesmo evento)
+### IMPORTANTE: Use o mesmo session_id do teste anterior
+POST http://localhost:54321/functions/v1/handle-payment-webhook
+Content-Type: application/json
+stripe-signature: whsec_test_fake_signature_for_dev
+
+{
+  "type": "checkout.session.completed",
+  "data": {
+    "object": {
+      "id": "cs_test_a1b2c3d4e5f6g7h8",
+      "amount_total": 10000,
+      "url": "https://checkout.stripe.com/receipt/test",
+      "metadata": {
+        "order_id": "SUBSTITUA_COM_UUID_REAL_DO_PEDIDO"
+      }
+    }
+  }
+}
+
+### 3. Testar Assinatura Ausente (Deve retornar 401)
+POST http://localhost:54321/functions/v1/handle-payment-webhook
+Content-Type: application/json
+
+{
+  "type": "checkout.session.completed",
+  "data": {
+    "object": {
+      "id": "cs_test_missing_signature",
+      "amount_total": 5000,
+      "metadata": {
+        "order_id": "test-order-id"
+      }
+    }
+  }
+}
+
+### 4. Testar Metadata Inválida (Deve retornar 400)
+POST http://localhost:54321/functions/v1/handle-payment-webhook
+Content-Type: application/json
+stripe-signature: whsec_test_fake_signature_for_dev
+
+{
+  "type": "checkout.session.completed",
+  "data": {
+    "object": {
+      "id": "cs_test_invalid_metadata",
+      "amount_total": 5000,
+      "metadata": {}
+    }
+  }
+}
+
+### 5. Testar Evento Não-Checkout (Deve retornar 200 e logar)
+POST http://localhost:54321/functions/v1/handle-payment-webhook
+Content-Type: application/json
+stripe-signature: whsec_test_fake_signature_for_dev
+
+{
+  "type": "payment_intent.succeeded",
+  "data": {
+    "object": {
+      "id": "pi_test_123456"
+    }
+  }
+}
