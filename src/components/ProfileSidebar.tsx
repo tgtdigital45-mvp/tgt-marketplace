@@ -48,8 +48,14 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                         )}
                     </div>
 
-                    <h2 className="text-xl font-bold text-gray-900 mb-1">
+                    <h2 className="text-xl font-bold text-gray-900 mb-1 flex items-center justify-center gap-2">
                         {owner?.fullName || company.companyName}
+                        {company.current_plan_tier === 'pro' && (
+                            <Badge variant="primary" size="sm">PRO</Badge>
+                        )}
+                        {company.current_plan_tier === 'agency' && (
+                            <Badge variant="secondary" size="sm">AGENCY</Badge>
+                        )}
                     </h2>
                     <p className="text-gray-500 text-sm mb-4 line-clamp-2">
                         {company.category} • {owner?.location || "Brasil"}

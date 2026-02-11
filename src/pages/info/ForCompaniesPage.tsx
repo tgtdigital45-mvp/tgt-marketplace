@@ -118,24 +118,28 @@ const ForCompaniesPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {/* Plan 1: Free */}
+            {/* Plan 1: Starter */}
             <motion.div
               whileHover={{ y: -5 }}
               className="border border-slate-200 rounded-3xl p-10 bg-white shadow-soft flex flex-col"
             >
-              <h3 className="text-2xl font-bold text-slate-900">Básico</h3>
-              <p className="text-slate-500 mt-2 font-medium">Essencial para sua entrada</p>
+              <h3 className="text-2xl font-bold text-slate-900">Starter</h3>
+              <p className="text-slate-500 mt-2 font-medium">Para quem está começando</p>
               <div className="my-8">
-                <p className="text-4xl font-bold text-slate-900 leading-none">Grátis</p>
-                <p className="text-slate-400 text-sm mt-2">Para sempre</p>
+                <div className="flex items-baseline gap-1">
+                  <p className="text-4xl font-bold text-slate-900">R$ 49,90</p>
+                  <p className="text-slate-500 text-sm font-medium">/mês</p>
+                </div>
+                <p className="text-green-600 text-sm mt-2 font-bold">1º Mês Grátis</p>
               </div>
               <ul className="space-y-4 text-left text-slate-600 mb-10 flex-grow">
-                <li className="flex items-center gap-3"><Check className="text-primary-600" size={20} /><span className="text-sm font-medium">Perfil da Empresa Standard</span></li>
-                <li className="flex items-center gap-3"><Check className="text-primary-600" size={20} /><span className="text-sm font-medium">Até 5 fotos na galeria</span></li>
-                <li className="flex items-center gap-3"><Check className="text-primary-600" size={20} /><span className="text-sm font-medium">Receber avaliações</span></li>
+                <li className="flex items-center gap-3"><Check className="text-primary-600" size={20} /><span className="text-sm font-medium">Taxa de Serviço: 20%</span></li>
+                <li className="flex items-center gap-3"><Check className="text-primary-600" size={20} /><span className="text-sm font-medium">Listagem na busca</span></li>
+                <li className="flex items-center gap-3"><Check className="text-primary-600" size={20} /><span className="text-sm font-medium">5 serviços ativos</span></li>
+                <li className="flex items-center gap-3"><Check className="text-primary-600" size={20} /><span className="text-sm font-medium">Acesso a orçamentos</span></li>
               </ul>
               <Link to="/empresa/cadastro">
-                <Button variant="outline" className="w-full py-4 text-sm font-bold">Começar Agora</Button>
+                <Button variant="outline" className="w-full py-4 text-sm font-bold">Começar Grátis</Button>
               </Link>
             </motion.div>
 
@@ -145,48 +149,48 @@ const ForCompaniesPage: React.FC = () => {
               className="border-2 border-primary-600 rounded-3xl p-10 bg-slate-900 shadow-xl relative flex flex-col md:scale-105"
             >
               <span className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-primary-600 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">Recomendado</span>
-              <h3 className="text-2xl font-bold text-white">Profissional</h3>
+              <h3 className="text-2xl font-bold text-white">TGT Pro</h3>
               <p className="text-slate-400 mt-2 font-medium">Tração e destaque total</p>
               <div className="my-8">
                 <div className="flex items-baseline gap-1">
-                  <p className="text-4xl font-bold text-white">R$ 49</p>
+                  <p className="text-4xl font-bold text-white">R$ 99,90</p>
                   <p className="text-slate-400 text-sm font-medium">/mês</p>
                 </div>
-                <p className="text-primary-400 text-[10px] font-bold uppercase mt-2">Destaque na sua região</p>
+                <p className="text-primary-400 text-[10px] font-bold uppercase mt-2">1º Mês Grátis</p>
               </div>
               <ul className="space-y-4 text-left text-slate-300 mb-10 flex-grow">
-                <li className="flex items-center gap-3"><Check className="text-primary-400" size={20} /><span className="text-sm font-medium">Galeria com até 20 mídias</span></li>
-                <li className="flex items-center gap-3"><Check className="text-primary-400" size={20} /><span className="text-sm font-medium">Responder avaliações</span></li>
+                <li className="flex items-center gap-3"><Check className="text-primary-400" size={20} /><span className="text-sm font-medium">Taxa de Serviço: 12%</span></li>
+                <li className="flex items-center gap-3"><Check className="text-primary-400" size={20} /><span className="text-sm font-medium">Emissor de NF-e Automático</span></li>
                 <li className="flex items-center gap-3"><Check className="text-primary-400" size={20} /><span className="text-sm font-medium">Selo de Verificado</span></li>
-                <li className="flex items-center gap-3"><Check className="text-primary-400" size={20} /><span className="text-sm font-medium">Prioridade nos resultados</span></li>
+                <li className="flex items-center gap-3"><Check className="text-primary-400" size={20} /><span className="text-sm font-medium">Serviços Ilimitados</span></li>
               </ul>
               <Link to="/empresa/cadastro">
                 <Button className="w-full py-4 text-sm font-bold bg-primary-600 hover:bg-primary-700">Escolher Plano Pro</Button>
               </Link>
             </motion.div>
 
-            {/* Plan 3: Enterprise */}
+            {/* Plan 3: Agency */}
             <motion.div
               whileHover={{ y: -5 }}
               className="border border-slate-200 rounded-3xl p-10 bg-white shadow-soft flex flex-col"
             >
-              <h3 className="text-2xl font-bold text-slate-900">Premium</h3>
+              <h3 className="text-2xl font-bold text-slate-900">Agency</h3>
               <p className="text-slate-500 mt-2 font-medium">Escala e exclusividade</p>
               <div className="my-8">
                 <div className="flex items-baseline gap-1">
-                  <p className="text-4xl font-bold text-slate-900">R$ 99</p>
+                  <p className="text-4xl font-bold text-slate-900">R$ 299,90</p>
                   <p className="text-slate-400 text-sm font-medium">/mês</p>
                 </div>
-                <p className="text-slate-400 text-sm mt-2">Solução corporativa</p>
+                <p className="text-green-600 text-sm mt-2 font-bold">1º Mês Grátis</p>
               </div>
               <ul className="space-y-4 text-left text-slate-600 mb-10 flex-grow">
-                <li className="flex items-center gap-3"><Check className="text-primary-600" size={20} /><span className="text-sm font-medium">Galeria de mídia ilimitada</span></li>
-                <li className="flex items-center gap-3"><Check className="text-primary-600" size={20} /><span className="text-sm font-medium">Análise de dados detalhada</span></li>
-                <li className="flex items-center gap-3"><Check className="text-primary-600" size={20} /><span className="text-sm font-medium">Gerente de conta dedicado</span></li>
-                <li className="flex items-center gap-3"><Check className="text-primary-600" size={20} /><span className="text-sm font-medium">Checkout personalizado</span></li>
+                <li className="flex items-center gap-3"><Check className="text-primary-600" size={20} /><span className="text-sm font-medium">Taxa de Serviço: 8%</span></li>
+                <li className="flex items-center gap-3"><Check className="text-primary-600" size={20} /><span className="text-sm font-medium">Menor taxa do mercado</span></li>
+                <li className="flex items-center gap-3"><Check className="text-primary-600" size={20} /><span className="text-sm font-medium">Multi-usuários</span></li>
+                <li className="flex items-center gap-3"><Check className="text-primary-600" size={20} /><span className="text-sm font-medium">Relatórios de Inteligência</span></li>
               </ul>
-              <Link to="/contato">
-                <Button variant="outline" className="w-full py-4 text-sm font-bold">Falar com Consultor</Button>
+              <Link to="/empresa/cadastro">
+                <Button variant="outline" className="w-full py-4 text-sm font-bold">Criar Conta Agency</Button>
               </Link>
             </motion.div>
           </div>

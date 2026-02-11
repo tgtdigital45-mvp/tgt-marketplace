@@ -24,7 +24,7 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const ClientLoginPage = lazy(() => import('./pages/auth/ClientLoginPage'));
 const CompanyLoginPage = lazy(() => import('./pages/auth/CompanyLoginPage'));
 const ClientRegisterPage = lazy(() => import('./pages/auth/ClientRegisterPage'));
-// const CompanyRegisterPage = lazy(() => import('./pages/auth/CompanyRegisterPage')); // Unused
+
 const CompanyRegistrationPage = lazy(() => import('./pages/CompanyRegistrationPage'));
 
 // Client Pages
@@ -46,8 +46,11 @@ const DashboardAvaliacoesPage = lazy(() => import('./pages/pro/DashboardAvaliaco
 const DashboardAgendamentosPage = lazy(() => import('./pages/pro/DashboardAgendamentosPage'));
 const DashboardAgendaPage = lazy(() => import('./pages/pro/DashboardAgendaPage'));
 const DashboardMensagensPage = lazy(() => import('./pages/pro/DashboardMensagensPage'));
-const SubscriptionPage = lazy(() => import('./pages/dashboard/SubscriptionPage'));
+const DashboardSubscriptionPage = lazy(() => import('./pages/pro/DashboardSubscriptionPage'));
 const DashboardConfiguracoesPage = lazy(() => import('./pages/pro/DashboardConfiguracoesPage'));
+const DashboardSupportPage = lazy(() => import('./pages/pro/DashboardSupportPage'));
+const DashboardEquipePage = lazy(() => import('./pages/pro/DashboardEquipePage'));
+const DashboardFaturamentoPage = lazy(() => import('./pages/pro/DashboardFaturamentoPage'));
 
 // Admin Pages
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
@@ -103,7 +106,7 @@ const DashboardRedirect = () => {
 
     if (loading || companyLoading) return <LoadingSpinner />;
 
-    if (!user) return <Navigate to="/login/company" replace />;
+    if (!user) return <Navigate to="/login/empresa" replace />;
 
     if (user.type !== 'company') {
         // Clients don't have a "dashboard" in the same sense, redirect to profile or orders
@@ -112,6 +115,11 @@ const DashboardRedirect = () => {
 
     if (company?.slug) {
         return <Navigate to={`/dashboard/empresa/${company.slug}`} replace />;
+    }
+
+    // Fallback: Use slug from auth profile if CompanyContext is not yet loaded (prevents false positive redirect to registration)
+    if (user.companySlug) {
+        return <Navigate to={`/dashboard/empresa/${user.companySlug}`} replace />;
     }
 
     // Is company user but no company record -> Go to registration
@@ -125,7 +133,7 @@ const MainRoutes = () => {
         <ErrorBoundary>
             <React.Suspense fallback={<LoadingSpinner />}>
                 <AnimatePresence mode="wait">
-                    <Routes location={location} key={location.pathname}>
+                    <Routes location={location}>
                         <Route path="/" element={<AnimatedElement><ClientLandingPage /></AnimatedElement>} />
                         <Route path="/empresas" element={<AnimatedElement><CompaniesListPage /></AnimatedElement>} />
 
@@ -140,7 +148,7 @@ const MainRoutes = () => {
 
                         {/* Auth Routes - Companies */}
                         <Route path="/login/empresa" element={<AnimatedElement><CompanyLoginPage /></AnimatedElement>} />
-                        <Route path="/login/company" element={<AnimatedElement><CompanyLoginPage /></AnimatedElement>} /> {/* Explicit Login Route */}
+                        <Route path="/login/company" element={<Navigate to="/login/empresa" replace />} />
                         <Route path="/empresa/cadastro" element={<AnimatedElement><CompanyRegistrationPage /></AnimatedElement>} />
 
                         {/* Redirect old company registration route to canonical path */}
@@ -157,18 +165,17 @@ const MainRoutes = () => {
                         {/* Company Dashboard Routes - DashboardLayout handles its own outlet, maybe animate layout entry? */}
                         <Route path="/dashboard/empresa/:slug" element={<DashboardLayout />}>
                             <Route index element={<AnimatedElement><DashboardOverviewPage /></AnimatedElement>} />
-                            <Route path="oportunidades" element={<AnimatedElement><ProFindJobsPage /></AnimatedElement>} />
-                            <Route path="oportunidades/:id" element={<AnimatedElement><ProJobDetailsPage /></AnimatedElement>} /> {/* [NEW] */}
                             <Route path="perfil" element={<AnimatedElement><DashboardPerfilPage /></AnimatedElement>} />
                             <Route path="administradores" element={<AnimatedElement><DashboardAdministradoresPage /></AnimatedElement>} />
                             <Route path="servicos" element={<AnimatedElement><DashboardServicosPage /></AnimatedElement>} />
                             <Route path="portfolio" element={<AnimatedElement><DashboardPortfolioPage /></AnimatedElement>} />
                             <Route path="avaliacoes" element={<AnimatedElement><DashboardAvaliacoesPage /></AnimatedElement>} />
-                            <Route path="agendamentos" element={<AnimatedElement><DashboardAgendamentosPage /></AnimatedElement>} />
-                            <Route path="agenda" element={<AnimatedElement><DashboardAgendaPage /></AnimatedElement>} />
                             <Route path="mensagens" element={<AnimatedElement><DashboardMensagensPage /></AnimatedElement>} />
-                            <Route path="assinatura" element={<AnimatedElement><SubscriptionPage /></AnimatedElement>} />
+                            <Route path="assinatura" element={<AnimatedElement><DashboardSubscriptionPage /></AnimatedElement>} />
                             <Route path="configuracoes" element={<AnimatedElement><DashboardConfiguracoesPage /></AnimatedElement>} />
+                            <Route path="suporte" element={<AnimatedElement><DashboardSupportPage /></AnimatedElement>} />
+                            <Route path="equipe" element={<AnimatedElement><DashboardEquipePage /></AnimatedElement>} />
+                            <Route path="faturamento" element={<AnimatedElement><DashboardFaturamentoPage /></AnimatedElement>} />
                         </Route>
 
                         {/* Smart Dashboard Redirect */}

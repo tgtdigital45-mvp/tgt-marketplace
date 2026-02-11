@@ -23,9 +23,12 @@ import {
 } from 'lucide-react';
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
 
+import { CompanyData } from '../../contexts/CompanyContext';
+import { DbPortfolioItem } from '../../types';
+
 // --- Components for Purity UI Profile ---
 
-const ProfileHeaderCard = ({ company, onAvatarChange, uploading }: { company: any, onAvatarChange: (file: File) => void, uploading: boolean }) => {
+const ProfileHeaderCard = ({ company, onAvatarChange, uploading }: { company: CompanyData | null, onAvatarChange: (file: File) => void, uploading: boolean }) => {
   return (
     <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-xl rounded-2xl p-4">
       <div className="px-6">
@@ -107,12 +110,14 @@ const Toggle = ({ label, enabled, onChange }: { label: string, enabled: boolean,
 );
 
 
+
+
 const DashboardPerfilPage: React.FC = () => {
   const { company, loading: companyLoading, refreshCompany } = useCompany();
   const { user } = useAuth();
   const { addToast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [portfolioItems, setPortfolioItems] = useState<any[]>([]);
+  const [portfolioItems, setPortfolioItems] = useState<DbPortfolioItem[]>([]);
 
   // Form State
   const [formData, setFormData] = useState({

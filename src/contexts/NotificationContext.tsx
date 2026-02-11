@@ -14,10 +14,17 @@ interface NotificationContextType {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
     const isMounted = React.useRef(true);
+
+    useEffect(() => {
+        isMounted.current = true;
+        return () => {
+            isMounted.current = false;
+        };
+    }, []);
 
     useEffect(() => {
         isMounted.current = true;
@@ -34,6 +41,32 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
             }
             return;
         }
+
+        const fetchNotifications = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('notifications')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false })
+                    .limit(50);
+
+                if (error) throw error;
+                if (isMounted.current) setNotifications(data || []);
+            } catch (err: any) {
+                const error = err as Error;
+                if (error.name === 'AbortError' || error.message?.includes('aborted')) return;
+                console.error('Error fetching notifications:', error);
+
+                // Critical: Check for JWT expiration
+                if ((err as any)?.code === 'PGRST303' || error.message?.includes('JWT expired')) {
+                    console.warn("NotificationContext: JWT expired. Triggering logout.");
+                    logout(); // Trigger context logout
+                }
+            } finally {
+                if (isMounted.current) setLoading(false);
+            }
+        };
 
         // Fetch initial notifications
         fetchNotifications();
@@ -81,29 +114,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
             console.log(`Unsubscribing from channel: ${channelName}`);
             supabase.removeChannel(channel);
         };
-    }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    const fetchNotifications = async () => {
-        if (!user) return;
-
-        try {
-            const { data, error } = await supabase
-                .from('notifications')
-                .select('*')
-                .eq('user_id', user.id)
-                .order('created_at', { ascending: false })
-                .limit(50);
-
-            if (error) throw error;
-            if (isMounted.current) setNotifications(data || []);
-        } catch (err) {
-            const error = err as Error;
-            if (error.name === 'AbortError' || error.message?.includes('aborted')) return;
-            console.error('Error fetching notifications:', error);
-        } finally {
-            if (isMounted.current) setLoading(false);
-        }
-    };
+    }, [user]);
 
     const markAsRead = async (id: string) => {
         try {

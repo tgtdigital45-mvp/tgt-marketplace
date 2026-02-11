@@ -214,7 +214,7 @@ const DashboardOverviewPage: React.FC = () => {
                     <h3 className="text-lg font-bold text-gray-800 mb-1">Histórico de Vendas</h3>
                     <p className="text-sm text-gray-500 mb-6">Últimos 6 meses</p>
 
-                    <div className="w-full" style={{ height: 300 }}>
+                    <div className="w-full h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={chartData}>
                                 <defs>
@@ -239,7 +239,7 @@ const DashboardOverviewPage: React.FC = () => {
                         <h3 className="text-lg font-bold mb-2">Pedidos Realizados</h3>
                         <p className="text-white/80 text-sm mb-6">Volume mensal</p>
 
-                        <div className="w-full" style={{ height: 220 }}>
+                        <div className="w-full h-[220px]">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={chartData}>
                                     <Bar dataKey="orders_count" fill="rgba(255,255,255,0.8)" radius={[4, 4, 0, 0]} barSize={8} />

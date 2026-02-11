@@ -35,6 +35,7 @@ const CompanyRegistrationPage: React.FC = () => {
     adminEmail: '',
     password: '',
     confirmPassword: '',
+    selectedPlan: '' // 'starter' | 'pro' | 'agency'
   });
   const [logo, setLogo] = useState<File | null>(null);
   const [coverImage, setCoverImage] = useState<File | null>(null);
@@ -91,9 +92,18 @@ const CompanyRegistrationPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   }
 
+  const validateStep4 = () => {
+    if (!formData.selectedPlan) {
+      setErrors(prev => ({ ...prev, selectedPlan: 'Por favor, selecione um plano para continuar.' }));
+      return false;
+    }
+    return true;
+  }
+
   const handleNext = () => {
     if (step === 1 && validateStep1()) setStep(2);
     if (step === 2 && validateStep2()) setStep(3);
+    if (step === 3 && validateStep3()) setStep(4);
     window.scrollTo(0, 0);
   };
 
@@ -145,12 +155,13 @@ const CompanyRegistrationPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
-    if (!validateStep3()) return;
+    if (!validateStep4()) return; // Validação final
 
     if (isLoading) return; // Prevent double clicks
     setIsLoading(true);
 
     try {
+      // 1. Create Auth User
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.adminEmail,
         password: formData.password,
@@ -169,6 +180,7 @@ const CompanyRegistrationPage: React.FC = () => {
 
       const userId = authData.user.id;
 
+      // 2. Upload Files
       let logoUrl = '';
       let coverUrl = '';
       let cnpjUrl = '';
@@ -185,6 +197,7 @@ const CompanyRegistrationPage: React.FC = () => {
         .replace(/-+/g, '-')
         .replace(/^-+|-+$/g, '');
 
+      // 3. Create Company Record
       const { error: dbError } = await supabase.from('companies').insert({
         profile_id: userId,
         slug: slug,
@@ -212,20 +225,55 @@ const CompanyRegistrationPage: React.FC = () => {
         logo_url: logoUrl,
         cover_image_url: coverUrl,
         cnpj_document_url: cnpjUrl,
-        status: 'active'
+        status: 'active', // TODO: Maybe 'pending_payment' if plan is paid?
+        current_plan_tier: 'starter', // Default to starter until paid, or update webhook to set.
+        // For paid plans, we will redirect to checkout.
       });
 
       if (dbError) {
         console.error("Database Insert Error:", dbError);
+        throw dbError;
       }
 
+      addToast('Cadastro realizado! Redirecionando para pagamento...', 'success');
+
+      // 4. Redirect to Stripe Checkout
+      // Placeholder IDs - SHOULD be environment variables
+      const PRICES = {
+        'starter': 'price_1Q...',
+        'pro': 'price_1Q...',
+        'agency': 'price_1Q...'
+      };
+
+      const selectedPriceId = PRICES[formData.selectedPlan as keyof typeof PRICES];
+
+      if (selectedPriceId) {
+        const { data, error } = await supabase.functions.invoke('create-subscription-checkout', {
+          body: {
+            priceId: selectedPriceId,
+            userId: userId, // We need to pass userId because auth session might not be fully established/propagated or we want to be explicit
+            successUrl: `${window.location.origin}/dashboard/empresa/${slug}/inicio?session_id={CHECKOUT_SESSION_ID}`,
+            cancelUrl: `${window.location.origin}/dashboard/empresa/${slug}/assinatura`,
+            companyId: null // We don't have company ID yet returned easily, but the Function can look it up by userId or we can fetch it. 
+            // Actually, since we just inserted, we can try to get it. 
+            // For simplicity in registration, maybe pass metadata to Stripe to update the company/user later via webhook.
+          }
+        });
+
+        if (error) {
+          console.error('Checkout error:', error);
+          // Fallback to login if checkout fails
+          setTimeout(() => navigate('/login/empresa'), 2000);
+        } else if (data?.url) {
+          window.location.href = data.url;
+          return;
+        }
+      }
+
+      // If free plan or no checkout url (fallback)
       if (authData.session) {
         await supabase.auth.signOut();
       }
-
-      addToast('Cadastro realizado com sucesso! Redirecionando...', 'success');
-
-      // Delay for UX
       setTimeout(() => {
         navigate('/login/empresa', { replace: true });
       }, 1500);
@@ -233,10 +281,10 @@ const CompanyRegistrationPage: React.FC = () => {
     } catch (err) {
       console.error("Registration Error", err);
       const message = err instanceof Error ? err.message : "";
-      if (message.includes("User already registered") || message.includes("already registered")) {
-        addToast('Este CNPJ/Email já possui cadastro. Por favor, acesse a área de login.', 'error');
+      if (message.includes("User already registered")) {
+        addToast('CNPJ/Email já cadastrado.', 'error');
       } else {
-        addToast(message || 'Erro ao registrar empresa.', 'error');
+        addToast('Erro ao registrar. Tente novamente.', 'error');
       }
     } finally {
       setIsLoading(false);
@@ -345,155 +393,250 @@ const CompanyRegistrationPage: React.FC = () => {
                     </div>
                     {/* Step 3 */}
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${step >= 3 ? 'bg-brand-primary text-white ring-4 ring-brand-primary/20' : 'bg-gray-200 text-gray-500'}`}>
-                      3
+                      {step > 3 ? <Check className="w-5 h-5" /> : '3'}
+                    </div>
+                    {/* Step 4 */}
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${step >= 4 ? 'bg-brand-primary text-white ring-4 ring-brand-primary/20' : 'bg-gray-200 text-gray-500'}`}>
+                      4
                     </div>
                   </div>
                 </div>
+                <div className="flex justify-between w-full max-w-sm mx-auto mt-2 text-xs font-medium text-gray-500">
+                  <span>Dados</span>
+                  <span>Endereço</span>
+                  <span>Acesso</span>
+                  <span>Plano</span>
+                </div>
               </div>
-              <div className="flex justify-between w-full max-w-xs mx-auto mt-2 text-xs font-medium text-gray-500">
-                <span>Dados Gerais</span>
-                <span>Endereço</span>
-                <span>Acesso</span>
-              </div>
-            </div>
 
-            <form onSubmit={(e) => e.preventDefault()}>
-              {step === 1 && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-right duration-500">
-                  <h3 className="text-xl font-bold text-gray-800 border-l-4 border-brand-primary pl-3">Dados da Empresa</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Input label="Nome Fantasia" name="companyName" placeholder="Ex: TGT Soluções" value={formData.companyName} onChange={handleChange} error={errors.companyName} required />
-                    <Input label="Razão Social" name="legalName" placeholder="Razão social completa" value={formData.legalName} onChange={handleChange} error={errors.legalName} required />
-                    <Input label="CNPJ" name="cnpj" placeholder="00.000.000/0000-00" value={formData.cnpj} onChange={handleChange} error={errors.cnpj} required />
-                    <Input label="Email Público" name="email" type="email" placeholder="contato@empresa.com" value={formData.email} onChange={handleChange} error={errors.email} required />
-                    <Input label="Telefone" name="phone" type="tel" placeholder="(00) 00000-0000" value={formData.phone} onChange={handleChange} error={errors.phone} />
-                    <Input label="Website" name="website" placeholder="www.suaempresa.com.br" value={formData.website} onChange={handleChange} error={errors.website} />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <form onSubmit={(e) => e.preventDefault()}>
+                {step === 1 && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-right duration-500">
+                    <h3 className="text-xl font-bold text-gray-800 border-l-4 border-brand-primary pl-3">Dados da Empresa</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <Input label="Nome Fantasia" name="companyName" placeholder="Ex: TGT Soluções" value={formData.companyName} onChange={handleChange} error={errors.companyName} required />
+                      <Input label="Razão Social" name="legalName" placeholder="Razão social completa" value={formData.legalName} onChange={handleChange} error={errors.legalName} required />
+                      <Input label="CNPJ" name="cnpj" placeholder="00.000.000/0000-00" value={formData.cnpj} onChange={handleChange} error={errors.cnpj} required />
+                      <Input label="Email Público" name="email" type="email" placeholder="contato@empresa.com" value={formData.email} onChange={handleChange} error={errors.email} required />
+                      <Input label="Telefone" name="phone" type="tel" placeholder="(00) 00000-0000" value={formData.phone} onChange={handleChange} error={errors.phone} />
+                      <Input label="Website" name="website" placeholder="www.suaempresa.com.br" value={formData.website} onChange={handleChange} error={errors.website} />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+                        <select
+                          id="category"
+                          name="category"
+                          value={formData.category}
+                          onChange={handleChange}
+                          className={`appearance-none block w-full px-3 py-2 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary sm:text-sm ${errors.category ? 'border-red-500' : ''}`}
+                        >
+                          <option value="">Selecione uma categoria</option>
+                          {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                        </select>
+                        {errors.category && <p className="mt-1 text-xs text-red-500">{errors.category}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Uploads</label>
+                        <div className="text-xs text-gray-500">Prepare seu logo e capa para o próximo passo.</div>
+                      </div>
+                    </div>
+
                     <div>
-                      <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
-                      <select
-                        id="category"
-                        name="category"
-                        value={formData.category}
+                      <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Breve Descrição</label>
+                      <textarea
+                        id="description"
+                        name="description"
+                        rows={3}
+                        placeholder="Descreva seus serviços e diferenciais..."
+                        value={formData.description}
                         onChange={handleChange}
-                        className={`appearance-none block w-full px-3 py-2 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary sm:text-sm ${errors.category ? 'border-red-500' : ''}`}
+                        className="appearance-none block w-full px-3 py-2 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary sm:text-sm"
+                      ></textarea>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Logo</label>
+                        <FileUpload id="logo-upload" accept="image/jpeg,image/png" maxSizeMb={5} onFileChange={handleFileChange(setLogo, 'logo')} />
+                        {errors.logo && <p className="mt-1 text-xs text-red-500">{errors.logo}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Imagem de Capa</label>
+                        <FileUpload id="cover-upload" accept="image/jpeg,image/png" maxSizeMb={10} onFileChange={handleFileChange(setCoverImage, 'coverImage')} />
+                        {errors.coverImage && <p className="mt-1 text-xs text-red-500">{errors.coverImage}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Doc. CNPJ (PDF/Img)</label>
+                        <FileUpload id="cnpj-upload" accept="application/pdf,image/jpeg,image/png" maxSizeMb={10} onFileChange={handleFileChange(setCnpjDocument, 'cnpjDocument')} />
+                        {errors.cnpjDocument && <p className="mt-1 text-xs text-red-500">{errors.cnpjDocument}</p>}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {step === 2 && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-right duration-500">
+                    <h3 className="text-xl font-bold text-gray-800 border-l-4 border-brand-primary pl-3">Endereço Comercial</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <Input label="CEP" name="cep" placeholder="00000-000" value={formData.cep} onChange={handleChange} onBlur={handleCepBlur} error={errors.cep} required />
+                      <Input label="Rua" name="street" value={formData.street} onChange={handleChange} error={errors.street} required />
+                      <Input label="Número" name="number" value={formData.number} onChange={handleChange} error={errors.number} />
+                      <Input label="Bairro" name="district" value={formData.district} onChange={handleChange} error={errors.district} />
+                      <Input label="Cidade" name="city" value={formData.city} onChange={handleChange} error={errors.city} required />
+                      <Input label="Estado" name="state" value={formData.state} onChange={handleChange} error={errors.state} required />
+                    </div>
+                  </div>
+                )}
+
+                {step === 3 && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-right duration-500">
+                    <h3 className="text-xl font-bold text-gray-800 border-l-4 border-brand-primary pl-3">Administrador da Conta</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <Input label="Nome do Responsável" name="adminName" placeholder="Nome completo" value={formData.adminName} onChange={handleChange} error={errors.adminName} required />
+                      <Input label="CPF do Responsável" name="adminCpf" placeholder="000.000.000-00" value={formData.adminCpf} onChange={handleChange} error={errors.adminCpf} required />
+                      <div className="md:col-span-2">
+                        <Input label="Email de Login (Admin)" name="adminEmail" type="email" placeholder="Seu email de acesso" value={formData.adminEmail} onChange={handleChange} error={errors.adminEmail} required />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <Input label="Senha" name="password" type="password" placeholder="Mínimo 6 caracteres" value={formData.password} onChange={handleChange} error={errors.password} required />
+                      <Input label="Confirmar Senha" name="confirmPassword" type="password" placeholder="Repita a senha" value={formData.confirmPassword} onChange={handleChange} error={errors.confirmPassword} required />
+                    </div>
+
+                    <div className="flex items-center text-xs text-gray-500 bg-gray-50 p-3 rounded-lg mt-4">
+                      <svg className="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                      <div>
+                        <p className="font-semibold text-gray-700">Segurança Garantida</p>
+                        <p>Seus dados são criptografados e armazenados com segurança.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {step === 4 && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-right duration-500">
+                    <h3 className="text-xl font-bold text-gray-800 border-l-4 border-brand-primary pl-3">Escolha seu Plano</h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Selecione o plano ideal para iniciar. Você terá <strong>30 dias grátis</strong> para experimentar.
+                    </p>
+
+                    <div className="grid grid-cols-1 gap-4">
+                      {/* Starter */}
+                      <div
+                        className={`relative border-2 rounded-xl p-4 cursor-pointer transition-all ${formData.selectedPlan === 'starter' ? 'border-brand-primary bg-brand-primary/5' : 'border-gray-200 hover:border-brand-primary/50'}`}
+                        onClick={() => setFormData(prev => ({ ...prev, selectedPlan: 'starter' }))}
                       >
-                        <option value="">Selecione uma categoria</option>
-                        {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                      </select>
-                      {errors.category && <p className="mt-1 text-xs text-red-500">{errors.category}</p>}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Uploads</label>
-                      <div className="text-xs text-gray-500">Prepare seu logo e capa para o próximo passo.</div>
-                    </div>
-                  </div>
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h4 className="font-bold text-gray-900">Starter</h4>
+                            <p className="text-sm text-gray-500">Para quem está começando</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-lg">R$ 49,90<span className="text-sm font-normal text-gray-500">/mês</span></p>
+                          </div>
+                        </div>
+                        <ul className="mt-3 space-y-1 text-sm text-gray-600">
+                          <li className="flex items-center"><Check className="w-4 h-4 text-green-500 mr-2" /> 20% de Taxa</li>
+                          <li className="flex items-center"><Check className="w-4 h-4 text-green-500 mr-2" /> 5 Serviços Ativos</li>
+                        </ul>
+                        {formData.selectedPlan === 'starter' && (
+                          <div className="absolute top-2 right-2 w-6 h-6 bg-brand-primary rounded-full flex items-center justify-center">
+                            <Check className="w-4 h-4 text-white" />
+                          </div>
+                        )}
+                      </div>
 
-                  <div>
-                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Breve Descrição</label>
-                    <textarea
-                      id="description"
-                      name="description"
-                      rows={3}
-                      placeholder="Descreva seus serviços e diferenciais..."
-                      value={formData.description}
-                      onChange={handleChange}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary sm:text-sm"
-                    ></textarea>
-                  </div>
+                      {/* Pro */}
+                      <div
+                        className={`relative border-2 rounded-xl p-4 cursor-pointer transition-all ${formData.selectedPlan === 'pro' ? 'border-brand-primary bg-brand-primary/5' : 'border-gray-200 hover:border-brand-primary/50'}`}
+                        onClick={() => setFormData(prev => ({ ...prev, selectedPlan: 'pro' }))}
+                      >
+                        <div className="absolute -top-3 left-4 bg-brand-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Recomendado</div>
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h4 className="font-bold text-gray-900">TGT Pro</h4>
+                            <p className="text-sm text-gray-500">Mais visibilidade</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-lg">R$ 99,90<span className="text-sm font-normal text-gray-500">/mês</span></p>
+                          </div>
+                        </div>
+                        <ul className="mt-3 space-y-1 text-sm text-gray-600">
+                          <li className="flex items-center"><Check className="w-4 h-4 text-green-500 mr-2" /> 12% de Taxa</li>
+                          <li className="flex items-center"><Check className="w-4 h-4 text-green-500 mr-2" /> Serviços Ilimitados</li>
+                          <li className="flex items-center"><Check className="w-4 h-4 text-green-500 mr-2" /> Selo Verificado</li>
+                        </ul>
+                        {formData.selectedPlan === 'pro' && (
+                          <div className="absolute top-2 right-2 w-6 h-6 bg-brand-primary rounded-full flex items-center justify-center">
+                            <Check className="w-4 h-4 text-white" />
+                          </div>
+                        )}
+                      </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Logo</label>
-                      <FileUpload id="logo-upload" accept="image/jpeg,image/png" maxSizeMb={5} onFileChange={handleFileChange(setLogo, 'logo')} />
-                      {errors.logo && <p className="mt-1 text-xs text-red-500">{errors.logo}</p>}
+                      {/* Agency */}
+                      <div
+                        className={`relative border-2 rounded-xl p-4 cursor-pointer transition-all ${formData.selectedPlan === 'agency' ? 'border-brand-primary bg-brand-primary/5' : 'border-gray-200 hover:border-brand-primary/50'}`}
+                        onClick={() => setFormData(prev => ({ ...prev, selectedPlan: 'agency' }))}
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h4 className="font-bold text-gray-900">Agency</h4>
+                            <p className="text-sm text-gray-500">Para alto volume</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-lg">R$ 299,90<span className="text-sm font-normal text-gray-500">/mês</span></p>
+                          </div>
+                        </div>
+                        <ul className="mt-3 space-y-1 text-sm text-gray-600">
+                          <li className="flex items-center"><Check className="w-4 h-4 text-green-500 mr-2" /> 8% de Taxa</li>
+                          <li className="flex items-center"><Check className="w-4 h-4 text-green-500 mr-2" /> Multi-usuários e Relatórios</li>
+                        </ul>
+                        {formData.selectedPlan === 'agency' && (
+                          <div className="absolute top-2 right-2 w-6 h-6 bg-brand-primary rounded-full flex items-center justify-center">
+                            <Check className="w-4 h-4 text-white" />
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Imagem de Capa</label>
-                      <FileUpload id="cover-upload" accept="image/jpeg,image/png" maxSizeMb={10} onFileChange={handleFileChange(setCoverImage, 'coverImage')} />
-                      {errors.coverImage && <p className="mt-1 text-xs text-red-500">{errors.coverImage}</p>}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Doc. CNPJ (PDF/Img)</label>
-                      <FileUpload id="cnpj-upload" accept="application/pdf,image/jpeg,image/png" maxSizeMb={10} onFileChange={handleFileChange(setCnpjDocument, 'cnpjDocument')} />
-                      {errors.cnpjDocument && <p className="mt-1 text-xs text-red-500">{errors.cnpjDocument}</p>}
-                    </div>
-                  </div>
-                </div>
-              )}
 
-              {step === 2 && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-right duration-500">
-                  <h3 className="text-xl font-bold text-gray-800 border-l-4 border-brand-primary pl-3">Endereço Comercial</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Input label="CEP" name="cep" placeholder="00000-000" value={formData.cep} onChange={handleChange} onBlur={handleCepBlur} error={errors.cep} required />
-                    <Input label="Rua" name="street" value={formData.street} onChange={handleChange} error={errors.street} required />
-                    <Input label="Número" name="number" value={formData.number} onChange={handleChange} error={errors.number} />
-                    <Input label="Bairro" name="district" value={formData.district} onChange={handleChange} error={errors.district} />
-                    <Input label="Cidade" name="city" value={formData.city} onChange={handleChange} error={errors.city} required />
-                    <Input label="Estado" name="state" value={formData.state} onChange={handleChange} error={errors.state} required />
+                    {errors.selectedPlan && <p className="text-sm text-red-500 font-medium mt-2">{errors.selectedPlan}</p>}
                   </div>
-                </div>
-              )}
-
-              {step === 3 && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-right duration-500">
-                  <h3 className="text-xl font-bold text-gray-800 border-l-4 border-brand-primary pl-3">Administrador da Conta</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Input label="Nome do Responsável" name="adminName" placeholder="Nome completo" value={formData.adminName} onChange={handleChange} error={errors.adminName} required />
-                    <Input label="CPF do Responsável" name="adminCpf" placeholder="000.000.000-00" value={formData.adminCpf} onChange={handleChange} error={errors.adminCpf} required />
-                    <div className="md:col-span-2">
-                      <Input label="Email de Login (Admin)" name="adminEmail" type="email" placeholder="Seu email de acesso" value={formData.adminEmail} onChange={handleChange} error={errors.adminEmail} required />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Input label="Senha" name="password" type="password" placeholder="Mínimo 6 caracteres" value={formData.password} onChange={handleChange} error={errors.password} required />
-                    <Input label="Confirmar Senha" name="confirmPassword" type="password" placeholder="Repita a senha" value={formData.confirmPassword} onChange={handleChange} error={errors.confirmPassword} required />
-                  </div>
-
-                  <div className="flex items-center text-xs text-gray-500 bg-gray-50 p-3 rounded-lg mt-4">
-                    <svg className="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                    <div>
-                      <p className="font-semibold text-gray-700">Segurança Garantida</p>
-                      <p>Seus dados são criptografados e armazenados com segurança.</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="mt-8 flex justify-between items-center border-t border-gray-100 pt-6">
-                {step > 1 ? (
-                  <Button type="button" variant="outline" onClick={handleBack}>
-                    Voltar
-                  </Button>
-                ) : (
-                  <div />
                 )}
 
-                {step < 3 ? (
-                  <Button type="button" onClick={handleNext} className="flex items-center">
-                    Próximo Passo <ChevronRight className="w-4 h-4 ml-1" />
-                  </Button>
-                ) : (
-                  <Button type="button" onClick={(e) => handleSubmit(e)} isLoading={isLoading} disabled={isLoading} size="lg" className="px-8">
-                    {isLoading ? 'Criando conta...' : 'Finalizar Cadastro'}
-                  </Button>
-                )}
+                <div className="mt-8 flex justify-between items-center border-t border-gray-100 pt-6">
+                  {step > 1 ? (
+                    <Button type="button" variant="outline" onClick={handleBack}>
+                      Voltar
+                    </Button>
+                  ) : (
+                    <div />
+                  )}
+
+                  {step < 4 ? (
+                    <Button type="button" onClick={handleNext} className="flex items-center">
+                      Próximo Passo <ChevronRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  ) : (
+                    <Button type="button" onClick={(e) => handleSubmit(e)} isLoading={isLoading} disabled={isLoading} size="lg" className="px-8 bg-green-600 hover:bg-green-700">
+                      {isLoading ? 'Processando...' : 'Finalizar e Ir para Pagamento'}
+                    </Button>
+                  )}
+                </div>
+              </form>
+
+              <div className="mt-8 text-center">
+                <p className="text-sm text-gray-600">
+                  Já tem cadastro?{' '}
+                  <Link to="/login/empresa" className="font-bold text-brand-primary hover:text-brand-primary/80">
+                    Acessar Minha Conta
+                  </Link>
+                </p>
               </div>
-            </form>
 
-            <div className="mt-8 text-center">
-              <p className="text-sm text-gray-600">
-                Já tem cadastro?{' '}
-                <Link to="/login/empresa" className="font-bold text-brand-primary hover:text-brand-primary/80">
-                  Acessar Minha Conta
-                </Link>
-              </p>
             </div>
-
           </div>
         </div>
       </div>

@@ -3,10 +3,11 @@ import React from 'react';
 interface BadgeProps {
     children: React.ReactNode;
     variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
+    size?: 'sm' | 'md' | 'lg';
     className?: string;
 }
 
-const Badge: React.FC<BadgeProps> = ({ children, variant = 'primary', className = '' }) => {
+const Badge: React.FC<BadgeProps> = ({ children, variant = 'primary', size = 'md', className = '' }) => {
     const variants = {
         primary: 'bg-primary-100 text-primary-800',
         secondary: 'bg-gray-100 text-gray-800',
@@ -16,8 +17,14 @@ const Badge: React.FC<BadgeProps> = ({ children, variant = 'primary', className 
         info: 'bg-blue-100 text-blue-800',
     };
 
+    const sizes = {
+        sm: 'px-2 py-0.5 text-[10px]',
+        md: 'px-2.5 py-0.5 text-xs',
+        lg: 'px-3 py-1 text-sm',
+    };
+
     return (
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${variants[variant]} ${className}`}>
+        <span className={`inline-flex items-center rounded-full font-medium ${variants[variant]} ${sizes[size]} ${className}`}>
             {children}
         </span>
     );

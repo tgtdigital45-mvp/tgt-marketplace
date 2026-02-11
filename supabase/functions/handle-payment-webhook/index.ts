@@ -335,6 +335,7 @@ serve(async (req) => {
             let commissionRate = 0.20
 
             // TODO: Map your actual Stripe Product IDs here
+            // These are placeholders. Update them in your Supabase Dashboard -> Edge Functions -> Secrets
             const PRO_PRODUCT_ID = Deno.env.get('STRIPE_PRODUCT_ID_PRO') || 'prod_pro_placeholder'
             const AGENCY_PRODUCT_ID = Deno.env.get('STRIPE_PRODUCT_ID_AGENCY') || 'prod_agency_placeholder'
 
@@ -345,9 +346,16 @@ serve(async (req) => {
                 } else if (productId === PRO_PRODUCT_ID) {
                     planTier = 'pro'
                     commissionRate = 0.12
+                } else {
+                    // Fallback if price doesn't match known tiers but is active (maybe a legacy plan or new one)
+                    // Keep existing or default to basic paid? 
+                    // For now, let's assume if it's not PRO or AGENCY, it might be a custom tier or we default to starter/error.
+                    console.warn(`Unknown product ID: ${productId}, defaulting to starter stats but keeping status active.`)
+                    planTier = 'starter'
+                    commissionRate = 0.20
                 }
             } else {
-                // canceled, unpaid, etc -> revert to free/starter
+                // canceled, unpaid, past_due -> revert to free/starter
                 planTier = 'starter'
                 commissionRate = 0.20
             }

@@ -292,7 +292,7 @@ const StepGallery = ({ data, updateData }: any) => {
     );
 };
 
-const ServiceWizard = ({ onCancel }: { onCancel?: () => void }) => {
+const ServiceWizard = ({ onCancel, initialData, onSuccess }: { onCancel?: () => void, initialData?: any, onSuccess?: () => void }) => {
     const { user } = useAuth();
     const { addToast } = useToast();
     const navigate = useNavigate();
@@ -300,13 +300,15 @@ const ServiceWizard = ({ onCancel }: { onCancel?: () => void }) => {
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<any>({});
     const [formData, setFormData] = useState({
-        title: '',
-        category: '',
-        description: '',
-        tags: '',
-        packages: {} as ServicePackages,
-        gallery: [] as string[]
+        title: initialData?.title || '',
+        category: initialData?.category || '', // You might need to map this if it's an object in DB
+        description: initialData?.description || '',
+        tags: initialData?.tags || '', // tags might not exist in Service type yet, check schema
+        packages: initialData?.packages || {} as ServicePackages,
+        gallery: initialData?.gallery || [] as string[]
     });
+
+    const isEditing = !!initialData;
 
     const steps = [
         { title: 'Visão Geral', component: StepOverview },
@@ -332,58 +334,56 @@ const ServiceWizard = ({ onCancel }: { onCancel?: () => void }) => {
 
         setLoading(true);
         try {
-            // Get company ID for the user
-            const { data: companyData, error: companyError } = await supabase
-                .from('companies')
-                .select('id')
-                .eq('profile_id', user.id) // Corrected column name to match schema
-                .single();
-
-            // Fallback if owner_id not used, try to find by email or just insert if we know the user is type company
-            // User type check
-            if (user.type !== 'company') {
-                throw new Error("Apenas empresas podem criar serviços.");
-            }
-
-            // For MVP, if we can't find company linked, we might have an issue. 
-            // But let's assume one company per user for now or user.companySlug
-
-            // Actually, let's try to get company_id from a known profile or just standard
-            // In types.ts, User has companySlug. 
-            // We need company_id for the service foreign key.
-
-            let companyId = companyData?.id;
-
-            if (!companyId) {
-                // Try fetching by user id from another table or profile?
-                // Let's assume there's a way. If not, we might fail. 
-                // Let's rely on user.companySlug to fetch company
-                if (user.companySlug) {
-                    const { data: cData } = await supabase.from('companies').select('id').eq('slug', user.companySlug).single();
-                    companyId = cData?.id;
-                }
-            }
-
-            if (!companyId) throw new Error("Perfil de empresa não encontrado.");
-
             const startingPrice = calculateStartingPrice();
-
-            const { error } = await supabase.from('services').insert({
-                company_id: companyId,
+            const payload = {
                 title: formData.title,
                 description: formData.description,
                 price: startingPrice, // Legacy field
                 starting_price: startingPrice,
-                duration: formData.packages.basic?.delivery_time + ' dias', // Legacy fallback
+                duration: (formData.packages as any)?.basic?.delivery_time + ' dias', // Legacy fallback
                 packages: formData.packages,
                 gallery: formData.gallery
-            });
+            };
 
-            if (error) throw error;
+            if (isEditing) {
+                const { error } = await supabase
+                    .from('services')
+                    .update(payload)
+                    .eq('id', initialData.id);
 
-            addToast("Serviço criado com sucesso!", "success");
-            navigate(`/dashboard/empresa/${user.companySlug || 'me'}/servicos`);
+                if (error) throw error;
+                addToast("Serviço atualizado com sucesso!", "success");
+            } else {
+                // Get company ID logic (same as before)
+                const { data: companyData } = await supabase
+                    .from('companies')
+                    .select('id')
+                    .eq('profile_id', user.id)
+                    .single();
 
+                let companyId = companyData?.id;
+                if (!companyId && user.companySlug) {
+                    const { data: cData } = await supabase.from('companies').select('id').eq('slug', user.companySlug).single();
+                    companyId = cData?.id;
+                }
+
+                if (!companyId) throw new Error("Perfil de empresa não encontrado.");
+
+                const { error } = await supabase.from('services').insert({
+                    company_id: companyId,
+                    ...payload
+                });
+
+                if (error) throw error;
+                addToast("Serviço criado com sucesso!", "success");
+            }
+
+            if (onSuccess) {
+                onSuccess();
+            } else {
+                // Default behavior if no callback
+                navigate(`/dashboard/empresa/${user.companySlug || 'me'}/servicos`);
+            }
         } catch (error: any) {
             console.error(error);
             addToast(error.message || "Erro ao salvar serviço.", "error");
@@ -480,7 +480,7 @@ const ServiceWizard = ({ onCancel }: { onCancel?: () => void }) => {
                     {currentStep === 0 ? 'Cancelar' : 'Voltar'}
                 </Button>
                 <Button variant="primary" onClick={handleNext} isLoading={loading}>
-                    {currentStep === steps.length - 1 ? 'Publicar Serviço' : 'Próximo'}
+                    {currentStep === steps.length - 1 ? (isEditing ? 'Salvar Alterações' : 'Publicar Serviço') : 'Próximo'}
                 </Button>
             </div>
         </div>

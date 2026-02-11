@@ -38,11 +38,11 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ isTransparentMode = false }
             >
                 <OptimizedImage
                     className="h-9 w-9 rounded-full object-cover ring-2 ring-transparent group-hover:ring-brand-primary/20 transition-all"
-                    src={(user.type === 'company' && company?.logo_url) || user.avatar || `https://i.pravatar.cc/150?u=${user.id}`}
-                    alt={(user.type === 'company' && company?.company_name) || user.name}
+                    src={company?.logo_url || user.avatar || `https://i.pravatar.cc/150?u=${user.id}`}
+                    alt={company?.company_name || user.name}
                 />
                 <span className={`text-sm font-medium transition-colors max-w-[100px] truncate ${textColor}`}>
-                    {(user.type === 'company' && company?.company_name) || user.name.split(' ')[0]}
+                    {company?.company_name || user.name.split(' ')[0]}
                 </span>
                 <svg className={`h-4 w-4 transition-transform duration-200 ${iconColor} ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -80,7 +80,7 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ isTransparentMode = false }
                         )}
                         {user.type === 'company' && (
                             <>
-                                <Link to="/dashboard" onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                <Link to={(company?.slug || user.companySlug) ? `/dashboard/empresa/${company?.slug || user.companySlug}` : "/dashboard"} onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                                     Dashboard
                                 </Link>
                                 <Link to={(company?.slug || user.companySlug) ? `/empresa/${company?.slug || user.companySlug}` : "/empresa/meu-negocio"} onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">

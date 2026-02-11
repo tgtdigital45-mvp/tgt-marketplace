@@ -1,59 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+
 import { useToast } from '../../contexts/ToastContext';
 import { Service } from '../../types';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 
-const ServiceModal: React.FC<{
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (service: Omit<Service, 'id'> & { id?: string }) => Promise<void>;
-  service: Service | null;
-  isLoading: boolean;
-}> = ({ isOpen, onClose, onSave, service, isLoading }) => {
-  const [title, setTitle] = useState(service?.title || '');
-  const [description, setDescription] = useState(service?.description || '');
-  const [price, setPrice] = useState(service?.price || 0);
-  const [duration, setDuration] = useState(service?.duration || '');
 
-  if (!isOpen) return null;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await onSave({
-      id: service?.id,
-      title,
-      description,
-      price: Number(price),
-      duration
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-        <h2 className="text-xl font-bold mb-4">{service ? 'Editar Serviço' : 'Adicionar Serviço'}</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input label="Título do Serviço" value={title} onChange={e => setTitle(e.target.value)} required />
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Descrição</label>
-            <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className="mt-1 shadow-sm block w-full sm:text-sm border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500" required />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Input label="Preço (R$)" type="number" value={price.toString()} onChange={e => setPrice(Number(e.target.value))} />
-            <Input label="Duração (ex: 2 horas)" value={duration} onChange={e => setDuration(e.target.value)} />
-          </div>
-          <div className="flex justify-end space-x-3 mt-6">
-            <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading}>Cancelar</Button>
-            <Button type="submit" isLoading={isLoading}>Salvar</Button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
 
 
 import LoadingSkeleton from '../../components/ui/LoadingSkeleton';
@@ -61,14 +14,14 @@ import ServiceWizard from '@/components/dashboard/ServiceWizard';
 
 const DashboardServicosPage: React.FC = () => {
   const [services, setServices] = useState<Service[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
-  const [companyId, setCompanyId] = useState<string | null>(null);
+  const [company, setCompany] = useState<{ id: string; current_plan_tier: string; slug: string } | null>(null);
   const { addToast } = useToast();
   const { user } = useAuth();
+
+  const isLimitReached = company?.current_plan_tier === 'starter' && services.length >= 3;
 
   const fetchServices = async () => {
     if (!user) return;
@@ -77,7 +30,7 @@ const DashboardServicosPage: React.FC = () => {
       // 1. Get Company ID based on user auth ID
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
-        .select('id')
+        .select('id, current_plan_tier, slug')
         .eq('profile_id', user.id)
         .single();
 
@@ -93,7 +46,7 @@ const DashboardServicosPage: React.FC = () => {
       }
 
       if (companyData) {
-        setCompanyId(companyData.id);
+        setCompany(companyData);
 
         // 2. Fetch Services
         const { data: servicesData, error: servicesError } = await supabase
@@ -120,19 +73,20 @@ const DashboardServicosPage: React.FC = () => {
     fetchServices();
   }, [user, addToast]);
 
+  const closeWizard = () => {
+    setIsWizardOpen(false);
+    setEditingService(null); // Reset provided service
+    fetchServices(); // Refresh list
+  };
+
   const openWizard = () => {
+    setEditingService(null); // Ensure fresh state for new
     setIsWizardOpen(true);
   };
 
-  const closeWizard = () => {
-    setIsWizardOpen(false);
-    fetchServices(); // Refresh list after adding
-  };
-
   const openModalToEdit = (service: Service) => {
-    // For now, editing uses old modal. In future, update Wizard to support editing.
     setEditingService(service);
-    setIsModalOpen(true);
+    setIsWizardOpen(true); // Open Wizard instead of Modal
   };
 
   const handleDelete = async (serviceId: string) => {
@@ -151,46 +105,18 @@ const DashboardServicosPage: React.FC = () => {
     }
   };
 
-  const handleSave = async (serviceData: Omit<Service, 'id'> & { id?: string }) => {
-    if (!companyId) {
-      addToast("Erro: Perfil de empresa não encontrado.", "error");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      if (serviceData.id) {
-        // Update
-        const { error } = await supabase
-          .from('services')
-          .update({
-            title: serviceData.title,
-            description: serviceData.description,
-            price: serviceData.price,
-            duration: serviceData.duration
-          })
-          .eq('id', serviceData.id);
-
-        if (error) throw error;
-
-        setServices(prev => prev.map(s => s.id === serviceData.id ? { ...s, ...serviceData } as Service : s));
-        addToast("Serviço atualizado com sucesso!", 'success');
-      } else {
-        // Add logic (Should not be called here since we use Wizard for add now, but kept for fallback or edit modal reuse errors)
-      }
-      setIsModalOpen(false);
-    } catch (err) {
-      const error = err as Error;
-      console.error("Error saving service:", error);
-      addToast("Erro ao salvar serviço.", "error");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
 
   if (isWizardOpen) {
-    return <ServiceWizard onCancel={closeWizard} />;
+    return (
+      <div className="p-6">
+        <h2 className="text-xl font-bold mb-4">{editingService ? 'Editar Serviço' : 'Novo Serviço'}</h2>
+        <ServiceWizard
+          onCancel={closeWizard}
+          initialData={editingService}
+          onSuccess={closeWizard}
+        />
+      </div>
+    );
   }
 
   return (
@@ -204,8 +130,15 @@ const DashboardServicosPage: React.FC = () => {
             </p>
           </div>
           <div className="mt-4 sm:mt-0">
-            <Button onClick={openWizard} disabled={!companyId}>Adicionar Serviço</Button>
-            {!companyId && <p className="text-xs text-red-500 mt-2">Você precisa completar o cadastro da empresa.</p>}
+            {/* Service Limit Logic */}
+            <Button onClick={openWizard} disabled={!company || isLimitReached}>Adicionar Serviço</Button>
+            {!company && <p className="text-xs text-red-500 mt-2">Você precisa completar o cadastro da empresa.</p>}
+            {isLimitReached && (
+              <div className="mt-2 text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
+                <strong>Limite Atingido:</strong> Seu plano Starter permite apenas 3 serviços ativos.
+                <a href={`/dashboard/empresa/${company?.slug}/assinatura`} className="underline ml-1">Faça Upgrade para Ilimitado</a>
+              </div>
+            )}
           </div>
         </div>
 
@@ -253,14 +186,7 @@ const DashboardServicosPage: React.FC = () => {
           </div>
         </div>
       </div>
-      <ServiceModal
-        key={editingService?.id || 'new'}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSave}
-        service={editingService}
-        isLoading={isLoading}
-      />
+
     </>
   );
 };

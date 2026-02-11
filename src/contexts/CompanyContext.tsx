@@ -12,7 +12,7 @@ interface Address {
     cep: string;
 }
 
-interface CompanyData {
+export interface CompanyData {
     id: string;
     slug: string;
     company_name: string;
@@ -56,7 +56,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
     } = useQuery({
         queryKey: ['company', profileId],
         queryFn: async () => {
-            if (!profileId || !isCompany) return null;
+            if (!profileId) return null;
 
             const { data, error } = await supabase
                 .from('companies')
@@ -84,7 +84,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
                 address: addressData,
             } as CompanyData;
         },
-        enabled: !!profileId && isCompany,
+        enabled: !!profileId, // Fetch for any logged in user to robustly detect company
         staleTime: 1000 * 60 * 10, // 10 minutes (rarely changes)
     });
 
@@ -116,7 +116,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     useEffect(() => {
         // Real-time subscription
-        if (profileId && isCompany) {
+        if (profileId) {
             const subscription = supabase
                 .channel(`company-changes-${profileId}`)
                 .on(
@@ -138,7 +138,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
                 subscription.unsubscribe();
             };
         }
-    }, [profileId, isCompany, queryClient]);
+    }, [profileId, queryClient]);
 
     return (
         <CompanyContext.Provider value={{

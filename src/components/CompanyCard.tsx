@@ -1,11 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { StarIcon } from '@heroicons/react/24/solid';
+import { MapPinIcon } from '@heroicons/react/24/outline';
 import { Company } from '../types';
 import VerifiedBadge from './VerifiedBadge';
 import { useAuth } from '../contexts/AuthContext';
 import { useFavorites } from '../contexts/FavoritesContext';
 import OptimizedImage from '@/components/ui/OptimizedImage';
-import Badge from '@/components/ui/Badge';
+import Badge from './ui/Badge';
 
 
 interface CompanyCardProps {
@@ -36,7 +38,7 @@ const CompanyCard: React.FC<CompanyCardProps> = ({ company }) => {
 
     return (
         <article className="group relative">
-            <Link to={`/empresa/${company.slug}`} className="block bg-white rounded-[var(--radius-box)] shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ring-1 ring-gray-100 hover:ring-brand-primary">
+            <Link to={company.slug ? `/empresa/${company.slug}` : '#'} className="block bg-white rounded-[var(--radius-box)] shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ring-1 ring-gray-100 hover:ring-brand-primary">
                 <div className="relative w-full h-48 bg-gray-200">
                     <OptimizedImage
                         src={company.coverImage}
@@ -49,12 +51,12 @@ const CompanyCard: React.FC<CompanyCardProps> = ({ company }) => {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
 
-                    {/* Availability Badge */}
-                    <div className="absolute top-2 left-2">
+                    {/* Availability Badge - TODO: Connect to real data */}
+                    {/* <div className="absolute top-2 left-2">
                         <Badge variant="success">
                             Disponível Hoje
                         </Badge>
-                    </div>
+                    </div> */}
 
                     {/* Logo Badge */}
                     <div className="absolute -bottom-8 left-6 z-10">
@@ -71,7 +73,17 @@ const CompanyCard: React.FC<CompanyCardProps> = ({ company }) => {
                 </div>
                 <div className="p-4 pt-10">
                     <p className="text-xs font-bold text-brand-primary uppercase tracking-wider">{company.category || 'Serviços'}</p>
-                    <p className="block mt-1 text-lg font-bold text-gray-900 group-hover:text-brand-primary transition-colors">{company.companyName}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                        <span className="text-lg font-bold text-gray-900 group-hover:text-brand-primary transition-colors block">
+                            {company.companyName}
+                        </span>
+                        {company.current_plan_tier === 'pro' && (
+                            <Badge variant="primary" size="sm">PRO</Badge>
+                        )}
+                        {company.current_plan_tier === 'agency' && (
+                            <Badge variant="secondary" size="sm">AGENCY</Badge>
+                        )}
+                    </div>
                     <div className="mt-2 flex items-center">
                         <div className="flex items-center">
                             {[...Array(5)].map((_, i) => (

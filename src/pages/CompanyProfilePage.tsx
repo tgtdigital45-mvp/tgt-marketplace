@@ -1,7 +1,7 @@
 import React, { useState, lazy, Suspense } from 'react';
 import { Helmet } from 'react-helmet-async';
 import SEO from '../components/SEO';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import ServiceCard from '../components/ServiceCard';
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,6 +12,7 @@ import { useToast } from '../contexts/ToastContext';
 const MessageModal = lazy(() => import('../components/MessageModal'));
 const ServiceBookingModal = lazy(() => import('../components/ServiceBookingModal'));
 const ReviewModal = lazy(() => import('../components/ReviewModal'));
+const InquiryModal = lazy(() => import('../components/InquiryModal'));
 import CompanyCard from '../components/CompanyCard';
 import { Service } from '../types';
 import { supabase } from '../lib/supabase';
@@ -25,6 +26,7 @@ import OptimizedImage from '../components/ui/OptimizedImage';
 
 const CompanyProfilePage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
   const { addToast } = useToast();
@@ -32,6 +34,7 @@ const CompanyProfilePage: React.FC = () => {
   const { data: similarCompanies = [] } = useSimilarCompanies(company?.category, company?.id);
 
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+  const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
@@ -155,7 +158,29 @@ const CompanyProfilePage: React.FC = () => {
           <aside className="lg:col-span-4 order-2 lg:order-1">
             <ProfileSidebar
               company={company}
-              onContactClick={() => setIsMessageModalOpen(true)}
+              onContactClick={async () => {
+                if (!user) {
+                  addToast("Faça login para enviar mensagens", "info");
+                  return;
+                }
+
+                const targetId = company.profileId;
+                if (!targetId) {
+                  addToast("Erro ao iniciar chat: Perfil da empresa não encontrado.", "error");
+                  return;
+                }
+
+                if (isClient) {
+                  // Check for existing open job/conversation not yet implemented fully to check specifics
+                  // But InquiryModal creates a new Job.
+                  // Ideally we check if there's an ACTIVE job with this company to allow continuing it?
+                  // For now, let's open InquiryModal which acts as "New Request".
+                  // If they want to continue an old one, they should use "Minhas Mensagens".
+                  setIsInquiryModalOpen(true);
+                } else {
+                  addToast("Apenas clientes podem iniciar chat por aqui.", "info");
+                }
+              }}
               onRequestQuote={() => handleRequestQuote()}
               isFavorited={favorited}
               onToggleFavorite={handleToggleFavorite}
@@ -265,6 +290,23 @@ const CompanyProfilePage: React.FC = () => {
             onClose={() => setIsMessageModalOpen(false)}
             companyId={company.id}
             companyName={company.companyName}
+          />
+        </Suspense>
+      )}
+
+      {isInquiryModalOpen && (
+        <Suspense fallback={
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <LoadingSkeleton className="w-96 h-64 rounded-xl" />
+          </div>
+        }>
+          <InquiryModal
+            isOpen={isInquiryModalOpen}
+            onClose={() => setIsInquiryModalOpen(false)}
+            companyId={company.id}
+            companyName={company.companyName}
+            companyCategory={company.category}
+            companyOwnerId={company.profileId}
           />
         </Suspense>
       )}

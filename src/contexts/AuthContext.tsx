@@ -45,6 +45,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             if (companyError) {
               console.warn("AuthContext: Error checking company existence", companyError);
+
+              // Critical: Check for JWT expiration
+              if (companyError.code === 'PGRST303' || companyError.message?.includes('JWT expired')) {
+                console.warn("AuthContext: JWT expired detected during initial company check. Logging out.");
+                await supabase.auth.signOut();
+                // Force hard redirect
+                window.location.href = '/login/empresa';
+                return;
+              }
+
               // Fallback: attempts to get any company associated if maybeSingle fails (though limit 1 should prevent 406)
               if (companyError.code === 'PGRST116' || companyError.code === '406') {
                 const { data: fallbackData } = await supabase
@@ -82,8 +92,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             } else {
               console.warn('[AuthContext] No profile data found for user');
             }
-          } catch (companyError) {
+          } catch (companyError: any) {
             console.error("AuthContext: Failed to fetch company data", companyError);
+
+            // Critical: If JWT expired during this check, force logout to prevent loop
+            if (companyError?.code === 'PGRST303' || companyError?.message?.includes('JWT expired')) {
+              console.warn("AuthContext: JWT expired detected during initial check. Logging out.");
+              await supabase.auth.signOut();
+              if (mounted) setUser(null);
+              // We don't redirect here immediately to avoid interfering with public pages that might try to load auth
+              // But we ensure user is null so private routes will redirect
+              return;
+            }
           }
 
           if (mounted) setUser(userData);
@@ -130,6 +150,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             if (companyError) {
               console.warn("AuthContext (Subscription): Error checking company existence", companyError);
+
+              // Critical: Check for JWT expiration
+              if (companyError.code === 'PGRST303' || companyError.message?.includes('JWT expired')) {
+                console.warn("AuthContext: JWT expired detected during subscription company check. Logging out.");
+                await supabase.auth.signOut();
+                window.location.href = '/login/empresa';
+                return;
+              }
+
               if (companyError.code === 'PGRST116' || companyError.code === '406') {
                 const { data: fallbackData } = await supabase
                   .from('companies')
@@ -157,8 +186,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (profileData?.role) {
               userData.role = profileData.role as 'user' | 'admin' | 'moderator';
             }
-          } catch (companyError) {
+          } catch (companyError: any) {
             console.error("AuthContext: Failed to fetch company data on state change", companyError);
+
+            // Critical: If JWT expired during this check, force logout to prevent loop
+            if (companyError?.code === 'PGRST303' || companyError?.message?.includes('JWT expired')) {
+              console.warn("AuthContext: JWT expired detected during company check. Logging out.");
+              await supabase.auth.signOut();
+              if (mounted) setUser(null);
+              window.location.href = '/login/empresa'; // Hard redirect to clear bad state
+              return;
+            }
           }
 
           if (mounted) setUser(userData);
@@ -243,11 +281,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await supabase.auth.signOut();
 
       // 3. Force hard redirect to clear all application state/cache
-      window.location.replace('/login');
+      window.location.replace('/login/empresa');
     } catch (error) {
       console.error("Error during logout:", error);
       // Fallback: Force redirect even if Supabase errors
-      window.location.replace('/login');
+      window.location.replace('/login/empresa');
     } finally {
       setLoading(false);
     }

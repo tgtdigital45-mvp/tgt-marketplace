@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { Service, ServicePackage } from '../../types';
+import { Service, ServicePackage, ServicePackages, DbCompany, Company } from '../../types';
 import LoadingSkeleton from '../../components/ui/LoadingSkeleton';
 import Button from '../../components/ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
@@ -19,7 +19,7 @@ const formatCurrency = (value: number) =>
 
 // 1. Pricing Card Component (Sidebar)
 interface PricingCardProps {
-    packages: any; // Using any to safely handle JSONB
+    packages: ServicePackages | undefined;
     onCheckout: (tier: string) => void;
 }
 
@@ -182,7 +182,7 @@ const ServiceDetailsPage = () => {
 
     // States
     const [service, setService] = useState<Service | null>(null);
-    const [company, setCompany] = useState<any>(null);
+    const [company, setCompany] = useState<DbCompany | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [activeImageIndex, setActiveImageIndex] = useState(0);

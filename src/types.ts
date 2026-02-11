@@ -65,6 +65,7 @@ export interface Address {
 
 export interface Company {
   id: string;
+  profileId: string; // Add this
   slug: string; // Used for URL routing (e.g. /empresa/nome-da-empresa)
   companyName: string;
   legalName: string;
@@ -170,6 +171,7 @@ export interface DbCompany {
   level?: 'Iniciante' | 'Nível 1' | 'Pro';
   current_plan_tier?: 'starter' | 'pro' | 'agency';
   subscription_status?: string;
+  profile_id: string; // Add this
 }
 
 export interface Service {

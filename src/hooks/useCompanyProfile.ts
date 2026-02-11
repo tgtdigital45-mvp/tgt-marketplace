@@ -33,7 +33,14 @@ export const useCompanyProfile = (slug: string | undefined) => {
             if (!data) return null;
 
             // Type assertion to include the joined profile data
-            const raw = data as unknown as DbCompany;
+            // We define a local type that includes the relations we joined
+            type DbCompanyJoined = DbCompany & {
+                services: any[];
+                reviews: (any & { profiles: DbProfile })[];
+                portfolio_items: any[];
+            };
+
+            const raw = data as unknown as DbCompanyJoined;
 
             // 2. Data Transformation (DB -> UI)
 
@@ -74,7 +81,7 @@ export const useCompanyProfile = (slug: string | undefined) => {
 
             // Map Owner Profile & Fetch Stats
             let owner = undefined;
-            let level: 'Beginner' | 'Level 1' | 'Level 2' | 'Pro' = 'Beginner';
+            let level: 'Iniciante' | 'Nível 1' | 'Pro' = 'Iniciante';
 
             if ((raw as any).owner_id) {
                 const { data: stats } = await supabase
@@ -84,13 +91,21 @@ export const useCompanyProfile = (slug: string | undefined) => {
                     .single();
 
                 if (stats && stats.current_level) {
-                    level = stats.current_level as any;
+                    // Map backend levels to UI levels
+                    const levelMap: Record<string, 'Iniciante' | 'Nível 1' | 'Pro'> = {
+                        'Beginner': 'Iniciante',
+                        'Level 1': 'Nível 1',
+                        'Level 2': 'Pro', // Mapping Level 2 to Pro for simpler UI
+                        'Pro': 'Pro'
+                    };
+                    level = levelMap[stats.current_level] || 'Iniciante';
                 }
             }
 
             // Construct Final Object
             const company: Company = {
                 id: raw.id,
+                profileId: raw.profile_id,
                 slug: raw.slug,
                 companyName: raw.company_name,
                 legalName: raw.legal_name,
@@ -98,7 +113,7 @@ export const useCompanyProfile = (slug: string | undefined) => {
                 logo: raw.logo_url || 'https://placehold.co/150',
                 coverImage: raw.cover_image_url || 'https://placehold.co/1200x400',
                 category: raw.category,
-                level: level,
+                level: level as 'Iniciante' | 'Nível 1' | 'Pro',
 
                 rating: parseFloat(avgRating.toFixed(1)),
                 reviewCount: reviews.length,

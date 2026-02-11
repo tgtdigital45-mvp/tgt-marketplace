@@ -36,9 +36,13 @@ const LoginPage: React.FC = () => {
     setIsLoading(true);
     try {
       await signInWithGoogle();
-    } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+    } catch (error: unknown) {
       console.error('Google login error:', error);
-      addToast(error.message || "Erro ao conectar com Google. Tente novamente.", "error");
+      let errorMessage = "Erro ao conectar com Google. Tente novamente.";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      addToast(errorMessage, "error");
     } finally {
       setIsLoading(false);
     }

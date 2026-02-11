@@ -4,12 +4,10 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { CompanyProvider } from './contexts/CompanyContext';
-import Header from './components/layout/Header';
-import Footer from './components/layout/Footer';
 import { ToastProvider } from './contexts/ToastContext';
 import { FavoritesProvider } from './contexts/FavoritesContext';
 import ScrollToTop from './components/ScrollToTop';
-import MainRoutes from './routes';
+import MainLayout from './components/layout/MainLayout';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const queryClient = new QueryClient({
@@ -39,13 +37,7 @@ const App: React.FC = () => {
                 <CompanyProvider>
                   <FavoritesProvider>
                     <ScrollToTop />
-                    <div className="flex flex-col min-h-screen">
-                      <Header />
-                      <main className="flex-grow" style={{ minHeight: 'calc(100vh - 80px - 200px)' }}>
-                        <MainRoutes />
-                      </main>
-                      <Footer />
-                    </div>
+                    <MainLayout />
                   </FavoritesProvider>
                 </CompanyProvider>
               </NotificationProvider>

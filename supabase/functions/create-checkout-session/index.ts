@@ -76,7 +76,7 @@ serve(async (req) => {
 
         // 3. Calculate Fee (Dynamic Take Rate)
         const sellerCompany = service.companies
-        const commissionRate = sellerCompany.commission_rate !== undefined ? sellerCompany.commission_rate : 0.20
+        const commissionRate = sellerCompany.commission_rate ?? 0.20
         const applicationFeeAmount = Math.round(unitAmount * commissionRate)
 
         // Stripe expects cents

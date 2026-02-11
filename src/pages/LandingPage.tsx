@@ -30,6 +30,7 @@ const CompaniesListPage: React.FC = () => {
     searchTerm,
     setSearchTerm,
     locationTerm,
+    setLocationTerm,
     selectedCategory,
     setSelectedCategory,
     priceRange,
@@ -114,7 +115,8 @@ const CompaniesListPage: React.FC = () => {
                 <MapPin size={20} />
               </div>
               <input
-                type="text"
+                value={locationTerm}
+                onChange={(e) => setLocationTerm(e.target.value)}
                 placeholder="Localização"
                 className="w-full pl-14 pr-4 py-4 bg-transparent border-none outline-none text-slate-900 placeholder:text-slate-400 font-medium"
               />
@@ -180,6 +182,7 @@ const CompaniesListPage: React.FC = () => {
                     setSortBy('rating');
                     setCurrentPage(1);
                     setPriceRangeValue('all');
+                    setLocationTerm('');
                   }}
                   className="w-full py-4 px-4 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-[20px] text-xs font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
                 >

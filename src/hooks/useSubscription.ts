@@ -1,65 +1,97 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { useToast } from '../contexts/ToastContext';
 import { useCompany } from '../contexts/CompanyContext';
-import { toast } from 'react-hot-toast';
 
-interface UseSubscriptionReturn {
-    currentPlan: 'starter' | 'pro' | 'agency';
-    subscriptionStatus: string;
-    loading: boolean;
-    handleSubscribe: (priceId?: string) => Promise<void>;
-    isLoadingSubscribe: boolean;
-}
+// Helper to get the current window origin for redirects
+const getRedirectUrl = (path: string) => {
+    return `${window.location.origin}${path}`;
+};
 
-export const useSubscription = (): UseSubscriptionReturn => {
-    const { company, refreshCompany } = useCompany();
-    const [loading, setLoading] = useState(true);
-    const [isLoadingSubscribe, setIsLoadingSubscribe] = useState(false);
-    const [currentPlan, setCurrentPlan] = useState<'starter' | 'pro' | 'agency'>('starter');
-    const [subscriptionStatus, setSubscriptionStatus] = useState<string>('active');
+export const useSubscription = () => {
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const { addToast } = useToast();
+    const { company } = useCompany();
 
-    useEffect(() => {
-        if (company) {
-            setCurrentPlan(company.current_plan_tier || 'starter');
-            setSubscriptionStatus(company.subscription_status || 'active');
-            setLoading(false);
-        }
-    }, [company]);
-
-    const handleSubscribe = async (priceId?: string) => {
+    const subscribe = async (priceId: string, companyId: string) => {
+        setIsLoading(true);
+        setError(null);
         try {
-            setIsLoadingSubscribe(true);
-
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                toast.error('Você precisa estar logado para assinar.');
-                return;
-            }
-
-            const { data, error } = await supabase.functions.invoke('manage-subscription', {
-                body: { price_id: priceId },
+            const { data, error } = await supabase.functions.invoke('create-subscription-checkout', {
+                body: {
+                    price_id: priceId,
+                    success_url: getRedirectUrl(`/dashboard/empresa/${companyId}/assinatura?success=true`),
+                    cancel_url: getRedirectUrl(`/dashboard/empresa/${companyId}/assinatura?canceled=true`),
+                },
             });
 
             if (error) throw error;
+            if (data?.error) throw new Error(data.error);
+
+            // Redirect to Stripe
+            if (data?.url) {
+                window.location.href = data.url;
+            } else {
+                throw new Error('No checkout URL returned');
+            }
+
+        } catch (err: any) {
+            console.error('Subscription error:', err);
+            const msg = err.message || 'Falha ao iniciar checkout.';
+            setError(msg);
+            addToast(msg, 'error');
+            // Re-throw if you want the component to handle it too
+            throw err;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const manageSubscription = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const { data, error } = await supabase.functions.invoke('create-portal-session', {
+                body: {
+                    return_url: window.location.href,
+                },
+            });
+
+            if (error) throw error;
+            if (data?.error) throw new Error(data.error);
 
             if (data?.url) {
                 window.location.href = data.url;
             } else {
-                toast.error('Erro ao redirecionar para o pagamento.');
+                throw new Error('No portal URL returned');
             }
-        } catch (error: any) {
-            console.error('Error handling subscription:', error);
-            toast.error('Ocorreu um erro ao processar sua solicitação.');
+
+        } catch (err: any) {
+            console.error('Portal error:', err);
+            const msg = err.message || 'Falha ao abrir portal de cobrança.';
+            setError(msg);
+            addToast(msg, 'error');
+            throw err;
         } finally {
-            setIsLoadingSubscribe(false);
+            setIsLoading(false);
+        }
+    };
+
+    const handleSubscribe = async (priceId?: string) => {
+        if (priceId && company?.id) {
+            await subscribe(priceId, company.id);
+        } else {
+            await manageSubscription();
         }
     };
 
     return {
-        currentPlan,
-        subscriptionStatus,
-        loading,
+        subscribe,
+        manageSubscription,
         handleSubscribe,
-        isLoadingSubscribe
+        isLoadingSubscribe: isLoading,
+        currentPlan: company?.current_plan_tier,
+        error
     };
 };
