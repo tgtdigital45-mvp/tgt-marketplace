@@ -144,6 +144,7 @@ export const useCompanyProfile = (slug: string | undefined) => {
         },
         enabled: !!slug,
         staleTime: 1000 * 60 * 5, // 5 minutes cache
+        refetchOnMount: true, // Garante dados frescos ao entrar na página
         retry: 1
     });
 };

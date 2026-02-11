@@ -1,4 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { User } from '../types';
 import { supabase } from '../lib/supabase';
 
@@ -14,7 +16,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  // Initialize loading based on whether we expect a session
+  const [loading, setLoading] = useState(() => {
+    return !!localStorage.getItem('tgt-auth-session');
+  });
 
   useEffect(() => {
     let mounted = true;
@@ -274,18 +282,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = async () => {
     try {
       setLoading(true);
-      // 1. Immediate UI clear to prevent ghost state
+      // 1. Immediate UI clear
       setUser(null);
 
       // 2. Clear Supabase session
       await supabase.auth.signOut();
 
-      // 3. Force hard redirect to clear all application state/cache
-      window.location.replace('/login/empresa');
+      // 3. Clear React Query Cache to avoid stale data
+      queryClient.clear();
+
+      // 4. Soft redirect
+      navigate('/login/empresa');
     } catch (error) {
       console.error("Error during logout:", error);
-      // Fallback: Force redirect even if Supabase errors
-      window.location.replace('/login/empresa');
+      // Fallback: Force redirect
+      window.location.href = '/login/empresa';
     } finally {
       setLoading(false);
     }
