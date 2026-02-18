@@ -17,6 +17,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const fetchIdRef = React.useRef(0); // Track fetch attempts
+  const mountedRef = React.useRef(true); // Track component mount status
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -25,205 +27,172 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return !!localStorage.getItem('tgt-auth-session');
   });
 
+  // Extract profile fetching logic for reuse
+  const fetchUserProfile = async (session: any) => {
+    if (!session?.user) return;
+
+    const currentFetchId = ++fetchIdRef.current;
+
+    // Ensure we are in loading state while fetching profile
+    setLoading(true);
+
+    try {
+      const userData: User = {
+        id: session.user.id,
+        name: session.user.user_metadata.name || session.user.email?.split('@')[0] || 'User',
+        email: session.user.email || '',
+        type: (session.user.user_metadata.type as 'client' | 'company') || 'client',
+        role: 'user', // Default role
+        avatar: session.user.user_metadata.avatar_url,
+      };
+
+      console.log(`[AuthContext] Fetching profile data (ID: ${currentFetchId}) for:`, session.user.id);
+
+      // 1. Check if user has a company
+      const { data: companyData, error: companyError } = await supabase
+        .from('companies')
+        .select('id, slug, profile_id')
+        .eq('profile_id', session.user.id);
+
+      // If a newer fetch started, stop immediately
+      if (currentFetchId !== fetchIdRef.current) return;
+
+      if (companyError) {
+        if (!companyError.message?.includes('AbortError')) {
+          console.error("[AuthContext] Error checking company existence:", companyError);
+        }
+        // Removed early return here to ensure finally block is always reached
+      } else if (companyData && companyData.length > 0) {
+        console.log("[AuthContext] Found company matching user:", companyData[0].slug);
+        userData.type = 'company';
+        userData.companySlug = companyData[0].slug;
+      }
+
+      // 2. Fetch role and latest profile data
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('role, full_name, avatar_url, user_type')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      if (currentFetchId !== fetchIdRef.current) return;
+
+      if (profileError) {
+        if (!profileError.message?.includes('AbortError')) {
+          console.error("[AuthContext] Error fetching profile data:", profileError);
+        }
+        // Removed early return here to ensure finally block is always reached
+      }
+
+      if (profileData) {
+        if (profileData.role) userData.role = profileData.role as any;
+        if (profileData.full_name) userData.name = profileData.full_name;
+        if (profileData.avatar_url) userData.avatar = profileData.avatar_url;
+        if (profileData.user_type) userData.type = profileData.user_type as any;
+      }
+
+      // Final check before committing state
+      if (mountedRef.current && currentFetchId === fetchIdRef.current) {
+        setUser(userData);
+      }
+    } catch (err: any) {
+      if (!err.message?.includes('AbortError')) {
+        console.error("[AuthContext] Failed to fetch user profile", err);
+      }
+    } finally {
+      // Release loading state ONLY if we are the LATEST fetch
+      if (mountedRef.current && currentFetchId === fetchIdRef.current) {
+        setLoading(false);
+      }
+    }
+  };
+
   useEffect(() => {
-    let mounted = true;
+    mountedRef.current = true;
 
-    // Check active session
+    // 1. Initial Session Check
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!mounted) return;
-
+      if (!mountedRef.current) return;
       try {
         if (session?.user) {
-          const userData: User = {
-            id: session.user.id,
-            name: session.user.user_metadata.name || session.user.email?.split('@')[0] || 'User',
-            email: session.user.email || '',
-            type: (session.user.user_metadata.type as 'client' | 'company') || 'client',
-            role: 'user', // Default role
-            avatar: session.user.user_metadata.avatar_url,
-          };
-
-          // Always check if user has a company to ensure type consistency and get slug
-          try {
-            const { data: companyData, error: companyError } = await supabase
-              .from('companies')
-              .select('slug')
-              .eq('profile_id', session.user.id)
-              .limit(1)
-              .maybeSingle();
-
-            if (companyError) {
-              console.warn("AuthContext: Error checking company existence", companyError);
-
-              // Critical: Check for JWT expiration
-              if (companyError.code === 'PGRST303' || companyError.message?.includes('JWT expired')) {
-                console.warn("AuthContext: JWT expired detected during initial company check. Logging out.");
-                await supabase.auth.signOut();
-                // Force hard redirect
-                window.location.href = '/login/empresa';
-                return;
-              }
-
-              // Fallback: attempts to get any company associated if maybeSingle fails (though limit 1 should prevent 406)
-              if (companyError.code === 'PGRST116' || companyError.code === '406') {
-                const { data: fallbackData } = await supabase
-                  .from('companies')
-                  .select('slug')
-                  .eq('profile_id', session.user.id)
-                  .limit(1);
-
-                if (fallbackData && Array.isArray(fallbackData) && fallbackData.length > 0) {
-                  userData.type = 'company';
-                  userData.companySlug = fallbackData[0].slug;
-                }
-              }
-            } else if (companyData) {
-              userData.type = 'company'; // Force type to company if record exists
-              userData.companySlug = companyData.slug;
-            }
-
-            // Buscar role do usuário
-            const { data: profileData, error: profileError } = await supabase
-              .from('profiles')
-              .select('role')
-              .eq('id', session.user.id)
-              .maybeSingle();
-
-            if (profileError) {
-              console.error('[AuthContext] Error fetching profile role:', profileError);
-            }
-
-            if (profileData) {
-              console.log('[AuthContext] Fetched role for user:', profileData.role);
-              if (profileData.role) {
-                userData.role = profileData.role as 'user' | 'admin' | 'moderator';
-              }
-            } else {
-              console.warn('[AuthContext] No profile data found for user');
-            }
-          } catch (companyError: any) {
-            console.error("AuthContext: Failed to fetch company data", companyError);
-
-            // Critical: If JWT expired during this check, force logout to prevent loop
-            if (companyError?.code === 'PGRST303' || companyError?.message?.includes('JWT expired')) {
-              console.warn("AuthContext: JWT expired detected during initial check. Logging out.");
-              await supabase.auth.signOut();
-              if (mounted) setUser(null);
-              // We don't redirect here immediately to avoid interfering with public pages that might try to load auth
-              // But we ensure user is null so private routes will redirect
-              return;
-            }
-          }
-
-          if (mounted) setUser(userData);
+          await fetchUserProfile(session);
         }
       } catch (err) {
         console.error("AuthContext: Unexpected error in session check", err);
       } finally {
-        if (mounted) setLoading(false);
+        if (mountedRef.current) setLoading(false);
       }
     }).catch(err => {
-      // Ignore AbortError which happens on strict mode re-renders
       if (err.name === 'AbortError' || err.message?.includes('aborted')) return;
       console.error("AuthContext: Terminal error getting session", err);
-      if (mounted) setLoading(false);
+      if (mountedRef.current) setLoading(false);
     });
 
-    // Listen for changes
+    // 2. Auth State Change Listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!mounted) return;
+      if (!mountedRef.current) return;
+      console.log(`[AuthContext] Auth State Change Event: ${event}`);
 
-      // Handle programmatic redirects for password recovery
-      if (event === 'PASSWORD_RECOVERY') {
-        // This event comes from Supabase when a recovery link is clicked and session is established
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      // Aggressively set loading true for any auth event that implies a user session
+      if (session?.user) {
+        setLoading(true);
       }
 
       try {
         if (session?.user) {
-          const userData: User = {
-            id: session.user.id,
-            name: session.user.user_metadata.name || session.user.email?.split('@')[0] || 'User',
-            email: session.user.email || '',
-            type: (session.user.user_metadata.type as 'client' | 'company') || 'client',
-            avatar: session.user.user_metadata.avatar_url,
-          };
-
-          try {
-            // Always check if user has a company
-            const { data: companyData, error: companyError } = await supabase
-              .from('companies')
-              .select('slug')
-              .eq('profile_id', session.user.id)
-              .limit(1)
-              .maybeSingle();
-
-            if (companyError) {
-              console.warn("AuthContext (Subscription): Error checking company existence", companyError);
-
-              // Critical: Check for JWT expiration
-              if (companyError.code === 'PGRST303' || companyError.message?.includes('JWT expired')) {
-                console.warn("AuthContext: JWT expired detected during subscription company check. Logging out.");
-                await supabase.auth.signOut();
-                window.location.href = '/login/empresa';
-                return;
-              }
-
-              if (companyError.code === 'PGRST116' || companyError.code === '406') {
-                const { data: fallbackData } = await supabase
-                  .from('companies')
-                  .select('slug')
-                  .eq('profile_id', session.user.id)
-                  .limit(1);
-
-                if (fallbackData && Array.isArray(fallbackData) && fallbackData.length > 0) {
-                  userData.type = 'company';
-                  userData.companySlug = fallbackData[0].slug;
-                }
-              }
-            } else if (companyData) {
-              userData.type = 'company'; // Force type to company if record exists
-              userData.companySlug = companyData.slug;
-            }
-
-            // Buscar role do usuário (CRITICAL FIX: Fetch role in onAuthStateChange)
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('role')
-              .eq('id', session.user.id)
-              .maybeSingle();
-
-            if (profileData?.role) {
-              userData.role = profileData.role as 'user' | 'admin' | 'moderator';
-            }
-          } catch (companyError: any) {
-            console.error("AuthContext: Failed to fetch company data on state change", companyError);
-
-            // Critical: If JWT expired during this check, force logout to prevent loop
-            if (companyError?.code === 'PGRST303' || companyError?.message?.includes('JWT expired')) {
-              console.warn("AuthContext: JWT expired detected during company check. Logging out.");
-              await supabase.auth.signOut();
-              if (mounted) setUser(null);
-              window.location.href = '/login/empresa'; // Hard redirect to clear bad state
-              return;
-            }
-          }
-
-          if (mounted) setUser(userData);
+          // fetchUserProfile sets loading true and handles its own setLoading(false) in finally
+          await fetchUserProfile(session);
         } else {
-          if (mounted) setUser(null);
+          setUser(null);
+          setLoading(false);
         }
       } catch (authStateError) {
         console.error("AuthContext: Error handling auth state change", authStateError);
-      } finally {
-        if (mounted) setLoading(false);
+        setLoading(false); // Failsafe
       }
     });
 
     return () => {
-      mounted = false;
+      mountedRef.current = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, []); // Run once on mount
+
+  // 3. Realtime Profile Sync
+  useEffect(() => {
+    if (!user?.id) return;
+
+    console.log(`[AuthContext] Subscribing to profile Realtime for: ${user.id}`);
+    const profileChannel = supabase.channel(`public:profiles:id=eq.${user.id}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'profiles',
+        filter: `id=eq.${user.id}`
+      }, (payload) => {
+        console.log('[AuthContext] Profile updated via Realtime:', payload.new);
+        const updatedProfile = payload.new;
+        setUser(prev => prev ? {
+          ...prev,
+          name: updatedProfile.full_name || prev.name,
+          role: updatedProfile.role || prev.role,
+          avatar: updatedProfile.avatar_url || prev.avatar,
+          type: updatedProfile.user_type || prev.type
+        } : null);
+      })
+      .subscribe();
+
+    return () => {
+      console.log(`[AuthContext] Unsubscribing from profile Realtime for: ${user.id}`);
+      profileChannel.unsubscribe();
+    };
+  }, [user?.id]); // Only re-subscribe if ID changes
 
   // --- ADMIN SESSION TIMEOUT LOGIC ---
   useEffect(() => {

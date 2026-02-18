@@ -24,7 +24,7 @@ const SERVICE_TYPE_FILTERS: { label: string; value: ServiceFilter; icon: React.R
 ];
 
 // ─── Service Card ─────────────────────────────────────────────────────────────
-function ServiceCard({ service }: { service: DbService }) {
+const ServiceCard: React.FC<{ service: DbService }> = ({ service }) => {
     const price = service.starting_price ?? service.price;
     const isPresential = service.service_type === 'presential';
 

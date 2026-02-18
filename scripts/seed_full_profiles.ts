@@ -2,6 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import path from 'path';
+import * as h3 from 'h3-js';
 
 // Load env vars
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
@@ -37,58 +38,49 @@ const TEST_COMPANY = {
     }
 };
 
-async function seed() {
-    console.log('🚀 Starting seed process...');
+// Cascavel, PR Center Coords
+const LAT = -24.9558;
+const LNG = -53.4552;
+const H3_INDEX = h3.latLngToCell(LAT, LNG, 8);
 
-    // 1. Create Client User
-    console.log(`Creating Client: ${TEST_CLIENT.email}...`);
-    const { data: clientAuth, error: clientAuthError } = await supabase.auth.signUp({
+async function seed() {
+    console.log('🚀 Starting seed process (with UI visibility fixes)...');
+    console.log(`📍 Calculated H3 Index for Cascavel: ${H3_INDEX}`);
+
+    // 1. Create/Ensure Client User
+    console.log(`Ensuring Client: ${TEST_CLIENT.email}...`);
+    await supabase.auth.signUp({
         email: TEST_CLIENT.email,
         password: TEST_CLIENT.password,
         options: { data: TEST_CLIENT.metadata }
     });
+    console.log('✅ Client auth ready.');
 
-    if (clientAuthError && !clientAuthError.message.includes('already registered')) {
-        console.error('Error creating client auth:', clientAuthError.message);
-    } else {
-        console.log('✅ Client auth ready.');
-    }
-
-    // 2. Create Company User
-    console.log(`Creating Company User: ${TEST_COMPANY.email}...`);
-    const { data: companyAuth, error: companyAuthError } = await supabase.auth.signUp({
+    // 2. Create/Ensure Company User
+    console.log(`Ensuring Company User: ${TEST_COMPANY.email}...`);
+    await supabase.auth.signUp({
         email: TEST_COMPANY.email,
         password: TEST_COMPANY.password,
         options: { data: TEST_COMPANY.metadata }
     });
 
-    let companyUserId = companyAuth.user?.id;
+    // 3. Explicitly Sign In as Company User
+    console.log('Signing in as Company User...');
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: TEST_COMPANY.email,
+        password: TEST_COMPANY.password
+    });
 
-    if (companyAuthError) {
-        if (companyAuthError.message.includes('already registered')) {
-            console.log('Company user already exists. Fetching ID...');
-            // We can't easily get the ID without admin API or searching profiles if auth.signUp fails
-            // Let's try to get it from profiles table
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('id')
-                .eq('full_name', TEST_COMPANY.metadata.name)
-                .maybeSingle();
-            companyUserId = profile?.id;
-        } else {
-            console.error('Error creating company auth:', companyAuthError.message);
-        }
-    }
-
-    if (!companyUserId) {
-        console.error('❌ Could not determine Company User ID. Seed aborted.');
+    if (signInError) {
+        console.error('❌ Sign-in failed:', signInError.message);
         process.exit(1);
     }
 
-    console.log('✅ Company auth ready. ID:', companyUserId);
+    const companyUserId = signInData.user.id;
+    console.log('✅ Signed in. User ID:', companyUserId);
 
-    // 3. Create Company Record
-    console.log('Inserting Company record...');
+    // 4. Create Company Record
+    console.log('Inserting Company record (status="approved")...');
     const slug = 'target-solucoes';
     const { error: companyError } = await supabase.from('companies').upsert({
         profile_id: companyUserId,
@@ -98,30 +90,35 @@ async function seed() {
         cnpj: '99888777000166',
         email: TEST_COMPANY.email,
         phone: '45988887777',
-        category: 'Marketing Digital',
+        category: 'Marketing', // Match CATEGORIES constant
         description: 'A Target Soluções é líder em estratégias digitais de alta performance, ajudando empresas a escalarem seus resultados através de tráfego pago, SEO e inbound marketing.',
-        status: 'active',
-        verified: true,
-        level: 'Pro',
+        status: 'approved', // IMPORTANT: RPC require 'approved'
+        h3_index: H3_INDEX,
         address: {
             street: 'Avenida Brasil, 5000',
             number: '5000',
             district: 'Centro',
             city: 'Cascavel',
             state: 'PR',
-            cep: '85812-001'
+            cep: '85812-001',
+            latitude: LAT,
+            longitude: LNG
         },
         logo_url: TEST_COMPANY.metadata.avatar_url,
-        cover_image_url: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&q=80&w=1200&h=400'
+        cover_image_url: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&q=80&w=1200&h=400',
+        admin_contact: {
+            name: 'Pedro Gerente',
+            phone: '45988887777',
+            email: 'admin@target.com'
+        }
     }, { onConflict: 'slug' });
 
     if (companyError) {
-        console.error('Error upserting company:', companyError.message);
+        console.error('Error upserting company:', companyError);
     } else {
         console.log('✅ Company record ready.');
     }
 
-    // Get company ID for foreign keys
     const { data: companyRecord } = await supabase
         .from('companies')
         .select('id')
@@ -133,8 +130,17 @@ async function seed() {
         process.exit(1);
     }
 
-    // 4. Create Services
-    console.log('Inserting Services...');
+    // 5. Assign owner
+    const { error: roleError } = await supabase.from('team_members').upsert({
+        company_id: companyRecord.id,
+        user_id: companyUserId,
+        role: 'owner'
+    }, { onConflict: 'company_id,user_id' });
+
+    if (roleError) console.error('Error assigning owner role:', roleError);
+
+    // 6. Create Services
+    console.log('Inserting Services (with h3_index and is_active=true)...');
     const services = [
         {
             company_id: companyRecord.id,
@@ -144,69 +150,74 @@ async function seed() {
             service_type: 'remote',
             starting_price: 1500,
             image_url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800',
+            is_active: true,
+            h3_index: H3_INDEX,
             packages: {
                 basic: {
                     name: 'Basic',
                     price: 1500,
                     delivery_time: 30,
                     revisions: 2,
-                    description: 'Gestão de 1 canal de anúncios (apenas Google ou Meta).',
-                    features: ['Setup de conta', 'Relatório mensal', 'Monitoramento diário']
-                },
-                standard: {
-                    name: 'Standard',
-                    price: 2500,
-                    delivery_time: 30,
-                    revisions: -1,
-                    description: 'Gestão de 2 canais de anúncios + Dashboard em tempo real.',
-                    features: ['Setup de conta', 'Relatório quinzenal', 'Dashboard Looker Studio', 'A/B Testing']
+                    description: 'Gestão de 1 canal de anúncios.',
+                    features: ['Setup de conta', 'Relatório mensal']
                 }
             }
         },
         {
             company_id: companyRecord.id,
             title: 'SEO & Otimização de Busca',
-            description: 'Coloque seu site na primeira página do Google organicamente e atraia tráfego gratuito e constante.',
+            description: 'Coloque seu site na primeira página do Google organicamente.',
             category_tag: 'SEO',
             service_type: 'remote',
             starting_price: 2000,
             image_url: 'https://images.unsplash.com/photo-1562577309-4932fdd64cd1?auto=format&fit=crop&q=80&w=800',
+            is_active: true,
+            h3_index: H3_INDEX,
             packages: {
                 basic: {
                     name: 'Basic',
                     price: 2000,
                     delivery_time: 45,
                     revisions: 1,
-                    description: 'Auditoria técnica + Otimização On-page de 5 páginas.',
-                    features: ['Pesquisa de Keywords', 'Otimização de Meta Tags', 'Auditoria Técnica']
+                    description: 'Auditoria técnica.',
+                    features: ['Pesquisa de Keywords']
                 }
             }
         }
     ];
 
     for (const service of services) {
-        const { error: srvError } = await supabase.from('services').upsert(service, { onConflict: 'title,company_id' });
-        if (srvError) console.error(`Error inserting service ${service.title}:`, srvError.message);
+        const { data: existingSrv } = await supabase.from('services')
+            .select('id').eq('title', service.title).eq('company_id', companyRecord.id).maybeSingle();
+
+        if (!existingSrv) {
+            await supabase.from('services').insert(service);
+        } else {
+            console.log(`Service ${service.title} already exists. Updating...`);
+            await supabase.from('services').update(service).eq('id', existingSrv.id);
+        }
     }
     console.log('✅ Services ready.');
 
-    // 5. Create Portfolio Items
-    console.log('Inserting Portfolio Items...');
+    // 7. Portfolio
     const portfolio = [
         {
             company_id: companyRecord.id,
             image_url: 'https://images.unsplash.com/photo-1551288049-bbbda536339a?auto=format&fit=crop&q=80&w=800',
-            caption: 'Dashboard de Resultados - Cliente E-commerce'
-        },
-        {
-            company_id: companyRecord.id,
-            image_url: 'https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&q=80&w=800',
-            caption: 'Equipe de Estratégia em Planejamento'
+            title: 'Dashboard de Resultados',
+            description: 'Implementação de métricas.'
         }
     ];
 
     for (const item of portfolio) {
-        await supabase.from('portfolio_items').upsert(item, { onConflict: 'image_url,company_id' });
+        const { data: existingPrt } = await supabase.from('portfolio_items')
+            .select('id').eq('image_url', item.image_url).eq('company_id', companyRecord.id).maybeSingle();
+
+        if (!existingPrt) {
+            await supabase.from('portfolio_items').insert(item);
+        } else {
+            await supabase.from('portfolio_items').update(item).eq('id', existingPrt.id);
+        }
     }
     console.log('✅ Portfolio ready.');
 

@@ -27,7 +27,30 @@ const DashboardLayout: React.FC = () => {
 
   if (!company) {
     // User is company type but has no company profile yet
-    return <Navigate to="/empresa/cadastro" replace />;
+    // Before redirecting to registration, give one chance to refresh if it was just created
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="max-w-md w-full text-center space-y-4">
+          <div className="bg-red-50 text-red-600 p-4 rounded-xl border border-red-100 font-medium">
+            Perfil de empresa não encontrado ou ainda sincronizando.
+          </div>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full bg-brand-primary text-white py-2 px-4 rounded-lg font-bold hover:bg-brand-primary/90 transition-colors"
+            >
+              Tentar Atualizar
+            </button>
+            <button
+              onClick={() => navigate('/empresa/cadastro')}
+              className="w-full text-gray-500 py-2 px-4 text-sm hover:underline"
+            >
+              Não possui cadastro? Criar Perfil
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const navigation = [

@@ -47,8 +47,8 @@ async function generateSitemap() {
 
         console.log(`Found ${companies?.length || 0} companies`);
 
-        // Base URLs
-        const baseUrl = 'https://tgt-guia-de-negocios.vercel.app';
+        // Base URLs - Prefer environment variable, fallback to production domain
+        const baseUrl = process.env.VITE_SITE_URL || 'https://contrattoex.com';
         const urls: SitemapUrl[] = [
             {
                 loc: `${baseUrl}/`,

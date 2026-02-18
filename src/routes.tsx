@@ -104,28 +104,76 @@ const ProtectedRoute = ({ userType, element }: ProtectedRouteProps): React.React
 const DashboardRedirect = () => {
     const { user, loading } = useAuth();
     const { company, loading: companyLoading } = useCompany();
+    const [isPatienceOver, setIsPatienceOver] = React.useState(false);
 
-    if (loading || companyLoading) return <LoadingSpinner />;
+    // Detailed logging for stuck states
+    if (loading || (companyLoading && !isPatienceOver)) {
+        console.log("[DashboardRedirect] Waiting for data...", {
+            authLoading: loading,
+            companyLoading,
+            isPatienceOver,
+            hasUser: !!user,
+            hasCompany: !!company,
+            hasAuthSlug: !!user?.companySlug
+        });
+        return <LoadingSpinner />;
+    }
 
-    if (!user) return <Navigate to="/login/empresa" replace />;
+    // Logging only on status changes
+    React.useEffect(() => {
+        console.log("[DashboardRedirect] Data Ready - Evaluating Path", {
+            userId: user?.id,
+            userType: user?.type,
+            companySlug: company?.slug,
+            authSlug: user?.companySlug
+        });
+    }, [user, company]);
+
+    // Give CompanyContext a bit more time if user.type is 'company' but company is null
+    React.useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (user?.type === 'company' && !company && !user.companySlug) {
+            console.log("[DashboardRedirect] User is company but no slug yet, starting 2s patience timer...");
+            timer = setTimeout(() => {
+                console.log("[DashboardRedirect] Patience timer expired.");
+                setIsPatienceOver(true);
+            }, 2000);
+        } else {
+            setIsPatienceOver(false);
+        }
+        return () => clearTimeout(timer);
+    }, [user, company]);
+
+    if (!user) {
+        console.log("[DashboardRedirect] No user session found, redirecting to login");
+        return <Navigate to="/login/empresa" replace />;
+    }
 
     if (user.type !== 'company') {
-        // Clients don't have a "dashboard" in the same sense, redirect to profile or orders
+        console.log("[DashboardRedirect] Not a company user, redirecting to client profile");
         return <Navigate to="/perfil/cliente" replace />;
     }
 
+    // Prioritize CompanyContext slug
     if (company?.slug) {
+        console.log("[DashboardRedirect] Navigating to company dashboard via CompanyContext:", company.slug);
         return <Navigate to={`/dashboard/empresa/${company.slug}`} replace />;
     }
 
-    // Fallback: Use slug from auth profile if CompanyContext is not yet loaded
+    // Fallback to AuthContext slug (might be faster)
     if (user.companySlug) {
+        console.log("[DashboardRedirect] Navigating to company dashboard via AuthContext:", user.companySlug);
         return <Navigate to={`/dashboard/empresa/${user.companySlug}`} replace />;
     }
 
-    console.warn("DashboardRedirect: Company user detected but no company slug found. User ID:", user.id);
-    // Is company user but no company record -> Go to registration
-    return <Navigate to="/empresa/cadastro" replace />;
+    // Only if we waited and still nothing
+    if (isPatienceOver) {
+        console.warn("DashboardRedirect: Company user detected but no company slug found after wait. User ID:", user.id);
+        return <Navigate to="/empresa/cadastro" replace />;
+    }
+
+    console.log("[DashboardRedirect] Final fallback (waiting for timer)");
+    return <LoadingSpinner />;
 };
 
 const MainRoutes = () => {

@@ -55,29 +55,55 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
         refetch
     } = useQuery({
         queryKey: ['company', profileId],
-        queryFn: async () => {
+        queryFn: async ({ signal }) => {
             if (!profileId) return null;
 
-            const { data, error } = await supabase
-                .from('companies')
-                .select('*')
-                .eq('profile_id', profileId)
-                .limit(1);
+            const fetchWithRetry = async (retryCount = 0): Promise<any> => {
+                try {
+                    const { data, error } = await supabase
+                        .from('companies')
+                        .select('*')
+                        .eq('profile_id', profileId)
+                        .limit(1)
+                        .abortSignal(signal as AbortSignal); // Pass signal for correct unmount handling
 
-            if (error) throw error;
-            if (!data || data.length === 0) return null;
+                    if (error) {
+                        if (error.message?.includes('AbortError') && retryCount < 2) {
+                            console.log("[CompanyContext] Retrying aborted fetch...");
+                            return fetchWithRetry(retryCount + 1);
+                        }
+                        throw error;
+                    }
+                    return data;
+                } catch (err: any) {
+                    if (err.message?.includes('AbortError') && retryCount < 2) {
+                        return fetchWithRetry(retryCount + 1);
+                    }
+                    throw err;
+                }
+            };
+
+            const data = await fetchWithRetry();
+
+            if (!data || data.length === 0) {
+                console.warn("[CompanyContext] No results for profile_id:", profileId);
+                return null;
+            }
 
             const companyRecord = data[0];
 
-            // Map flat DB fields to nested Address object
+            // Map flat DB fields to nested Address object with robust fallback
+            const rawAddress = typeof companyRecord.address === 'string' ? JSON.parse(companyRecord.address) : companyRecord.address;
             const addressData: Address = {
-                street: companyRecord.address?.street || '',
-                city: companyRecord.address?.city || '',
-                state: companyRecord.address?.state || '',
-                cep: companyRecord.address?.cep || '',
-                number: companyRecord.address?.number || '',
-                district: companyRecord.address?.district || ''
+                street: rawAddress?.street || '',
+                city: rawAddress?.city || '',
+                state: rawAddress?.state || '',
+                cep: rawAddress?.cep || '',
+                number: rawAddress?.number || '',
+                district: rawAddress?.district || ''
             };
+
+            console.log("[CompanyContext] Successfully loaded company for slug:", companyRecord.slug);
 
             return {
                 ...companyRecord,
@@ -115,8 +141,9 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
     };
 
     useEffect(() => {
-        // Real-time subscription
+        // Realtime subscription for company record
         if (profileId) {
+            console.log("[CompanyContext] Subscribing to Realtime for profile_id:", profileId);
             const subscription = supabase
                 .channel(`company-changes-${profileId}`)
                 .on(
@@ -128,13 +155,23 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
                         filter: `profile_id=eq.${profileId}`,
                     },
                     (payload) => {
-                        console.log('Company data changed via realtime:', payload);
-                        queryClient.invalidateQueries({ queryKey: ['company'] });
+                        console.log('[CompanyContext] Realtime Update Detected:', payload.eventType, payload.new);
+
+                        // Invalidate query to force a refetch with full mapping logic
+                        queryClient.invalidateQueries({ queryKey: ['company', profileId] });
+
+                        // If it's a deletion, explicitly set company to null
+                        if (payload.eventType === 'DELETE') {
+                            queryClient.setQueryData(['company', profileId], null);
+                        }
                     }
                 )
-                .subscribe();
+                .subscribe((status) => {
+                    console.log(`[CompanyContext] Realtime subscription status: ${status}`);
+                });
 
             return () => {
+                console.log("[CompanyContext] Unsubscribing from Realtime");
                 subscription.unsubscribe();
             };
         }

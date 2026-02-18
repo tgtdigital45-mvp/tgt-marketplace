@@ -44,19 +44,8 @@ const CompanyLoginPage: React.FC = () => {
                 }
 
                 addToast('Login realizado com sucesso!', 'success');
-
-                const { data: companyData } = await supabase
-                    .from('companies')
-                    .select('slug')
-                    .eq('profile_id', data.session.user.id)
-                    .limit(1)
-                    .maybeSingle();
-
-                if (companyData?.slug) {
-                    navigate(`/dashboard/empresa/${companyData.slug}`);
-                } else {
-                    navigate('/empresa/cadastro');
-                }
+                // Centralize navigation logic in DashboardRedirect
+                navigate('/dashboard');
             }
         } catch (err: unknown) {
             const error = err as Error;

@@ -16,6 +16,28 @@ import { coordsToH3 } from '../utils/h3Utils';
 
 const CompanyRegistrationPage: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+
+  // Guard: If user is already logged in and has a company, send them to dashboard
+  React.useEffect(() => {
+    const checkExistingCompany = async () => {
+      if (user?.id && user.type === 'company') {
+        console.log("[CompanyRegistrationPage] Checking for existing company for user:", user.id);
+        const { data } = await supabase
+          .from('companies')
+          .select('slug')
+          .eq('profile_id', user.id)
+          .maybeSingle();
+
+        if (data?.slug) {
+          console.log("[CompanyRegistrationPage] Company found, redirecting to dashboard:", data.slug);
+          navigate(`/dashboard/empresa/${data.slug}`, { replace: true });
+        }
+      }
+    };
+    checkExistingCompany();
+  }, [user, navigate]);
+
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     companyName: '',
@@ -45,7 +67,6 @@ const CompanyRegistrationPage: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const { addToast } = useToast();
-  const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
