@@ -80,18 +80,61 @@ export function useServicesMarketplace({
                 if (data) results.push(...(data as DbService[]));
             }
 
-            // Fetch presential services (only if we have location)
-            if (shouldFetchPresential && h3Indexes) {
-                const { data, error: rpcError } = await supabase.rpc('get_nearby_services', {
-                    p_h3_indexes: h3Indexes,
-                    p_category: category || null,
-                    p_limit: limit,
-                    p_offset: 0,
-                });
+            // Fetch presential services
+            // If we have location, use h3. If NOT, we fallback to a general query.
+            if (shouldFetchPresential) {
+                if (h3Indexes) {
+                    const { data, error: rpcError } = await supabase.rpc('get_nearby_services', {
+                        p_h3_indexes: h3Indexes,
+                        p_category: category || null,
+                        p_limit: limit,
+                        p_offset: 0,
+                    });
 
-                if (rpcError) throw rpcError;
-                if (data) results.push(...(data as DbService[]));
+                    if (rpcError) throw rpcError;
+                    if (data) results.push(...(data as DbService[]));
+                } else {
+                    // Fallback: No location -> Fetch latest presential services
+                    let query = supabase
+                        .from('services')
+                        .select(`
+                            *,
+                            companies!inner (
+                                company_name,
+                                logo_url,
+                                rating,
+                                slug
+                            )
+                        `)
+                        .eq('service_type', 'presential')
+                        .eq('is_active', true)
+                        .order('created_at', { ascending: false })
+                        .limit(limit);
+
+                    if (category) {
+                        query = query.eq('category_tag', category);
+                    }
+
+                    if (searchQuery) {
+                        query = query.ilike('title', `%${searchQuery}%`);
+                    }
+
+                    const { data, error: fallbackError } = await query;
+                    if (fallbackError) throw fallbackError;
+
+                    if (data) {
+                        const mapped = data.map((s: any) => ({
+                            ...s,
+                            company_name: s.companies?.company_name,
+                            company_logo: s.companies?.logo_url,
+                            company_rating: s.companies?.rating,
+                            company_slug: s.companies?.slug,
+                        }));
+                        results.push(...mapped);
+                    }
+                }
             }
+
 
             // Deduplicate by id (a hybrid service could appear in both queries)
             const seen = new Set<string>();

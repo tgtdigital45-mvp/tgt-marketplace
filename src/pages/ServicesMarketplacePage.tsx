@@ -51,8 +51,8 @@ function ServiceCard({ service }: { service: DbService }) {
                 {/* Service type badge */}
                 <span
                     className={`absolute top-3 left-3 flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${isPresential
-                            ? 'bg-amber-100 text-amber-700'
-                            : 'bg-blue-100 text-blue-700'
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-blue-100 text-blue-700'
                         }`}
                 >
                     {isPresential ? <MapPin size={10} /> : <Wifi size={10} />}
@@ -122,7 +122,7 @@ function ServiceCard({ service }: { service: DbService }) {
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
-export default function ServicesMarketplacePage() {
+export default function ServicesMarketplacePage({ hideHeader = false }: { hideHeader?: boolean }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState('');
     const [activeFilter, setActiveFilter] = useState<ServiceFilter>('all');
@@ -158,56 +158,59 @@ export default function ServicesMarketplacePage() {
     return (
         <div className="min-h-screen bg-gray-50">
             {/* ── Search Header ── */}
-            <div className="bg-white border-b border-gray-100 sticky top-0 z-10 shadow-sm">
-                <div className="max-w-6xl mx-auto px-4 py-4">
-                    {/* Search bar */}
-                    <div className="relative mb-4">
-                        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input
-                            type="text"
-                            placeholder="O que você precisa? Ex: Logo Design, Gestão de Tráfego..."
-                            value={searchQuery}
-                            onChange={handleSearchChange}
-                            className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition-all"
-                        />
-                    </div>
+            {!hideHeader && (
+                <div className="bg-white border-b border-gray-100 sticky top-0 z-10 shadow-sm">
+                    <div className="max-w-6xl mx-auto px-4 py-4">
+                        {/* Search bar */}
+                        <div className="relative mb-4">
+                            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                                type="text"
+                                placeholder="O que você precisa? Ex: Logo Design, Gestão de Tráfego..."
+                                value={searchQuery}
+                                onChange={handleSearchChange}
+                                className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition-all"
+                            />
+                        </div>
 
-                    {/* Service type filter pills */}
-                    <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                        {SERVICE_TYPE_FILTERS.map((f) => (
-                            <button
-                                key={f.value}
-                                onClick={() => setActiveFilter(f.value)}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${activeFilter === f.value
+                        {/* Service type filter pills */}
+                        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                            {SERVICE_TYPE_FILTERS.map((f) => (
+                                <button
+                                    key={f.value}
+                                    onClick={() => setActiveFilter(f.value)}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${activeFilter === f.value
                                         ? 'bg-blue-600 text-white shadow-sm'
                                         : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
-                                    }`}
-                            >
-                                {f.icon}
-                                {f.label}
-                            </button>
-                        ))}
+                                        }`}
+                                >
+                                    {f.icon}
+                                    {f.label}
+                                </button>
+                            ))}
 
-                        <div className="w-px h-4 bg-gray-200 mx-1" />
+                            <div className="w-px h-4 bg-gray-200 mx-1" />
 
-                        {/* Category pills */}
-                        {CATEGORIES.map((cat) => (
-                            <button
-                                key={cat.value}
-                                onClick={() => setActiveCategory(cat.value)}
-                                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${activeCategory === cat.value
+                            {/* Category pills */}
+                            {CATEGORIES.map((cat) => (
+                                <button
+                                    key={cat.value}
+                                    onClick={() => setActiveCategory(cat.value)}
+                                    className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${activeCategory === cat.value
                                         ? 'bg-slate-800 text-white'
                                         : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
-                                    }`}
-                            >
-                                {cat.label}
-                            </button>
-                        ))}
+                                        }`}
+                                >
+                                    {cat.label}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* ── Location Notice ── */}
+
             {!locationLoading && !hasLocation && activeFilter !== 'remote' && (
                 <div className="max-w-6xl mx-auto px-4 pt-4">
                     <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-700">
@@ -226,73 +229,64 @@ export default function ServicesMarketplacePage() {
             )}
 
             {/* ── Content ── */}
-            <div className="max-w-6xl mx-auto px-4 py-6">
-                {/* Loading state */}
-                {loading && (
-                    <div className="flex flex-col items-center justify-center py-24 gap-3">
-                        <Loader2 size={32} className="animate-spin text-blue-500" />
-                        <p className="text-slate-500 text-sm">Buscando serviços...</p>
-                    </div>
-                )}
+            {(loading || error || services.length > 0) && (
+                <div className="max-w-6xl mx-auto px-4 py-6">
+                    {/* Loading state */}
+                    {loading && (
+                        <div className="flex flex-col items-center justify-center py-24 gap-3">
+                            <Loader2 size={32} className="animate-spin text-blue-500" />
+                            <p className="text-slate-500 text-sm">Buscando serviços...</p>
+                        </div>
+                    )}
 
-                {/* Error state */}
-                {!loading && error && (
-                    <div className="flex flex-col items-center justify-center py-24 gap-3">
-                        <AlertCircle size={32} className="text-red-400" />
-                        <p className="text-slate-600 font-medium">Erro ao carregar serviços</p>
-                        <p className="text-slate-400 text-sm">{error}</p>
-                    </div>
-                )}
+                    {/* Error state */}
+                    {!loading && error && (
+                        <div className="flex flex-col items-center justify-center py-24 gap-3">
+                            <AlertCircle size={32} className="text-red-400" />
+                            <p className="text-slate-600 font-medium">Erro ao carregar serviços</p>
+                            <p className="text-slate-400 text-sm">{error}</p>
+                        </div>
+                    )}
 
-                {/* Empty state */}
-                {!loading && !error && services.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-24 gap-3">
-                        <Search size={40} className="text-slate-200" />
-                        <p className="text-slate-600 font-medium">Nenhum serviço encontrado</p>
-                        <p className="text-slate-400 text-sm">
-                            Tente outros termos ou remova os filtros
-                        </p>
-                    </div>
-                )}
-
-                {/* Grouped view (no active filter) */}
-                {!loading && !error && grouped && grouped.size > 0 && (
-                    <div className="space-y-10">
-                        {Array.from(grouped.entries()).map(([category, items]) => (
-                            <section key={category}>
-                                <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-lg font-bold text-slate-800">{category}</h2>
-                                    <button
-                                        onClick={() => setActiveCategory(category)}
-                                        className="text-sm text-blue-600 hover:underline flex items-center gap-1"
-                                    >
-                                        Ver todos <ArrowRight size={14} />
-                                    </button>
-                                </div>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                                    {items.slice(0, 4).map((service) => (
-                                        <ServiceCard key={service.id} service={service} />
-                                    ))}
-                                </div>
-                            </section>
-                        ))}
-                    </div>
-                )}
-
-                {/* Flat list (with active filter/search) */}
-                {!loading && !error && !grouped && services.length > 0 && (
-                    <>
-                        <p className="text-sm text-slate-500 mb-4">
-                            {services.length} serviço{services.length !== 1 ? 's' : ''} encontrado{services.length !== 1 ? 's' : ''}
-                        </p>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {services.map((service) => (
-                                <ServiceCard key={service.id} service={service} />
+                    {/* Grouped view (no active filter) */}
+                    {!loading && !error && grouped && grouped.size > 0 && (
+                        <div className="space-y-10">
+                            {Array.from(grouped.entries()).map(([category, items]) => (
+                                <section key={category}>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h2 className="text-lg font-bold text-slate-800">{category}</h2>
+                                        <button
+                                            onClick={() => setActiveCategory(category)}
+                                            className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                                        >
+                                            Ver todos <ArrowRight size={14} />
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                                        {items.slice(0, 4).map((service) => (
+                                            <ServiceCard key={service.id} service={service} />
+                                        ))}
+                                    </div>
+                                </section>
                             ))}
                         </div>
-                    </>
-                )}
-            </div>
+                    )}
+
+                    {/* Flat list (with active filter/search) */}
+                    {!loading && !error && !grouped && services.length > 0 && (
+                        <>
+                            <p className="text-sm text-slate-500 mb-4">
+                                {services.length} serviço{services.length !== 1 ? 's' : ''} encontrado{services.length !== 1 ? 's' : ''}
+                            </p>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                                {services.map((service) => (
+                                    <ServiceCard key={service.id} service={service} />
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

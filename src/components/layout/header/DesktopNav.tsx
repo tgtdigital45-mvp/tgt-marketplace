@@ -14,11 +14,18 @@ const DesktopNav: React.FC<DesktopNavProps> = ({ isScrolled, isTransparent }) =>
     return (
         <nav className="hidden md:flex items-center space-x-8">
             <Link
+                to="/servicos"
+                className={`${baseTextColor} font-bold text-sm transition-colors flex items-center gap-2 group`}
+            >
+                <div className={`w-1.5 h-1.5 rounded-full bg-transparent group-hover:${activeIndicatorColor} transition-colors`}></div>
+                Serviços
+            </Link>
+            <Link
                 to="/empresas"
                 className={`${baseTextColor} font-bold text-sm transition-colors flex items-center gap-2 group`}
             >
                 <div className={`w-1.5 h-1.5 rounded-full bg-transparent group-hover:${activeIndicatorColor} transition-colors`}></div>
-                Buscar Empresas
+                Empresas
             </Link>
             <Link
                 to="/para-empresas"
