@@ -1,4 +1,5 @@
 import React, { useState, lazy, Suspense } from 'react';
+import { deduplicateCompanies } from '../utils/companyUtils';
 import { Helmet } from 'react-helmet-async';
 import SEO from '../components/SEO';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -137,8 +138,10 @@ const CompanyProfilePage: React.FC = () => {
 
   const isClient = user?.type === 'client';
 
+  const [activeTab, setActiveTab] = useState<'overview' | 'services'>('overview');
+
   return (
-    <main className="bg-gray-50 min-h-screen pb-12">
+    <main className="bg-brand-background min-h-screen pb-12">
       <SEO
         title={`${company.companyName} | TGT`}
         description={`Confira os serviços de ${company.companyName}.`}
@@ -146,16 +149,11 @@ const CompanyProfilePage: React.FC = () => {
         image={company.coverImage}
       />
 
-      {/* Schema.org omitted for brevity but should be kept if critical */}
-
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-        {/* Breadcrumb / Top Bar could go here */}
-
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
           {/* LEFT SIDEBAR (Sticky) - Authority */}
-          <aside className="lg:col-span-4 order-2 lg:order-1">
+          <aside className="lg:col-span-4 order-2 lg:order-1 sticky top-24">
             <ProfileSidebar
               company={company}
               onContactClick={async () => {
@@ -163,19 +161,12 @@ const CompanyProfilePage: React.FC = () => {
                   addToast("Faça login para enviar mensagens", "info");
                   return;
                 }
-
                 const targetId = company.profileId;
                 if (!targetId) {
                   addToast("Erro ao iniciar chat: Perfil da empresa não encontrado.", "error");
                   return;
                 }
-
                 if (isClient) {
-                  // Check for existing open job/conversation not yet implemented fully to check specifics
-                  // But InquiryModal creates a new Job.
-                  // Ideally we check if there's an ACTIVE job with this company to allow continuing it?
-                  // For now, let's open InquiryModal which acts as "New Request".
-                  // If they want to continue an old one, they should use "Minhas Mensagens".
                   setIsInquiryModalOpen(true);
                 } else {
                   addToast("Apenas clientes podem iniciar chat por aqui.", "info");
@@ -189,9 +180,7 @@ const CompanyProfilePage: React.FC = () => {
           </aside>
 
           {/* RIGHT MAIN CONTENT - Product Showcase */}
-          <div className="lg:col-span-8 order-1 lg:order-2 space-y-8">
-
-
+          <div className="lg:col-span-8 order-1 lg:order-2 space-y-6">
 
             {/* Cover Image Banner */}
             <div className="rounded-[var(--radius-box)] overflow-hidden h-48 md:h-64 shadow-md relative group bg-gray-200">
@@ -203,75 +192,106 @@ const CompanyProfilePage: React.FC = () => {
                 optimizedWidth={1200}
                 quality={85}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
+              <div className="absolute bottom-4 left-4 text-white z-10">
+                <h1 className="text-3xl font-bold shadow-sm">{company.companyName}</h1>
+                {company.level && <SellerBadge level={company.level as SellerLevel} showLabel={true} className="mt-2 text-xs" />}
+              </div>
             </div>
 
-            <section className="bg-white p-6 md:p-8 rounded-[var(--radius-box)] border border-gray-100 shadow-sm">
-              <div className="flex items-center gap-3 mb-4">
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{company.companyName}</h1>
-                {company.level && <SellerBadge level={company.level as SellerLevel} showLabel={true} className="text-sm px-2 py-1" />}
-              </div>
-              <p className="text-gray-600 whitespace-pre-wrap leading-relaxed text-lg">
-                {company.description}
-              </p>
-            </section>
+            {/* Navigation Tabs */}
+            <div className="flex border-b border-gray-200 mb-6 bg-white rounded-t-[var(--radius-box)] px-6 pt-4 sticky top-0 z-20 shadow-sm">
+              <button
+                onClick={() => setActiveTab('overview')}
+                className={`pb-4 px-6 text-sm font-semibold transition-colors relative ${activeTab === 'overview'
+                  ? 'text-brand-primary border-b-2 border-brand-primary'
+                  : 'text-gray-500 hover:text-gray-700'
+                  }`}
+              >
+                Visão Geral
+              </button>
+              <button
+                onClick={() => setActiveTab('services')}
+                className={`pb-4 px-6 text-sm font-semibold transition-colors relative ${activeTab === 'services'
+                  ? 'text-brand-primary border-b-2 border-brand-primary'
+                  : 'text-gray-500 hover:text-gray-700'
+                  }`}
+              >
+                Soluções (Loja)
+                <span className="ml-2 bg-brand-accent/10 text-brand-accent text-[10px] px-2 py-0.5 rounded-full">{company.services.length}</span>
+              </button>
+            </div>
 
-            {/* Services Grid (Gigs) */}
-            <section>
-              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                Meus Serviços
-                <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full font-medium">{company.services.length}</span>
-              </h2>
+            {/* Tab Content */}
+            <div className="min-h-[500px]">
+              {activeTab === 'overview' ? (
+                <div className="space-y-8 animate-in fade-in duration-300">
+                  {/* About */}
+                  <section className="bg-white p-6 md:p-8 rounded-[var(--radius-box)] border border-gray-100 shadow-sm">
+                    <h2 className="text-xl font-bold text-gray-900 mb-4">Sobre Nós</h2>
+                    <p className="text-gray-600 whitespace-pre-wrap leading-relaxed text-base">
+                      {company.description || "Nenhuma descrição informada."}
+                    </p>
+                  </section>
 
-              {company.services.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {company.services.map(service => (
-                    <ServiceCard
-                      key={service.id}
-                      service={service}
-                      onRequestQuote={handleRequestQuote}
-                    />
-                  ))}
+                  {/* Portfolio */}
+                  {company.portfolio.length > 0 && (
+                    <section className="bg-white p-6 md:p-8 rounded-[var(--radius-box)] border border-gray-100 shadow-sm">
+                      <h2 className="text-xl font-bold text-gray-900 mb-4">Portfólio</h2>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {company.portfolio.map((item, idx) => (
+                          <div key={item.id || idx} className="aspect-square rounded-[var(--radius-box)] overflow-hidden bg-gray-200 cursor-pointer hover:opacity-90 transition-opacity">
+                            <img src={item.url} alt={item.caption} className="w-full h-full object-cover" />
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {/* Reviews */}
+                  <ReviewsList
+                    reviews={company.reviews}
+                    overallRating={company.rating}
+                    reviewCount={company.reviewCount}
+                  />
+
+                  {/* Similar Companies in Overview? Maybe better at bottom of page generally. Keeping for consistency */}
+                  {similarCompanies.length > 0 && (
+                    <section className="pt-8 border-t border-gray-200">
+                      <h2 className="text-xl font-bold text-gray-900 mb-4">Outros profissionais em {company.category}</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {deduplicateCompanies(similarCompanies).slice(0, 2).map(comp => (
+                          <CompanyCard key={comp.id} company={comp} />
+                        ))}
+                      </div>
+                    </section>
+                  )}
                 </div>
               ) : (
-                <div className="text-center py-12 bg-white rounded-[var(--radius-box)] border border-dashed border-gray-200">
-                  <p className="text-gray-500">Nenhum serviço ativo no momento.</p>
+                <div className="animate-in fade-in duration-300">
+                  {/* Services Grid (Shop) */}
+                  {company.services.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {company.services.map(service => (
+                        <ServiceCard
+                          key={service.id}
+                          service={service}
+                          step="ShopTab" // Optional: Pass context if needed
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-20 bg-white rounded-[var(--radius-box)] border border-dashed border-gray-200">
+                      <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400">
+                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4" /></svg>
+                      </div>
+                      <h3 className="text-lg font-medium text-gray-900">Nenhum serviço disponível</h3>
+                      <p className="text-gray-500 mt-2">Esta empresa ainda não cadastrou soluções.</p>
+                    </div>
+                  )}
                 </div>
               )}
-            </section>
-
-            {/* Portfolio Preview (Optional) */}
-            {company.portfolio.length > 0 && (
-              <section>
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Portfólio</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {company.portfolio.map((item, idx) => (
-                    <div key={item.id || idx} className="aspect-square rounded-[var(--radius-box)] overflow-hidden bg-gray-200 cursor-pointer hover:opacity-90 transition-opacity">
-                      <img src={item.url} alt={item.caption} className="w-full h-full object-cover" />
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Reviews List */}
-            <ReviewsList
-              reviews={company.reviews}
-              overallRating={company.rating}
-              reviewCount={company.reviewCount}
-            />
-
-            {/* Similar Companies */}
-            {similarCompanies.length > 0 && (
-              <section className="pt-8 border-t border-gray-200">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Outros profissionais em {company.category}</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {similarCompanies.slice(0, 2).map(comp => (
-                    <CompanyCard key={comp.id} company={comp} />
-                  ))}
-                </div>
-              </section>
-            )}
+            </div>
 
           </div>
 

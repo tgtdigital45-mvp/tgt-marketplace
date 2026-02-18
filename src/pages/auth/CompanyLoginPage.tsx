@@ -13,7 +13,13 @@ const CompanyLoginPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [portalError, setPortalError] = useState<string | null>(null);
     const navigate = useNavigate();
+
     const { addToast } = useToast();
+    const [isMounted, setIsMounted] = useState(true);
+
+    React.useEffect(() => {
+        return () => setIsMounted(false);
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -57,9 +63,21 @@ const CompanyLoginPage: React.FC = () => {
             console.error('Login error:', error);
             addToast('Credenciais inválidas. Verifique seu e-mail e senha.', 'error');
         } finally {
-            setIsLoading(false);
+            if (isMounted) setIsLoading(false);
         }
     };
+
+    // Safety timeout to reset loading state if something hangs
+    React.useEffect(() => {
+        let timeout: NodeJS.Timeout;
+        if (isLoading) {
+            timeout = setTimeout(() => {
+                setIsLoading(false);
+                // Optional: addToast('O login demorou muito. Tente novamente.', 'warning');
+            }, 15000);
+        }
+        return () => clearTimeout(timeout);
+    }, [isLoading]);
 
     const handleCertificateLogin = () => {
         setIsLoading(true);

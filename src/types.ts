@@ -2,6 +2,22 @@
 
 export type OrderStatus = 'pending_payment' | 'active' | 'in_review' | 'in_progress' | 'delivered' | 'completed' | 'cancelled';
 
+/** SAGA state machine for distributed checkout transactions (iFood pattern) */
+export type SagaStatus =
+  | 'PENDING'              // Order created, awaiting payment redirect
+  | 'PAYMENT_PROCESSING'   // User redirected to Stripe, awaiting webhook
+  | 'PAYMENT_CONFIRMED'    // Stripe confirmed payment, worker activating
+  | 'PAYMENT_FAILED'       // Stripe reported failure or timeout
+  | 'ORDER_ACTIVE'         // Payment confirmed, order is live
+  | 'CANCELLED'            // Compensated/cancelled after failure
+  | 'REFUNDED';            // Payment reversed
+
+export interface SagaLogEntry {
+  event: SagaStatus | 'ORDER_CREATED';
+  timestamp: string;
+  data?: Record<string, unknown>;
+}
+
 export interface DbOrder {
   id: string;
   created_at: string;
@@ -14,6 +30,11 @@ export interface DbOrder {
   status: OrderStatus;
   delivery_deadline: string;
   package_snapshot?: any;
+  // SAGA fields
+  saga_status?: SagaStatus;
+  saga_log?: SagaLogEntry[];
+  stripe_payment_intent_id?: string;
+  payment_status?: 'pending' | 'paid' | 'failed' | 'refunded';
 }
 
 export interface DbMessage {
@@ -61,6 +82,7 @@ export interface Address {
   cep: string;
   lat?: number;
   lng?: number;
+  h3_index?: string; // Computed H3 cell index (resolution 8)
 }
 
 export interface Company {
@@ -139,6 +161,18 @@ export interface DbService {
   packages?: ServicePackages; // JSONB
   gallery?: string[]; // Array of image URLs
   faq?: { question: string; answer: string; }[]; // JSONB
+  // H3 + Marketplace fields
+  service_type?: 'remote' | 'presential' | 'hybrid';
+  category_tag?: string;
+  image_url?: string;
+  is_active?: boolean;
+  tags?: string[];
+  h3_index?: string;
+  // Joined company data (from RPC)
+  company_name?: string;
+  company_logo?: string;
+  company_rating?: number;
+  company_slug?: string;
 }
 
 export interface DbPortfolioItem {
@@ -171,7 +205,8 @@ export interface DbCompany {
   level?: 'Iniciante' | 'Nível 1' | 'Pro';
   current_plan_tier?: 'starter' | 'pro' | 'agency';
   subscription_status?: string;
-  profile_id: string; // Add this
+  profile_id: string;
+  h3_index?: string; // Uber H3 cell index (resolution 8) for geo search
 }
 
 export interface Service {
@@ -185,6 +220,18 @@ export interface Service {
   packages?: ServicePackages;
   gallery?: string[];
   faq?: { question: string; answer: string; }[];
+  // H3 + Marketplace fields
+  service_type?: 'remote' | 'presential' | 'hybrid';
+  category_tag?: string;
+  image_url?: string;
+  is_active?: boolean;
+  tags?: string[];
+  h3_index?: string;
+  // Joined company data
+  company_name?: string;
+  company_logo?: string;
+  company_rating?: number;
+  company_slug?: string;
 }
 
 export interface PortfolioItem {

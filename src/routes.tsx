@@ -15,6 +15,7 @@ import AdminGuard from './components/AdminGuard';
 // Pages
 const ClientLandingPage = lazy(() => import('./pages/ClientLandingPage'));
 const CompaniesListPage = lazy(() => import('./pages/LandingPage'));
+const ServicesMarketplacePage = lazy(() => import('./pages/ServicesMarketplacePage'));
 
 const CompanyProfilePage = lazy(() => import('./pages/CompanyProfilePage'));
 const BookingConfirmationPage = lazy(() => import('./pages/BookingConfirmationPage'));
@@ -117,11 +118,12 @@ const DashboardRedirect = () => {
         return <Navigate to={`/dashboard/empresa/${company.slug}`} replace />;
     }
 
-    // Fallback: Use slug from auth profile if CompanyContext is not yet loaded (prevents false positive redirect to registration)
+    // Fallback: Use slug from auth profile if CompanyContext is not yet loaded
     if (user.companySlug) {
         return <Navigate to={`/dashboard/empresa/${user.companySlug}`} replace />;
     }
 
+    console.warn("DashboardRedirect: Company user detected but no company slug found. User ID:", user.id);
     // Is company user but no company record -> Go to registration
     return <Navigate to="/empresa/cadastro" replace />;
 };
@@ -136,6 +138,8 @@ const MainRoutes = () => {
                     <Routes location={location}>
                         <Route path="/" element={<AnimatedElement><ClientLandingPage /></AnimatedElement>} />
                         <Route path="/empresas" element={<AnimatedElement><CompaniesListPage /></AnimatedElement>} />
+                        {/* Service-First marketplace — direct deep-link to services tab */}
+                        <Route path="/servicos" element={<AnimatedElement><ServicesMarketplacePage /></AnimatedElement>} />
 
                         <Route path="/empresa/:slug" element={<AnimatedElement><CompanyProfilePage /></AnimatedElement>} />
                         <Route path="/servico/:id" element={<AnimatedElement><ServiceDetailsPage /></AnimatedElement>} />

@@ -11,6 +11,8 @@ import { validateCNPJ, validateCPF } from '../utils/validators';
 import { CATEGORIES } from '../constants';
 import { supabase } from '../lib/supabase';
 import { Store, Briefcase, ChevronRight, Check } from 'lucide-react';
+import { getCoordinatesFromAddress } from '../utils/geocoding';
+import { coordsToH3 } from '../utils/h3Utils';
 
 const CompanyRegistrationPage: React.FC = () => {
   const { user } = useAuth();
@@ -81,9 +83,12 @@ const CompanyRegistrationPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Validação do passo 3 (Dados de Acesso) - Pular se usuário já estiver logado
   const validateStep3 = () => {
+    if (user) return true; // Se já está logado, não precisa validar senha
+
     const newErrors: Record<string, string> = {};
-    if (!formData.adminName) newErrors.adminName = 'Campo obrigatório';
+    if (!formData.adminName) newErrors.adminName = 'Campo obrigatório'; // Este campo pode ser preenchido automaticamente se tivermos o perfil
     if (!validateCPF(formData.adminCpf)) newErrors.adminCpf = 'CPF inválido';
     if (!formData.adminEmail) newErrors.adminEmail = 'Campo obrigatório';
     if (!formData.password || formData.password.length < 6) newErrors.password = 'Senha deve ter no mínimo 6 caracteres';
@@ -161,24 +166,36 @@ const CompanyRegistrationPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // 1. Create Auth User
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.adminEmail,
-        password: formData.password,
-        options: {
-          data: {
-            name: formData.companyName,
-            type: 'company',
-            role: 'company',
+      let userId = user?.id;
+      let authSession = null;
+
+      // 1. Authenticate or Get User
+      if (!userId) {
+        // Normal Flow: Sign Up
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: formData.adminEmail,
+          password: formData.password,
+          options: {
+            data: {
+              name: formData.companyName,
+              type: 'company',
+              role: 'company',
+            }
           }
-        }
-      });
+        });
 
-      if (authError) throw authError;
+        if (authError) throw authError;
+        if (!authData.user) throw new Error("Erro ao criar usuário.");
 
-      if (!authData.user) throw new Error("Erro ao criar usuário.");
+        userId = authData.user.id;
+        authSession = authData.session;
+      } else {
+        // Resume Flow: User already logged in (Limbo state)
+        console.log("Usuário já autenticado, pulando criação de conta auth:", userId);
+        // Opcional: Atualizar metadados se necessário
+      }
 
-      const userId = authData.user.id;
+      if (!userId) throw new Error("Falha ao identificar usuário.");
 
       // 2. Upload Files
       let logoUrl = '';
@@ -196,6 +213,29 @@ const CompanyRegistrationPage: React.FC = () => {
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
         .replace(/^-+|-+$/g, '');
+
+      // 2.5 Geocode Address & Calculate H3
+      let h3Index = null;
+      let lat = null;
+      let lng = null;
+
+      try {
+        const coordinates = await getCoordinatesFromAddress(
+          formData.street,
+          formData.number,
+          formData.district,
+          formData.city,
+          formData.state
+        );
+
+        if (coordinates) {
+          lat = coordinates.lat;
+          lng = coordinates.lng;
+          h3Index = coordsToH3(lat, lng);
+        }
+      } catch (error) {
+        console.error("Geocoding failed:", error);
+      }
 
       // 3. Create Company Record
       const { error: dbError } = await supabase.from('companies').insert({
@@ -215,8 +255,13 @@ const CompanyRegistrationPage: React.FC = () => {
           district: formData.district,
           city: formData.city,
           state: formData.state,
-          cep: formData.cep
+          cep: formData.cep,
+          latitude: lat,
+          longitude: lng
         },
+        h3_index: h3Index,
+        rating: 0,
+        total_reviews: 0,
         admin_contact: {
           name: formData.adminName,
           cpf: formData.adminCpf,
@@ -229,11 +274,6 @@ const CompanyRegistrationPage: React.FC = () => {
         current_plan_tier: 'starter', // Default to starter until paid, or update webhook to set.
         // For paid plans, we will redirect to checkout.
       });
-
-      if (dbError) {
-        console.error("Database Insert Error:", dbError);
-        throw dbError;
-      }
 
       addToast('Cadastro realizado! Redirecionando para pagamento...', 'success');
 
@@ -248,22 +288,32 @@ const CompanyRegistrationPage: React.FC = () => {
       const selectedPriceId = PRICES[formData.selectedPlan as keyof typeof PRICES];
 
       if (selectedPriceId) {
-        const { data, error } = await supabase.functions.invoke('create-subscription-checkout', {
-          body: {
-            priceId: selectedPriceId,
-            userId: userId, // We need to pass userId because auth session might not be fully established/propagated or we want to be explicit
-            successUrl: `${window.location.origin}/dashboard/empresa/${slug}/inicio?session_id={CHECKOUT_SESSION_ID}`,
-            cancelUrl: `${window.location.origin}/dashboard/empresa/${slug}/assinatura`,
-            companyId: null // We don't have company ID yet returned easily, but the Function can look it up by userId or we can fetch it. 
-            // Actually, since we just inserted, we can try to get it. 
-            // For simplicity in registration, maybe pass metadata to Stripe to update the company/user later via webhook.
-          }
-        });
+        // Timeout wrapper for checking out invoke
+        const invokeCheckout = async () => {
+          const { data, error } = await supabase.functions.invoke('create-subscription-checkout', {
+            body: {
+              priceId: selectedPriceId,
+              userId: userId,
+              successUrl: `${window.location.origin}/dashboard`, // Simplified success URL for now
+              cancelUrl: `${window.location.origin}/dashboard/empresa/${slug}/assinatura`,
+              companyId: null
+            }
+          });
+          return { data, error };
+        };
+
+        const { data, error } = await Promise.race([
+          invokeCheckout(),
+          new Promise<{ data: any, error: any }>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 15000))
+        ]).catch(err => ({ data: null, error: err }));
 
         if (error) {
           console.error('Checkout error:', error);
-          // Fallback to login if checkout fails
-          setTimeout(() => navigate('/login/empresa'), 2000);
+          // Fallback: successful registration but failed checkout -> Go to dashboard to retry later
+          addToast('Empresa criada, mas houve um erro ao iniciar o pagamento. Você pode tentar novamente no painel.', 'warning');
+          setTimeout(() => {
+            window.location.href = `/dashboard/empresa/${slug}/assinatura`;
+          }, 2000);
         } else if (data?.url) {
           window.location.href = data.url;
           return;
@@ -271,9 +321,21 @@ const CompanyRegistrationPage: React.FC = () => {
       }
 
       // If free plan or no checkout url (fallback)
-      if (authData.session) {
-        await supabase.auth.signOut();
+      if (authSession || user) {
+        // DO NOT Sign out. If session causes issues, it's better to refresh it.
+        // await supabase.auth.signOut(); 
+
+        addToast('Cadastro realizado com sucesso!', 'success');
+
+        // Force a specialized redirect to dashboard
+        // We use window.location.href to force a full reload and ensure AuthContext picks up the new company
+        setTimeout(() => {
+          window.location.href = `/dashboard/empresa/${slug}`;
+        }, 1000);
+        return;
       }
+
+      // Fallback for cases without immediate session (e.g. email confirmation required)
       setTimeout(() => {
         navigate('/login/empresa', { replace: true });
       }, 1500);
@@ -374,12 +436,12 @@ const CompanyRegistrationPage: React.FC = () => {
 
             <div className="mb-10">
               {/* Custom Stepper */}
-              <div className="flex items-center justify-center">
-                <div className="flex items-center w-full max-w-xs relative">
+              <div className="flex flex-col items-center mb-10 min-h-[80px]">
+                <div className="w-full max-w-xs relative mb-4">
                   <div className="absolute left-0 top-1/2 w-full h-1 bg-gray-200 -z-10 rounded"></div>
                   <div
                     className="absolute left-0 top-1/2 h-1 bg-brand-primary -z-10 rounded transition-all duration-300"
-                    style={{ width: `${((step - 1) / 2) * 100}%` }}
+                    style={{ width: `${((step - 1) / 3) * 100}%` }} // Adjusted to 3 segments for 4 steps
                   />
 
                   <div className="flex justify-between w-full">
@@ -401,11 +463,11 @@ const CompanyRegistrationPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <div className="flex justify-between w-full max-w-sm mx-auto mt-2 text-xs font-medium text-gray-500">
-                  <span>Dados</span>
-                  <span>Endereço</span>
-                  <span>Acesso</span>
-                  <span>Plano</span>
+                <div className="flex justify-between w-full max-w-xs text-[10px] sm:text-xs font-medium text-gray-500 px-1">
+                  <span className={step === 1 ? 'text-brand-primary font-bold' : ''}>Dados</span>
+                  <span className={step === 2 ? 'text-brand-primary font-bold' : ''}>Endereço</span>
+                  <span className={step === 3 ? 'text-brand-primary font-bold' : ''}>Acesso</span>
+                  <span className={step === 4 ? 'text-brand-primary font-bold' : ''}>Plano</span>
                 </div>
               </div>
 

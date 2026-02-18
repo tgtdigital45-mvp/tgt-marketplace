@@ -16,6 +16,11 @@ const ClientLoginPage: React.FC = () => {
     const navigate = useNavigate();
     const { addToast } = useToast();
     const { signInWithGoogle } = useAuth();
+    const [isMounted, setIsMounted] = useState(true);
+
+    React.useEffect(() => {
+        return () => setIsMounted(false);
+    }, []);
 
     const handleGoogleLogin = async () => {
         setIsLoading(true);

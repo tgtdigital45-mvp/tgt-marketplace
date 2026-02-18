@@ -1,4 +1,5 @@
 import React from 'react';
+import { deduplicateCompanies } from '../../utils/companyUtils';
 import { motion } from 'framer-motion';
 import { useVerifiedCompanies } from '../../hooks/useVerifiedCompanies';
 import CompanyCard from '../CompanyCard';
@@ -38,7 +39,7 @@ const TrustSection: React.FC = () => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        {companies?.map((company: Partial<Company>, index: number) => (
+                        {deduplicateCompanies(companies || []).map((company: Partial<Company>, index: number) => (
                             <motion.div
                                 key={company.id}
                                 initial={{ opacity: 0, y: 20 }}

@@ -54,36 +54,32 @@ const CheckoutPage = () => {
             const selectedPackage = service.packages?.[tier];
             const price = selectedPackage?.price || service.price || 0;
 
-            // 1. Create PRELIMINARY Order (Status: pending)
+            // 1. Create SAGA Order (Atomic RPC)
             console.log("Service Object for Payment:", service);
             const companyData = (service as any).company || (service as any).companies;
-            // Schema correction: 'profile_id' is the correct column for the owner, not 'owner_id'
             const sellerId = companyData?.profile_id;
             console.log("Extracted Seller ID:", sellerId, "From company data:", companyData);
 
             if (!sellerId) throw new Error("ID do vendedor não encontrado. A empresa não possui um profile_id vinculado.");
 
-            const { data: order, error: orderError } = await supabase
-                .from('orders')
-                .insert({
-                    buyer_id: user.id,
-                    seller_id: sellerId,
-                    service_id: service.id,
-                    service_title: service.title,
-                    package_tier: tier,
-                    price: price,
-                    agreed_price: price,
-                    status: 'pending', // IMPORTANT: Start as 'pending'
-                    package_snapshot: service.packages,
-                    payment_status: 'pending'
-                })
-                .select()
-                .single();
+            const { data: sagaResult, error: sagaError } = await supabase.rpc('create_order_saga', {
+                p_service_id: service.id,
+                p_package_tier: tier,
+                p_seller_id: sellerId
+            });
 
-            if (orderError) throw new Error(`Erro ao criar pedido: ${orderError.message}`);
+            if (sagaError) throw new Error(`Erro ao criar pedido SAGA: ${sagaError.message}`);
+
+            console.log("SAGA Order Created:", sagaResult);
+            // Result is { order_id, price, ... } (JSONB, so we cast or access properties)
+            // Note: RPC returns JSONB, so data is likely strictly the object.
+
+            const orderId = (sagaResult as any).order_id;
+
+            if (!orderId) throw new Error("RPC não retornou ID do pedido.");
 
             // 2. Redirect to Stripe Checkout using the Order ID
-            await redirectToCheckout({ order_id: order.id });
+            await redirectToCheckout({ order_id: orderId });
 
         } catch (error: any) {
             console.error("Payment initiation error:", error);

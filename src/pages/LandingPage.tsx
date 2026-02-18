@@ -1,4 +1,5 @@
 import React from 'react';
+import { deduplicateCompanies } from '../utils/companyUtils';
 import SEO from '../components/SEO';
 import CompanyCard from '../components/CompanyCard';
 import { CATEGORIES } from '../constants';
@@ -211,9 +212,9 @@ const CompaniesListPage: React.FC = () => {
                 </div>
               ) : companies.length > 0 ? (
                 <div className="grid gap-8 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-                  {companies.map(company => (
+                  {deduplicateCompanies(companies).map((company, index) => (
                     <motion.div
-                      key={company.id}
+                      key={company.id ? `${company.id}-${index}` : `company-${index}`}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                     >

@@ -101,6 +101,38 @@ serve(async (req) => {
         // ====================================================================
         // STEP 3: HANDLE checkout.session.completed EVENT
         // ====================================================================
+        // ====================================================================
+        // STEP 3: HANDLE EVENTS
+        // ====================================================================
+
+        // --- SAGA: Handle Payment Failure ---
+        if (event.type === 'payment_intent.payment_failed') {
+            const paymentIntent = event.data.object;
+            const failMessage = paymentIntent.last_payment_error?.message || 'Payment failed';
+
+            logStructured('warn', 'Payment failed (SAGA)', {
+                payment_intent: paymentIntent.id,
+                error: failMessage
+            });
+
+            // Find order by payment_intent_id if possible, or metadata
+            // Note: Metadata might be needed on PaymentIntent.
+            // If we don't have order_id, we can't update.
+            // Assuming metadata.order_id is present on PI.
+
+            if (paymentIntent.metadata?.order_id) {
+                const { error: sagaError } = await supabaseClient.rpc('transition_saga_status', {
+                    p_order_id: paymentIntent.metadata.order_id,
+                    p_new_status: 'PAYMENT_FAILED',
+                    p_log_data: { error: failMessage, stripe_pi: paymentIntent.id }
+                });
+
+                if (sagaError) {
+                    logStructured('error', 'Failed to transition SAGA to PAYMENT_FAILED', { error: sagaError.message });
+                }
+            }
+        }
+
         if (event.type === 'checkout.session.completed') {
             const session = event.data.object
             sessionId = session.id
@@ -186,6 +218,34 @@ serve(async (req) => {
                     order_id: order.id,
                     payment_status: 'paid'
                 })
+
+                // ============================================================
+                // SAGA: PAYMENT_CONFIRMED -> TRIGGER NEXT STEP
+                // ============================================================
+                // 1. Transition SAGA status
+                const { error: sagaTransitionError } = await supabaseClient.rpc('transition_saga_status', {
+                    p_order_id: order.id,
+                    p_new_status: 'PAYMENT_CONFIRMED',
+                    p_log_data: { stripe_session_id: sessionId, amount: amountTotal }
+                });
+
+                if (sagaTransitionError) {
+                    logStructured('error', 'SAGA: Failed to transition status', { error: sagaTransitionError.message });
+                } else {
+                    // 2. Create next job: ACTIVATE_ORDER
+                    // This job will be picked up by the same worker (or a separate cron) 
+                    // but since we are here, we can basically consider "Order Activated" logic is what comes next.
+                    // The existing logic below (Commission + Wallet) IS the "Activate Order" logic.
+                    // So we can transition to ORDER_ACTIVE after successful wallet update.
+
+                    // Insert a job record just for audit/consistency or if we want async processing later.
+                    await supabaseClient.from('saga_jobs').insert({
+                        order_id: order.id,
+                        event_type: 'ACTIVATE_ORDER',
+                        status: 'processing', // We are processing it right now below
+                        payload: { session_id: sessionId }
+                    });
+                }
 
                 // ============================================================
                 // STEP 6: COMMISSION SPLIT & WALLET UPDATE
@@ -298,6 +358,22 @@ serve(async (req) => {
                         existing_tx_id: existingTx.id
                     })
                 }
+
+                // ============================================================
+                // SAGA: COMPLETE (ORDER_ACTIVE)
+                // ============================================================
+                await supabaseClient.rpc('transition_saga_status', {
+                    p_order_id: order.id,
+                    p_new_status: 'ORDER_ACTIVE',
+                    p_log_data: { wallet_tx: wallet_id }
+                });
+
+                // Update the job to completed
+                await supabaseClient
+                    .from('saga_jobs')
+                    .update({ status: 'completed', processed_at: new Date().toISOString() })
+                    .match({ order_id: order.id, event_type: 'ACTIVATE_ORDER' });
+
 
             } catch (processingError) {
                 logStructured('error', 'Payment processing failed', {

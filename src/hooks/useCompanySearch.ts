@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { deduplicateCompanies } from '../utils/companyUtils';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
@@ -167,7 +168,7 @@ export const useCompanySearch = (itemsPerPage: number = 8) => {
     });
 
     return {
-        companies: data?.companies || [],
+        companies: deduplicateCompanies(data?.companies || []),
         totalCount: data?.count || 0,
         loading,
         error,

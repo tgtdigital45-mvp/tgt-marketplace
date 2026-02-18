@@ -10,6 +10,7 @@ interface AuthContextType {
   login: (email: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
+  refreshSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -302,8 +303,40 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const refreshSession = async () => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      if (session?.user) {
+        // This will trigger onAuthStateChange, or we can manually update
+        // Since onAuthStateChange handles the update, we just need to ensure it fires or we manually set
+        // Ideally re-fetching the user details manually here ensures we get the latest data (like new company)
+        const userInfo = session.user;
+        const userData: User = {
+          id: userInfo.id,
+          name: userInfo.user_metadata.name || userInfo.email?.split('@')[0] || 'User',
+          email: userInfo.email || '',
+          type: (userInfo.user_metadata.type as 'client' | 'company') || 'client',
+          avatar: userInfo.user_metadata.avatar_url,
+        };
+
+        // ... duplicate logic from useEffect? Better to extract checks to function.
+        // For now, let's just rely on window reload in critical paths, but exposing this allows manual refresh.
+        // Actually, force fetching company:
+        const { data: companyData } = await supabase.from('companies').select('slug').eq('profile_id', userInfo.id).maybeSingle();
+        if (companyData) {
+          userData.type = 'company';
+          userData.companySlug = companyData.slug;
+        }
+        setUser(userData);
+      }
+    } catch (err) {
+      console.error("Error refreshing session:", err);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, signInWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, signInWithGoogle, logout, refreshSession }}>
       {children}
     </AuthContext.Provider>
   );

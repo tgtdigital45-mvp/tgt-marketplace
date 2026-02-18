@@ -24,16 +24,16 @@ const HeroSection: React.FC = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8 }}
                     >
-                        <span className="inline-block py-2 px-6 rounded-full bg-primary-600/20 text-primary-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-8 border border-primary-500/30 backdrop-blur-sm">
-                            Impulsionando o Futuro do Comércio Local
+                        <span className="inline-block py-2 px-6 rounded-full bg-brand-accent/10 text-brand-accent text-[10px] font-bold uppercase tracking-[0.2em] mb-8 border border-brand-accent/20 backdrop-blur-sm">
+                            Marketplace B2B de Serviços
                         </span>
 
-                        <h1 className="text-5xl md:text-8xl font-bold text-white leading-[1.05] mb-10 tracking-tight">
-                            A conexão <span className="text-primary-500 italic">definitiva</span> entre quem precisa e quem resolve.
+                        <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.1] mb-8 tracking-tight">
+                            Contrate agências verificadas com a <span className="text-brand-accent italic">segurança</span> de um clique.
                         </h1>
 
-                        <p className="text-lg md:text-xl text-slate-300 mb-12 max-w-2xl mx-auto leading-relaxed">
-                            A maior rede de serviços e empresas verificadas da região. Segurança garantida, processos ágeis e transparência total em cada contrato.
+                        <p className="text-lg md:text-xl text-slate-300 mb-12 max-w-2xl mx-auto leading-relaxed font-light">
+                            Esqueça orçamentos intermináveis. Acesse serviços produtizados de Marketing, TI e Consultoria com escopo definido, preço fixo e garantia de entrega.
                         </p>
                     </motion.div>
 

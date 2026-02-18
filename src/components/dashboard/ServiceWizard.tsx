@@ -19,6 +19,12 @@ const StepOverview = ({ data, updateData, errors }: any) => {
         { label: 'Jurídico', value: 'juridico' },
     ];
 
+    const serviceTypeOptions = [
+        { label: 'Presencial (No local)', value: 'presential' },
+        { label: 'Remoto (Online)', value: 'remote' },
+        { label: 'Híbrido', value: 'hybrid' },
+    ];
+
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             <div className="text-center mb-8">
@@ -47,11 +53,23 @@ const StepOverview = ({ data, updateData, errors }: any) => {
                             onChange={(value) => updateData({ category: value })}
                             options={categoryOptions}
                             placeholder="Selecione..."
-                        // Select might not accept className prop directly depending on implementation, 
-                        // but wrapping in div with border if needed or handling error msg.
                         />
                         {errors?.category && <p className="text-red-500 text-xs mt-1">Selecione uma categoria.</p>}
                     </motion.div>
+
+                    <motion.div className="w-full">
+                        <Select
+                            label="Tipo de Atendimento"
+                            value={data.serviceType}
+                            onChange={(value) => updateData({ serviceType: value })}
+                            options={serviceTypeOptions}
+                            placeholder="Selecione..."
+                        />
+                        {/* Defaulting to presential if not set, or ensuring it's set in init */}
+                    </motion.div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6">
                     <Input
                         label="Tags (Separadas por vírgula)"
                         placeholder="Ex: logo, branding, design"
@@ -301,9 +319,10 @@ const ServiceWizard = ({ onCancel, initialData, onSuccess }: { onCancel?: () => 
     const [errors, setErrors] = useState<any>({});
     const [formData, setFormData] = useState({
         title: initialData?.title || '',
-        category: initialData?.category || '', // You might need to map this if it's an object in DB
+        category: initialData?.category || '',
+        serviceType: initialData?.service_type || 'presential', // Default to presential
         description: initialData?.description || '',
-        tags: initialData?.tags || '', // tags might not exist in Service type yet, check schema
+        tags: initialData?.tags || '',
         packages: initialData?.packages || {} as ServicePackages,
         gallery: initialData?.gallery || [] as string[]
     });
@@ -335,6 +354,30 @@ const ServiceWizard = ({ onCancel, initialData, onSuccess }: { onCancel?: () => 
         setLoading(true);
         try {
             const startingPrice = calculateStartingPrice();
+
+            // Fetch company to get ID and H3 Index
+            const { data: companyData } = await supabase
+                .from('companies')
+                .select('id, h3_index')
+                .eq('profile_id', user.id)
+                .single();
+
+            let companyId = companyData?.id;
+            let companyH3 = companyData?.h3_index;
+
+            // Fallback for ID if not found via profile_id (unlikely if flow is correct)
+            if (!companyId && user.companySlug) {
+                const { data: cData } = await supabase.from('companies').select('id, h3_index').eq('slug', user.companySlug).single();
+                companyId = cData?.id;
+                companyH3 = cData?.h3_index;
+            }
+
+            if (!companyId) throw new Error("Perfil de empresa não encontrado.");
+
+            // Determine H3 for service
+            // If remote, h3_index is null. If presential/hybrid, inherit from company.
+            const serviceH3Index = (formData.serviceType === 'remote') ? null : companyH3;
+
             const payload = {
                 title: formData.title,
                 description: formData.description,
@@ -342,7 +385,10 @@ const ServiceWizard = ({ onCancel, initialData, onSuccess }: { onCancel?: () => 
                 starting_price: startingPrice,
                 duration: (formData.packages as any)?.basic?.delivery_time + ' dias', // Legacy fallback
                 packages: formData.packages,
-                gallery: formData.gallery
+                gallery: formData.gallery,
+                service_type: formData.serviceType,
+                h3_index: serviceH3Index,
+                category_tag: formData.category // Syncing category_tag
             };
 
             if (isEditing) {
@@ -354,21 +400,6 @@ const ServiceWizard = ({ onCancel, initialData, onSuccess }: { onCancel?: () => 
                 if (error) throw error;
                 addToast("Serviço atualizado com sucesso!", "success");
             } else {
-                // Get company ID logic (same as before)
-                const { data: companyData } = await supabase
-                    .from('companies')
-                    .select('id')
-                    .eq('profile_id', user.id)
-                    .single();
-
-                let companyId = companyData?.id;
-                if (!companyId && user.companySlug) {
-                    const { data: cData } = await supabase.from('companies').select('id').eq('slug', user.companySlug).single();
-                    companyId = cData?.id;
-                }
-
-                if (!companyId) throw new Error("Perfil de empresa não encontrado.");
-
                 const { error } = await supabase.from('services').insert({
                     company_id: companyId,
                     ...payload

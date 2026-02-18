@@ -28,6 +28,7 @@ serve(async (req) => {
         const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
 
         if (userError || !user) {
+            console.error('Auth error:', userError)
             throw new Error('Unauthorized')
         }
 
@@ -38,21 +39,22 @@ serve(async (req) => {
         })
 
         // 4. Parse Request
-        const { price_id, success_url, cancel_url } = await req.json()
+        const { priceId, successUrl, cancelUrl } = await req.json()
 
-        if (!price_id) throw new Error('Missing price_id')
-        if (!success_url) throw new Error('Missing success_url')
-        if (!cancel_url) throw new Error('Missing cancel_url')
+        if (!priceId) throw new Error('Missing priceId')
+        if (!successUrl) throw new Error('Missing successUrl')
+        if (!cancelUrl) throw new Error('Missing cancelUrl')
 
         // 5. Get Company & Customer Info
-        // We need the company to attach the subscription to, and to check for existing stripe_customer_id
+        // We use profile_id based on schema logic (companies linked to profiles)
         const { data: company, error: companyError } = await supabaseClient
             .from('companies')
-            .select('id, company_name, stripe_customer_id, owner_id')
-            .eq('owner_id', user.id)
+            .select('id, company_name, stripe_customer_id, profile_id')
+            .eq('profile_id', user.id)
             .single()
 
         if (companyError || !company) {
+            console.error('Company error:', companyError)
             throw new Error('Company not found for this user')
         }
 
@@ -72,10 +74,6 @@ serve(async (req) => {
             customerId = customer.id
 
             // Save customer ID to database
-            // We use service_role key here to bypass RLS if strictly needed, 
-            // but normally the user can update their own company if RLS allows.
-            // Let's rely on the authenticated client first. If it fails, we might need service role.
-            // Assuming RLS allows update of own company.
             const { error: updateError } = await supabaseClient
                 .from('companies')
                 .update({ stripe_customer_id: customerId })
@@ -83,25 +81,23 @@ serve(async (req) => {
 
             if (updateError) {
                 console.error('Failed to save stripe_customer_id:', updateError)
-                // We continue anyway, but next time it will create a duplicate customer if we don't save it.
-                // Ideally should fail here or use service role.
             }
         }
 
         // 6. Create Checkout Session
-        console.log(`Creating subscription session for customer: ${customerId}, price: ${price_id}`)
+        console.log(`Creating subscription session for customer: ${customerId}, price: ${priceId}`)
 
         const session = await stripe.checkout.sessions.create({
             customer: customerId,
             line_items: [
                 {
-                    price: price_id,
+                    price: priceId,
                     quantity: 1,
                 },
             ],
             mode: 'subscription',
-            success_url: success_url,
-            cancel_url: cancel_url,
+            success_url: successUrl,
+            cancel_url: cancelUrl,
             allow_promotion_codes: true,
             subscription_data: {
                 metadata: {
