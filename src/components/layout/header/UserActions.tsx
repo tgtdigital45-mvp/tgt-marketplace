@@ -19,7 +19,7 @@ const UserActions: React.FC<UserActionsProps> = ({ isScrolled, isTransparentMode
         <div className="hidden md:flex items-center gap-4">
             {!user && (
                 <>
-                    <LoginDropdown />
+                    <LoginDropdown isTransparentMode={isTransparentMode} />
 
                     <Link to="/empresa/cadastro">
                         <Button
