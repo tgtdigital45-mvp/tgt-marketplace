@@ -6,23 +6,23 @@ import TransactionsTable from '../../components/admin/TransactionsTable';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
 // Icons
-const MoneyIcon = () => (
+const MoneyIcon = React.memo(() => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
-);
+));
 
-const UsersIcon = () => (
+const UsersIcon = React.memo(() => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
     </svg>
-);
+));
 
-const OrdersIcon = () => (
+const OrdersIcon = React.memo(() => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
     </svg>
-);
+));
 
 interface AdminMetrics {
     total_revenue: number;
@@ -64,7 +64,7 @@ const AdminDashboard: React.FC = () => {
                     .select(`
             *,
             from_wallet:wallets!transactions_wallet_id_fkey(
-              user:profiles(full_name, email)
+              user:profiles(full_name, email, avatar_url)
             )
           `)
                     .order('created_at', { ascending: false })
@@ -172,7 +172,10 @@ const AdminDashboard: React.FC = () => {
                 </div>
 
                 {/* Transações */}
-                <TransactionsTable transactions={transactions} loading={false} />
+                <div className="mb-8">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">Últimas Transações</h3>
+                    <TransactionsTable transactions={transactions} loading={false} />
+                </div>
 
                 {/* Estatísticas Adicionais */}
                 <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">

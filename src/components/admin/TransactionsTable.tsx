@@ -1,5 +1,5 @@
 import React from 'react';
-import Badge from '../ui/Badge';
+import { getOptimizedImageUrlExact } from '../../utils/supabase-image-loader';
 
 interface Transaction {
     id: string;
@@ -10,6 +10,7 @@ interface Transaction {
     from_profile?: {
         full_name: string;
         email: string;
+        avatar_url?: string;
     };
     to_profile?: {
         full_name: string;
@@ -50,6 +51,11 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({ transactions, loa
             'refund': 'bg-red-100 text-red-700',
         };
         return colors[type] || 'bg-gray-100 text-gray-700';
+    };
+
+    const getAvatarUrl = (path: string | null | undefined, name: string) => {
+        if (!path) return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff&size=40`;
+        return getOptimizedImageUrlExact(path, 40, 40);
     };
 
     if (loading) {
@@ -107,11 +113,21 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({ transactions, loa
                                         {formatDate(tx.created_at)}
                                     </td>
                                     <td className="px-6 py-4 text-sm">
-                                        <div className="font-medium text-gray-900">
-                                            {tx.from_profile?.full_name || 'Sistema'}
-                                        </div>
-                                        <div className="text-xs text-gray-500">
-                                            {tx.from_profile?.email}
+                                        <div className="flex items-center">
+                                            <img
+                                                src={getAvatarUrl(tx.from_profile?.avatar_url, tx.from_profile?.full_name || 'U')}
+                                                alt=""
+                                                className="h-8 w-8 rounded-full mr-3 object-cover"
+                                                loading="lazy"
+                                            />
+                                            <div>
+                                                <div className="font-medium text-gray-900">
+                                                    {tx.from_profile?.full_name || 'Sistema'}
+                                                </div>
+                                                <div className="text-xs text-gray-500">
+                                                    {tx.from_profile?.email}
+                                                </div>
+                                            </div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-sm">

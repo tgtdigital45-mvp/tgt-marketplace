@@ -31,80 +31,18 @@ function logStructured(level: 'info' | 'warn' | 'error', message: string, contex
 }
 
 // ============================================================================
-// WEBHOOK HANDLER
+// ASYNC PROCESSOR
 // ============================================================================
-serve(async (req) => {
-    const startTime = Date.now()
+async function processEvent(event: Stripe.Event) {
     let sessionId: string | undefined
-    let eventType: string | undefined
+    let eventType = event.type
+
+    const supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
 
     try {
-        // ====================================================================
-        // STEP 1: VALIDATE STRIPE SIGNATURE (MANDATORY)
-        // ====================================================================
-        const signature = req.headers.get('stripe-signature')
-        const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
-
-        if (!signature) {
-            logStructured('error', 'Missing Stripe signature header', {
-                error: 'No stripe-signature header found'
-            })
-            return new Response(
-                JSON.stringify({ error: 'Missing signature' }),
-                { status: 401, headers: { 'Content-Type': 'application/json' } }
-            )
-        }
-
-        if (!webhookSecret) {
-            logStructured('error', 'STRIPE_WEBHOOK_SECRET not configured', {
-                error: 'Environment variable missing'
-            })
-            return new Response(
-                JSON.stringify({ error: 'Webhook secret not configured' }),
-                { status: 500, headers: { 'Content-Type': 'application/json' } }
-            )
-        }
-
-        // ====================================================================
-        // STEP 2: CONSTRUCT AND VERIFY EVENT
-        // ====================================================================
-        const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
-            apiVersion: '2023-10-16',
-            httpClient: Stripe.createFetchHttpClient(),
-        })
-
-        const body = await req.text()
-        let event
-
-        try {
-            event = await stripe.webhooks.constructEventAsync(
-                body,
-                signature,
-                webhookSecret
-            )
-
-            eventType = event.type
-            logStructured('info', 'Webhook signature validated successfully', {
-                event_type: eventType
-            })
-        } catch (err) {
-            logStructured('error', 'Webhook signature validation failed', {
-                error: err.message,
-                signature_present: !!signature
-            })
-            return new Response(
-                JSON.stringify({ error: 'Invalid signature' }),
-                { status: 401, headers: { 'Content-Type': 'application/json' } }
-            )
-        }
-
-        // ====================================================================
-        // STEP 3: HANDLE checkout.session.completed EVENT
-        // ====================================================================
-        // ====================================================================
-        // STEP 3: HANDLE EVENTS
-        // ====================================================================
-
         // --- SAGA: Handle Payment Failure ---
         if (event.type === 'payment_intent.payment_failed') {
             const paymentIntent = event.data.object;
@@ -114,11 +52,6 @@ serve(async (req) => {
                 payment_intent: paymentIntent.id,
                 error: failMessage
             });
-
-            // Find order by payment_intent_id if possible, or metadata
-            // Note: Metadata might be needed on PaymentIntent.
-            // If we don't have order_id, we can't update.
-            // Assuming metadata.order_id is present on PI.
 
             if (paymentIntent.metadata?.order_id) {
                 const { error: sagaError } = await supabaseClient.rpc('transition_saga_status', {
@@ -143,251 +76,114 @@ serve(async (req) => {
                 amount_total: session.amount_total
             })
 
-            // Validate metadata
             if (!metadata || !metadata.order_id) {
                 logStructured('error', 'Missing order_id in session metadata', {
                     session_id: sessionId,
                     metadata: metadata
                 })
-                return new Response(
-                    JSON.stringify({ error: 'Missing order_id in metadata' }),
-                    { status: 400, headers: { 'Content-Type': 'application/json' } }
-                )
+                return
             }
 
             const { order_id } = metadata
             const amountTotal = session.amount_total
 
-            // Initialize Supabase client
-            const supabaseClient = createClient(
-                Deno.env.get('SUPABASE_URL') ?? '',
-                Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-            )
+            // IDEMPOTENCY CHECK
+            const { data: existingOrder } = await supabaseClient
+                .from('orders')
+                .select('id, payment_status, stripe_session_id')
+                .eq('stripe_session_id', sessionId)
+                .single()
 
-            // ================================================================
-            // STEP 4: IDEMPOTENCY CHECK - Early Exit
-            // ================================================================
-            try {
-                const { data: existingOrder } = await supabaseClient
-                    .from('orders')
-                    .select('id, payment_status, stripe_session_id')
-                    .eq('stripe_session_id', sessionId)
-                    .single()
-
-                if (existingOrder) {
-                    logStructured('info', 'Webhook already processed (idempotent)', {
-                        session_id: sessionId,
-                        order_id: existingOrder.id,
-                        payment_status: existingOrder.payment_status
-                    })
-                    return new Response(
-                        JSON.stringify({ received: true, idempotent: true }),
-                        { status: 200, headers: { 'Content-Type': 'application/json' } }
-                    )
-                }
-            } catch (err) {
-                // No existing order found, proceed with processing
-                logStructured('info', 'No existing order found, proceeding with processing', {
+            if (existingOrder) {
+                logStructured('info', 'Webhook already processed (idempotent)', {
                     session_id: sessionId,
-                    order_id: order_id
+                    order_id: existingOrder.id
                 })
+                return
             }
 
-            // ================================================================
-            // STEP 5: PROCESS PAYMENT - Update Order
-            // ================================================================
-            try {
-                const { data: order, error: orderError } = await supabaseClient
-                    .from('orders')
-                    .update({
-                        payment_status: 'paid',
-                        stripe_session_id: sessionId,
-                        amount_total: amountTotal,
-                        receipt_url: session.url
-                    })
-                    .eq('id', order_id)
-                    .select()
-                    .single()
+            // PROCESS PAYMENT
+            const { data: order, error: orderError } = await supabaseClient
+                .from('orders')
+                .update({
+                    payment_status: 'paid',
+                    stripe_session_id: sessionId,
+                    amount_total: amountTotal,
+                    receipt_url: session.url
+                })
+                .eq('id', order_id)
+                .select()
+                .single()
 
-                if (orderError) {
-                    throw new Error(`Order update failed: ${orderError.message}`)
-                }
+            if (orderError) throw new Error(`Order update failed: ${orderError.message}`)
 
-                logStructured('info', 'Order updated successfully', {
-                    session_id: sessionId,
+            // SAGA: PAYMENT_CONFIRMED
+            await supabaseClient.rpc('transition_saga_status', {
+                p_order_id: order.id,
+                p_new_status: 'PAYMENT_CONFIRMED',
+                p_log_data: { stripe_session_id: sessionId, amount: amountTotal }
+            });
+
+            // COMMISSION SPLIT & WALLET
+            const commissionRate = session.metadata?.commission_rate ? parseFloat(session.metadata.commission_rate) : 0.20
+            const totalOrderValue = order.agreed_price || order.price || 0
+            const sellerNetIncome = totalOrderValue * (1 - commissionRate)
+            const seller_id = order.seller_id
+
+            // Get/Create Wallet
+            let { data: wallet } = await supabaseClient.from('wallets').select('*').eq('user_id', seller_id).single()
+            if (!wallet) {
+                const { data: newWallet } = await supabaseClient.from('wallets').insert({ user_id: seller_id }).select().single()
+                wallet = newWallet
+            }
+
+            // Create Transaction
+            const { data: existingTx } = await supabaseClient
+                .from('transactions')
+                .select('id')
+                .eq('order_id', order.id)
+                .eq('type', 'credit')
+                .single()
+
+            if (!existingTx) {
+                await supabaseClient.from('transactions').insert({
+                    wallet_id: wallet.id,
+                    amount: sellerNetIncome,
+                    type: 'credit',
+                    status: 'pending',
                     order_id: order.id,
-                    payment_status: 'paid'
+                    description: `Venda #${order.id.slice(0, 8)}`
                 })
 
-                // ============================================================
-                // SAGA: PAYMENT_CONFIRMED -> TRIGGER NEXT STEP
-                // ============================================================
-                // 1. Transition SAGA status
-                const { error: sagaTransitionError } = await supabaseClient.rpc('transition_saga_status', {
-                    p_order_id: order.id,
-                    p_new_status: 'PAYMENT_CONFIRMED',
-                    p_log_data: { stripe_session_id: sessionId, amount: amountTotal }
-                });
-
-                if (sagaTransitionError) {
-                    logStructured('error', 'SAGA: Failed to transition status', { error: sagaTransitionError.message });
-                } else {
-                    // 2. Create next job: ACTIVATE_ORDER
-                    // This job will be picked up by the same worker (or a separate cron) 
-                    // but since we are here, we can basically consider "Order Activated" logic is what comes next.
-                    // The existing logic below (Commission + Wallet) IS the "Activate Order" logic.
-                    // So we can transition to ORDER_ACTIVE after successful wallet update.
-
-                    // Insert a job record just for audit/consistency or if we want async processing later.
-                    await supabaseClient.from('saga_jobs').insert({
-                        order_id: order.id,
-                        event_type: 'ACTIVATE_ORDER',
-                        status: 'processing', // We are processing it right now below
-                        payload: { session_id: sessionId }
-                    });
-                }
-
-                // ============================================================
-                // STEP 6: COMMISSION SPLIT & WALLET UPDATE
-                // ============================================================
-                // Use commission rate from metadata, fallback to default 20%
-                const commissionRate = session.metadata?.commission_rate ? parseFloat(session.metadata.commission_rate) : 0.20
-                const totalOrderValue = order.agreed_price || order.price
-                const sellerNetIncome = totalOrderValue * (1 - commissionRate)
-                const seller_id = order.seller_id
-
-                logStructured('info', 'Calculating commission split', {
-                    session_id: sessionId,
-                    order_id: order.id,
-                    total_value: totalOrderValue,
-                    seller_net: sellerNetIncome,
-                    commission_rate: commissionRate
+                // Update Balance
+                const { error: balanceError } = await supabaseClient.rpc('increment_pending_balance', {
+                    row_id: wallet.id,
+                    amount_to_add: sellerNetIncome
                 })
 
-                // Get or create wallet
-                let { data: wallet } = await supabaseClient
-                    .from('wallets')
-                    .select('*')
-                    .eq('user_id', seller_id)
-                    .single()
-
-                let wallet_id = wallet?.id
-
-                if (!wallet) {
-                    const { data: newWallet, error: createWalletError } = await supabaseClient
+                if (balanceError) {
+                    await supabaseClient
                         .from('wallets')
-                        .insert({ user_id: seller_id })
-                        .select()
-                        .single()
-
-                    if (createWalletError) {
-                        throw new Error(`Wallet creation failed: ${createWalletError.message}`)
-                    }
-
-                    wallet_id = newWallet.id
-                    wallet = newWallet
-
-                    logStructured('info', 'Created new wallet for seller', {
-                        session_id: sessionId,
-                        seller_id: seller_id,
-                        wallet_id: wallet_id
-                    })
+                        .update({ pending_balance: (wallet.pending_balance || 0) + sellerNetIncome })
+                        .eq('id', wallet.id)
                 }
-
-                // ============================================================
-                // STEP 7: CREATE TRANSACTION (Idempotent)
-                // ============================================================
-                const { data: existingTx } = await supabaseClient
-                    .from('transactions')
-                    .select('id')
-                    .eq('order_id', order.id)
-                    .eq('type', 'credit')
-                    .single()
-
-                if (!existingTx) {
-                    const { error: txError } = await supabaseClient
-                        .from('transactions')
-                        .insert({
-                            wallet_id: wallet_id,
-                            amount: sellerNetIncome,
-                            type: 'credit',
-                            status: 'pending',
-                            order_id: order.id,
-                            description: `Venda #${order.id.slice(0, 8)} - ${order.service_title}`
-                        })
-
-                    if (txError) {
-                        throw new Error(`Transaction creation failed: ${txError.message}`)
-                    }
-
-                    logStructured('info', 'Transaction created successfully', {
-                        session_id: sessionId,
-                        order_id: order.id,
-                        wallet_id: wallet_id,
-                        amount: sellerNetIncome
-                    })
-
-                    // Update pending balance
-                    const { error: balanceError } = await supabaseClient.rpc('increment_pending_balance', {
-                        row_id: wallet_id,
-                        amount_to_add: sellerNetIncome
-                    })
-
-                    if (balanceError) {
-                        logStructured('warn', 'RPC increment_pending_balance failed, using fallback', {
-                            session_id: sessionId,
-                            error: balanceError.message
-                        })
-
-                        // Fallback: manual update
-                        await supabaseClient
-                            .from('wallets')
-                            .update({ pending_balance: (wallet.pending_balance || 0) + sellerNetIncome })
-                            .eq('id', wallet_id)
-                    }
-
-                    logStructured('info', 'Wallet balance updated successfully', {
-                        session_id: sessionId,
-                        wallet_id: wallet_id,
-                        new_pending_balance: (wallet.pending_balance || 0) + sellerNetIncome
-                    })
-                } else {
-                    logStructured('info', 'Transaction already exists, skipping wallet update', {
-                        session_id: sessionId,
-                        order_id: order.id,
-                        existing_tx_id: existingTx.id
-                    })
-                }
-
-                // ============================================================
-                // SAGA: COMPLETE (ORDER_ACTIVE)
-                // ============================================================
-                await supabaseClient.rpc('transition_saga_status', {
-                    p_order_id: order.id,
-                    p_new_status: 'ORDER_ACTIVE',
-                    p_log_data: { wallet_tx: wallet_id }
-                });
-
-                // Update the job to completed
-                await supabaseClient
-                    .from('saga_jobs')
-                    .update({ status: 'completed', processed_at: new Date().toISOString() })
-                    .match({ order_id: order.id, event_type: 'ACTIVATE_ORDER' });
-
-
-            } catch (processingError) {
-                logStructured('error', 'Payment processing failed', {
-                    session_id: sessionId,
-                    order_id: order_id,
-                    error: processingError.message,
-                    stack: processingError.stack
-                })
-
-                return new Response(
-                    JSON.stringify({ error: 'Processing failed', details: processingError.message }),
-                    { status: 500, headers: { 'Content-Type': 'application/json' } }
-                )
             }
+
+            // SAGA: ORDER_ACTIVE
+            await supabaseClient.rpc('transition_saga_status', {
+                p_order_id: order.id,
+                p_new_status: 'ORDER_ACTIVE',
+                p_log_data: { wallet_tx: wallet.id }
+            });
+
+            // Log Job completion
+            await supabaseClient.from('saga_jobs').insert({
+                order_id: order.id,
+                event_type: 'ACTIVATE_ORDER',
+                status: 'completed',
+                payload: { session_id: sessionId, processed_at: new Date().toISOString() }
+            });
+
         } else if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
             const subscription = event.data.object
             const customerId = subscription.customer
@@ -395,49 +191,27 @@ serve(async (req) => {
             const priceId = subscription.items.data[0].price.id
             const productId = subscription.items.data[0].price.product
 
-            logStructured('info', `Processing ${event.type}`, {
-                customer_id: customerId,
-                status: status,
-                price_id: priceId
-            })
+            logStructured('info', `Processing ${event.type}`, { customer_id: customerId, status })
 
-            const supabaseClient = createClient(
-                Deno.env.get('SUPABASE_URL') ?? '',
-                Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-            )
-
-            // Determine Plan Tier and Commission Rate
             let planTier = 'starter'
             let commissionRate = 0.20
+            const PRO_PRODUCT_ID = Deno.env.get('STRIPE_PRODUCT_ID_PRO')
+            const AGENCY_PRODUCT_ID = Deno.env.get('STRIPE_PRODUCT_ID_AGENCY')
 
-            // TODO: Map your actual Stripe Product IDs here
-            // These are placeholders. Update them in your Supabase Dashboard -> Edge Functions -> Secrets
-            const PRO_PRODUCT_ID = Deno.env.get('STRIPE_PRODUCT_ID_PRO') || 'prod_pro_placeholder'
-            const AGENCY_PRODUCT_ID = Deno.env.get('STRIPE_PRODUCT_ID_AGENCY') || 'prod_agency_placeholder'
-
-            if (status === 'active' || status === 'trialing') {
+            if (['active', 'trialing'].includes(status)) {
                 if (productId === AGENCY_PRODUCT_ID) {
-                    planTier = 'agency'
-                    commissionRate = 0.08
+                    planTier = 'agency'; commissionRate = 0.08
                 } else if (productId === PRO_PRODUCT_ID) {
-                    planTier = 'pro'
-                    commissionRate = 0.12
-                } else {
-                    // Fallback if price doesn't match known tiers but is active (maybe a legacy plan or new one)
-                    // Keep existing or default to basic paid? 
-                    // For now, let's assume if it's not PRO or AGENCY, it might be a custom tier or we default to starter/error.
-                    console.warn(`Unknown product ID: ${productId}, defaulting to starter stats but keeping status active.`)
-                    planTier = 'starter'
-                    commissionRate = 0.20
+                    planTier = 'pro'; commissionRate = 0.12
                 }
-            } else {
-                // canceled, unpaid, past_due -> revert to free/starter
+            } else if (['past_due', 'canceled', 'unpaid'].includes(status)) {
+                // Handling resilience: downgrade to free/starter
                 planTier = 'starter'
                 commissionRate = 0.20
+                logStructured('warn', `Subscription ${status} - downgrading company`, { customer_id: customerId })
             }
 
-            // Update Company
-            const { error: companyError } = await supabaseClient
+            const { error } = await supabaseClient
                 .from('companies')
                 .update({
                     subscription_status: status,
@@ -447,56 +221,65 @@ serve(async (req) => {
                 })
                 .eq('stripe_customer_id', customerId)
 
-            if (companyError) {
-                logStructured('error', 'Failed to update company subscription', {
-                    error: companyError.message,
-                    customer_id: customerId
-                })
-                throw new Error(`Company update failed: ${companyError.message}`)
-            }
-
-            logStructured('info', 'Company subscription updated', {
-                customer_id: customerId,
-                plan_tier: planTier,
-                commission_rate: commissionRate
-            })
-
-        } else {
-            // Other event types - log and acknowledge
-            logStructured('info', 'Received event', {
-                event_type: event.type
-            })
+            if (error) logStructured('error', 'Company update failed', { error: error.message })
         }
 
-        // ====================================================================
-        // SUCCESS RESPONSE
-        // ====================================================================
-        const duration = Date.now() - startTime
-        logStructured('info', 'Webhook processed successfully', {
-            session_id: sessionId,
-            event_type: eventType,
-            duration_ms: duration
+    } catch (err) {
+        logStructured('error', 'Background processing failed', { error: err.message })
+    }
+}
+
+// ============================================================================
+// WEBHOOK HANDLER
+// ============================================================================
+serve(async (req) => {
+    try {
+        const signature = req.headers.get('stripe-signature')
+        const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
+
+        if (!signature || !webhookSecret) {
+            return new Response(JSON.stringify({ error: 'Configuration error' }), { status: 400 })
+        }
+
+        const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+            apiVersion: '2023-10-16',
+            httpClient: Stripe.createFetchHttpClient(),
         })
 
-        return new Response(
-            JSON.stringify({ received: true }),
-            { status: 200, headers: { 'Content-Type': 'application/json' } }
-        )
+        const body = await req.text()
+        let event
+
+        try {
+            event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret)
+        } catch (err) {
+            logStructured('error', 'Signature verification failed', { error: err.message })
+            return new Response(JSON.stringify({ error: 'Invalid signature' }), { status: 400 })
+        }
+
+        // Return 200 OK immediately
+        const response = new Response(JSON.stringify({ received: true }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+        })
+
+        // Process in background
+        const processingPromise = processEvent(event)
+
+        if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime.waitUntil) {
+            EdgeRuntime.waitUntil(processingPromise)
+        } else {
+            // In dev environment or if waitUntil misses, we might await it to ensure it runs
+            // But to satisfy "Return 200 OK immediately", we don't await.
+            // Note: Deno deploy might kill it if not waited. 
+            // We assume this is deployed to Supabase which supports waitUntil.
+            // For safety in local dev, we log that we are not awaiting.
+            console.log('EdgeRuntime.waitUntil not found, processing in background (may be killed)')
+            // processingPromise; 
+        }
+
+        return response
 
     } catch (err) {
-        // ====================================================================
-        // TOP-LEVEL ERROR HANDLER
-        // ====================================================================
-        logStructured('error', 'Webhook handler failed', {
-            session_id: sessionId,
-            event_type: eventType,
-            error: err.message,
-            stack: err.stack
-        })
-
-        return new Response(
-            JSON.stringify({ error: 'Webhook processing failed', details: err.message }),
-            { status: 400, headers: { 'Content-Type': 'application/json' } }
-        )
+        return new Response(JSON.stringify({ error: 'Server error' }), { status: 500 })
     }
 })

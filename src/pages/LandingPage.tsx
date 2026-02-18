@@ -1,14 +1,11 @@
 import React from 'react';
-import { deduplicateCompanies } from '../utils/companyUtils';
 import SEO from '../components/SEO';
-import CompanyCard from '../components/CompanyCard';
 import { CATEGORIES } from '../constants';
 import { useCompanySearch } from '../hooks/useCompanySearch';
 import Select from '../components/ui/Select';
-import EmptyState from '../components/EmptyState';
-import LoadingSkeleton from '../components/ui/LoadingSkeleton';
-import { Search, Filter, SlidersHorizontal, MapPin } from 'lucide-react';
+import { Search, SlidersHorizontal, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
+import CompanyGrid from '../components/CompanyGrid';
 
 const PRICE_OPTIONS = [
   { label: 'Todos os Preços', value: 'all' },
@@ -202,31 +199,7 @@ const CompaniesListPage: React.FC = () => {
             </div>
 
             <section aria-label="Lista de Empresas">
-              {loading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="h-full">
-                      <LoadingSkeleton className="h-[400px] rounded-[32px]" />
-                    </div>
-                  ))}
-                </div>
-              ) : companies.length > 0 ? (
-                <div className="grid gap-8 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-                  {deduplicateCompanies(companies).map((company, index) => (
-                    <motion.div
-                      key={company.id ? `${company.id}-${index}` : `company-${index}`}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                    >
-                      <CompanyCard company={company} />
-                    </motion.div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-24 bg-white rounded-[48px] border border-slate-200">
-                  <EmptyState />
-                </div>
-              )}
+              <CompanyGrid companies={companies} loading={loading} />
             </section>
 
             {/* Pagination Component (Refined) */}
