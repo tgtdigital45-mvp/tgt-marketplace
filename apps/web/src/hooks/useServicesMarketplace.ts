@@ -18,22 +18,23 @@ interface UseServicesMarketplaceReturn {
     error: string | null;
     hasLocation: boolean;
     locationLoading: boolean;
+    totalCount: number;
     refetch: () => void;
 }
 
 /**
  * Hook for the Service-First marketplace vitrine.
  *
- * Strategy:
- * - Remote/Hybrid services: fetched globally via get_remote_services RPC
- * - Presential services: fetched via get_nearby_services RPC using H3 neighbor indexes
- * - "All" filter: merges both results, deduplicating by id
+ * Strategy (with fallback):
+ * 1. Try RPCs (get_remote_services / get_nearby_services)
+ * 2. If RPCs fail or return empty → fallback to direct table query
+ * 3. Merge, deduplicate, sort by rating
  */
 export function useServicesMarketplace({
     category,
     searchQuery,
     serviceFilter = 'all',
-    limit = 20,
+    limit = 50,
 }: UseServicesMarketplaceOptions = {}): UseServicesMarketplaceReturn {
     const [services, setServices] = useState<DbService[]>([]);
     const [loading, setLoading] = useState(true);
@@ -41,12 +42,13 @@ export function useServicesMarketplace({
     const [hasLocation, setHasLocation] = useState(false);
     const [locationLoading, setLocationLoading] = useState(false);
     const [h3Indexes, setH3Indexes] = useState<string[] | null>(null);
+    const [totalCount, setTotalCount] = useState(0);
 
     // Fetch user's H3 indexes once on mount
     useEffect(() => {
         const fetchLocation = async () => {
             setLocationLoading(true);
-            const indexes = await getH3SearchIndexes(2, 8); // k=2 rings, res=8 (~1.4km)
+            const indexes = await getH3SearchIndexes(2, 8);
             setH3Indexes(indexes);
             setHasLocation(indexes !== null);
             setLocationLoading(false);
@@ -54,12 +56,67 @@ export function useServicesMarketplace({
         fetchLocation();
     }, []);
 
+    /**
+     * Fallback: direct table query when RPCs fail or return empty
+     */
+    const fetchDirectFromTable = useCallback(async (): Promise<DbService[]> => {
+        let query = supabase
+            .from('services')
+            .select(`
+                *,
+                companies!inner (
+                    company_name,
+                    logo_url,
+                    rating,
+                    slug,
+                    status
+                )
+            `, { count: 'exact' })
+            .eq('is_active', true);
+
+        // Service type filter
+        if (serviceFilter === 'remote') {
+            query = query.in('service_type', ['remote', 'hybrid']);
+        } else if (serviceFilter === 'presential') {
+            query = query.eq('service_type', 'presential');
+        }
+        // 'all' → no service_type filter
+
+        // Category filter
+        if (category) {
+            query = query.eq('category_tag', category);
+        }
+
+        // Search filter
+        if (searchQuery) {
+            query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,category_tag.ilike.%${searchQuery}%`);
+        }
+
+        query = query.order('created_at', { ascending: false }).limit(limit);
+
+        const { data, error: queryError, count } = await query;
+        if (queryError) throw queryError;
+
+        if (count !== null && count !== undefined) {
+            setTotalCount(count);
+        }
+
+        return (data || []).map((s: any) => ({
+            ...s,
+            company_name: s.companies?.company_name,
+            company_logo: s.companies?.logo_url,
+            company_rating: s.companies?.rating,
+            company_slug: s.companies?.slug,
+        }));
+    }, [category, searchQuery, serviceFilter, limit]);
+
     const fetchServices = useCallback(async () => {
         setLoading(true);
         setError(null);
 
         try {
-            const results: DbService[] = [];
+            let results: DbService[] = [];
+            let rpcWorked = false;
 
             const shouldFetchRemote =
                 serviceFilter === 'all' || serviceFilter === 'remote' || serviceFilter === 'hybrid';
@@ -67,23 +124,23 @@ export function useServicesMarketplace({
             const shouldFetchPresential =
                 (serviceFilter === 'all' || serviceFilter === 'presential') && h3Indexes !== null;
 
-            // Fetch remote/hybrid services
-            if (shouldFetchRemote) {
-                const { data, error: rpcError } = await supabase.rpc('get_remote_services', {
-                    p_category: category || null,
-                    p_search: searchQuery || null,
-                    p_limit: limit,
-                    p_offset: 0,
-                });
+            // Try RPCs first
+            try {
+                if (shouldFetchRemote) {
+                    const { data, error: rpcError } = await supabase.rpc('get_remote_services', {
+                        p_category: category || null,
+                        p_search: searchQuery || null,
+                        p_limit: limit,
+                        p_offset: 0,
+                    });
 
-                if (rpcError) throw rpcError;
-                if (data) results.push(...(data as DbService[]));
-            }
+                    if (!rpcError && data && data.length > 0) {
+                        results.push(...(data as DbService[]));
+                        rpcWorked = true;
+                    }
+                }
 
-            // Fetch presential services
-            // If we have location, use h3. If NOT, we fallback to a general query.
-            if (shouldFetchPresential) {
-                if (h3Indexes) {
+                if (shouldFetchPresential && h3Indexes) {
                     const { data, error: rpcError } = await supabase.rpc('get_nearby_services', {
                         p_h3_indexes: h3Indexes,
                         p_category: category || null,
@@ -91,52 +148,24 @@ export function useServicesMarketplace({
                         p_offset: 0,
                     });
 
-                    if (rpcError) throw rpcError;
-                    if (data) results.push(...(data as DbService[]));
-                } else {
-                    // Fallback: No location -> Fetch latest presential services
-                    let query = supabase
-                        .from('services')
-                        .select(`
-                            *,
-                            companies!inner (
-                                company_name,
-                                logo_url,
-                                rating,
-                                slug
-                            )
-                        `)
-                        .eq('service_type', 'presential')
-                        .eq('is_active', true)
-                        .order('created_at', { ascending: false })
-                        .limit(limit);
-
-                    if (category) {
-                        query = query.eq('category_tag', category);
-                    }
-
-                    if (searchQuery) {
-                        query = query.ilike('title', `%${searchQuery}%`);
-                    }
-
-                    const { data, error: fallbackError } = await query;
-                    if (fallbackError) throw fallbackError;
-
-                    if (data) {
-                        const mapped = data.map((s: any) => ({
-                            ...s,
-                            company_name: s.companies?.company_name,
-                            company_logo: s.companies?.logo_url,
-                            company_rating: s.companies?.rating,
-                            company_slug: s.companies?.slug,
-                        }));
-                        results.push(...mapped);
+                    if (!rpcError && data && data.length > 0) {
+                        results.push(...(data as DbService[]));
+                        rpcWorked = true;
                     }
                 }
+            } catch {
+                // RPCs not available — will use fallback
+                console.warn('[useServicesMarketplace] RPCs unavailable, using direct query');
             }
 
+            // Fallback: if RPCs didn't work or returned few results, query directly
+            if (!rpcWorked || results.length < 3) {
+                console.log('[useServicesMarketplace] Using direct table query fallback');
+                const directResults = await fetchDirectFromTable();
+                results.push(...directResults);
+            }
 
-            // Deduplicate by id (a hybrid service could appear in both queries)
+            // Deduplicate by id
             const seen = new Set<string>();
             const unique = results.filter((s) => {
                 if (seen.has(s.id)) return false;
@@ -151,6 +180,10 @@ export function useServicesMarketplace({
                 return a.title.localeCompare(b.title);
             });
 
+            if (totalCount === 0) {
+                setTotalCount(unique.length);
+            }
+
             setServices(unique);
         } catch (err: any) {
             console.error('[useServicesMarketplace] Error:', err);
@@ -158,11 +191,10 @@ export function useServicesMarketplace({
         } finally {
             setLoading(false);
         }
-    }, [category, searchQuery, serviceFilter, h3Indexes, limit]);
+    }, [category, searchQuery, serviceFilter, h3Indexes, limit, fetchDirectFromTable]);
 
     // Refetch when filters or location changes
     useEffect(() => {
-        // Don't fetch while location is still loading
         if (locationLoading) return;
         fetchServices();
     }, [fetchServices, locationLoading]);
@@ -173,6 +205,7 @@ export function useServicesMarketplace({
         error,
         hasLocation,
         locationLoading,
+        totalCount,
         refetch: fetchServices,
     };
 }

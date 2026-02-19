@@ -106,7 +106,34 @@ const DashboardRedirect = () => {
     const { company, loading: companyLoading } = useCompany();
     const [isPatienceOver, setIsPatienceOver] = React.useState(false);
 
-    // Detailed logging for stuck states
+    // ALL hooks must be called unconditionally before any early returns
+    React.useEffect(() => {
+        console.log("[DashboardRedirect] Data Ready - Evaluating Path", {
+            userId: user?.id,
+            userType: user?.type,
+            companySlug: company?.slug,
+            authSlug: user?.companySlug
+        });
+    }, [user, company]);
+
+    React.useEffect(() => {
+        let timer: NodeJS.Timeout;
+        // Only start the patience timer AFTER company data has finished loading (companyLoading=false)
+        // This prevents a race condition where the timer expires before the query returns data
+        if (user?.type === 'company' && !companyLoading && !company && !user.companySlug) {
+            console.log("[DashboardRedirect] Company query done but no slug found, starting 2s patience timer...");
+            timer = setTimeout(() => {
+                console.log("[DashboardRedirect] Patience timer expired.");
+                setIsPatienceOver(true);
+            }, 2000);
+        } else if (company || user?.companySlug) {
+            setIsPatienceOver(false);
+        }
+        return () => clearTimeout(timer);
+    }, [user, company, companyLoading]);
+
+    // --- All conditional returns AFTER all hooks ---
+
     if (loading || (companyLoading && !isPatienceOver)) {
         console.log("[DashboardRedirect] Waiting for data...", {
             authLoading: loading,
@@ -118,31 +145,6 @@ const DashboardRedirect = () => {
         });
         return <LoadingSpinner />;
     }
-
-    // Logging only on status changes
-    React.useEffect(() => {
-        console.log("[DashboardRedirect] Data Ready - Evaluating Path", {
-            userId: user?.id,
-            userType: user?.type,
-            companySlug: company?.slug,
-            authSlug: user?.companySlug
-        });
-    }, [user, company]);
-
-    // Give CompanyContext a bit more time if user.type is 'company' but company is null
-    React.useEffect(() => {
-        let timer: NodeJS.Timeout;
-        if (user?.type === 'company' && !company && !user.companySlug) {
-            console.log("[DashboardRedirect] User is company but no slug yet, starting 2s patience timer...");
-            timer = setTimeout(() => {
-                console.log("[DashboardRedirect] Patience timer expired.");
-                setIsPatienceOver(true);
-            }, 2000);
-        } else {
-            setIsPatienceOver(false);
-        }
-        return () => clearTimeout(timer);
-    }, [user, company]);
 
     if (!user) {
         console.log("[DashboardRedirect] No user session found, redirecting to login");

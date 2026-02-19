@@ -35,16 +35,30 @@ const CompanyLoginPage: React.FC = () => {
             if (error) throw error;
 
             if (data.session) {
-                const metadataType = data.session.user.user_metadata.type as string;
+                // Check company profile existence in DB (not just metadata, which may be stale)
+                const { data: companyData } = await supabase
+                    .from('companies')
+                    .select('slug')
+                    .eq('profile_id', data.session.user.id)
+                    .maybeSingle();
 
-                if (metadataType !== 'company') {
-                    await supabase.auth.signOut();
-                    setPortalError('WRONG_PORTAL_TYPE');
-                    return;
+                if (!companyData) {
+                    // Check profile table for user_type as secondary fallback
+                    const { data: profileData } = await supabase
+                        .from('profiles')
+                        .select('user_type')
+                        .eq('id', data.session.user.id)
+                        .maybeSingle();
+
+                    if (profileData?.user_type === 'client') {
+                        await supabase.auth.signOut();
+                        setPortalError('WRONG_PORTAL_TYPE');
+                        return;
+                    }
                 }
 
                 addToast('Login realizado com sucesso!', 'success');
-                // Centralize navigation logic in DashboardRedirect
+                // DashboardRedirect handles slug resolution
                 navigate('/dashboard');
             }
         } catch (err: unknown) {

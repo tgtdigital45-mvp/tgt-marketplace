@@ -4,11 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import Button from '@/components/ui/Button';
 import { useOnClickOutside } from '@/hooks/useOnClickOutside';
 
-interface LoginDropdownProps {
-    isTransparentMode?: boolean;
-}
-
-const LoginDropdown: React.FC<LoginDropdownProps> = ({ isTransparentMode }) => {
+const LoginDropdown: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -17,16 +13,12 @@ const LoginDropdown: React.FC<LoginDropdownProps> = ({ isTransparentMode }) => {
     return (
         <div className="relative" ref={dropdownRef}>
             <Button
-                variant={isTransparentMode ? "ghost" : "outline"}
+                variant="outline"
                 onClick={() => setIsOpen(!isOpen)}
-                className={`min-h-[44px] flex items-center gap-2 transition-all duration-300
-                    ${isTransparentMode
-                        ? 'text-white border-white/30 hover:bg-white/10 hover:border-white'
-                        : 'border-slate-200 text-slate-700 hover:bg-slate-50'
-                    }`}
+                className="min-h-[44px] flex items-center gap-2 transition-all duration-300 border-gray-200 text-gray-700 hover:bg-gray-50 bg-white"
             >
                 Entrar
-                <svg className={`h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${isTransparentMode ? 'text-white/70' : 'text-slate-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className={`h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} text-gray-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
             </Button>

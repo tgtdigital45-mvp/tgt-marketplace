@@ -19,6 +19,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const fetchIdRef = React.useRef(0); // Track fetch attempts
   const mountedRef = React.useRef(true); // Track component mount status
+  const lastProcessedUserIdRef = React.useRef<string | null>(null); // Deduplicate SIGNED_IN events
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -110,51 +111,53 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     mountedRef.current = true;
 
-    // 1. Initial Session Check
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!mountedRef.current) return;
-      try {
-        if (session?.user) {
-          await fetchUserProfile(session);
-        }
-      } catch (err) {
-        console.error("AuthContext: Unexpected error in session check", err);
-      } finally {
-        if (mountedRef.current) setLoading(false);
-      }
-    }).catch(err => {
-      if (err.name === 'AbortError' || err.message?.includes('aborted')) return;
-      console.error("AuthContext: Terminal error getting session", err);
-      if (mountedRef.current) setLoading(false);
-    });
-
-    // 2. Auth State Change Listener
+    // Single listener: let INITIAL_SESSION bootstrap state, then handle subsequent events.
+    // This avoids concurrent getSession() + onAuthStateChange lock contention.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mountedRef.current) return;
       console.log(`[AuthContext] Auth State Change Event: ${event}`);
 
       if (event === 'SIGNED_OUT') {
+        lastProcessedUserIdRef.current = null;
         setUser(null);
         setLoading(false);
         return;
       }
 
-      // Aggressively set loading true for any auth event that implies a user session
-      if (session?.user) {
-        setLoading(true);
-      }
-
-      try {
-        if (session?.user) {
-          // fetchUserProfile sets loading true and handles its own setLoading(false) in finally
-          await fetchUserProfile(session);
-        } else {
+      // Handle both INITIAL_SESSION and SIGNED_IN
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (!session?.user) {
+          // No session — not logged in
           setUser(null);
           setLoading(false);
+          return;
         }
-      } catch (authStateError) {
-        console.error("AuthContext: Error handling auth state change", authStateError);
-        setLoading(false); // Failsafe
+
+        // Deduplicate: skip if this exact user was already fully processed
+        if (event === 'SIGNED_IN' && session.user.id === lastProcessedUserIdRef.current) {
+          console.log(`[AuthContext] Skipping duplicate SIGNED_IN for user: ${session.user.id}`);
+          return;
+        }
+
+        lastProcessedUserIdRef.current = session.user.id;
+
+        try {
+          await fetchUserProfile(session);
+        } catch (err) {
+          console.error('[AuthContext] Error handling auth event', event, err);
+          if (mountedRef.current) setLoading(false);
+        }
+        return;
+      }
+
+      // All other events (PASSWORD_RECOVERY, etc.)
+      if (session?.user) {
+        try {
+          await fetchUserProfile(session);
+        } catch (err) {
+          console.error('[AuthContext] Error handling auth event', event, err);
+          if (mountedRef.current) setLoading(false);
+        }
       }
     });
 

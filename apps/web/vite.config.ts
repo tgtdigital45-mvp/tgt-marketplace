@@ -4,8 +4,9 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, '.', '');
+  const env = loadEnv(mode, path.resolve(__dirname, '../../'), '');
   return {
+    envDir: '../../',
     server: {
       port: 3001,
       strictPort: false,
@@ -64,7 +65,8 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
-      }
+      },
+      dedupe: ['react', 'react-dom', 'react-router-dom', '@supabase/supabase-js'],
     },
     build: {
       chunkSizeWarningLimit: 1000,

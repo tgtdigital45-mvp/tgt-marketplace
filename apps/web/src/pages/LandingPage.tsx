@@ -1,11 +1,45 @@
-import React from 'react';
+import React, { useState } from 'react';
 import SEO from '@/components/SEO';
-import { CATEGORIES } from '@/constants';
 import { useCompanySearch } from '@/hooks/useCompanySearch';
 import Select from '@/components/ui/Select';
-import { Search, SlidersHorizontal, MapPin } from 'lucide-react';
+import { Search, SlidersHorizontal, MapPin, ChevronLeft, ChevronRight, X, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 import CompanyGrid from '@/components/CompanyGrid';
+
+// ─── Constants (matching DB values) ──────────────────────────────────────────
+const CATEGORY_OPTIONS = [
+  { label: 'Todas as Categorias', value: 'all' },
+  { label: 'Marketing', value: 'Marketing' },
+  { label: 'Tecnologia', value: 'Tecnologia' },
+  { label: 'Design', value: 'Design' },
+  { label: 'Consultoria', value: 'Consultoria' },
+  { label: 'Contabilidade', value: 'Contabilidade' },
+  { label: 'Advocacia', value: 'Advocacia' },
+  { label: 'Arquitetura', value: 'Arquitetura' },
+  { label: 'Fotografia', value: 'Fotografia' },
+  { label: 'Educação', value: 'Educação' },
+  { label: 'Saúde', value: 'Saúde' },
+];
+
+const CITY_OPTIONS = [
+  { label: 'Todas as Cidades', value: '' },
+  { label: 'Curitiba', value: 'Curitiba' },
+  { label: 'Londrina', value: 'Londrina' },
+  { label: 'Maringá', value: 'Maringá' },
+  { label: 'Cascavel', value: 'Cascavel' },
+  { label: 'Ponta Grossa', value: 'Ponta Grossa' },
+  { label: 'Foz do Iguaçu', value: 'Foz do Iguaçu' },
+  { label: 'Guarapuava', value: 'Guarapuava' },
+  { label: 'Paranaguá', value: 'Paranaguá' },
+  { label: 'Toledo', value: 'Toledo' },
+  { label: 'Francisco Beltrão', value: 'Francisco Beltrão' },
+  { label: 'Umuarama', value: 'Umuarama' },
+  { label: 'Campo Mourão', value: 'Campo Mourão' },
+  { label: 'Apucarana', value: 'Apucarana' },
+  { label: 'Arapongas', value: 'Arapongas' },
+  { label: 'Colombo', value: 'Colombo' },
+  { label: 'São José dos Pinhais', value: 'São José dos Pinhais' },
+];
 
 const PRICE_OPTIONS = [
   { label: 'Todos os Preços', value: 'all' },
@@ -19,8 +53,15 @@ const SORT_OPTIONS = [
   { label: 'Nome (A-Z)', value: 'name' },
 ];
 
+const ITEMS_PER_PAGE_OPTIONS = [
+  { label: '8 por página', value: '8' },
+  { label: '16 por página', value: '16' },
+  { label: '24 por página', value: '24' },
+  { label: '48 por página', value: '48' },
+];
+
 const CompaniesListPage: React.FC = () => {
-  const itemsPerPage = 8;
+  const [itemsPerPage, setItemsPerPage] = useState(16);
   const {
     companies,
     totalCount,
@@ -60,6 +101,39 @@ const CompaniesListPage: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleItemsPerPageChange = (val: string) => {
+    setItemsPerPage(Number(val));
+    setCurrentPage(1);
+  };
+
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setSelectedCategory('all');
+    setSortBy('rating');
+    setCurrentPage(1);
+    setPriceRangeValue('all');
+    setLocationTerm('');
+  };
+
+  const hasActiveFilters = searchTerm || selectedCategory !== 'all' || priceRange !== 'all' || locationTerm;
+
+  // Generate page numbers with ellipsis for large page counts
+  const getPageNumbers = () => {
+    const pages: (number | '...')[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push('...');
+      for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+        pages.push(i);
+      }
+      if (currentPage < totalPages - 2) pages.push('...');
+      pages.push(totalPages);
+    }
+    return pages;
+  };
+
   return (
     <main className="bg-slate-50 min-h-screen">
       <SEO
@@ -89,7 +163,7 @@ const CompaniesListPage: React.FC = () => {
             </motion.p>
           </div>
 
-          {/* New Search Bar Component (Inline) */}
+          {/* Search Bar */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -142,16 +216,23 @@ const CompaniesListPage: React.FC = () => {
                 <h2 className="text-lg font-bold text-slate-900 uppercase tracking-widest text-[10px]">Filtros Avançados</h2>
               </div>
 
-              <div className="space-y-8">
+              <div className="space-y-6">
                 <div>
                   <Select
                     label="Categoria"
                     value={selectedCategory}
                     onChange={(val) => { setSelectedCategory(val); setCurrentPage(1); }}
-                    options={[
-                      { label: 'Todas as Categorias', value: 'all' },
-                      ...CATEGORIES.map(cat => ({ label: cat, value: cat }))
-                    ]}
+                    options={CATEGORY_OPTIONS}
+                  />
+                </div>
+
+                {/* City Filter */}
+                <div>
+                  <Select
+                    label="Cidade"
+                    value={locationTerm}
+                    onChange={(val) => { setLocationTerm(val); setCurrentPage(1); }}
+                    options={CITY_OPTIONS}
                   />
                 </div>
 
@@ -173,19 +254,24 @@ const CompaniesListPage: React.FC = () => {
                   />
                 </div>
 
-                <button
-                  onClick={() => {
-                    setSearchTerm('');
-                    setSelectedCategory('all');
-                    setSortBy('rating');
-                    setCurrentPage(1);
-                    setPriceRangeValue('all');
-                    setLocationTerm('');
-                  }}
-                  className="w-full py-4 px-4 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-[20px] text-xs font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
-                >
-                  Limpar Tudo
-                </button>
+                <div>
+                  <Select
+                    label="Empresas por Página"
+                    value={String(itemsPerPage)}
+                    onChange={handleItemsPerPageChange}
+                    options={ITEMS_PER_PAGE_OPTIONS}
+                  />
+                </div>
+
+                {hasActiveFilters && (
+                  <button
+                    onClick={clearAllFilters}
+                    className="w-full py-4 px-4 bg-red-50 hover:bg-red-100 text-red-600 rounded-[20px] text-xs font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
+                  >
+                    <X size={14} />
+                    Limpar Tudo
+                  </button>
+                )}
               </div>
             </div>
           </aside>
@@ -194,46 +280,58 @@ const CompaniesListPage: React.FC = () => {
           <div className="lg:w-3/4">
             <div className="flex justify-between items-center mb-10">
               <p className="text-slate-500 font-medium">
-                Mostrando <span className="text-slate-900 font-bold">{totalCount}</span> resultados encontrados
+                Mostrando <span className="text-slate-900 font-bold">{companies.length}</span> de{' '}
+                <span className="text-slate-900 font-bold">{totalCount}</span> resultados
               </p>
+              {totalPages > 1 && (
+                <p className="text-xs text-slate-400">
+                  Página {currentPage} de {totalPages}
+                </p>
+              )}
             </div>
 
             <section aria-label="Lista de Empresas">
               <CompanyGrid companies={companies} loading={loading} />
             </section>
 
-            {/* Pagination Component (Refined) */}
+            {/* Pagination */}
             {!loading && totalPages > 1 && (
-              <div className="mt-16 flex justify-center items-center gap-4">
+              <div className="mt-16 flex flex-col sm:flex-row justify-center items-center gap-4">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="h-14 w-14 flex items-center justify-center border border-slate-200 rounded-full disabled:opacity-30 hover:bg-white transition-colors bg-slate-50"
+                  className="h-12 w-12 flex items-center justify-center border border-slate-200 rounded-full disabled:opacity-30 hover:bg-white transition-colors bg-slate-50"
+                  aria-label="Página Anterior"
                 >
-                  <SlidersHorizontal className="rotate-90 text-slate-400 group-hover:text-slate-900" size={18} />
+                  <ChevronLeft className="text-slate-500" size={18} />
                 </button>
 
-                <div className="flex items-center gap-2">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                    <button
-                      key={page}
-                      onClick={() => handlePageChange(page)}
-                      className={`h-10 px-4 rounded-xl font-bold text-sm transition-all ${currentPage === page
-                        ? 'bg-primary-600 text-white shadow-lg'
-                        : 'text-slate-400 hover:text-slate-900'
-                        }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
+                <div className="flex items-center gap-1">
+                  {getPageNumbers().map((page, i) =>
+                    page === '...' ? (
+                      <span key={`ellipsis-${i}`} className="px-2 text-slate-400">…</span>
+                    ) : (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`h-10 min-w-[40px] px-3 rounded-xl font-bold text-sm transition-all ${currentPage === page
+                          ? 'bg-primary-600 text-white shadow-lg'
+                          : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'
+                          }`}
+                      >
+                        {page}
+                      </button>
+                    )
+                  )}
                 </div>
 
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="h-14 w-14 flex items-center justify-center border border-slate-200 rounded-full disabled:opacity-30 hover:bg-white transition-colors bg-slate-50"
+                  className="h-12 w-12 flex items-center justify-center border border-slate-200 rounded-full disabled:opacity-30 hover:bg-white transition-colors bg-slate-50"
+                  aria-label="Próxima Página"
                 >
-                  <SlidersHorizontal className="-rotate-90 text-slate-400" size={18} />
+                  <ChevronRight className="text-slate-500" size={18} />
                 </button>
               </div>
             )}

@@ -4,17 +4,20 @@ import { Search, MapPin, Wifi, Layers, Star, ArrowRight, AlertCircle, Loader2 } 
 import { useServicesMarketplace, ServiceFilter } from '@/hooks/useServicesMarketplace';
 import { DbService } from '@tgt/shared';
 
-// ─── Category definitions ────────────────────────────────────────────────────
+// ─── Category definitions (must match DB category_tag values) ────────────────
 const CATEGORIES = [
     { label: 'Todos', value: '' },
-    { label: 'Design', value: 'Design' },
     { label: 'Marketing', value: 'Marketing' },
-    { label: 'TI & Redes', value: 'TI' },
-    { label: 'Jurídico', value: 'Juridico' },
-    { label: 'Contabilidade', value: 'Contabilidade' },
+    { label: 'Tecnologia', value: 'Tecnologia' },
+    { label: 'Design', value: 'Design' },
     { label: 'Consultoria', value: 'Consultoria' },
-    { label: 'Saúde', value: 'Saude' },
-    { label: 'Educação', value: 'Educacao' },
+    { label: 'Contabilidade', value: 'Contabilidade' },
+    { label: 'Advocacia', value: 'Advocacia' },
+    { label: 'Arquitetura', value: 'Arquitetura' },
+    { label: 'Fotografia', value: 'Fotografia' },
+    { label: 'Educação', value: 'Educação' },
+    { label: 'Saúde', value: 'Saúde' },
+    { label: 'SEO', value: 'SEO' },
 ];
 
 const SERVICE_TYPE_FILTERS: { label: string; value: ServiceFilter; icon: React.ReactNode }[] = [

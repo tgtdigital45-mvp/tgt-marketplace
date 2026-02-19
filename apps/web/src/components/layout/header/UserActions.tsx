@@ -6,31 +6,19 @@ import NotificationsDropdown from '@/components/layout/NotificationsDropdown';
 import UserDropdown from '@/components/layout/header/UserDropdown';
 import LoginDropdown from '@/components/layout/header/LoginDropdown';
 
-interface UserActionsProps {
-    isScrolled: boolean;
-    isTransparent: boolean;
-    isTransparentMode: boolean; // Computed detailed mode state
-}
-
-const UserActions: React.FC<UserActionsProps> = ({ isScrolled, isTransparentMode }) => {
+const UserActions: React.FC = () => {
     const { user } = useAuth();
 
     return (
         <div className="hidden md:flex items-center gap-4">
             {!user && (
                 <>
-                    <LoginDropdown isTransparentMode={isTransparentMode} />
+                    <LoginDropdown />
 
                     <Link to="/empresa/cadastro">
                         <Button
-                            variant={isTransparentMode ? 'outline' : 'primary'}
-                            className={`transition-all duration-300 rounded-xl px-6 font-semibold shadow-none hover:shadow-md
-                                ${isTransparentMode
-                                    ? 'border-white/30 text-white hover:bg-white hover:text-brand-primary hover:border-white'
-                                    : 'bg-brand-primary text-white border border-transparent hover:bg-brand-primary/90'
-                                } 
-                                ${isScrolled ? 'py-2 text-sm' : 'py-2.5'}
-                            `}
+                            variant="primary"
+                            className="bg-brand-primary text-white border border-transparent hover:bg-brand-primary/90 transition-all duration-300 rounded-xl px-6 py-2.5 font-semibold shadow-none hover:shadow-md"
                         >
                             Começar Grátis
                         </Button>
@@ -41,10 +29,7 @@ const UserActions: React.FC<UserActionsProps> = ({ isScrolled, isTransparentMode
             {user && (
                 <div className="flex items-center gap-3">
                     <NotificationsDropdown />
-                    <UserDropdown isTransparentMode={isTransparentMode} />
-
-                    {/* Optional: Add a specialized CTA for logged in users if needed */}
-                    {/* e.g., "Post New Service" if they are a company */}
+                    <UserDropdown />
                 </div>
             )}
         </div>

@@ -1,1 +1,3 @@
 2026-02-18T22:48:07.284241Z  WARN daemon_server: turborepo_lib::commands::daemon: daemon already running
+2026-02-18T22:55:27.206917Z  WARN get_package_file_hashes{include_default_files=true telemetry=None}: turborepo_scm::package_deps: git hashing failed for AnchoredSystemPath("apps\\mobile") with resource error: Git error on F:\MVP\test 4\tgt-contratto-mvp\apps\mobile\.npmrc.39570118: could not find 'F:\MVP\test 4\tgt-contratto-mvp\apps\mobile\.npmrc.39570118' to open: O sistema não pode encontrar o arquivo especificado.
+; class=Os (2); code=NotFound (-3)

@@ -4,12 +4,11 @@ import { Helmet } from 'react-helmet-async';
 import SEO from '@/components/SEO';
 import { useParams, useNavigate } from 'react-router-dom';
 import ServiceCard from '@/components/ServiceCard';
-import Button from '@/components/ui/Button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import { useToast } from '@/contexts/ToastContext';
 
-// Lazy load modals (only load when user opens them)
+// Lazy load modals
 const MessageModal = lazy(() => import('../components/MessageModal'));
 const ServiceBookingModal = lazy(() => import('../components/ServiceBookingModal'));
 const ReviewModal = lazy(() => import('../components/ReviewModal'));
@@ -22,8 +21,8 @@ import { useSimilarCompanies } from '@/hooks/useSimilarCompanies';
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
 import ProfileSidebar from '@/components/ProfileSidebar';
 import ReviewsList from '@/components/ReviewsList';
-import SellerBadge, { SellerLevel } from '@/components/SellerBadge';
 import OptimizedImage from '@/components/ui/OptimizedImage';
+import { LayoutGrid, Info, Star } from 'lucide-react';
 
 const CompanyProfilePage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -40,26 +39,17 @@ const CompanyProfilePage: React.FC = () => {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [activeTab, setActiveTab] = useState<'services' | 'about' | 'reviews'>('services');
 
-  // Handle errors from query
   const error = queryError ? (queryError as Error).message : null;
 
   if (loading) {
     return (
       <div className="bg-gray-50 min-h-screen">
+        <div className="w-full h-64 bg-gray-200 animate-pulse mt-14" />
         <div className="container mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Sidebar Skeleton */}
-          <div className="lg:col-span-4">
-            <LoadingSkeleton className="h-96 w-full rounded-xl" />
-          </div>
-          {/* Main Content Skeleton */}
-          <div className="lg:col-span-8 space-y-6">
-            <LoadingSkeleton className="h-40 w-full rounded-xl" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <LoadingSkeleton className="h-60 rounded-xl" />
-              <LoadingSkeleton className="h-60 rounded-xl" />
-            </div>
-          </div>
+          <div className="lg:col-span-4"><LoadingSkeleton className="h-96 w-full rounded-xl" /></div>
+          <div className="lg:col-span-8 space-y-6"><LoadingSkeleton className="h-40 w-full rounded-xl" /></div>
         </div>
       </div>
     );
@@ -70,11 +60,8 @@ const CompanyProfilePage: React.FC = () => {
   const favorited = isFavorite(company.id);
 
   const handleToggleFavorite = () => {
-    if (favorited) {
-      removeFavorite(company.id);
-    } else {
-      addFavorite(company.id);
-    }
+    if (favorited) removeFavorite(company.id);
+    else addFavorite(company.id);
   };
 
   const handleRequestQuote = (service?: Service) => {
@@ -89,88 +76,63 @@ const CompanyProfilePage: React.FC = () => {
       setIsReviewModalOpen(false);
       return;
     }
-
     if (!user.id) {
-      addToast("Erro de autenticação. Por favor, faça login novamente.", 'error');
-      setIsReviewModalOpen(false);
+      addToast("Erro de autenticação.", 'error');
       return;
     }
-
     if (!company?.id) {
-      addToast("Erro ao identificar a empresa.", 'error');
-      setIsReviewModalOpen(false);
+      addToast("Erro empresa.", 'error');
       return;
     }
 
     setSubmittingReview(true);
-
     try {
-      const payload = {
-        company_id: company.id,
-        client_id: user.id,
-        rating,
-        comment
-      };
-
+      const payload = { company_id: company.id, client_id: user.id, rating, comment };
       const { error } = await supabase.from('reviews').insert(payload);
-
-      if (error) {
-        if (error.code === '42501') {
-          addToast("Erro de permissão.", 'error');
-        } else if (error.code === '23505') {
-          addToast("Você já avaliou esta empresa.", 'error');
-        } else {
-          addToast(`Erro ao enviar avaliação: ${error.message}`, 'error');
-        }
-        throw error;
-      }
-
+      if (error) throw error;
       addToast("Avaliação enviada com sucesso!", 'success');
       setIsReviewModalOpen(false);
       setTimeout(() => window.location.reload(), 1000);
-
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      if (err.code === '23505') addToast("Você já avaliou esta empresa.", 'error');
+      else addToast(`Erro: ${err.message}`, 'error');
     } finally {
       setSubmittingReview(false);
     }
   };
 
   const isClient = user?.type === 'client';
-
-  const [activeTab, setActiveTab] = useState<'overview' | 'services'>('overview');
+  const { owner } = company;
 
   return (
-    <main className="bg-brand-background min-h-screen pb-12">
-      <SEO
-        title={`${company.companyName} | TGT`}
-        description={`Confira os serviços de ${company.companyName}.`}
-        url={`/empresa/${company.slug}`}
-        image={company.coverImage}
-      />
+    <main className="bg-gray-50 min-h-screen pb-12">
+      <SEO title={`${company.companyName} | TGT`} description={`Confira os serviços de ${company.companyName}.`} url={`/empresa/${company.slug}`} image={company.coverImage} />
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* FULL WIDTH HERO BANNER */}
+      <div className="w-full h-64 md:h-80 relative bg-gray-900 group">
+        <OptimizedImage
+          src={company.coverImage}
+          alt={`Capa de ${company.companyName}`}
+          className="w-full h-full object-cover opacity-90 transition-opacity duration-700"
+          fallbackSrc="https://placehold.co/1920x400/111827/374151?text=Cover"
+          optimizedWidth={1440}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+      </div>
+
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 -mt-20 md:-mt-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-          {/* LEFT SIDEBAR (Sticky) - Authority */}
+          {/* LEFT SIDEBAR (Sticky) */}
           <aside className="lg:col-span-4 order-2 lg:order-1 sticky top-24">
             <ProfileSidebar
               company={company}
               onContactClick={async () => {
-                if (!user) {
-                  addToast("Faça login para enviar mensagens", "info");
-                  return;
-                }
+                if (!user) { addToast("Faça login para enviar mensagens", "info"); return; }
                 const targetId = company.profileId;
-                if (!targetId) {
-                  addToast("Erro ao iniciar chat: Perfil da empresa não encontrado.", "error");
-                  return;
-                }
-                if (isClient) {
-                  setIsInquiryModalOpen(true);
-                } else {
-                  addToast("Apenas clientes podem iniciar chat por aqui.", "info");
-                }
+                if (!targetId) { addToast("Erro: Perfil não encontrado.", "error"); return; }
+                if (isClient) setIsInquiryModalOpen(true);
+                else addToast("Apenas clientes podem iniciar chat.", "info");
               }}
               onRequestQuote={() => handleRequestQuote()}
               isFavorited={favorited}
@@ -179,187 +141,141 @@ const CompanyProfilePage: React.FC = () => {
             />
           </aside>
 
-          {/* RIGHT MAIN CONTENT - Product Showcase */}
-          <div className="lg:col-span-8 order-1 lg:order-2 space-y-6">
+          {/* RIGHT MAIN CONTENT */}
+          <div className="lg:col-span-8 order-1 lg:order-2">
+            {/* Tabs */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+              <div className="flex border-b border-gray-100">
+                <button
+                  onClick={() => setActiveTab('services')}
+                  className={`flex-1 flex items-center justify-center gap-2 py-4 text-sm font-semibold transition-all relative ${activeTab === 'services' ? 'text-brand-primary' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                  Serviços
+                  <span className="ml-1 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">{company.services.length}</span>
+                  {activeTab === 'services' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-brand-primary" />}
+                </button>
+                <button
+                  onClick={() => setActiveTab('about')}
+                  className={`flex-1 flex items-center justify-center gap-2 py-4 text-sm font-semibold transition-all relative ${activeTab === 'about' ? 'text-brand-primary' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
+                >
+                  <Info className="w-4 h-4" />
+                  Quem Somos
+                  {activeTab === 'about' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-brand-primary" />}
+                </button>
+                <button
+                  onClick={() => setActiveTab('reviews')}
+                  className={`flex-1 flex items-center justify-center gap-2 py-4 text-sm font-semibold transition-all relative ${activeTab === 'reviews' ? 'text-brand-primary' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
+                >
+                  <Star className="w-4 h-4" />
+                  Avaliações
+                  <span className="ml-1 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">{company.reviewCount || 0}</span>
+                  {activeTab === 'reviews' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-brand-primary" />}
+                </button>
+              </div>
 
-            {/* Cover Image Banner */}
-            <div className="rounded-[var(--radius-box)] overflow-hidden h-48 md:h-64 shadow-md relative group bg-gray-200">
-              <OptimizedImage
-                src={company.coverImage}
-                alt={`Capa de ${company.companyName}`}
-                className="w-full h-full object-cover"
-                fallbackSrc="https://placehold.co/1200x400/f1f5f9/94a3b8?text=Capa+da+Empresa"
-                optimizedWidth={1200}
-                quality={85}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
-              <div className="absolute bottom-4 left-4 text-white z-10">
-                <h1 className="text-3xl font-bold shadow-sm">{company.companyName}</h1>
-                {company.level && <SellerBadge level={company.level as SellerLevel} showLabel={true} className="mt-2 text-xs" />}
+              {/* Tab Content */}
+              <div className="p-6 md:p-8 min-h-[400px]">
+                {activeTab === 'services' && (
+                  <div className="animate-in fade-in duration-300">
+                    {company.services.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {company.services.map(service => (
+                          <ServiceCard key={service.id} service={service} onRequestQuote={() => handleRequestQuote(service)} />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-20 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                        <p className="text-gray-500">Nenhum serviço disponível.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'about' && (
+                  <div className="space-y-8 animate-in fade-in duration-300">
+                    <section>
+                      <h3 className="text-lg font-bold text-gray-900 mb-3">Sobre</h3>
+                      <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">{company.description || "Sem descrição."}</p>
+                    </section>
+
+                    {/* Languages & Skills (moved from sidebar) */}
+                    {(owner?.languages?.length || owner?.skills?.length) ? (
+                      <section className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-100">
+                        {owner?.languages && owner.languages.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wider">Idiomas</h3>
+                            <ul className="space-y-2">
+                              {owner.languages.map((lang, idx) => (
+                                <li key={idx} className="flex justify-between text-sm text-gray-700 bg-gray-50 px-3 py-2 rounded-lg">
+                                  <span>{lang.language}</span>
+                                  <span className="text-gray-400 text-xs font-medium">{lang.level}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {owner?.skills && owner.skills.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wider">Competências</h3>
+                            <div className="flex flex-wrap gap-2">
+                              {owner.skills.map((skill, idx) => (
+                                <span key={idx} className="px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium border border-gray-200">
+                                  {skill}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </section>
+                    ) : null}
+
+                    {/* Portfolio */}
+                    {company.portfolio.length > 0 && (
+                      <section className="pt-6 border-t border-gray-100">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">Portfólio</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                          {company.portfolio.map((item, idx) => (
+                            <div key={item.id || idx} className="aspect-square rounded-xl overflow-hidden bg-gray-100 hover:opacity-90 transition-opacity shadow-sm border border-gray-200">
+                              <img src={item.url} alt={item.caption} className="w-full h-full object-cover" />
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'reviews' && (
+                  <div className="animate-in fade-in duration-300">
+                    <ReviewsList reviews={company.reviews} overallRating={company.rating} reviewCount={company.reviewCount} />
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Navigation Tabs */}
-            <div className="flex border-b border-gray-200 mb-6 bg-white rounded-t-[var(--radius-box)] px-6 pt-4 sticky top-0 z-20 shadow-sm">
-              <button
-                onClick={() => setActiveTab('overview')}
-                className={`pb-4 px-6 text-sm font-semibold transition-colors relative ${activeTab === 'overview'
-                  ? 'text-brand-primary border-b-2 border-brand-primary'
-                  : 'text-gray-500 hover:text-gray-700'
-                  }`}
-              >
-                Visão Geral
-              </button>
-              <button
-                onClick={() => setActiveTab('services')}
-                className={`pb-4 px-6 text-sm font-semibold transition-colors relative ${activeTab === 'services'
-                  ? 'text-brand-primary border-b-2 border-brand-primary'
-                  : 'text-gray-500 hover:text-gray-700'
-                  }`}
-              >
-                Soluções (Loja)
-                <span className="ml-2 bg-brand-accent/10 text-brand-accent text-[10px] px-2 py-0.5 rounded-full">{company.services.length}</span>
-              </button>
-            </div>
-
-            {/* Tab Content */}
-            <div className="min-h-[500px]">
-              {activeTab === 'overview' ? (
-                <div className="space-y-8 animate-in fade-in duration-300">
-                  {/* About */}
-                  <section className="bg-white p-6 md:p-8 rounded-[var(--radius-box)] border border-gray-100 shadow-sm">
-                    <h2 className="text-xl font-bold text-gray-900 mb-4">Sobre Nós</h2>
-                    <p className="text-gray-600 whitespace-pre-wrap leading-relaxed text-base">
-                      {company.description || "Nenhuma descrição informada."}
-                    </p>
-                  </section>
-
-                  {/* Portfolio */}
-                  {company.portfolio.length > 0 && (
-                    <section className="bg-white p-6 md:p-8 rounded-[var(--radius-box)] border border-gray-100 shadow-sm">
-                      <h2 className="text-xl font-bold text-gray-900 mb-4">Portfólio</h2>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {company.portfolio.map((item, idx) => (
-                          <div key={item.id || idx} className="aspect-square rounded-[var(--radius-box)] overflow-hidden bg-gray-200 cursor-pointer hover:opacity-90 transition-opacity">
-                            <img src={item.url} alt={item.caption} className="w-full h-full object-cover" />
-                          </div>
-                        ))}
-                      </div>
-                    </section>
-                  )}
-
-                  {/* Reviews */}
-                  <ReviewsList
-                    reviews={company.reviews}
-                    overallRating={company.rating}
-                    reviewCount={company.reviewCount}
-                  />
-
-                  {/* Similar Companies in Overview? Maybe better at bottom of page generally. Keeping for consistency */}
-                  {similarCompanies.length > 0 && (
-                    <section className="pt-8 border-t border-gray-200">
-                      <h2 className="text-xl font-bold text-gray-900 mb-4">Outros profissionais em {company.category}</h2>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {deduplicateCompanies(similarCompanies).slice(0, 2).map(comp => (
-                          <CompanyCard key={comp.id} company={comp} />
-                        ))}
-                      </div>
-                    </section>
-                  )}
+            {/* Similar Companies */}
+            {similarCompanies.length > 0 && (
+              <div className="mt-12">
+                <h2 className="text-xl font-bold text-gray-900 mb-6">Também em {company.category}</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {deduplicateCompanies(similarCompanies).slice(0, 2).map(comp => (
+                    <CompanyCard key={comp.id} company={comp} />
+                  ))}
                 </div>
-              ) : (
-                <div className="animate-in fade-in duration-300">
-                  {/* Services Grid (Shop) */}
-                  {company.services.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {company.services.map(service => (
-                        <ServiceCard
-                          key={service.id}
-                          service={service}
-                          step="ShopTab" // Optional: Pass context if needed
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-20 bg-white rounded-[var(--radius-box)] border border-dashed border-gray-200">
-                      <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400">
-                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4" /></svg>
-                      </div>
-                      <h3 className="text-lg font-medium text-gray-900">Nenhum serviço disponível</h3>
-                      <p className="text-gray-500 mt-2">Esta empresa ainda não cadastrou soluções.</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
+              </div>
+            )}
           </div>
-
         </div>
       </div>
 
-      {/* Lazy load modals with Suspense */}
-      {isMessageModalOpen && (
-        <Suspense fallback={
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <LoadingSkeleton className="w-96 h-64 rounded-xl" />
-          </div>
-        }>
-          <MessageModal
-            isOpen={isMessageModalOpen}
-            onClose={() => setIsMessageModalOpen(false)}
-            companyId={company.id}
-            companyName={company.companyName}
-          />
-        </Suspense>
-      )}
-
-      {isInquiryModalOpen && (
-        <Suspense fallback={
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <LoadingSkeleton className="w-96 h-64 rounded-xl" />
-          </div>
-        }>
-          <InquiryModal
-            isOpen={isInquiryModalOpen}
-            onClose={() => setIsInquiryModalOpen(false)}
-            companyId={company.id}
-            companyName={company.companyName}
-            companyCategory={company.category}
-            companyOwnerId={company.profileId}
-          />
-        </Suspense>
-      )}
-
-      {isBookingModalOpen && (
-        <Suspense fallback={
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <LoadingSkeleton className="w-96 h-96 rounded-xl" />
-          </div>
-        }>
-          <ServiceBookingModal
-            isOpen={isBookingModalOpen}
-            onClose={() => setIsBookingModalOpen(false)}
-            service={selectedService}
-            companyName={company.companyName}
-          />
-        </Suspense>
-      )}
-
-      {isReviewModalOpen && (
-        <Suspense fallback={
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <LoadingSkeleton className="w-96 h-64 rounded-xl" />
-          </div>
-        }>
-          <ReviewModal
-            isOpen={isReviewModalOpen}
-            onClose={() => setIsReviewModalOpen(false)}
-            onSubmit={handleReviewSubmit}
-            isLoading={submittingReview}
-          />
-        </Suspense>
-      )}
+      {/* Modals */}
+      <Suspense fallback={null}>
+        {isMessageModalOpen && <MessageModal isOpen={isMessageModalOpen} onClose={() => setIsMessageModalOpen(false)} companyId={company.id} companyName={company.companyName} />}
+        {isInquiryModalOpen && <InquiryModal isOpen={isInquiryModalOpen} onClose={() => setIsInquiryModalOpen(false)} companyId={company.id} companyName={company.companyName} companyCategory={company.category} companyOwnerId={company.profileId} />}
+        {isBookingModalOpen && <ServiceBookingModal isOpen={isBookingModalOpen} onClose={() => setIsBookingModalOpen(false)} service={selectedService} companyName={company.companyName} />}
+        {isReviewModalOpen && <ReviewModal isOpen={isReviewModalOpen} onClose={() => setIsReviewModalOpen(false)} onSubmit={handleReviewSubmit} isLoading={submittingReview} />}
+      </Suspense>
     </main>
   );
 };

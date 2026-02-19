@@ -2,19 +2,22 @@
 import { Company } from '@tgt/shared';
 
 export const CATEGORIES = [
-  "Restaurantes",
-  "Vinhos",
+  "Marketing",
   "Tecnologia",
-  "Saúde",
+  "Design",
+  "Consultoria",
+  "Contabilidade",
+  "Advocacia",
+  "Arquitetura",
+  "Fotografia",
   "Educação",
-  "Construção",
-  "Serviços Automotivos",
-  "Beleza e Estética",
+  "Saúde",
 ];
 
 export const MOCK_COMPANIES: Company[] = [
   {
     id: '1',
+    profileId: 'mock-profile-1',
     slug: 'adega-vinho-sul',
     companyName: 'Adega Vinho Sul',
     legalName: 'Adega Vinho Sul Comercio Ltda',
@@ -56,6 +59,7 @@ export const MOCK_COMPANIES: Company[] = [
   },
   {
     id: '2',
+    profileId: 'mock-profile-2',
     slug: 'tech-solutions',
     companyName: 'Tech Solutions',
     legalName: 'Soluções em Tecnologia Ltda',

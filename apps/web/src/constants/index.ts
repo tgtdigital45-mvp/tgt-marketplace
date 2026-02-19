@@ -3,6 +3,7 @@ import { Company } from '@tgt/shared';
 export const MOCK_COMPANIES: Company[] = [
     {
         id: "1",
+        profileId: "mock-profile-1",
         slug: "eco-clean-services",
         companyName: "EcoClean Services",
         legalName: "EcoClean Limpeza Ltda",
@@ -41,6 +42,7 @@ export const MOCK_COMPANIES: Company[] = [
     },
     {
         id: "2",
+        profileId: "mock-profile-2",
         slug: "tech-solutions",
         companyName: "Tech Solutions",
         legalName: "Tech Soluções de TI Ltda",
@@ -68,10 +70,16 @@ export const MOCK_COMPANIES: Company[] = [
 ];
 
 export const CATEGORIES = [
-    { id: 'limpeza', name: 'Limpeza', icon: 'Sparkles' },
-    { id: 'tecnologia', name: 'Tecnologia', icon: 'Laptop' },
     { id: 'marketing', name: 'Marketing', icon: 'Megaphone' },
-    { id: 'financas', name: 'Finanças', icon: 'DollarSign' }
+    { id: 'tecnologia', name: 'Tecnologia', icon: 'Laptop' },
+    { id: 'design', name: 'Design', icon: 'Palette' },
+    { id: 'consultoria', name: 'Consultoria', icon: 'Briefcase' },
+    { id: 'contabilidade', name: 'Contabilidade', icon: 'Calculator' },
+    { id: 'advocacia', name: 'Advocacia', icon: 'Scale' },
+    { id: 'arquitetura', name: 'Arquitetura', icon: 'Building2' },
+    { id: 'fotografia', name: 'Fotografia', icon: 'Camera' },
+    { id: 'educacao', name: 'Educação', icon: 'GraduationCap' },
+    { id: 'saude', name: 'Saúde', icon: 'Heart' },
 ];
 
 export const PLANS = [

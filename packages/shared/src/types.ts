@@ -98,6 +98,9 @@ export interface Company {
   rating: number;
   reviewCount: number;
   description: string;
+  verified?: boolean;
+  clients_count?: number;
+  recurring_clients_percent?: number;
   level?: 'Iniciante' | 'Nível 1' | 'Pro';
   address: Address;
   phone?: string;
@@ -160,6 +163,8 @@ export interface DbService {
   company_id: string;
   packages?: ServicePackages; // JSONB
   gallery?: string[]; // Array of image URLs
+  attributes?: Record<string, string>;
+  details?: Record<string, any>;
   faq?: { question: string; answer: string; }[]; // JSONB
   // H3 + Marketplace fields
   service_type?: 'remote' | 'presential' | 'hybrid';
@@ -202,6 +207,8 @@ export interface DbCompany {
   review_count?: number;
   status?: string;
   verified?: boolean;
+  clients_count?: number;
+  recurring_clients_percent?: number;
   level?: 'Iniciante' | 'Nível 1' | 'Pro';
   current_plan_tier?: 'starter' | 'pro' | 'agency';
   subscription_status?: string;
@@ -219,6 +226,8 @@ export interface Service {
   duration?: string;
   packages?: ServicePackages;
   gallery?: string[];
+  attributes?: Record<string, string>; // e.g. { "Style": "Minimalist", "File Format": "PNG, SVG" }
+  details?: Record<string, any>; // e.g. { "methodology": "...", "target_audience": "..." }
   faq?: { question: string; answer: string; }[];
   // H3 + Marketplace fields
   service_type?: 'remote' | 'presential' | 'hybrid';
@@ -240,6 +249,7 @@ export interface PortfolioItem {
   url: string;
   thumbnailUrl?: string;
   caption: string;
+  service_id?: string;
 }
 
 export interface Review {
