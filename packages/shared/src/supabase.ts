@@ -26,7 +26,14 @@ const getSupabase = () => {
                 autoRefreshToken: true,
                 detectSessionInUrl: true,
                 storageKey: 'tgt-auth-session',
-                lockType: 'null',
+                // Bypass navigator.locks completely to prevent
+                // NavigatorLockAcquireTimeoutError. The default lock
+                // implementation uses navigator.locks.request() which
+                // can deadlock when auth state change callbacks make
+                // supabase queries that also need the same lock.
+                lock: async (_name: string, _acquireTimeout: number, fn: () => Promise<any>) => {
+                    return await fn();
+                },
             } as any,
         }
     );
