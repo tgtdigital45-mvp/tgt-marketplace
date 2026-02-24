@@ -300,6 +300,7 @@ export interface DbOrder {
   delivery_deadline: string;
   hiring_responses?: Record<string, any>;
   package_snapshot?: any;
+  revision_count?: number;
   created_at: string;
   updated_at: string;
 }

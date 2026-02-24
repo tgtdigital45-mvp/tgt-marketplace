@@ -277,6 +277,11 @@ const OrderRoomPage = () => {
 
                 {/* Center: Chat / Timeline */}
                 <div className="lg:col-span-2 space-y-6">
+                    {order && order.status === 'cancelled' && (
+                        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl mb-4 text-center font-medium">
+                            Este pedido foi cancelado e os valores foram estornados.
+                        </div>
+                    )}
                     <OrderChat
                         orderId={order.id}
                         receiverId={isBuyer ? order.seller_id : order.buyer_id}
@@ -406,8 +411,40 @@ const OrderRoomPage = () => {
                                         <Button className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={() => setIsReviewModalOpen(true)}>
                                             Aprovar e Finalizar
                                         </Button>
-                                        <Button variant="secondary" className="w-full text-red-600 border-red-200 hover:bg-red-50" onClick={() => updateStatus('in_progress')}>
-                                            Solicitar Revisão
+                                        <Button
+                                            variant="secondary"
+                                            className="w-full text-red-600 border-red-200 hover:bg-red-50"
+                                            onClick={async () => {
+                                                if (order.revision_count >= 3) {
+                                                    addToast("Limite de revisões atingido. Por favor, abra uma disputa se ainda houver problemas.", "warning");
+                                                    return;
+                                                }
+                                                // Increment revision_count and set back to in_progress
+                                                try {
+                                                    const { error } = await supabase
+                                                        .from('orders')
+                                                        .update({
+                                                            status: 'in_progress',
+                                                            revision_count: (order.revision_count || 0) + 1
+                                                        })
+                                                        .eq('id', order.id);
+
+                                                    if (error) throw error;
+
+                                                    await supabase.from('messages').insert({
+                                                        order_id: order.id,
+                                                        sender_id: user?.id,
+                                                        content: `SYSTEM: O comprador solicitou a revisão #${(order.revision_count || 0) + 1}.`,
+                                                    });
+
+                                                    fetchOrder();
+                                                    addToast("Revisão solicitada com sucesso.", "success");
+                                                } catch (err: any) {
+                                                    addToast("Erro ao solicitar revisão: " + err.message, "error");
+                                                }
+                                            }}
+                                        >
+                                            Solicitar Revisão ({order.revision_count || 0}/3)
                                         </Button>
                                         <Button variant="outline" className="w-full text-gray-500 hover:bg-gray-100" onClick={() => setIsDisputeModalOpen(true)}>
                                             Tive um problema (Abrir Disputa)

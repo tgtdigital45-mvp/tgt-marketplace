@@ -37,6 +37,12 @@ serve(async (req) => {
         }
 
         // ============================================================================
+        // 0. CLEANUP EXPIRED BOOKING LOCKS
+        // ============================================================================
+        console.log('Cleaning up expired booking locks...');
+        await supabaseClient.rpc('cleanup_expired_booking_locks');
+
+        // ============================================================================
         // 1. CLEAR PENDING TRANSFERS (7 DAYS RETENTION)
         // ============================================================================
         console.log('Starting 7-day retention payouts...');
@@ -155,6 +161,37 @@ serve(async (req) => {
             } catch (err) {
                 console.error(`Error reconciling order ${order.id}:`, err);
                 results.errors.push({ type: 'reconciliation', order_id: order.id, message: err.message });
+            }
+        }
+
+        // ============================================================================
+        // 3. AUTO-APPROVE DELIVERED ORDERS (3 DAYS INACTIVITY)
+        // ============================================================================
+        console.log('Starting Auto-Approval for delivered orders...');
+        const threeDaysAgo = new Date();
+        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+        const isoThreeDaysAgo = threeDaysAgo.toISOString();
+
+        const { data: deliveredOrders, error: dError } = await supabaseClient
+            .from('orders')
+            .select('id')
+            .eq('status', 'delivered')
+            .lt('updated_at', isoThreeDaysAgo);
+
+        if (dError) throw dError;
+
+        for (const order of deliveredOrders || []) {
+            try {
+                console.log(`Auto-approving order ${order.id}...`);
+                // Update Order to "completed"
+                await supabaseClient.from('orders').update({ status: 'completed' }).eq('id', order.id);
+                // Update corresponding booking
+                await supabaseClient.from('bookings').update({ status: 'completed' }).eq('order_id', order.id);
+
+                // Note: The settlement will be handled by the next cron run (Retention logic in step 1)
+            } catch (err) {
+                console.error(`Error auto-approving order ${order.id}:`, err);
+                results.errors.push({ type: 'auto-approval', order_id: order.id, message: err.message });
             }
         }
 
