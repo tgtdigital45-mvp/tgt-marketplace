@@ -1,4 +1,4 @@
-# TGT Marketplace
+# CONTRATTO Marketplace
 
 Plataforma B2B completa para conectar empresas a prestadores de serviços profissionais. 
 Marketplace transacional com modelo SaaS + comissão regressiva, permitindo que agências e consultorias criem perfis profissionais, gerenciem serviços e recebam pagamentos, enquanto clientes corporativos podem buscar, contratar e avaliar serviços de forma segura e eficiente.
@@ -164,13 +164,13 @@ npm run test:ui      # Interface de testes
 
 ## 🤝 Contribuindo
 
-Este é um projeto proprietário. Para contribuições, entre em contato com a equipe TGT.
+Este é um projeto proprietário. Para contribuições, entre em contato com a equipe CONTRATTO.
 
 ## 📜 Licença
 
-© 2026 TGT Digital. Todos os direitos reservados.
+© 2026 CONTRATTO Digital. Todos os direitos reservados.
 
 ---
 
-**Desenvolvido com ❤️ pela equipe TGT Digital**
+**Desenvolvido com ❤️ pela equipe CONTRATTO Digital**
 

@@ -9,7 +9,7 @@ const Footer: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
                     {/* Brand */}
                     <div>
-                        <h2 className="text-3xl font-black mb-6 tracking-tight">TGT Contratto.</h2>
+                        <h2 className="text-3xl font-black mb-6 tracking-tight">CONTRATTO.</h2>
                         <p className="text-gray-400 leading-relaxed mb-6">
                             A plataforma definitiva para conectar pessoas e negócios. Tecnologia, segurança e crescimento em um só lugar.
                         </p>
@@ -41,7 +41,7 @@ const Footer: React.FC = () => {
                     <div>
                         <h3 className="font-bold text-lg mb-6">Institucional</h3>
                         <ul className="space-y-4 text-gray-400">
-                            <li><Link to="/sobre" className="hover:text-white transition-colors">Sobre a TGT</Link></li>
+                            <li><Link to="/sobre" className="hover:text-white transition-colors">Sobre a CONTRATTO</Link></li>
                             <li><Link to="/carreiras" className="hover:text-white transition-colors">Carreiras</Link></li>
                             <li><Link to="/blog" className="hover:text-white transition-colors">Blog</Link></li>
                             <li><Link to="/imprensa" className="hover:text-white transition-colors">Imprensa</Link></li>
@@ -64,7 +64,7 @@ const Footer: React.FC = () => {
                 </div>
 
                 <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-500">
-                    <p>© 2026 TGT Contratto. Todos os direitos reservados.</p>
+                    <p>© 2026 CONTRATTO. Todos os direitos reservados.</p>
                     <div className="flex gap-6">
                         <Link to="/privacidade" className="hover:text-white">Privacidade</Link>
                         <Link to="/termos" className="hover:text-white">Termos de Uso</Link>

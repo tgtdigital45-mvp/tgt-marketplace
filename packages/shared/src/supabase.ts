@@ -25,14 +25,24 @@ const getSupabase = () => {
                 persistSession: true,
                 autoRefreshToken: true,
                 detectSessionInUrl: true,
-                storageKey: 'tgt-auth-session',
-                // Bypass navigator.locks completely to prevent
-                // NavigatorLockAcquireTimeoutError. The default lock
-                // implementation uses navigator.locks.request() which
-                // can deadlock when auth state change callbacks make
-                // supabase queries that also need the same lock.
-                lock: async (_name: string, _acquireTimeout: number, fn: () => Promise<any>) => {
-                    return await fn();
+                storageKey: 'contratto-auth-session',
+                // Custom lock to prevent NavigatorLockAcquireTimeoutError.
+                // Uses ifAvailable mode so it never blocks — falls back to
+                // direct execution if the lock is held, avoiding deadlocks
+                // caused by auth state change callbacks re-entering Supabase.
+                lock: async (name: string, _acquireTimeout: number, fn: () => Promise<any>) => {
+                    if (typeof navigator !== 'undefined' && navigator.locks) {
+                        let lockAcquired = false;
+                        const result = await navigator.locks.request(name, { ifAvailable: true }, async () => {
+                            lockAcquired = true;
+                            return fn();
+                        });
+
+                        if (lockAcquired) return result;
+
+                        console.warn(`[Supabase] Lock "${name}" is busy. Falling back to direct execution to avoid hang.`);
+                    }
+                    return fn();
                 },
             } as any,
         }

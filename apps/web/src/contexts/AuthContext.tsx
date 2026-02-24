@@ -25,7 +25,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Initialize loading based on whether we expect a session
   const [loading, setLoading] = useState(() => {
-    return !!localStorage.getItem('tgt-auth-session');
+    return !!localStorage.getItem('contratto-auth-session');
   });
 
   // Extract profile fetching logic for reuse
@@ -49,43 +49,78 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       console.log(`[AuthContext] Fetching profile data (ID: ${currentFetchId}) for:`, session.user.id);
 
-      // 1. Check if user has a company
-      const { data: companyData, error: companyError } = await supabase
-        .from('companies')
-        .select('id, slug, profile_id')
-        .eq('profile_id', session.user.id);
+      console.log(`[AuthContext] (ID: ${currentFetchId}) Checking companies table...`);
+
+      // 1. Check if user has a company (with timeout)
+      const fetchCompany = async () => {
+        return supabase
+          .from('companies')
+          .select('id, slug, profile_id')
+          .eq('profile_id', session.user.id);
+      };
+
+      const timeout = (ms: number) => new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), ms));
+
+      let result: any;
+      try {
+        result = await Promise.race([fetchCompany(), timeout(5000)]);
+      } catch (err: any) {
+        console.error(`[AuthContext] (ID: ${currentFetchId}) Company check timed out or failed:`, err);
+        result = { data: null, error: err };
+      }
+
+      const { data: companyData, error: companyError } = result;
 
       // If a newer fetch started, stop immediately
-      if (currentFetchId !== fetchIdRef.current) return;
+      if (currentFetchId !== fetchIdRef.current) {
+        console.log(`[AuthContext] (ID: ${currentFetchId}) Superseded, stopping.`);
+        return;
+      }
 
       if (companyError) {
         if (!companyError.message?.includes('AbortError')) {
-          console.error("[AuthContext] Error checking company existence:", companyError);
+          console.error(`[AuthContext] (ID: ${currentFetchId}) Error checking company existence:`, companyError);
         }
-        // Removed early return here to ensure finally block is always reached
       } else if (companyData && companyData.length > 0) {
-        console.log("[AuthContext] Found company matching user:", companyData[0].slug);
+        console.log(`[AuthContext] (ID: ${currentFetchId}) Found company:`, companyData[0].slug);
         userData.type = 'company';
         userData.companySlug = companyData[0].slug;
       }
 
       // 2. Fetch role and latest profile data
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('role, full_name, avatar_url, user_type')
-        .eq('id', session.user.id)
-        .maybeSingle();
+      console.log(`[AuthContext] (ID: ${currentFetchId}) Fetching profile data...`);
 
-      if (currentFetchId !== fetchIdRef.current) return;
+      const fetchProfile = async () => {
+        return supabase
+          .from('profiles')
+          .select('role, full_name, avatar_url, user_type')
+          .eq('id', session.user.id)
+          .maybeSingle();
+      };
+
+      let profileResult: any;
+      try {
+        profileResult = await Promise.race([fetchProfile(), timeout(5000)]);
+      } catch (err: any) {
+        console.error(`[AuthContext] (ID: ${currentFetchId}) Profile fetch timed out or failed:`, err);
+        profileResult = { data: null, error: err };
+      }
+
+      const { data: profileData, error: profileError } = profileResult;
+
+      if (currentFetchId !== fetchIdRef.current) {
+        console.log(`[AuthContext] (ID: ${currentFetchId}) Superseded, stopping.`);
+        return;
+      }
 
       if (profileError) {
         if (!profileError.message?.includes('AbortError')) {
-          console.error("[AuthContext] Error fetching profile data:", profileError);
+          console.error(`[AuthContext] (ID: ${currentFetchId}) Error fetching profile data:`, profileError);
         }
-        // Removed early return here to ensure finally block is always reached
       }
 
       if (profileData) {
+        console.log(`[AuthContext] (ID: ${currentFetchId}) Profile found:`, profileData.full_name);
         if (profileData.role) userData.role = profileData.role as any;
         if (profileData.full_name) userData.name = profileData.full_name;
         if (profileData.avatar_url) userData.avatar = profileData.avatar_url;
@@ -94,16 +129,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       // Final check before committing state
       if (mountedRef.current && currentFetchId === fetchIdRef.current) {
+        console.log(`[AuthContext] (ID: ${currentFetchId}) Committing user state.`);
         setUser(userData);
       }
     } catch (err: any) {
       if (!err.message?.includes('AbortError')) {
-        console.error("[AuthContext] Failed to fetch user profile", err);
+        console.error(`[AuthContext] (ID: ${currentFetchId}) Failed to fetch user profile:`, err);
       }
     } finally {
       // Release loading state ONLY if we are the LATEST fetch
       if (mountedRef.current && currentFetchId === fetchIdRef.current) {
+        console.log(`[AuthContext] (ID: ${currentFetchId}) Fetch complete. Releasing loading state.`);
         setLoading(false);
+      } else {
+        console.log(`[AuthContext] (ID: ${currentFetchId}) Finally cleanup, but not latest. Current: ${fetchIdRef.current}`);
       }
     }
   };
@@ -317,7 +356,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 // eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
+
+  // Defensive check for transient unmount states or fast-refresh issues
   if (context === undefined) {
+    // In production, we might want to return a fallback or log and throw
+    // In development, we keep the throw to catch implementation errors early
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[AuthContext] useAuth accessed outside of AuthProvider. This should not happen in the current tree structure.');
+    }
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

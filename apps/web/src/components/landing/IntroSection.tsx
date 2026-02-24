@@ -45,7 +45,7 @@ const IntroSection: React.FC = () => {
                         </h2>
 
                         <p className="text-lg text-slate-500 mb-10 leading-relaxed">
-                            A TGT Contratto nasceu da necessidade de conectar profissionais qualificados a clientes que buscam excelência. Somos mais que um marketplace, somos o motor de crescimento para a economia da sua região.
+                            A CONTRATTO nasceu da necessidade de conectar profissionais qualificados a clientes que buscam excelência. Somos mais que um marketplace, somos o motor de crescimento para a economia da sua região.
                         </p>
 
                         <div className="grid sm:grid-cols-2 gap-6 mb-12">

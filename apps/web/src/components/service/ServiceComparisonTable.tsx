@@ -6,9 +6,10 @@ import Button from '@/components/ui/Button';
 interface ServiceComparisonTableProps {
     packages: ServicePackages;
     onSelect: (tier: string) => void;
+    requiresQuote?: boolean;
 }
 
-const ServiceComparisonTable: React.FC<ServiceComparisonTableProps> = ({ packages, onSelect }) => {
+const ServiceComparisonTable: React.FC<ServiceComparisonTableProps> = ({ packages, onSelect, requiresQuote }) => {
     // Helper to get features list (union of all features across packages for rows)
     // For simplicity, we'll just list common known features or map from available packages.
     // In a real app, you might want a defined list of comparison points.
@@ -38,7 +39,9 @@ const ServiceComparisonTable: React.FC<ServiceComparisonTableProps> = ({ package
                         </th>
                         {tiers.map(tier => (
                             <th key={tier.id} className="p-6 border-b border-gray-200 w-1/4">
-                                <div className="text-xl font-bold text-gray-900 mb-1">{tier.data?.price?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                                <div className="text-xl font-bold text-gray-900 mb-1">
+                                    {requiresQuote ? 'Sob Consulta' : tier.data?.price?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                </div>
                                 <div className="text-sm font-semibold text-gray-700 uppercase">{tier.data?.name}</div>
                                 <p className="text-xs text-gray-500 mt-2 font-normal leading-relaxed">{tier.data?.description}</p>
                             </th>

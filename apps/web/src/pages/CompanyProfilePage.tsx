@@ -22,7 +22,22 @@ import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
 import ProfileSidebar from '@/components/ProfileSidebar';
 import ReviewsList from '@/components/ReviewsList';
 import OptimizedImage from '@/components/ui/OptimizedImage';
-import { LayoutGrid, Info, Star } from 'lucide-react';
+import { LayoutGrid, Info, Star, MapPin as MapPinIcon } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Fix for default marker icon in Leaflet
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
 
 const CompanyProfilePage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -106,7 +121,7 @@ const CompanyProfilePage: React.FC = () => {
 
   return (
     <main className="bg-gray-50 min-h-screen pb-12">
-      <SEO title={`${company.companyName} | TGT`} description={`Confira os serviços de ${company.companyName}.`} url={`/empresa/${company.slug}`} image={company.coverImage} />
+      <SEO title={`${company.companyName} | CONTRATTO`} description={`Confira os serviços de ${company.companyName}.`} url={`/empresa/${company.slug}`} image={company.coverImage} />
 
       {/* FULL WIDTH HERO BANNER */}
       <div className="w-full h-64 md:h-80 relative bg-gray-900 group">
@@ -243,6 +258,54 @@ const CompanyProfilePage: React.FC = () => {
                         </div>
                       </section>
                     )}
+
+                    {/* Location & Map */}
+                    <section className="pt-8 border-t border-gray-100 mt-8">
+                      <div className="flex items-center gap-2 mb-4">
+                        <MapPinIcon className="w-5 h-5 text-brand-primary" />
+                        <h3 className="text-lg font-bold text-gray-900">Localização</h3>
+                      </div>
+
+                      {company.address ? (
+                        <div className="space-y-4">
+                          <p className="text-sm text-gray-600 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            {company.address.street}, {company.address.number} - {company.address.district}
+                            <br />
+                            {company.address.city}, {company.address.state} - CEP: {company.address.cep}
+                          </p>
+
+                          <div className="h-72 w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm relative z-0">
+                            {company.address.lat && company.address.lng ? (
+                              <MapContainer
+                                center={[company.address.lat, company.address.lng]}
+                                zoom={15}
+                                scrollWheelZoom={false}
+                                className="h-full w-full"
+                              >
+                                <TileLayer
+                                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                />
+                                <Marker position={[company.address.lat, company.address.lng]}>
+                                  <Popup>
+                                    <div className="text-center font-semibold p-1">
+                                      {company.companyName}
+                                    </div>
+                                  </Popup>
+                                </Marker>
+                              </MapContainer>
+                            ) : (
+                              <div className="h-full w-full bg-gray-50 flex flex-col items-center justify-center text-gray-400 gap-2">
+                                <MapPinIcon className="w-8 h-8 opacity-20" />
+                                <p className="text-xs">Geolocalização não disponível para este endereço.</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500 italic">Endereço não informado.</p>
+                      )}
+                    </section>
                   </div>
                 )}
 
@@ -273,7 +336,20 @@ const CompanyProfilePage: React.FC = () => {
       <Suspense fallback={null}>
         {isMessageModalOpen && <MessageModal isOpen={isMessageModalOpen} onClose={() => setIsMessageModalOpen(false)} companyId={company.id} companyName={company.companyName} />}
         {isInquiryModalOpen && <InquiryModal isOpen={isInquiryModalOpen} onClose={() => setIsInquiryModalOpen(false)} companyId={company.id} companyName={company.companyName} companyCategory={company.category} companyOwnerId={company.profileId} />}
-        {isBookingModalOpen && <ServiceBookingModal isOpen={isBookingModalOpen} onClose={() => setIsBookingModalOpen(false)} service={selectedService} companyName={company.companyName} />}
+        {isBookingModalOpen && <ServiceBookingModal
+          isOpen={isBookingModalOpen}
+          onClose={() => setIsBookingModalOpen(false)}
+          service={selectedService}
+          companyName={company.companyName}
+          canCheckout={company?.stripe_charges_enabled && company?.is_active !== false}
+          checkoutDisabledReason={
+            company?.is_active === false
+              ? "Esta empresa está temporariamente suspensa."
+              : !company?.stripe_charges_enabled
+                ? "Esta empresa está finalizando a configuração de pagamentos e não pode receber agendamentos no momento."
+                : undefined
+          }
+        />}
         {isReviewModalOpen && <ReviewModal isOpen={isReviewModalOpen} onClose={() => setIsReviewModalOpen(false)} onSubmit={handleReviewSubmit} isLoading={submittingReview} />}
       </Suspense>
     </main>

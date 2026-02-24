@@ -16,14 +16,16 @@ export const useClientOrders = (userId: string | undefined) => {
             // Parallel Fetching using Promise.all
             try {
                 const [jobsResponse, bookingsResponse] = await Promise.all([
-                    // 1. Fetch Jobs with Proposals (removed categories join to fix 400 error)
                     supabase
                         .from('jobs')
                         .select(`
             *,
             proposals (
               *,
-              companies:company_id(company_name, logo_url)
+              professional:profiles!proposals_user_id_fkey (
+                full_name, avatar_url,
+                companies (company_name, logo_url)
+              )
             )
           `)
                         .eq('user_id', userId)
@@ -60,14 +62,14 @@ export const useClientOrders = (userId: string | undefined) => {
                     category: undefined, // Category join removed due to schema issues
                     proposals: (j.proposals || []).map((p) => ({
                         id: p.id,
-                        company_id: p.company_id,
+                        company_id: p.user_id, // professional user_id
                         price: p.price,
-                        cover_letter: p.cover_letter,
+                        cover_letter: p.message, // using 'message' from DB instead of 'cover_letter'
                         status: p.status,
                         created_at: p.created_at,
                         company: {
-                            name: p.companies?.company_name || 'Empresa',
-                            avatar_url: p.companies?.logo_url
+                            name: ((p as any).professional?.companies as any)?.[0]?.company_name || (p as any).professional?.full_name || 'Profissional',
+                            avatar_url: ((p as any).professional?.companies as any)?.[0]?.logo_url || (p as any).professional?.avatar_url
                         }
                     }))
                 }));
@@ -88,7 +90,13 @@ export const useClientOrders = (userId: string | undefined) => {
                     serviceName: b.service_title,
                     price: b.service_price || 0,
                     date: b.booking_date,
-                    time: b.booking_time
+                    time: b.booking_time,
+                    // Proposal
+                    proposed_date: b.proposed_date,
+                    proposed_time: b.proposed_time,
+                    proposal_expires_at: b.proposal_expires_at,
+                    // Linking
+                    order_id: (b as any).order_id
                 }));
 
                 return { jobs, bookings };

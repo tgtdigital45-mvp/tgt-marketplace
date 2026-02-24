@@ -6,7 +6,7 @@ const InstitutionalLayout: React.FC = () => {
     const location = useLocation();
 
     const tabs = [
-        { name: 'Sobre a TGT', path: '/institucional/sobre' },
+        { name: 'Sobre a CONTRATTO', path: '/institucional/sobre' },
         { name: 'Notícias & Mídia', path: '/institucional/noticias' },
         { name: 'Blog do Especialista', path: '/institucional/blog' },
     ];

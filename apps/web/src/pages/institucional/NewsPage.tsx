@@ -7,7 +7,7 @@ const NewsPage: React.FC = () => {
     const articles = [
         {
             id: 1,
-            title: "TGT lança nova plataforma de contratação",
+            title: "CONTRATTO lança nova plataforma de contratação",
             date: "12 de Out, 2024",
             category: "Lançamento",
             excerpt: "Revolucionando a forma como serviços técnicos são contratados no Brasil.",
@@ -19,8 +19,8 @@ const NewsPage: React.FC = () => {
     return (
         <div className="max-w-4xl mx-auto">
             <SEO
-                title="Notícias & Mídia | TGT Contratto"
-                description="Fique por dentro das últimas novidades, lançamentos e comunicados da TGT."
+                title="Notícias & Mídia | CONTRATTO"
+                description="Fique por dentro das últimas novidades, lançamentos e comunicados da CONTRATTO."
             />
 
             <div className="grid gap-8 md:grid-cols-2">

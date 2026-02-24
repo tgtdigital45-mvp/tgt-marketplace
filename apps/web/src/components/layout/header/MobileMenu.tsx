@@ -72,7 +72,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
                         <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
                             <Link to="/" onClick={handleLinkClick} className="flex items-center gap-2">
                                 <div className="bg-brand-primary/10 p-2 rounded-xl">
-                                    <span className="text-brand-primary font-bold text-lg">TGT</span>
+                                    <span className="text-brand-primary font-bold text-lg">CONTRATTO</span>
                                 </div>
                                 <span className="text-gray-800 font-bold text-lg">Contratto</span>
                             </Link>

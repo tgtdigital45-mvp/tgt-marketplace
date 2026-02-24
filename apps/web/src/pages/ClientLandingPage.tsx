@@ -19,7 +19,7 @@ const ClientLandingPage: React.FC = () => {
   return (
     <div className="bg-white text-gray-800">
       <SEO
-        title="TGT Contratto | Conectando Profissionais e Empresas com Excelência"
+        title="CONTRATTO | Conectando Profissionais e Empresas com Excelência"
         description="A maior rede corporativa de serviços locais. Encontre contadores, engenheiros, especialistas em estética e muito mais em um ecossistema seguro e verificado."
         keywords="empresas locais, serviços profissionais, marketplace b2b, contabilidade, engenharia, estética, parcerias comerciais"
       />

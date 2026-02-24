@@ -10,8 +10,8 @@ const AboutPage: React.FC = () => {
   return (
     <div className="py-8 font-sans">
       <SEO
-        title="Sobre a TGT | O Futuro do Crescimento"
-        description="Na TGT, combinamos tecnologia de ponta e estratégia humana para redefinir o que é possível. Conheça nossa liderança e valores."
+        title="Sobre a CONTRATTO | O Futuro do Crescimento"
+        description="Na CONTRATTO, combinamos tecnologia de ponta e estratégia humana para redefinir o que é possível. Conheça nossa liderança e valores."
         type="website"
       />
 
@@ -24,7 +24,7 @@ const AboutPage: React.FC = () => {
           Redefinindo o futuro do crescimento
         </h2>
         <p className="text-xl md:text-2xl text-slate-500 leading-relaxed font-medium max-w-3xl mx-auto">
-          A TGT Contratto nasceu da necessidade de conectar excelência técnica a demandas reais. Acreditamos que a tecnologia deve ser a ponte, não a barreira. Transformamos dados em decisões e potencial em performance escalável.
+          A CONTRATTO nasceu da necessidade de conectar excelência técnica a demandas reais. Acreditamos que a tecnologia deve ser a ponte, não a barreira. Transformamos dados em decisões e potencial em performance escalável.
         </p>
       </div>
 
@@ -94,7 +94,7 @@ const AboutPage: React.FC = () => {
           {/* Decorative background element */}
           <div className="absolute top-0 right-0 w-96 h-96 bg-blue-100/30 rounded-full blur-3xl -mr-32 -mt-32"></div>
 
-          <h2 className="text-3xl md:text-4xl font-bold text-center text-slate-900 mb-16 tracking-tight relative z-10">O DNA da TGT</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-center text-slate-900 mb-16 tracking-tight relative z-10">O DNA da CONTRATTO</h2>
 
           <div className="grid md:grid-cols-3 gap-8 relative z-10">
             {/* Innovation Card */}
@@ -132,7 +132,7 @@ const AboutPage: React.FC = () => {
         <div className="relative z-10 max-w-3xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-extrabold mb-8 tracking-tight leading-tight">Pronto para o próximo nível?</h2>
           <p className="text-slate-300 max-w-xl mx-auto mb-12 text-lg md:text-xl leading-relaxed font-light">
-            Seja como parceiro ou cliente, a TGT é o ambiente onde o crescimento encontra a tecnologia. Vamos construir o futuro juntos.
+            Seja como parceiro ou cliente, a CONTRATTO é o ambiente onde o crescimento encontra a tecnologia. Vamos construir o futuro juntos.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
             <Link to="/contato">

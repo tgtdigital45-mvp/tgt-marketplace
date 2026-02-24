@@ -117,6 +117,12 @@ async function processEvent(event: Stripe.Event) {
 
             if (orderError) throw new Error(`Order update failed: ${orderError.message}`)
 
+            // Confirm associated booking
+            await supabaseClient
+                .from('bookings')
+                .update({ status: 'confirmed' })
+                .eq('order_id', order_id);
+
             // SAGA: PAYMENT_CONFIRMED
             await supabaseClient.rpc('transition_saga_status', {
                 p_order_id: order.id,

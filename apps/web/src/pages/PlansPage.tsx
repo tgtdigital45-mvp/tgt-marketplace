@@ -8,8 +8,8 @@ const PlansPage: React.FC = () => {
     return (
         <div className="bg-gray-50 min-h-screen py-24">
             <Helmet>
-                <title>Planos e Preços | TGT Contratto</title>
-                <meta name="description" content="Escolha o plano ideal para destacar sua empresa e conseguir mais clientes no TGT Contratto." />
+                <title>Planos e Preços | CONTRATTO</title>
+                <meta name="description" content="Escolha o plano ideal para destacar sua empresa e conseguir mais clientes na CONTRATTO." />
             </Helmet>
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">

@@ -117,6 +117,7 @@ const CompanyLoginPage: React.FC = () => {
                             Sou Cliente
                         </Link>
                         <button
+                            type="button"
                             className="flex-1 flex items-center justify-center py-2 px-4 text-sm font-medium rounded-lg bg-white text-gray-900 shadow-sm transition-all"
                         >
                             <Briefcase className="w-4 h-4 mr-2 text-[#FF6B35]" />
@@ -240,7 +241,7 @@ const CompanyLoginPage: React.FC = () => {
 
                 <div className="relative h-full flex flex-col items-center justify-center p-12 text-white">
                     <div className="w-24 h-24 bg-white/10 backdrop-blur-lg rounded-2xl flex items-center justify-center mb-8 border border-white/20 shadow-2xl">
-                        <span className="text-4xl font-bold tracking-tight">TGT</span>
+                        <span className="text-4xl font-bold tracking-tight">CONTRATTO</span>
                     </div>
 
                     <h1 className="text-4xl font-bold text-center mb-4 leading-tight">

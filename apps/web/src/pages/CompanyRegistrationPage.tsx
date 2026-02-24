@@ -331,7 +331,7 @@ const CompanyRegistrationPage: React.FC = () => {
         if (error) {
           console.error('Checkout error:', error);
           // Fallback: successful registration but failed checkout -> Go to dashboard to retry later
-          addToast('Empresa criada, mas houve um erro ao iniciar o pagamento. Você pode tentar novamente no painel.', 'warning');
+          addToast('Empresa criada, mas houve um erro ao iniciar o pagamento. Você pode tentar novamente no painel.', 'info');
           setTimeout(() => {
             window.location.href = `/dashboard/empresa/${slug}/assinatura`;
           }, 2000);
@@ -377,8 +377,8 @@ const CompanyRegistrationPage: React.FC = () => {
   return (
     <div className="min-h-screen relative bg-gray-50 overflow-hidden">
       <SEO
-        title="Cadastro de Empresa | TGT Contratto"
-        description="Cadastre sua empresa no TGT Contratto e encontre novos clientes na sua região."
+        title="Cadastro de Empresa | CONTRATTO"
+        description="Cadastre sua empresa na CONTRATTO e encontre novos clientes na sua região."
       />
 
       {/* Background Split */}
@@ -497,7 +497,7 @@ const CompanyRegistrationPage: React.FC = () => {
                   <div className="space-y-6 animate-in fade-in slide-in-from-right duration-500">
                     <h3 className="text-xl font-bold text-gray-800 border-l-4 border-brand-primary pl-3">Dados da Empresa</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <Input label="Nome Fantasia" name="companyName" placeholder="Ex: TGT Soluções" value={formData.companyName} onChange={handleChange} error={errors.companyName} required />
+                      <Input label="Nome Fantasia" name="companyName" placeholder="Ex: Nome da sua Empresa" value={formData.companyName} onChange={handleChange} error={errors.companyName} required />
                       <Input label="Razão Social" name="legalName" placeholder="Razão social completa" value={formData.legalName} onChange={handleChange} error={errors.legalName} required />
                       <Input label="CNPJ" name="cnpj" placeholder="00.000.000/0000-00" value={formData.cnpj} onChange={handleChange} error={errors.cnpj} required />
                       <Input label="Email Público" name="email" type="email" placeholder="contato@empresa.com" value={formData.email} onChange={handleChange} error={errors.email} required />
@@ -640,7 +640,7 @@ const CompanyRegistrationPage: React.FC = () => {
                         <div className="absolute -top-3 left-4 bg-brand-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Recomendado</div>
                         <div className="flex justify-between items-center">
                           <div>
-                            <h4 className="font-bold text-gray-900">TGT Pro</h4>
+                            <h4 className="font-bold text-gray-900">CONTRATTO Pro</h4>
                             <p className="text-sm text-gray-500">Mais visibilidade</p>
                           </div>
                           <div className="text-right">

@@ -85,12 +85,12 @@ const CompaniesListPage: React.FC = () => {
     if (searchTerm) title = `${searchTerm}`;
     else if (selectedCategory !== 'all') title = `${selectedCategory}`;
     if (locationTerm) title += ` em ${locationTerm}`;
-    return `${title} | TGT Contratto`;
+    return `${title} | CONTRATTO`;
   };
 
   const getDynamicDescription = () => {
     return searchTerm
-      ? `Encontre ${searchTerm} no TGT Contratto. Profissionais qualificados e avaliados na sua região.`
+      ? `Encontre ${searchTerm} no CONTRATTO. Profissionais qualificados e avaliados na sua região.`
       : 'Explore as melhores empresas e prestadores de serviços em nossa rede corporativa verificada.';
   };
 

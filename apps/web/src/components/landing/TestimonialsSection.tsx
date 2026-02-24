@@ -11,7 +11,7 @@ interface Testimonial {
 
 const testimonials: Testimonial[] = [
     {
-        text: "A TGT revolucionou a forma como encontramos parceiros de engenharia em Cascavel. A plataforma é intuitiva e a verificação de profissionais nos traz muita segurança.",
+        text: "A CONTRATTO revolucionou a forma como encontramos parceiros de engenharia em Cascavel. A plataforma é intuitiva e a verificação de profissionais nos traz muita segurança.",
         image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop",
         name: "Ricardo Fontes",
         role: "Diretor de RailCorp",
@@ -23,7 +23,7 @@ const testimonials: Testimonial[] = [
         role: "CEO da TechStart",
     },
     {
-        text: "Implementar a TGT foi rápido e eficiente. A interface personalizável e amigável tornou o treinamento da equipe muito fácil.",
+        text: "Implementar a CONTRATTO foi rápido e eficiente. A interface personalizável e amigável tornou o treinamento da equipe muito fácil.",
         image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop",
         name: "Bilal Ahmed",
         role: "Gerente de TI",
@@ -59,7 +59,7 @@ const testimonials: Testimonial[] = [
         role: "Gerente de Vendas",
     },
     {
-        text: "Usando a TGT, nossa presença online e conversões melhoraram significativamente, impulsionando o desempenho dos negócios.",
+        text: "Usando a CONTRATTO, nossa presença online e conversões melhoraram significativamente, impulsionando o desempenho dos negócios.",
         image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop",
         name: "Hassan Ali",
         role: "Gerente de E-commerce",

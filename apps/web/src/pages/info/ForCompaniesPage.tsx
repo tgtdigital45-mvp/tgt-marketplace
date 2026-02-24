@@ -32,7 +32,7 @@ const ForCompaniesPage: React.FC = () => {
             </span>
             <h1 className="text-5xl md:text-7xl font-bold text-slate-900 leading-[1.1] mb-8 tracking-tight max-w-4xl mx-auto">
               Sua vitrine profissional no <br />
-              <span className="text-primary-600 font-extrabold italic">Marketplace TGT Contratto.</span>
+              <span className="text-primary-600 font-extrabold italic">Marketplace CONTRATTO.</span>
             </h1>
             <p className="text-xl text-slate-500 mb-10 max-w-2xl mx-auto leading-relaxed">
               Expanda seu alcance, gerencie sua reputação e conecte-se com clientes que buscam excelência. A plataforma completa para o crescimento do seu negócio.
@@ -149,7 +149,7 @@ const ForCompaniesPage: React.FC = () => {
               className="border-2 border-primary-600 rounded-3xl p-10 bg-slate-900 shadow-xl relative flex flex-col md:scale-105"
             >
               <span className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-primary-600 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">Recomendado</span>
-              <h3 className="text-2xl font-bold text-white">TGT Pro</h3>
+              <h3 className="text-2xl font-bold text-white">CONTRATTO Pro</h3>
               <p className="text-slate-400 mt-2 font-medium">Tração e destaque total</p>
               <div className="my-8">
                 <div className="flex items-baseline gap-1">
@@ -212,7 +212,7 @@ const ForCompaniesPage: React.FC = () => {
               className="bg-white p-10 rounded-3xl border border-slate-200 shadow-soft"
             >
               <p className="text-slate-600 italic text-lg leading-relaxed mb-8">
-                "Desde que cadastramos nossa operação na TGT, vimos um aumento de 30% nas consultas diretas. A plataforma é intuitiva e o suporte é verdadeiramente corporativo."
+                "Desde que cadastramos nossa operação na CONTRATTO, vimos um aumento de 30% nas consultas diretas. A plataforma é intuitiva e o suporte é verdadeiramente corporativo."
               </p>
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-full bg-slate-100 p-1 border border-slate-200">
@@ -231,7 +231,7 @@ const ForCompaniesPage: React.FC = () => {
               className="bg-white p-10 rounded-3xl border border-slate-200 shadow-soft"
             >
               <p className="text-slate-600 italic text-lg leading-relaxed mb-8">
-                "A TGT nos conectou com clientes qualificados que buscam valor, não apenas preço. É a melhor ferramenta de marketing para prestadores de serviço de alto nível."
+                "A CONTRATTO nos conectou com clientes qualificados que buscam valor, não apenas preço. É a melhor ferramenta de marketing para prestadores de serviço de alto nível."
               </p>
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-full bg-slate-100 p-1 border border-slate-200">
@@ -258,7 +258,7 @@ const ForCompaniesPage: React.FC = () => {
           >
             <h2 className="text-4xl font-bold mb-6 tracking-tight">O futuro do seu negócio começa aqui.</h2>
             <p className="mt-2 text-slate-300 max-w-2xl mx-auto mb-10 text-lg">
-              Deixe a TGT cuidar da sua vitrine tecnológica enquanto você foca no que faz de melhor: entregar resultados.
+              Deixe a CONTRATTO cuidar da sua vitrine tecnológica enquanto você foca no que faz de melhor: entregar resultados.
             </p>
             <Link to="/empresa/cadastro">
               <Button size="lg" className="px-10 bg-primary-600 hover:bg-primary-700 text-white border-none shadow-xl transform hover:-translate-y-1 transition-all">

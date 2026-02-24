@@ -104,7 +104,7 @@ const ForClientsPage: React.FC = () => {
             <div>
               <h2 className="text-4xl font-bold text-slate-900 mb-8 tracking-tight leading-tight">
                 Por que contratar <br />
-                <span className="text-primary-600">pela TGT?</span>
+                <span className="text-primary-600">pela CONTRATTO?</span>
               </h2>
               <div className="space-y-6">
                 <div className="flex gap-4 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm">
@@ -157,7 +157,7 @@ const ForClientsPage: React.FC = () => {
           >
             <h2 className="text-4xl font-bold text-slate-900 mb-6 tracking-tight">O profissional ideal está a um clique de distância.</h2>
             <p className="text-lg text-slate-500 mb-10 max-w-2xl mx-auto">
-              Transforme sua necessidade em solução. Junte-se a milhares de clientes que confiam na TGT Contratto para gerenciar seus projetos.
+              Transforme sua necessidade em solução. Junte-se a milhares de clientes que confiam na CONTRATTO para gerenciar seus projetos.
             </p>
             <Link to="/empresas">
               <Button size="lg" className="px-12 py-4 h-auto shadow-xl group">

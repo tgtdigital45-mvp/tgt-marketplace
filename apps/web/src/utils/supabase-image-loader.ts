@@ -39,63 +39,34 @@ export function getOptimizedImageUrl(
     width: number = 800,
     quality: number = 75
 ): string {
-    // Se for uma URL completa do Supabase, extrair o path
-    if (path.includes('supabase.co/storage/v1/object/public/')) {
-        const urlParts = path.split('/storage/v1/object/public/');
-        if (urlParts.length === 2) {
-            path = urlParts[1];
-        }
+    // Para MVP no plano gratuito, a API render/image pode falhar. Usando URL direta.
+    if (path.startsWith('http')) {
+        return path; // Retorna a URL direta, seja do Supabase ou externa
     }
-
-    // Se for placeholder ou URL externa, retornar sem transformação
-    if (path.startsWith('http') && !path.includes('supabase.co')) {
-        return path;
-    }
-
-    // Construir URL com transformação
-    return `${SUPABASE_URL}/storage/v1/render/image/public/${path}?width=${width}&quality=${quality}&format=webp`;
+    return `${SUPABASE_URL}/storage/v1/object/public/${path}`;
 }
 
-/**
- * Gera URL otimizada com altura fixa (mantém aspect ratio)
- * 
- * @param path - Caminho da imagem no bucket
- * @param height - Altura desejada em pixels
- * @param quality - Qualidade da imagem 1-100 (padrão: 75)
- * @returns URL transformada com WebP
- */
 export function getOptimizedImageUrlByHeight(
     path: string,
     height: number,
     quality: number = 75
 ): string {
-    if (path.startsWith('http') && !path.includes('supabase.co')) {
+    if (path.startsWith('http')) {
         return path;
     }
-
-    return `${SUPABASE_URL}/storage/v1/render/image/public/${path}?height=${height}&quality=${quality}&format=webp`;
+    return `${SUPABASE_URL}/storage/v1/object/public/${path}`;
 }
 
-/**
- * Gera URL otimizada com dimensões exatas (pode distorcer)
- * 
- * @param path - Caminho da imagem no bucket
- * @param width - Largura desejada em pixels
- * @param height - Altura desejada em pixels
- * @param quality - Qualidade da imagem 1-100 (padrão: 75)
- * @returns URL transformada com WebP
- */
 export function getOptimizedImageUrlExact(
     path: string,
     width: number,
     height: number,
     quality: number = 75
 ): string {
-    if (path.startsWith('http') && !path.includes('supabase.co')) {
+    if (path.startsWith('http')) {
         return path;
     }
-
-    return `${SUPABASE_URL}/storage/v1/render/image/public/${path}?width=${width}&height=${height}&quality=${quality}&format=webp`;
+    return `${SUPABASE_URL}/storage/v1/object/public/${path}`;
 }
 
 /**

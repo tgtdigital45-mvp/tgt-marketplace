@@ -41,7 +41,7 @@ async function checkExtended() {
     if (servicesError) console.error('Error fetching services:', servicesError);
     else {
         console.log(`Found ${services.length} services (limit 10). First few:`);
-        services.slice(0, 3).forEach(s => console.log(`- ${s.title} (Active: ${s.is_active}). Company: ${s.companies?.slug}, Status: ${s.companies?.status}`));
+        services.slice(0, 3).forEach(s => console.log(`- ${s.title} (Active: ${s.is_active}). Company: ${(s.companies as any)?.slug}, Status: ${(s.companies as any)?.status}`));
     }
 
     // 2. Check companies with search logic simulation

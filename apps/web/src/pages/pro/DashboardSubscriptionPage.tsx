@@ -51,7 +51,7 @@ const DashboardSubscriptionPage = () => {
                 <Button
                     variant="outline"
                     onClick={manageSubscription}
-                    loading={isSubLoading}
+                    isLoading={isSubLoading}
                     className="w-full md:w-auto"
                 >
                     Gerenciar Cobrança (Portal)
@@ -68,7 +68,7 @@ const DashboardSubscriptionPage = () => {
                         <div>
                             <p className="text-sm text-gray-500">Plano Atual</p>
                             <h2 className="text-xl font-bold text-gray-900 capitalize">
-                                {currentTier === 'agency' ? 'Agency' : currentTier === 'pro' ? 'TGT Pro' : 'Starter'}
+                                {currentTier === 'agency' ? 'Agency' : currentTier === 'pro' ? 'CONTRATTO Pro' : 'Starter'}
                             </h2>
                             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${company.subscription_status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
                                 }`}>
@@ -116,7 +116,7 @@ const DashboardSubscriptionPage = () => {
                 {/* Pro Plan */}
                 <PlanCard
                     tier="pro"
-                    title="TGT Pro"
+                    title="CONTRATTO Pro"
                     price="R$ 99,90"
                     description="Para profissionais que buscam mais visibilidade e menor taxa."
                     features={[
@@ -155,7 +155,7 @@ const DashboardSubscriptionPage = () => {
             <div className="mt-12 bg-gray-50 rounded-xl p-8 text-center">
                 <h3 className="text-lg font-bold text-gray-900 mb-2">Precisa de um plano customizado?</h3>
                 <p className="text-gray-600 mb-6">Para grandes volumes ou necessidades específicas, entre em contato com nosso time comercial.</p>
-                <Button variant="outline" onClick={() => window.open('mailto:contato@tgt.com', '_blank')}>
+                <Button variant="outline" onClick={() => window.open('mailto:contato@contratto.com', '_blank')}>
                     Falar com Vendas
                 </Button>
             </div>

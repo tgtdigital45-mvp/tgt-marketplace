@@ -8,10 +8,10 @@ interface PageTransitionProps {
 const PageTransition: React.FC<PageTransitionProps> = ({ children }) => {
     return (
         <motion.div
-            initial={{ opacity: 0, y: 15, filter: 'blur(5px)' }}
-            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            exit={{ opacity: 0, y: -15, filter: 'blur(5px)' }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
+            initial={{ opacity: 0, scale: 0.98, filter: 'blur(3px)' }}
+            animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, scale: 0.98, filter: 'blur(3px)' }}
+            transition={{ type: "spring", stiffness: 260, damping: 20 }}
             className="w-full h-full"
         >
             {children}

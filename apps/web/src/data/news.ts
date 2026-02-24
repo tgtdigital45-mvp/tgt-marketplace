@@ -128,7 +128,7 @@ Seu portfólio é seu cartão de visitas digital. Ele deve:
 - Behance (para designers)
 - LinkedIn (para consultores)
 - Instagram (para serviços visuais)
-- TGT Marketplace (para todos os profissionais)
+- CONTRATTO Marketplace (para todos os profissionais)
 
 ### Otimize seu Perfil nas Redes Sociais
 

@@ -27,14 +27,13 @@ const Header: React.FC = () => {
 
                     {/* Left: Logo & Nav */}
                     <div className="flex items-center gap-10">
-                        <div className="flex-shrink-0 flex items-center gap-2">
-                            <Link to="/" className="flex items-center gap-2 group">
-                                <div className="transition-all duration-300 p-2 rounded-xl bg-brand-primary/10 group-hover:bg-brand-primary/20">
-                                    <span className="font-bold text-xl text-brand-primary">TGT</span>
-                                </div>
-                                <span className="text-xl font-bold tracking-tight text-gray-900 group-hover:text-brand-primary transition-colors">
-                                    Contratto
-                                </span>
+                        <div className="flex-shrink-0 flex items-center">
+                            <Link to="/" className="flex items-center group">
+                                <img
+                                    src="/logo-contratto.svg"
+                                    alt="CONTRATTO"
+                                    className="h-10 md:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+                                />
                             </Link>
                         </div>
                         <NavLinks />

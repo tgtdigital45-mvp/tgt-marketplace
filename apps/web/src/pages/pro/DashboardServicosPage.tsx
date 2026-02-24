@@ -105,6 +105,18 @@ const DashboardServicosPage: React.FC = () => {
     }
   };
 
+  const handleToggleService = async (id: string, currentActive: boolean) => {
+    try {
+      const { error } = await supabase.from('services').update({ is_active: !currentActive }).eq('id', id);
+      if (error) throw error;
+      setServices(prev => prev.map(s => s.id === id ? { ...s, is_active: !currentActive } as any : s));
+      addToast(!currentActive ? 'Serviço ativado.' : 'Serviço desativado.', 'info');
+    } catch (err) {
+      console.error(err);
+      addToast('Erro ao atualizar serviço.', 'error');
+    }
+  };
+
 
   if (isWizardOpen) {
     return (
@@ -151,6 +163,7 @@ const DashboardServicosPage: React.FC = () => {
                     <tr>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Título</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Preço</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                       <th scope="col" className="relative px-6 py-3"><span className="sr-only">Ações</span></th>
                     </tr>
                   </thead>
@@ -160,24 +173,37 @@ const DashboardServicosPage: React.FC = () => {
                         <tr key={i}>
                           <td className="px-6 py-4 whitespace-nowrap"><LoadingSkeleton className="h-4 w-32" /></td>
                           <td className="px-6 py-4 whitespace-nowrap"><LoadingSkeleton className="h-4 w-16" /></td>
+                          <td className="px-6 py-4 whitespace-nowrap"><LoadingSkeleton className="h-6 w-11 rounded-full" /></td>
                           <td className="px-6 py-4 whitespace-nowrap text-right"><LoadingSkeleton className="h-4 w-20 ml-auto" /></td>
                         </tr>
                       ))
                     ) : services.length === 0 ? (
                       <tr>
-                        <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">Nenhum serviço cadastrado.</td>
+                        <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">Nenhum serviço cadastrado.</td>
                       </tr>
                     ) : (
-                      services.map(service => (
-                        <tr key={service.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{service.title}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{service.starting_price ? `A partir de R$ ${service.starting_price.toFixed(2).replace('.', ',')}` : service.price ? `R$ ${service.price.toFixed(2).replace('.', ',')}` : '-'}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button onClick={() => openModalToEdit(service)} className="text-primary-600 hover:text-primary-900">Editar</button>
-                            <button onClick={() => handleDelete(service.id)} className="ml-4 text-red-600 hover:text-red-900">Excluir</button>
-                          </td>
-                        </tr>
-                      ))
+                      services.map(service => {
+                        const isActive = (service as any).is_active !== false;
+                        return (
+                          <tr key={service.id} className={!isActive ? 'opacity-60' : ''}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{service.title}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{service.starting_price ? `A partir de R$ ${service.starting_price.toFixed(2).replace('.', ',')}` : service.price ? `R$ ${service.price.toFixed(2).replace('.', ',')}` : '-'}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <button
+                                onClick={() => handleToggleService(service.id, isActive)}
+                                title={isActive ? 'Desativar serviço' : 'Ativar serviço'}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${isActive ? 'bg-green-500' : 'bg-gray-300'}`}
+                              >
+                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${isActive ? 'translate-x-6' : 'translate-x-1'}`} />
+                              </button>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <button onClick={() => openModalToEdit(service)} className="text-primary-600 hover:text-primary-900">Editar</button>
+                              <button onClick={() => handleDelete(service.id)} className="ml-4 text-red-600 hover:text-red-900">Excluir</button>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>

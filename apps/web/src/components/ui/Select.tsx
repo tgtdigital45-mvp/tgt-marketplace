@@ -14,21 +14,25 @@ interface SelectProps {
     options: SelectOption[];
     placeholder?: string;
     className?: string;
+    disabled?: boolean;
 }
 
-export default function Select({ label, value, onChange, options, placeholder = 'Selecione...', className = '' }: SelectProps) {
+export default function Select({ label, value, onChange, options, placeholder = 'Selecione...', className = '', disabled }: SelectProps) {
     const selectedOption = options.find(opt => opt.value === value) || (placeholder ? { label: placeholder, value: '' } : options[0]);
 
     return (
-        <div className={`w-full ${className}`}>
+        <div className={`w-full ${className} ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
             {label && (
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                     {label}
                 </label>
             )}
-            <Listbox value={value} onChange={onChange}>
+            <Listbox value={value} onChange={onChange} disabled={disabled}>
                 <div className="relative mt-1">
-                    <ListboxButton className="relative w-full cursor-default bg-white py-3 pl-4 pr-10 text-left border border-gray-300 rounded-[var(--radius-box)] shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+                    <ListboxButton
+                        disabled={disabled}
+                        className="relative w-full cursor-default bg-white py-3 pl-4 pr-10 text-left border border-gray-300 rounded-[var(--radius-box)] shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                    >
                         <span className={`block truncate ${!value ? 'text-gray-500' : 'text-gray-900'}`}>
                             {selectedOption?.label}
                         </span>

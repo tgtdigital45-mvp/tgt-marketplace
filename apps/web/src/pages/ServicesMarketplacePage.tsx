@@ -232,64 +232,95 @@ export default function ServicesMarketplacePage({ hideHeader = false }: { hideHe
             )}
 
             {/* ── Content ── */}
-            {(loading || error || services.length > 0) && (
-                <div className="max-w-6xl mx-auto px-4 py-6">
-                    {/* Loading state */}
-                    {loading && (
-                        <div className="flex flex-col items-center justify-center py-24 gap-3">
-                            <Loader2 size={32} className="animate-spin text-blue-500" />
-                            <p className="text-slate-500 text-sm">Buscando serviços...</p>
-                        </div>
-                    )}
+            <div className="max-w-6xl mx-auto px-4 py-6">
+                {(loading || error || services.length > 0) && (
+                    <>
+                        {/* Loading state */}
+                        {loading && (
+                            <div className="flex flex-col items-center justify-center py-24 gap-3">
+                                <Loader2 size={32} className="animate-spin text-blue-500" />
+                                <p className="text-slate-500 text-sm">Buscando serviços...</p>
+                            </div>
+                        )}
 
-                    {/* Error state */}
-                    {!loading && error && (
-                        <div className="flex flex-col items-center justify-center py-24 gap-3">
-                            <AlertCircle size={32} className="text-red-400" />
-                            <p className="text-slate-600 font-medium">Erro ao carregar serviços</p>
-                            <p className="text-slate-400 text-sm">{error}</p>
-                        </div>
-                    )}
+                        {/* Error state */}
+                        {!loading && error && (
+                            <div className="flex flex-col items-center justify-center py-24 gap-3">
+                                <AlertCircle size={32} className="text-red-400" />
+                                <p className="text-slate-600 font-medium">Erro ao carregar serviços</p>
+                                <p className="text-slate-400 text-sm">{error}</p>
+                            </div>
+                        )}
 
-                    {/* Grouped view (no active filter) */}
-                    {!loading && !error && grouped && grouped.size > 0 && (
-                        <div className="space-y-10">
-                            {Array.from(grouped.entries()).map(([category, items]) => (
-                                <section key={category}>
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h2 className="text-lg font-bold text-slate-800">{category}</h2>
-                                        <button
-                                            onClick={() => setActiveCategory(category)}
-                                            className="text-sm text-blue-600 hover:underline flex items-center gap-1"
-                                        >
-                                            Ver todos <ArrowRight size={14} />
-                                        </button>
-                                    </div>
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                                        {items.slice(0, 4).map((service) => (
-                                            <ServiceCard key={service.id} service={service} />
-                                        ))}
-                                    </div>
-                                </section>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Flat list (with active filter/search) */}
-                    {!loading && !error && !grouped && services.length > 0 && (
-                        <>
-                            <p className="text-sm text-slate-500 mb-4">
-                                {services.length} serviço{services.length !== 1 ? 's' : ''} encontrado{services.length !== 1 ? 's' : ''}
-                            </p>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                                {services.map((service) => (
-                                    <ServiceCard key={service.id} service={service} />
+                        {/* Grouped view (no active filter) */}
+                        {!loading && !error && grouped && grouped.size > 0 && (
+                            <div className="space-y-10">
+                                {Array.from(grouped.entries()).map(([category, items]) => (
+                                    <section key={category}>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h2 className="text-lg font-bold text-slate-800">{category}</h2>
+                                            <button
+                                                onClick={() => setActiveCategory(category)}
+                                                className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                                            >
+                                                Ver todos <ArrowRight size={14} />
+                                            </button>
+                                        </div>
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                                            {items.slice(0, 4).map((service) => (
+                                                <ServiceCard key={service.id} service={service} />
+                                            ))}
+                                        </div>
+                                    </section>
                                 ))}
                             </div>
-                        </>
-                    )}
-                </div>
-            )}
+                        )}
+
+                        {/* Flat list (with active filter/search) */}
+                        {!loading && !error && !grouped && services.length > 0 && (
+                            <>
+                                <p className="text-sm text-slate-500 mb-4">
+                                    {services.length} serviço{services.length !== 1 ? 's' : ''} encontrado{services.length !== 1 ? 's' : ''}
+                                </p>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                                    {services.map((service) => (
+                                        <ServiceCard key={service.id} service={service} />
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </>
+                )}
+
+                {/* ── Empty State Profissional ── */}
+                {!loading && !error && services.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-24 text-center px-4 max-w-2xl mx-auto">
+                        <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-6">
+                            <Search className="text-blue-500 w-10 h-10" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-slate-800 mb-3">
+                            Não encontramos prestadores para "{searchQuery || activeCategory || 'esta busca'}"
+                        </h3>
+                        <p className="text-slate-500 mb-8 max-w-md">
+                            Nossa rede está crescendo rápido! Deixe seu contato e o serviço que precisa, e nós buscaremos um profissional qualificado para você em até 24h.
+                        </p>
+
+                        <div className="w-full max-w-md bg-white p-2 border border-gray-200 rounded-2xl shadow-sm flex flex-col sm:flex-row gap-2">
+                            <input
+                                type="email"
+                                placeholder="Seu melhor e-mail"
+                                className="flex-1 px-4 py-3 bg-transparent outline-none text-sm"
+                            />
+                            <button
+                                className="bg-brand-primary text-white font-semibold px-6 py-3 rounded-xl hover:bg-orange-600 transition-colors whitespace-nowrap"
+                                onClick={() => alert("Interesse registrado! Entraremos em contato em breve.")}
+                            >
+                                Me avise
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

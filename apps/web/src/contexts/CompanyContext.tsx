@@ -30,11 +30,12 @@ export interface CompanyData {
     profile_id: string;
     current_plan_tier?: 'starter' | 'pro' | 'agency';
     subscription_status?: string;
+    availability?: Record<string, any>;
 }
 
 interface CompanyContextType {
     company: CompanyData | null;
-    loading: boolean;
+    isLoading: boolean;
     refreshCompany: () => Promise<void>;
     updateCompany: (data: Partial<CompanyData>) => Promise<void>;
 }
@@ -180,7 +181,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
     return (
         <CompanyContext.Provider value={{
             company: company || null,
-            loading,
+            isLoading: loading,
             refreshCompany,
             updateCompany
         }}>

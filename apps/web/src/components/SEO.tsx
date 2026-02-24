@@ -11,8 +11,8 @@ interface SEOProps {
 }
 
 const SEO: React.FC<SEOProps> = ({
-    title = 'TGT Contratto | Guia de Negócios e Serviços',
-    description = 'Encontre os melhores negócios e serviços locais na sua região. Conecte-se com profissionais verificados no TGT Contratto e expanda sua rede em Cascavel e região.',
+    title = 'CONTRATTO | Guia de Negócios e Serviços',
+    description = 'Encontre os melhores negócios e serviços locais na sua região. Conecte-se com profissionais verificados no CONTRATTO e expanda sua rede em Cascavel e região.',
     keywords,
     image = 'https://tgt-guia-de-negocios.vercel.app/og-image.jpg',
     url,
@@ -22,7 +22,7 @@ const SEO: React.FC<SEOProps> = ({
     const fullUrl = url ? (url.startsWith('http') ? url : `${siteUrl}${url}`) : siteUrl;
 
     // Default keywords plus any specific ones
-    const defaultKeywords = 'TGT, Contratto, Empresas de Contabilidade, serviços locais, guia de negócios, Cascavel';
+    const defaultKeywords = 'CONTRATTO, Contabilidade, serviços locais, guia de negócios, Cascavel';
     const fullKeywords = keywords ? `${keywords}, ${defaultKeywords}` : defaultKeywords;
 
     return (

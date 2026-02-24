@@ -9,9 +9,9 @@ interface AnimatedSectionProps extends HTMLMotionProps<'div'> {
 const AnimatedSection: React.FC<AnimatedSectionProps> = ({ children, delay = 0, className = '', ...props }) => {
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay }}
+            transition={{ type: "spring", stiffness: 100, damping: 15, delay }}
             className={className}
             {...props}
         >

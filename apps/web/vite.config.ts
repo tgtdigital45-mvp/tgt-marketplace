@@ -21,8 +21,8 @@ export default defineConfig(({ mode }) => {
         registerType: 'autoUpdate',
         includeAssets: ['favicon.svg', 'robots.txt'],
         manifest: {
-          name: 'TGT Contratto',
-          short_name: 'TGT',
+          name: 'CONTRATTO Marketplace',
+          short_name: 'CONTRATTO',
           description: 'Marketplace de serviços profissionais',
           theme_color: '#0f172a',
           background_color: '#ffffff',
@@ -68,8 +68,11 @@ export default defineConfig(({ mode }) => {
       },
       dedupe: ['react', 'react-dom', 'react-router-dom', '@supabase/supabase-js'],
     },
+    esbuild: {
+      drop: mode === 'production' ? ['console', 'debugger'] : [],
+    },
     build: {
-      chunkSizeWarningLimit: 1000,
+      chunkSizeWarningLimit: 500,
       rollupOptions: {
         output: {
           manualChunks: {

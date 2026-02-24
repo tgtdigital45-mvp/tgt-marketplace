@@ -37,7 +37,7 @@ const FeaturedProfessional: React.FC = () => {
                         </h2>
 
                         <p className="text-lg text-slate-500 mb-8 leading-relaxed">
-                            Conheça como a TGT ajuda empresas a escalarem através de conexões com os mentores mais influentes do mercado. Nossa metodologia garante resultados tangíveis em menos de 90 dias.
+                            Conheça como a CONTRATTO ajuda empresas a escalarem através de conexões com os mentores mais influentes do mercado. Nossa metodologia garante resultados tangíveis em menos de 90 dias.
                         </p>
 
                         <ul className="space-y-4 mb-10">

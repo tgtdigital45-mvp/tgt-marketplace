@@ -30,7 +30,7 @@ const NewsDetailPage: React.FC = () => {
     return (
         <main className="bg-white min-h-screen pt-32 pb-24">
             <SEO
-                title={`${post.title} | TGT Contratto`}
+                title={`${post.title} | CONTRATTO`}
                 description={post.excerpt}
                 image={post.image}
             />

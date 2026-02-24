@@ -7,7 +7,7 @@ import { MapPin, Briefcase, Sparkles, Rocket, ArrowRight } from 'lucide-react';
 const CareersPage: React.FC = () => {
   return (
     <InfoPageLayout
-      title="Construa o amanhã na TGT"
+      title="Construa o amanhã na CONTRATTO"
       subtitle="Estamos em busca de mentes inquietas que desejam transformar a economia local através de tecnologia de ponta."
     >
       <div className="mb-16">
@@ -15,7 +15,7 @@ const CareersPage: React.FC = () => {
           <div>
             <h2 className="text-3xl font-bold text-slate-900 mb-6 tracking-tight">Cultura de Alta Performance</h2>
             <p className="text-slate-500 leading-relaxed text-lg mb-8">
-              Trabalhar na TGT significa estar na linha de frente da inovação. Valorizamos autonomia, transparência radical e foco em resultados que movem o ponteiro.
+              Trabalhar na CONTRATTO significa estar na linha de frente da inovação. Valorizamos autonomia, transparência radical e foco em resultados que movem o ponteiro.
             </p>
             <div className="space-y-4">
               <div className="flex items-center gap-4 text-slate-700 font-medium">
@@ -30,12 +30,12 @@ const CareersPage: React.FC = () => {
           </div>
           <div className="bg-slate-900 rounded-[32px] p-10 text-white relative overflow-hidden shadow-2xl">
             <blockquote className="relative z-10 italic text-xl leading-relaxed text-slate-200">
-              "Na TGT, não apenas construímos software; desenhamos o ecossistema que permite a pequenas e médias empresas competirem no topo."
+              "Na CONTRATTO, não apenas construímos software; desenhamos o ecossistema que permite a pequenas e médias empresas competirem no topo."
             </blockquote>
             <div className="mt-8 flex items-center gap-4 relative z-10">
               <div className="w-12 h-12 rounded-full bg-slate-700 border border-slate-600" />
               <div>
-                <p className="font-bold text-white">Engenharia TGT</p>
+                <p className="font-bold text-white">Engenharia CONTRATTO</p>
                 <p className="text-primary-400 text-sm">Product Team</p>
               </div>
             </div>

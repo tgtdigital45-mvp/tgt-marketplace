@@ -8,6 +8,7 @@ import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import FileUpload from '@/components/FileUpload';
 import { Switch } from '@headlessui/react'; // Assuming we have headlessui installed, or I'll implement a simple switch
+import { Link } from 'react-router-dom';
 import {
   Building,
   MapPin,
@@ -19,7 +20,8 @@ import {
   MessageSquare,
   Facebook,
   Twitter,
-  Instagram
+  Instagram,
+  Linkedin
 } from 'lucide-react';
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
 
@@ -28,14 +30,53 @@ import { DbPortfolioItem } from '@tgt/shared';
 
 // --- Components for Purity UI Profile ---
 
-const ProfileHeaderCard = ({ company, onAvatarChange, uploading }: { company: CompanyData | null, onAvatarChange: (file: File) => void, uploading: boolean }) => {
+const ProfileHeaderCard = ({
+  company,
+  onAvatarChange,
+  onCoverChange,
+  uploading
+}: {
+  company: CompanyData | null,
+  onAvatarChange: (file: File) => void,
+  onCoverChange: (file: File) => void,
+  uploading: boolean
+}) => {
   return (
-    <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-xl rounded-2xl p-4">
-      <div className="px-6">
+    <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-xl rounded-2xl overflow-hidden">
+      {/* Cover Image */}
+      <div className="relative h-48 sm:h-64 w-full bg-gray-200 overflow-hidden">
+        {company?.cover_image_url ? (
+          <img
+            src={company.cover_image_url}
+            alt="Cover"
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-r from-teal-400 to-brand-primary" />
+        )}
+
+        <label
+          htmlFor="cover-upload"
+          className="absolute bottom-4 right-4 bg-white/80 backdrop-blur-sm p-2 rounded-lg cursor-pointer hover:bg-white shadow-lg transition-all flex items-center gap-2 text-xs font-bold text-gray-700"
+        >
+          <Camera size={16} className="text-brand-primary" />
+          Alterar Capa
+          <input
+            type="file"
+            id="cover-upload"
+            className="hidden"
+            accept="image/*"
+            onChange={(e) => e.target.files && onCoverChange(e.target.files[0])}
+            disabled={uploading}
+          />
+        </label>
+      </div>
+
+      <div className="px-6 pb-6">
         <div className="flex flex-wrap justify-center">
           <div className="w-full lg:w-3/12 px-4 lg:order-2 flex justify-center">
             <div className="relative">
-              <div className="w-24 h-24 sm:w-36 sm:h-36 relative -mt-16 border-4 border-white rounded-2xl shadow-lg overflow-hidden bg-white">
+              <div className="w-24 h-24 sm:w-36 sm:h-36 relative -mt-12 sm:-mt-16 border-4 border-white rounded-2xl shadow-lg overflow-hidden bg-white">
                 <img
                   alt={company?.company_name}
                   src={company?.logo_url || 'https://via.placeholder.com/150'}
@@ -64,7 +105,7 @@ const ProfileHeaderCard = ({ company, onAvatarChange, uploading }: { company: Co
             <div className="flex justify-center py-4 lg:pt-4 pt-8">
               <div className="mr-4 p-3 text-center">
                 <span className="text-xl font-bold block uppercase tracking-wide text-gray-700">22</span>
-                <span className="text-sm text-gray-400">Amigos</span>
+                <span className="text-sm text-gray-400">Reviews</span>
               </div>
               <div className="mr-4 p-3 text-center">
                 <span className="text-xl font-bold block uppercase tracking-wide text-gray-700">10</span>
@@ -72,7 +113,7 @@ const ProfileHeaderCard = ({ company, onAvatarChange, uploading }: { company: Co
               </div>
               <div className="lg:mr-4 p-3 text-center">
                 <span className="text-xl font-bold block uppercase tracking-wide text-gray-700">89</span>
-                <span className="text-sm text-gray-400">Comentários</span>
+                <span className="text-sm text-gray-400">Conversas</span>
               </div>
             </div>
           </div>
@@ -82,11 +123,11 @@ const ProfileHeaderCard = ({ company, onAvatarChange, uploading }: { company: Co
             {company?.company_name || 'Nome da Empresa'}
           </h3>
           <div className="text-sm leading-normal mt-0 mb-2 text-gray-400 font-bold uppercase">
-            <i className="fas fa-map-marker-alt mr-2 text-lg text-gray-400"></i>
+            <MapPin size={16} className="inline mr-2 text-gray-400" />
             {company?.address?.city}, {company?.address?.state || 'Brasil'}
           </div>
           <div className="mb-2 text-gray-600 mt-4">
-            <i className="fas fa-briefcase mr-2 text-lg text-gray-400"></i>
+            <Building size={16} className="inline mr-2 text-gray-400" />
             {company?.category || 'Categoria'}
           </div>
         </div>
@@ -118,6 +159,8 @@ const DashboardPerfilPage: React.FC = () => {
   const { addToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [portfolioItems, setPortfolioItems] = useState<DbPortfolioItem[]>([]);
+  const [threads, setThreads] = useState<any[]>([]);
+  const [loadingThreads, setLoadingThreads] = useState(true);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -135,8 +178,18 @@ const DashboardPerfilPage: React.FC = () => {
       district: '',
       city: '',
       state: '',
-    }
+    },
+    socialLinks: {
+      facebook: '',
+      instagram: '',
+      linkedin: '',
+    },
+    coverage_radius_km: 30,
+    coverage_neighborhoods: [] as string[],
+    terms_and_policies: '',
   });
+
+  const [neighborhoodInput, setNeighborhoodInput] = useState('');
 
   // Settings State (Mock)
   const [settings, setSettings] = useState({
@@ -149,6 +202,69 @@ const DashboardPerfilPage: React.FC = () => {
   });
 
   useEffect(() => {
+    const fetchRecentConversations = async () => {
+      if (!user) return;
+      try {
+        setLoadingThreads(true);
+        const { data: sent } = await supabase.from('messages').select('*, jobs(title), orders(service_title)').eq('sender_id', user.id).order('created_at', { ascending: false }).limit(20);
+        const { data: received } = await supabase.from('messages').select('*, jobs(title), orders(service_title)').eq('receiver_id', user.id).order('created_at', { ascending: false }).limit(20);
+
+        const allMessages = [...(sent || []), ...(received || [])];
+        allMessages.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        const uniqueThreads = new Map<string, any>();
+        const partnerIdsToFetch = new Set<string>();
+
+        const getPartnerId = (msg: any) => msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
+
+        allMessages.forEach(msg => {
+          const partnerId = getPartnerId(msg);
+          if (partnerId && (msg.job_id || msg.order_id)) {
+            partnerIdsToFetch.add(partnerId);
+          }
+        });
+
+        let profilesMap: Record<string, any> = {};
+        if (partnerIdsToFetch.size > 0) {
+          const { data: profiles } = await supabase.from('profiles').select('id, full_name, avatar_url').in('id', Array.from(partnerIdsToFetch));
+          profiles?.forEach((p: any) => profilesMap[p.id] = p);
+        }
+
+        allMessages.forEach((msg: any) => {
+          if (!msg.job_id && !msg.order_id) return;
+          const threadId = msg.job_id || msg.order_id;
+          if (!uniqueThreads.has(threadId)) {
+            const partnerId = getPartnerId(msg);
+            const profile = profilesMap[partnerId];
+            let jobTitle = 'Serviço';
+            if (msg.job_id && msg.jobs?.title) jobTitle = msg.jobs.title;
+            else if (msg.order_id && msg.orders?.service_title) jobTitle = msg.orders.service_title;
+
+            uniqueThreads.set(threadId, {
+              threadId,
+              partnerName: profile?.full_name || 'Cliente',
+              partnerAvatar: profile?.avatar_url,
+              lastMessage: msg.content,
+              lastMessageTime: msg.created_at,
+              jobTitle
+            });
+          }
+        });
+
+        setThreads(Array.from(uniqueThreads.values()).slice(0, 4));
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoadingThreads(false);
+      }
+    };
+
+    if (user) {
+      fetchRecentConversations();
+    }
+  }, [user]);
+
+  useEffect(() => {
     if (company) {
       setFormData({
         companyName: company.company_name || '',
@@ -158,7 +274,11 @@ const DashboardPerfilPage: React.FC = () => {
         category: company.category || '',
         description: company.description || '',
         email: company.email || '',
-        address: company.address || { cep: '', street: '', number: '', district: '', city: '', state: '' }
+        address: company.address || { cep: '', street: '', number: '', district: '', city: '', state: '' },
+        socialLinks: (company as any).social_links || { facebook: '', instagram: '', linkedin: '' },
+        coverage_radius_km: (company as any).coverage_radius_km ?? 30,
+        coverage_neighborhoods: (company as any).coverage_neighborhoods || [],
+        terms_and_policies: (company as any).terms_and_policies || '',
       });
       fetchPortfolio();
     }
@@ -174,6 +294,8 @@ const DashboardPerfilPage: React.FC = () => {
     const { name, value } = e.target;
     if (['street', 'number', 'district', 'city', 'state', 'cep'].includes(name)) {
       setFormData(prev => ({ ...prev, address: { ...prev.address, [name]: value } }));
+    } else if (['facebook', 'instagram', 'linkedin'].includes(name)) {
+      setFormData(prev => ({ ...prev, socialLinks: { ...prev.socialLinks, [name]: value } }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -212,6 +334,10 @@ const DashboardPerfilPage: React.FC = () => {
         description: formData.description,
         email: formData.email,
         address: formData.address,
+        social_links: formData.socialLinks,
+        coverage_radius_km: formData.coverage_radius_km,
+        coverage_neighborhoods: formData.coverage_neighborhoods,
+        terms_and_policies: formData.terms_and_policies,
       }).eq('id', company?.id);
 
       if (error) throw error;
@@ -226,17 +352,67 @@ const DashboardPerfilPage: React.FC = () => {
     }
   };
 
+  const uploadCover = async (file: File) => {
+    try {
+      setLoading(true);
+
+      // Validate dimensions: max 3000x1080
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+      });
+
+      if (img.width > 3000 || img.height > 1080) {
+        throw new Error(`Imagem muito grande (${img.width}x${img.height}). O máximo permitido é 3000x1080px.`);
+      }
+
+      const path = `${company?.id}/cover-${Date.now()}`;
+      const { error } = await supabase.storage.from('company-assets').upload(path, file, { upsert: true });
+      if (error) {
+        if (error.message.includes('Bucket not found')) {
+          // Fallback to portfolio bucket if company-assets doesn't exist
+          const { error: pError } = await supabase.storage.from('portfolio').upload(path, file, { upsert: true });
+          if (pError) throw pError;
+          const { data: { publicUrl } } = supabase.storage.from('portfolio').getPublicUrl(path);
+          await supabase.from('companies').update({ cover_image_url: publicUrl }).eq('id', company?.id);
+        } else {
+          throw error;
+        }
+      } else {
+        const { data: { publicUrl } } = supabase.storage.from('company-assets').getPublicUrl(path);
+        await supabase.from('companies').update({ cover_image_url: publicUrl }).eq('id', company?.id);
+      }
+
+      refreshCompany();
+      addToast('Capa atualizada com sucesso!', 'success');
+    } catch (err: any) {
+      console.error(err);
+      addToast(err.message || 'Erro ao atualizar capa.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!company) return <LoadingSkeleton className="h-96" />;
 
   return (
     <div className="relative w-full min-h-screen">
-      {/* Background Gradient Header */}
-      <div className="absolute top-0 w-full h-80 bg-gradient-to-r from-teal-400 to-brand-primary rounded-xl" style={{ zIndex: 0 }}></div>
+      {/* Background Gradient Header - Hidden when cover exists, or used as fallback */}
+      {!company?.cover_image_url && (
+        <div className="absolute top-0 w-full h-80 bg-gradient-to-r from-teal-400 to-brand-primary rounded-xl" style={{ zIndex: 0 }}></div>
+      )}
 
-      <div className="relative px-4 md:px-10 mx-auto w-full pt-20" style={{ zIndex: 1 }}>
+      <div className="relative px-4 md:px-10 mx-auto w-full pt-10" style={{ zIndex: 1 }}>
 
         {/* Profile Card Overlay */}
-        <ProfileHeaderCard company={company} onAvatarChange={uploadAvatar} uploading={loading} />
+        <ProfileHeaderCard
+          company={company}
+          onAvatarChange={uploadAvatar}
+          onCoverChange={uploadCover}
+          uploading={loading}
+        />
 
         {/* 3-Column Content Grid */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
@@ -302,18 +478,123 @@ const DashboardPerfilPage: React.FC = () => {
                     className="!mt-0 !h-8 !border-0 border-b border-gray-200 focus:ring-0 rounded-none px-0"
                   />
                 </div>
-                <div className="flex items-center">
-                  <strong className="w-32 text-gray-800">Localização:</strong>
-                  <span className="text-gray-500">{formData.address.city || 'Cidade'}, {formData.address.state || 'UF'}</span>
+                <div className="space-y-4 pt-4 border-t border-gray-50">
+                  <h6 className="text-xs font-bold text-gray-400 uppercase">Endereço Detalhado</h6>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input label="CEP" name="cep" value={formData.address.cep} onChange={handleChange} />
+                    <Input label="Número" name="number" value={formData.address.number} onChange={handleChange} />
+                  </div>
+                  <Input label="Rua" name="street" value={formData.address.street} onChange={handleChange} />
+                  <Input label="Bairro" name="district" value={formData.address.district} onChange={handleChange} />
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input label="Cidade" name="city" value={formData.address.city} onChange={handleChange} />
+                    <Input label="Estado (UF)" name="state" value={formData.address.state} onChange={handleChange} />
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-3 pt-4">
-                  <strong className="text-gray-800">Social:</strong>
-                  <a href="#" className="text-blue-600 hover:text-blue-800"><Facebook size={18} /></a>
-                  <a href="#" className="text-sky-500 hover:text-sky-700"><Twitter size={18} /></a>
-                  <a href="#" className="text-pink-600 hover:text-pink-800"><Instagram size={18} /></a>
+                <div className="space-y-4 pt-6 mt-6 border-t border-gray-50">
+                  <h6 className="text-xs font-bold text-gray-400 uppercase">Redes Sociais</h6>
+                  <div className="flex items-center gap-3">
+                    <Facebook size={18} className="text-blue-600" />
+                    <Input
+                      name="facebook"
+                      placeholder="Link do Facebook"
+                      value={formData.socialLinks.facebook}
+                      onChange={handleChange}
+                      className="!mt-0 flex-grow"
+                    />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Instagram size={18} className="text-pink-600" />
+                    <Input
+                      name="instagram"
+                      placeholder="Link do Instagram"
+                      value={formData.socialLinks.instagram}
+                      onChange={handleChange}
+                      className="!mt-0 flex-grow"
+                    />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Linkedin size={18} className="text-blue-700" />
+                    <Input
+                      name="linkedin"
+                      placeholder="Link do LinkedIn"
+                      value={formData.socialLinks.linkedin}
+                      onChange={handleChange}
+                      className="!mt-0 flex-grow"
+                    />
+                  </div>
                 </div>
               </div>
+
+                {/* Logistics Section */}
+                <div className="space-y-4 pt-6 mt-2 border-t border-gray-50">
+                  <h6 className="text-xs font-bold text-gray-400 uppercase">Logística de Atendimento</h6>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Raio de Atendimento (km)</label>
+                      <input
+                        type="number" min={1} max={500}
+                        value={formData.coverage_radius_km}
+                        onChange={e => setFormData(prev => ({ ...prev, coverage_radius_km: parseInt(e.target.value) || 30 }))}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Bairros Atendidos</label>
+                    <div className="flex gap-2 mb-2">
+                      <input
+                        type="text"
+                        value={neighborhoodInput}
+                        onChange={e => setNeighborhoodInput(e.target.value)}
+                        onKeyDown={e => {
+                          if ((e.key === 'Enter' || e.key === ',') && neighborhoodInput.trim()) {
+                            e.preventDefault();
+                            const val = neighborhoodInput.trim().replace(/,$/, '');
+                            if (val && !formData.coverage_neighborhoods.includes(val)) {
+                              setFormData(prev => ({ ...prev, coverage_neighborhoods: [...prev.coverage_neighborhoods, val] }));
+                            }
+                            setNeighborhoodInput('');
+                          }
+                        }}
+                        placeholder="Digite e pressione Enter"
+                        className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
+                      />
+                    </div>
+                    {formData.coverage_neighborhoods.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {formData.coverage_neighborhoods.map(nb => (
+                          <span key={nb} className="inline-flex items-center gap-1 bg-brand-primary/10 text-brand-primary text-xs font-medium px-2 py-1 rounded-full">
+                            {nb}
+                            <button
+                              type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, coverage_neighborhoods: prev.coverage_neighborhoods.filter(n => n !== nb) }))}
+                              className="hover:text-red-500 transition-colors ml-0.5"
+                            >×</button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {formData.coverage_neighborhoods.length === 0 && (
+                      <p className="text-xs text-gray-400">Nenhum bairro adicionado. Deixe em branco para atender toda a cidade.</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Terms & Policies Section */}
+                <div className="space-y-3 pt-6 mt-2 border-t border-gray-50">
+                  <h6 className="text-xs font-bold text-gray-400 uppercase">Termos e Políticas Próprios</h6>
+                  <textarea
+                    rows={5}
+                    maxLength={3000}
+                    value={formData.terms_and_policies}
+                    onChange={e => setFormData(prev => ({ ...prev, terms_and_policies: e.target.value }))}
+                    placeholder="Descreva suas regras de cancelamento, garantias e condições especiais de atendimento..."
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary resize-none"
+                  />
+                  <p className="text-xs text-gray-400 text-right">{formData.terms_and_policies.length}/3000</p>
+                </div>
 
               <div className="flex justify-end pt-4">
                 <Button onClick={saveProfile} isLoading={loading} size="sm">
@@ -323,22 +604,46 @@ const DashboardPerfilPage: React.FC = () => {
             </div>
           </div>
 
-          {/* 3. Conversations (Mock) */}
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h6 className="text-lg font-bold text-gray-800 mb-4">Conversas</h6>
-            <div className="space-y-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <img src={`https://i.pravatar.cc/150?u=${i}`} alt="Avatar" className="w-10 h-10 rounded-xl" />
-                    <div>
-                      <h6 className="text-sm font-bold text-gray-800">Usuario {i}</h6>
-                      <p className="text-xs text-gray-500">Olá! Preciso de mais infor...</p>
-                    </div>
-                  </div>
-                  <button className="text-xs font-bold text-brand-primary uppercase">Responder</button>
+          {/* 3. Conversations */}
+          <div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h6 className="text-lg font-bold text-gray-800">Conversas Recentes</h6>
+              <Link to={`/dashboard/empresa/${company.slug}/mensagens`} className="text-xs font-bold text-brand-primary uppercase hover:underline">
+                Ver Todas
+              </Link>
+            </div>
+
+            <div className="space-y-4 flex-grow">
+              {loadingThreads ? (
+                <div className="space-y-4">
+                  <LoadingSkeleton className="h-12 w-full rounded-lg" />
+                  <LoadingSkeleton className="h-12 w-full rounded-lg" />
+                  <LoadingSkeleton className="h-12 w-full rounded-lg" />
                 </div>
-              ))}
+              ) : threads.length === 0 ? (
+                <div className="text-center text-gray-500 text-sm py-8">
+                  Nenhuma conversa encontrada.
+                </div>
+              ) : (
+                threads.map((thread, i) => (
+                  <div key={thread.threadId || i} className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gray-200 rounded-xl flex items-center justify-center text-gray-500 font-bold overflow-hidden flex-shrink-0">
+                        {thread.partnerAvatar ? (
+                          <img src={thread.partnerAvatar} alt="Avatar" className="w-full h-full object-cover" />
+                        ) : (
+                          thread.partnerName?.charAt(0) || 'U'
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <h6 className="text-sm font-bold text-gray-800 truncate">{thread.partnerName}</h6>
+                        <p className="text-xs text-gray-500 truncate max-w-[150px] sm:max-w-xs">{thread.lastMessage}</p>
+                      </div>
+                    </div>
+                    <Link to={`/dashboard/empresa/${company.slug}/mensagens`} className="text-xs font-bold text-brand-primary uppercase whitespace-nowrap ml-2">Responder</Link>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

@@ -78,79 +78,125 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({ transactions, loa
                 <p className="text-sm text-gray-500 mt-1">Últimas {transactions.length} transações da plataforma</p>
             </div>
 
-            <div className="overflow-x-auto">
-                <table className="w-full">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                Data
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                De
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                Para
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                Tipo
-                            </th>
-                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                Valor
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {transactions.length === 0 ? (
-                            <tr>
-                                <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                                    Nenhuma transação encontrada
-                                </td>
-                            </tr>
-                        ) : (
-                            transactions.map((tx) => (
-                                <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                        {formatDate(tx.created_at)}
-                                    </td>
-                                    <td className="px-6 py-4 text-sm">
-                                        <div className="flex items-center">
-                                            <img
-                                                src={getAvatarUrl(tx.from_profile?.avatar_url, tx.from_profile?.full_name || 'U')}
-                                                alt=""
-                                                className="h-8 w-8 rounded-full mr-3 object-cover"
-                                                loading="lazy"
-                                            />
-                                            <div>
-                                                <div className="font-medium text-gray-900">
-                                                    {tx.from_profile?.full_name || 'Sistema'}
-                                                </div>
-                                                <div className="text-xs text-gray-500">
-                                                    {tx.from_profile?.email}
-                                                </div>
+            <div className="p-0">
+                {/* Mobile View (Cards) */}
+                <div className="block sm:hidden divide-y divide-gray-100">
+                    {transactions.length === 0 ? (
+                        <div className="p-8 text-center text-gray-500">
+                            Nenhuma transação encontrada
+                        </div>
+                    ) : (
+                        transactions.map((tx) => (
+                            <div key={tx.id} className="p-4 flex flex-col gap-3 bg-white hover:bg-gray-50 transition-colors">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex items-center gap-3">
+                                        <img
+                                            src={getAvatarUrl(tx.from_profile?.avatar_url, tx.from_profile?.full_name || 'U')}
+                                            alt=""
+                                            className="h-10 w-10 rounded-full object-cover"
+                                            loading="lazy"
+                                        />
+                                        <div>
+                                            <div className="font-bold text-gray-900 text-sm">
+                                                {tx.from_profile?.full_name || 'Sistema'}
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                                Para: {tx.to_profile?.full_name || 'Plataforma'}
                                             </div>
                                         </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-sm">
-                                        <div className="font-medium text-gray-900">
-                                            {tx.to_profile?.full_name || 'Plataforma'}
-                                        </div>
-                                        <div className="text-xs text-gray-500">
-                                            {tx.to_profile?.email}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeBadgeColor(tx.type)}`}>
-                                            {tx.type}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-gray-900">
+                                    </div>
+                                    <div className="font-bold text-gray-900 text-right">
                                         {formatCurrency(tx.amount)}
+                                    </div>
+                                </div>
+                                <div className="flex justify-between items-center mt-1">
+                                    <span className="text-xs text-gray-500 font-medium">
+                                        {formatDate(tx.created_at)}
+                                    </span>
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${getTypeBadgeColor(tx.type)}`}>
+                                        {tx.type}
+                                    </span>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                {/* Desktop View (Table) */}
+                <div className="hidden sm:block overflow-x-auto">
+                    <table className="w-full min-w-[600px]">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    Data
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    De
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    Para
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    Tipo
+                                </th>
+                                <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    Valor
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {transactions.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                                        Nenhuma transação encontrada
                                     </td>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                            ) : (
+                                transactions.map((tx) => (
+                                    <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                            {formatDate(tx.created_at)}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm">
+                                            <div className="flex items-center">
+                                                <img
+                                                    src={getAvatarUrl(tx.from_profile?.avatar_url, tx.from_profile?.full_name || 'U')}
+                                                    alt=""
+                                                    className="h-8 w-8 rounded-full mr-3 object-cover"
+                                                    loading="lazy"
+                                                />
+                                                <div>
+                                                    <div className="font-medium text-gray-900">
+                                                        {tx.from_profile?.full_name || 'Sistema'}
+                                                    </div>
+                                                    <div className="text-xs text-gray-500">
+                                                        {tx.from_profile?.email}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm">
+                                            <div className="font-medium text-gray-900">
+                                                {tx.to_profile?.full_name || 'Plataforma'}
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                                {tx.to_profile?.email}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeBadgeColor(tx.type)}`}>
+                                                {tx.type}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-gray-900">
+                                            {formatCurrency(tx.amount)}
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );

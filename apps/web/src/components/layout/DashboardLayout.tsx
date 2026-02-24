@@ -18,7 +18,7 @@ const DashboardLayout: React.FC = () => {
   }, [user, company, slug, loading, companyLoading, navigate]);
 
   if (loading || companyLoading) {
-    return <div className="flex justify-center items-center h-screen text-brand-primary font-bold">Carregando TGT...</div>;
+    return <div className="flex justify-center items-center h-screen text-brand-primary font-bold">Carregando CONTRATTO...</div>;
   }
 
   if (!user || user.type !== 'company') {
@@ -56,6 +56,8 @@ const DashboardLayout: React.FC = () => {
   const navigation = [
     { name: 'Dashboard', href: `/dashboard/empresa/${company.slug}`, icon: <HomeIcon /> },
     { name: 'Mensagens', href: `/dashboard/empresa/${company.slug}/mensagens`, icon: <ChatBubbleIcon /> },
+    { name: 'Orçamentos', href: `/dashboard/empresa/${company.slug}/orcamentos`, icon: <QuoteIcon /> },
+    { name: 'Agenda', href: `/dashboard/empresa/${company.slug}/agenda`, icon: <CalendarIcon /> },
     { name: 'Serviços', href: `/dashboard/empresa/${company.slug}/servicos`, icon: <SupportIcon /> },
     { name: 'Faturamento', href: `/dashboard/empresa/${company.slug}/faturamento`, icon: <WalletIcon /> },
     { name: 'Portfólio', href: `/dashboard/empresa/${company.slug}/portfolio`, icon: <PhotoIcon /> },
@@ -77,7 +79,7 @@ const DashboardLayout: React.FC = () => {
           <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center text-white">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M11.7 2.805a.75.75 0 01.6 0A60.65 60.65 0 0122.83 8.72a.75.75 0 01-.231 1.337 49.949 49.949 0 00-9.902 3.912l-.003.002-.34.18a.75.75 0 01-.707 0A50.009 50.009 0 002.1 9.763.75.75 0 011.7 8.72c2.787-1.31 5.952-2.3 9.38-2.922 1.341-2.43 3.65-4.436 6.366-5.466z" fillRule="evenodd" clipRule="evenodd" /></svg>
           </div>
-          <span className="text-gray-900 font-bold text-sm tracking-wide uppercase">TGT DASHBOARD</span>
+          <span className="text-gray-900 font-bold text-sm tracking-wide uppercase">CONTRATTO DASHBOARD</span>
         </div>
 
         <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent mb-6"></div>
@@ -157,5 +159,6 @@ const SettingsIcon = () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 
 const LifeBuoyIcon = () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 11-.671-1.34l.041-.022zM12 9a.75.75 0 01.75.75v.008c0 .414-.336.75-.75.75h-.008a.75.75 0 01-.75-.75V9.75c0-.414.336-.75.75-.75h.008zM14.5 9a.75.75 0 000 1.5h.008a.75.75 0 000-1.5H14.5zm-5 0a.75.75 0 000 1.5h.008a.75.75 0 000-1.5H9.5z" clipRule="evenodd" /></svg>;
 const PhotoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clipRule="evenodd" /></svg>;
 const ChatBubbleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M4.804 21.644A6.707 6.707 0 006 21.75a6.721 6.721 0 003.583-1.029c.774.182 1.584.279 2.417.279 5.322 0 9.75-3.97 9.75-9 0-5.03-4.428-9-9.75-9s-9.75 3.97-9.75 9c0 2.409 1.025 4.587 2.674 6.192.232.226.277.428.254.543a3.73 3.73 0 01-.814 1.686.75.75 0 00.44 1.223zM8.25 10.875a1.125 1.125 0 100 2.25 1.125 1.125 0 000-2.25zM10.875 12a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0zm4.875-1.125a1.125 1.125 0 100 2.25 1.125 1.125 0 000-2.25z" clipRule="evenodd" /></svg>;
+const QuoteIcon = () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0016.5 9h-1.875a1.875 1.875 0 01-1.875-1.875V5.25A3.75 3.75 0 009 1.5H5.625zM7.5 15a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 017.5 15zm.75-6.75a.75.75 0 000 1.5h4.5a.75.75 0 000-1.5h-4.5z" clipRule="evenodd" /><path d="M12.971 1.816A5.23 5.23 0 0114.25 5.25v1.875c0 .207.168.375.375.375H16.5a5.23 5.23 0 013.434 1.279 9.768 9.768 0 00-6.963-6.963z" /></svg>;
 
 export default DashboardLayout;

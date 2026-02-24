@@ -47,6 +47,18 @@ async function generateSitemap() {
 
         console.log(`Found ${companies?.length || 0} companies`);
 
+        // Fetch all active services
+        const { data: services, error: servicesError } = await supabase
+            .from('services')
+            .select('id, created_at')
+            .eq('is_active', true);
+
+        if (servicesError) {
+            throw new Error(`Error fetching services: ${servicesError.message}`);
+        }
+
+        console.log(`Found ${services?.length || 0} services`);
+
         // Base URLs - Prefer environment variable, fallback to production domain
         const baseUrl = process.env.VITE_SITE_URL || 'https://contrattoex.com';
         const urls: SitemapUrl[] = [
@@ -120,6 +132,19 @@ async function generateSitemap() {
             });
         }
 
+        // Add service pages
+        if (services) {
+            services.forEach((service) => {
+                const dateToUse = service.created_at;
+                urls.push({
+                    loc: `${baseUrl}/servico/${service.id}`,
+                    lastmod: dateToUse ? new Date(dateToUse).toISOString().split('T')[0] : undefined,
+                    changefreq: 'weekly',
+                    priority: 0.8
+                });
+            });
+        }
+
         // Generate XML
         const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -131,8 +156,8 @@ ${urls.map(url => `  <url>
   </url>`).join('\n')}
 </urlset>`;
 
-        // Write to public folder
-        const sitemapPath = path.join(__dirname, '..', 'public', 'sitemap.xml');
+        // Write to public folder inside apps/web
+        const sitemapPath = path.join(__dirname, '..', 'apps', 'web', 'public', 'sitemap.xml');
         fs.writeFileSync(sitemapPath, xml, 'utf-8');
 
         console.log(`✅ Sitemap generated successfully with ${urls.length} URLs`);

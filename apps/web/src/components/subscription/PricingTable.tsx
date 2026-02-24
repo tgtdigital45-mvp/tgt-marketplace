@@ -107,7 +107,7 @@ export const PricingTable: React.FC = () => {
         },
         {
             tier: 'pro',
-            title: 'TGT Pro',
+            title: 'CONTRATTO Pro',
             price: 'R$ 89,90',
             rate: '12%',
             recommended: true,

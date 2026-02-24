@@ -28,7 +28,7 @@ const faqs: FAQCategory[] = [
     icon: <Users size={20} />,
     items: [
       {
-        question: "Como encontro um profissional na TGT?",
+        question: "Como encontro um profissional na CONTRATTO?",
         answer: "Basta utilizar a barra de busca na home ou navegar pela página de empresas. Você pode filtrar por categoria, localização e avaliações."
       },
       {
@@ -55,7 +55,7 @@ const faqs: FAQCategory[] = [
       },
       {
         question: "Como recebo meus pagamentos?",
-        answer: "Após a conclusão do serviço e aprovação do cliente, o valor fica disponível em sua carteira digital TGT e pode ser transferido para sua conta bancária."
+        answer: "Após a conclusão do serviço e aprovação do cliente, o valor fica disponível em sua carteira digital CONTRATTO e pode ser transferido para sua conta bancária."
       }
     ]
   },
@@ -64,7 +64,7 @@ const faqs: FAQCategory[] = [
     icon: <ShieldCheck size={20} />,
     items: [
       {
-        question: "A TGT é segura?",
+        question: "A CONTRATTO é segura?",
         answer: "Sim, utilizamos criptografia de ponta a ponta e auditoria de empresas para garantir um ecossistema confiável."
       },
       {
@@ -85,7 +85,7 @@ const HelpPage: React.FC = () => {
   return (
     <InfoPageLayout
       title="Central de Ajuda"
-      subtitle="Encontre respostas rápidas para as dúvidas mais comuns sobre o ecossistema TGT Contratto."
+      subtitle="Encontre respostas rápidas para as dúvidas mais comuns sobre o ecossistema CONTRATTO."
     >
       <div className="max-w-4xl mx-auto mb-24">
         {/* Search Bar Placeholder */}

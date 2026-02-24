@@ -34,6 +34,8 @@ const ClientOrdersPage = lazy(() => import('@/pages/client/ClientOrdersPage'));
 const ClientMessagesPage = lazy(() => import('@/pages/client/ClientMessagesPage'));
 const FavoritesPage = lazy(() => import('@/pages/client/FavoritesPage'));
 const ClientPostJobPage = lazy(() => import('@/pages/client/ClientPostJobPage'));
+const MyAppointments = lazy(() => import('@/pages/client/MyAppointments'));
+const PaymentHistory = lazy(() => import('@/pages/client/PaymentHistory'));
 
 // Company Dashboard Pages
 const DashboardOverviewPage = lazy(() => import('@/pages/pro/DashboardOverviewPage'));
@@ -52,15 +54,18 @@ const DashboardConfiguracoesPage = lazy(() => import('@/pages/pro/DashboardConfi
 const DashboardSupportPage = lazy(() => import('@/pages/pro/DashboardSupportPage'));
 const DashboardEquipePage = lazy(() => import('@/pages/pro/DashboardEquipePage'));
 const DashboardFaturamentoPage = lazy(() => import('@/pages/pro/DashboardFaturamentoPage'));
+const DashboardOrcamentosPage = lazy(() => import('@/pages/pro/DashboardOrcamentosPage'));
 
 // Admin Pages
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
 const AdminSecurityPage = lazy(() => import('@/pages/admin/AdminSecurityPage'));
 const Verify2FAPage = lazy(() => import('@/pages/admin/Verify2FAPage'));
+const AdminDisputesPage = lazy(() => import('@/pages/admin/AdminDisputesPage'));
 
 // Service Details
 const ServiceDetailsPage = lazy(() => import('@/pages/service/ServiceDetailsPage'));
 const CheckoutPage = lazy(() => import('@/pages/checkout/CheckoutPage'));
+const BookingPage = lazy(() => import('@/pages/booking/BookingPage'));
 const OrderRoomPage = lazy(() => import('@/pages/orders/OrderRoomPage'));
 const WalletPage = lazy(() => import('@/pages/dashboard/WalletPage'));
 
@@ -193,6 +198,7 @@ const MainRoutes = () => {
 
                         <Route path="/empresa/:slug" element={<AnimatedElement><CompanyProfilePage /></AnimatedElement>} />
                         <Route path="/servico/:id" element={<AnimatedElement><ServiceDetailsPage /></AnimatedElement>} />
+                        <Route path="/agendar/:serviceId" element={<AnimatedElement><BookingPage /></AnimatedElement>} />
                         <Route path="/checkout/:serviceId" element={<AnimatedElement><CheckoutPage /></AnimatedElement>} />
                         <Route path="/orders/:orderId" element={<AnimatedElement><OrderRoomPage /></AnimatedElement>} />
 
@@ -212,6 +218,8 @@ const MainRoutes = () => {
                         {/* Client Routes */}
                         <Route path="/perfil/cliente" element={<ProtectedRoute userType="client" element={<AnimatedElement><ClientProfilePage /></AnimatedElement>} />} />
                         <Route path="/perfil/pedidos" element={<ProtectedRoute userType="client" element={<AnimatedElement><ClientOrdersPage /></AnimatedElement>} />} />
+                        <Route path="/perfil/agendamentos" element={<ProtectedRoute userType="client" element={<AnimatedElement><MyAppointments /></AnimatedElement>} />} />
+                        <Route path="/perfil/pagamentos" element={<ProtectedRoute userType="client" element={<AnimatedElement><PaymentHistory /></AnimatedElement>} />} />
                         <Route path="/minhas-mensagens" element={<ProtectedRoute userType="client" element={<AnimatedElement><ClientMessagesPage /></AnimatedElement>} />} />
                         <Route path="/favoritos" element={<ProtectedRoute userType="client" element={<AnimatedElement><FavoritesPage /></AnimatedElement>} />} />
                         <Route path="/cliente/novo-pedido" element={<ProtectedRoute userType="client" element={<AnimatedElement><ClientPostJobPage /></AnimatedElement>} />} />
@@ -224,11 +232,14 @@ const MainRoutes = () => {
                             <Route path="servicos" element={<AnimatedElement><DashboardServicosPage /></AnimatedElement>} />
                             <Route path="portfolio" element={<AnimatedElement><DashboardPortfolioPage /></AnimatedElement>} />
                             <Route path="avaliacoes" element={<AnimatedElement><DashboardAvaliacoesPage /></AnimatedElement>} />
+                            <Route path="agenda" element={<AnimatedElement><DashboardAgendaPage /></AnimatedElement>} />
                             <Route path="mensagens" element={<AnimatedElement><DashboardMensagensPage /></AnimatedElement>} />
                             <Route path="assinatura" element={<AnimatedElement><DashboardSubscriptionPage /></AnimatedElement>} />
                             <Route path="configuracoes" element={<AnimatedElement><DashboardConfiguracoesPage /></AnimatedElement>} />
                             <Route path="suporte" element={<AnimatedElement><DashboardSupportPage /></AnimatedElement>} />
                             <Route path="equipe" element={<AnimatedElement><DashboardEquipePage /></AnimatedElement>} />
+                            <Route path="agendamentos" element={<AnimatedElement><DashboardAgendamentosPage /></AnimatedElement>} />
+                            <Route path="orcamentos" element={<AnimatedElement><DashboardOrcamentosPage /></AnimatedElement>} />
                             <Route path="faturamento" element={<AnimatedElement><DashboardFaturamentoPage /></AnimatedElement>} />
                         </Route>
 
@@ -268,6 +279,11 @@ const MainRoutes = () => {
                         <Route path="/admin" element={
                             <AdminGuard>
                                 <AnimatedElement><AdminDashboard /></AnimatedElement>
+                            </AdminGuard>
+                        } />
+                        <Route path="/admin/disputas" element={
+                            <AdminGuard>
+                                <AnimatedElement><AdminDisputesPage /></AnimatedElement>
                             </AdminGuard>
                         } />
                         <Route path="/admin/security" element={

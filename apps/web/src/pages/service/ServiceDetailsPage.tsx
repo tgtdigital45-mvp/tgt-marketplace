@@ -24,9 +24,12 @@ const formatCurrency = (value: number) =>
 interface PricingCardProps {
     packages: any;
     onCheckout: (tier: string) => void;
+    canCheckout?: boolean;
+    checkoutDisabledReason?: string;
+    requiresQuote?: boolean;
 }
 
-const PricingCard = ({ packages, onCheckout }: PricingCardProps) => {
+const PricingCard = ({ packages, onCheckout, canCheckout, checkoutDisabledReason, requiresQuote }: PricingCardProps) => {
     const [selectedTier, setSelectedTier] = useState<'basic' | 'standard' | 'premium'>('basic');
 
     if (!packages) return null;
@@ -72,7 +75,7 @@ const PricingCard = ({ packages, onCheckout }: PricingCardProps) => {
                         {currentPackage.name}
                     </h3>
                     <span className="text-2xl font-extrabold text-gray-900">
-                        {formatCurrency(currentPackage.price || 0)}
+                        {requiresQuote ? 'Sob Consulta' : formatCurrency(currentPackage.price || 0)}
                     </span>
                 </div>
 
@@ -103,12 +106,19 @@ const PricingCard = ({ packages, onCheckout }: PricingCardProps) => {
                     </ul>
                 )}
 
+                {canCheckout === false && checkoutDisabledReason && (
+                    <div className="bg-orange-50 text-orange-800 text-xs p-3 rounded-lg font-medium text-center border border-orange-200 mb-3">
+                        {checkoutDisabledReason}
+                    </div>
+                )}
+
                 <Button
                     variant="primary"
                     className="w-full py-3.5 text-base font-bold shadow-lg shadow-brand-primary/20 hover:shadow-brand-primary/30"
                     onClick={() => onCheckout(selectedTier)}
+                    disabled={canCheckout === false}
                 >
-                    Continuar ({formatCurrency(currentPackage.price || 0)})
+                    {requiresQuote ? 'Solicitar Orçamento' : `Continuar (${formatCurrency(currentPackage.price || 0)})`}
                 </Button>
 
                 <div className="text-center">
@@ -145,18 +155,18 @@ const ServiceDetailsPage = () => {
                 if (error) throw error;
                 if (!data) throw new Error('Serviço não encontrado');
 
-                setService(data);
-                setCompany(data.company);
+                setService(data as any);
+                setCompany(data.company as any);
 
                 // Fetch related services
                 if (data.category_tag) {
                     const { data: related } = await supabase
                         .from('services')
-                        .select(`*, company:companies(slug, company_name, logo_url, level)`)
+                        .select(`*, company:companies(slug, company_name, logo_url)`)
                         .eq('category_tag', data.category_tag)
                         .neq('id', data.id)
                         .limit(4);
-                    setRelatedServices(related || []);
+                    setRelatedServices((related as any) || []);
                 }
 
             } catch (err: any) {
@@ -172,11 +182,26 @@ const ServiceDetailsPage = () => {
     }, [id]);
 
     const handleCheckout = (tier: string) => {
-        if (!user) {
-            navigate('/login/cliente', { state: { from: `/checkout/${id}?tier=${tier}` } });
+        if (service?.requires_quote) {
+            // For now, redirect to company profile where they can use "Fale Comigo"
+            // In the future, this could open a direct message modal
+            navigate(`/empresa/${company?.slug}`);
             return;
         }
-        navigate(`/checkout/${id}?tier=${tier}`);
+
+        if (!user) {
+            const redirectPath = service?.use_company_availability
+                ? `/agendar/${id}?tier=${tier}`
+                : `/checkout/${id}?tier=${tier}`;
+            navigate('/login/cliente', { state: { from: redirectPath } });
+            return;
+        }
+
+        if (service?.use_company_availability) {
+            navigate(`/agendar/${id}?tier=${tier}`);
+        } else {
+            navigate(`/checkout/${id}?tier=${tier}`);
+        }
     };
 
     if (loading) return <div className="min-h-screen pt-20 flex justify-center"><LoadingSkeleton className="w-full max-w-4xl h-screen" /></div>;
@@ -191,7 +216,7 @@ const ServiceDetailsPage = () => {
 
     return (
         <main className="min-h-screen bg-white pb-20">
-            <SEO title={`${service.title} | TGT`} description={service.description} image={service.gallery?.[0]} />
+            <SEO title={`${service.title} | CONTRATTO`} description={service.description} image={service.gallery?.[0]} />
 
             <div className="container mx-auto px-4 py-8 max-w-7xl">
 
@@ -299,6 +324,7 @@ const ServiceDetailsPage = () => {
                                 <ServiceComparisonTable
                                     packages={service.packages}
                                     onSelect={(tier) => handleCheckout(tier)}
+                                    requiresQuote={service.requires_quote}
                                 />
                             )}
                         </div>
@@ -397,6 +423,15 @@ const ServiceDetailsPage = () => {
                         <PricingCard
                             packages={service.packages}
                             onCheckout={handleCheckout}
+                            requiresQuote={service.requires_quote}
+                            canCheckout={company?.is_active !== false && (company as any).checkout_enabled !== false}
+                            checkoutDisabledReason={
+                                company?.is_active === false
+                                    ? "Esta empresa está temporariamente suspensa."
+                                    : (company as any).checkout_enabled === false
+                                        ? "Esta empresa está finalizando a configuração de pagamentos e não pode receber agendamentos no momento."
+                                        : undefined
+                            }
                         />
 
                         <div className="mt-8 bg-gray-50 rounded-xl p-6 border border-gray-100 text-center">

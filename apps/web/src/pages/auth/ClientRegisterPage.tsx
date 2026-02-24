@@ -76,8 +76,8 @@ const ClientRegisterPage: React.FC = () => {
     return (
         <div className="min-h-screen relative bg-gray-50 overflow-hidden">
             <SEO
-                title="Cadastro de Cliente | TGT Contratto"
-                description="Crie sua conta no TGT Contratto para contratar os melhores profissionais da sua região."
+                title="Cadastro de Cliente | CONTRATTO"
+                description="Crie sua conta na CONTRATTO para contratar os melhores profissionais da sua região."
             />
 
             {/* Background Split */}
@@ -93,7 +93,7 @@ const ClientRegisterPage: React.FC = () => {
             <div className="relative z-10 min-h-screen flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-8">
                     <h2 className="text-3xl font-bold text-white tracking-tight">
-                        Junte-se ao TGT Contratto
+                        Junte-se à CONTRATTO
                     </h2>
                     <p className="mt-2 text-blue-100">
                         Comece a contratar profissionais qualificados hoje mesmo.

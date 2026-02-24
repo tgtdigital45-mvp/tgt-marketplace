@@ -72,7 +72,7 @@ const Footer: React.FC = () => {
             </div>
           </div>
           <p className="text-base text-gray-400 md:order-1">
-            &copy; {new Date().getFullYear()} TGT Digital. Todos os direitos reservados.
+            &copy; {new Date().getFullYear()} CONTRATTO. Todos os direitos reservados.
           </p>
         </div>
       </div>

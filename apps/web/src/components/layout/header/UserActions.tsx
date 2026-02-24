@@ -7,7 +7,16 @@ import UserDropdown from '@/components/layout/header/UserDropdown';
 import LoginDropdown from '@/components/layout/header/LoginDropdown';
 
 const UserActions: React.FC = () => {
-    const { user } = useAuth();
+    const { user, loading } = useAuth();
+
+    if (loading) {
+        return (
+            <div className="hidden md:flex items-center gap-3">
+                <div className="h-4 w-20 bg-gray-100 animate-pulse rounded-lg"></div>
+                <div className="h-10 w-32 bg-gray-100 animate-pulse rounded-xl"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="hidden md:flex items-center gap-4">

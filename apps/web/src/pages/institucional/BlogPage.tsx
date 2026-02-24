@@ -7,7 +7,7 @@ const BlogPage: React.FC = () => {
     return (
         <div className="max-w-3xl mx-auto text-center py-12">
             <SEO
-                title="Blog do Especialista | TGT Contratto"
+                title="Blog do Especialista | CONTRATTO"
                 description="Guias técnicos, dicas de mercado e insights sobre construção, manutenção e serviços digitais."
             />
 

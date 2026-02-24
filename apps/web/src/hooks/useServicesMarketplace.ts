@@ -78,9 +78,19 @@ export function useServicesMarketplace({
         if (serviceFilter === 'remote') {
             query = query.in('service_type', ['remote', 'hybrid']);
         } else if (serviceFilter === 'presential') {
-            query = query.eq('service_type', 'presential');
+            query = query.in('service_type', ['presential', 'hybrid']);
+            // Apply H3 location filter if available
+            if (h3Indexes && h3Indexes.length > 0) {
+                query = query.in('h3_index', h3Indexes);
+            }
+        } else {
+            // all
+            if (h3Indexes && h3Indexes.length > 0) {
+                // If they want 'all' services, we should still prioritize nearby ones if they have location
+                // But for pure exact match, we might want to fetch everything or just remote + nearby presential
+                // For simplicity, we just fetch all without location restriction, relying on the sorting later
+            }
         }
-        // 'all' → no service_type filter
 
         // Category filter
         if (category) {

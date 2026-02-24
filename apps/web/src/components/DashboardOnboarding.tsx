@@ -74,7 +74,7 @@ const DashboardOnboarding: React.FC<DashboardOnboardingProps> = ({ companyId, on
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden">
                 {/* Header */}
                 <div className="bg-brand-primary p-6 text-white text-center">
-                    <h2 className="text-2xl font-bold">Bem-vindo ao TGT! 🎉</h2>
+                    <h2 className="text-2xl font-bold">Bem-vindo ao CONTRATTO! 🎉</h2>
                     <p className="opacity-90 mt-1">Vamos configurar seu perfil para começar a atrair clientes.</p>
                 </div>
 

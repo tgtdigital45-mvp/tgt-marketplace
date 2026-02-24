@@ -10,7 +10,7 @@ const LogoCloud: React.FC = () => {
         <section className="py-20 bg-white border-y border-slate-100">
             <div className="container mx-auto px-6">
                 <p className="text-center text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-12">
-                    Empresas de Confiança que utilizam a TGT
+                    Empresas de Confiança que utilizam a CONTRATTO
                 </p>
                 <div className="flex flex-wrap justify-center items-center gap-12 md:gap-24">
                     {logos.map((logo, index) => (

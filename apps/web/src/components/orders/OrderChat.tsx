@@ -7,9 +7,10 @@ import { useToast } from '@/contexts/ToastContext';
 
 interface OrderChatProps {
     orderId: string;
+    receiverId?: string;
 }
 
-const OrderChat: React.FC<OrderChatProps> = ({ orderId }) => {
+const OrderChat: React.FC<OrderChatProps> = ({ orderId, receiverId }) => {
     const { user } = useAuth();
     const { addToast } = useToast();
     const [messages, setMessages] = useState<DbMessage[]>([]);
@@ -57,7 +58,11 @@ const OrderChat: React.FC<OrderChatProps> = ({ orderId }) => {
                 },
                 (payload) => {
                     const newMsg = payload.new as DbMessage;
-                    setMessages(prev => [...prev, newMsg]);
+                    setMessages(prev => {
+                        // Prevent duplicates from Optimistic UI payload and real-time socket
+                        if (prev.some(m => m.id === newMsg.id)) return prev;
+                        return [...prev, newMsg];
+                    });
                 }
             )
             .subscribe();
@@ -102,17 +107,43 @@ const OrderChat: React.FC<OrderChatProps> = ({ orderId }) => {
                 if (fileInputRef.current) fileInputRef.current.value = '';
             }
 
-            const { error } = await supabase
+            // Optimistic UI update
+            const tempId = `temp-${Date.now()}`;
+            const optimisticMsg: DbMessage = {
+                id: tempId,
+                order_id: orderId,
+                sender_id: user.id,
+                content: newMessage || (fileUrl ? 'Enviou um anexo' : ''),
+                file_url: fileUrl,
+                created_at: new Date().toISOString()
+            };
+
+            setMessages(prev => [...prev, optimisticMsg]);
+            const messageToSend = newMessage;
+            setNewMessage(''); // Clear input instantly for better UX
+
+            const { data, error } = await supabase
                 .from('messages')
                 .insert({
                     order_id: orderId,
                     sender_id: user.id,
-                    content: newMessage || (fileUrl ? 'Enviou um anexo' : ''),
+                    receiver_id: receiverId,
+                    content: messageToSend || (fileUrl ? 'Enviou um anexo' : ''),
                     file_url: fileUrl,
-                });
+                })
+                .select()
+                .single();
 
-            if (error) throw error;
-            setNewMessage('');
+            if (error) {
+                // Revert optimistic update
+                setMessages(prev => prev.filter(m => m.id !== tempId));
+                setNewMessage(messageToSend); // Restore input
+                throw error;
+            }
+
+            // Replace temp id with real id
+            setMessages(prev => prev.map(m => m.id === tempId ? data : m));
+
         } catch (error: any) {
             console.error('Error sending message:', error);
             addToast('Erro ao enviar mensagem: ' + error.message, 'error');
@@ -148,8 +179,8 @@ const OrderChat: React.FC<OrderChatProps> = ({ orderId }) => {
                                 <div key={msg.id} className={`flex items-start space-x-3 ${isMe ? 'flex-row-reverse space-x-reverse' : ''}`}>
                                     <div className={`w-8 h-8 rounded-full flex-shrink-0 ${isMe ? 'bg-brand-primary' : 'bg-gray-300'}`}></div>
                                     <div className={`p-3 rounded-lg max-w-[80%] text-sm ${isMe
-                                            ? 'bg-brand-primary text-white rounded-tr-none'
-                                            : 'bg-gray-100 text-gray-800 rounded-tl-none'
+                                        ? 'bg-brand-primary text-white rounded-tr-none'
+                                        : 'bg-gray-100 text-gray-800 rounded-tl-none'
                                         }`}>
                                         <p>{msg.content}</p>
                                         {msg.file_url && (
@@ -159,9 +190,20 @@ const OrderChat: React.FC<OrderChatProps> = ({ orderId }) => {
                                                 {/* Note: In a real app we'd fetch a signed URL here to download */}
                                             </div>
                                         )}
-                                        <span className={`text-[10px] block mt-1 opacity-70 ${isMe ? 'text-right' : 'text-left'}`}>
-                                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </span>
+                                        <div className={`flex items-center justify-between gap-2 mt-1 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                                            <span className="text-[10px] block opacity-70">
+                                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                            {isMe && String(msg.id).startsWith('temp-') && (
+                                                <span className="text-[10px] opacity-50 flex items-center">
+                                                    <svg className="w-3 h-3 animate-spin mr-1" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                    Enviando...
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             );

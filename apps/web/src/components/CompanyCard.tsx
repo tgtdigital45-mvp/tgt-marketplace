@@ -46,7 +46,7 @@ const CompanyCard: React.FC<CompanyCardProps> = ({ company }) => {
                         aspectRatio="16/9"
                         optimizedWidth={1200}
                         quality={75}
-                        fallbackSrc="https://placehold.co/1200x675/f1f5f9/94a3b8?text=TGT+Service"
+                        fallbackSrc="https://placehold.co/1200x675/f1f5f9/94a3b8?text=CONTRATTO+Service"
                         className="w-full h-48 object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>

@@ -45,8 +45,8 @@ const TermsPage: React.FC = () => {
   return (
     <div className="bg-slate-50 min-h-screen font-sans text-slate-900 pb-24 pt-32 relative">
       <SEO
-        title="Termos de Uso | TGT Contratto"
-        description="Conheça os Termos e Condições que regem o uso do Marketplace TGT Contratto para Clientes e Empresas."
+        title="Termos de Uso | CONTRATTO"
+        description="Conheça os Termos e Condições que regem o uso do Marketplace CONTRATTO para Clientes e Empresas."
       />
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
@@ -78,8 +78,8 @@ const TermsPage: React.FC = () => {
                   key={section.id}
                   onClick={() => scrollToSection(section.id)}
                   className={`flex items-center gap-3 w-full text-left px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${activeSection === section.id
-                      ? 'bg-slate-900 text-white shadow-md'
-                      : 'text-slate-500 hover:bg-white hover:text-slate-900 hover:shadow-sm'
+                    ? 'bg-slate-900 text-white shadow-md'
+                    : 'text-slate-500 hover:bg-white hover:text-slate-900 hover:shadow-sm'
                     }`}
                 >
                   <span className={activeSection === section.id ? 'text-blue-400' : 'text-slate-400'}>
@@ -93,8 +93,8 @@ const TermsPage: React.FC = () => {
             <div className="mt-8 bg-blue-50/50 p-5 rounded-xl border border-blue-100">
               <h4 className="font-bold text-blue-900 text-sm mb-1">Dúvidas Jurídicas?</h4>
               <p className="text-xs text-blue-700 mb-3">Nossa equipe legal está à disposição.</p>
-              <a href="mailto:legal@tgtcontratto.com" className="text-xs font-bold text-brand-primary hover:underline flex items-center gap-1">
-                <Mail size={12} /> legal@tgtcontratto.com
+              <a href="mailto:legal@contratto.com" className="text-xs font-bold text-brand-primary hover:underline flex items-center gap-1">
+                <Mail size={12} /> legal@contratto.com
               </a>
             </div>
           </div>
@@ -105,7 +105,7 @@ const TermsPage: React.FC = () => {
             {/* Intro Box */}
             <div className="bg-white p-8 md:p-10 rounded-[var(--radius-box)] shadow-sm border border-slate-100 mb-10">
               <p className="text-lg text-slate-600 leading-relaxed">
-                Bem-vindo à <strong>TGT Contratto</strong>. Estes Termos de Uso regulam o acesso e utilização da nossa plataforma ("Marketplace") que conecta Prestadores de Serviços Qualificados ("Empresas") a Contratantes ("Clientes"). Ao acessar ou utilizar nossos serviços, você concorda expressamente com estes termos.
+                Bem-vindo à <strong>CONTRATTO</strong>. Estes Termos de Uso regulam o acesso e utilização da nossa plataforma ("Marketplace") que conecta Prestadores de Serviços Qualificados ("Empresas") a Contratantes ("Clientes"). Ao acessar ou utilizar nossos serviços, você concorda expressamente com estes termos.
               </p>
             </div>
 
@@ -116,7 +116,7 @@ const TermsPage: React.FC = () => {
               </h2>
               <div className="prose prose-slate max-w-none text-slate-600">
                 <p>
-                  Ao clicar em "Cadastre-se", "Entrar" ou utilizar qualquer serviço da TGT, você declara ter lido, compreendido e aceito integralmente este documento, bem como nossa <a href="/privacidade" className="text-brand-primary font-medium hover:underline">Política de Privacidade</a>.
+                  Ao clicar em "Cadastre-se", "Entrar" ou utilizar qualquer serviço da CONTRATTO, você declara ter lido, compreendido e aceito integralmente este documento, bem como nossa <a href="/privacidade" className="text-brand-primary font-medium hover:underline">Política de Privacidade</a>.
                 </p>
                 <p>
                   Se você estiver utilizando a plataforma em nome de uma pessoa jurídica, você declara ter poderes para vinculá-la a estes termos.
@@ -130,7 +130,7 @@ const TermsPage: React.FC = () => {
                 <span className="text-slate-300 font-normal">02.</span> Descrição do Serviço
               </h2>
               <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 mb-4">
-                <p className="text-slate-700 font-medium mb-2">A TGT Contratto atua exclusivamente como Intermediadora Tecnológica.</p>
+                <p className="text-slate-700 font-medium mb-2">A CONTRATTO atua exclusivamente como Intermediadora Tecnológica.</p>
                 <p className="text-sm text-slate-500">
                   Nossa função é fornecer a infraestrutura digital para o encontro entre oferta e demanda. <strong>Não somos fornecedores dos serviços finais</strong> (contabilidade, limpeza, manutenção, etc.) oferecidos pelas Empresas cadastradas, nem empregadores dos profissionais.
                 </p>
@@ -150,7 +150,7 @@ const TermsPage: React.FC = () => {
                   <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                     <div className="text-brand-primary mb-2"><DollarSign size={24} /></div>
                     <h4 className="font-bold text-slate-900 mb-1">1. Retenção</h4>
-                    <p className="text-xs text-slate-500">O pagamento do Cliente fica seguro na TGT até a conclusão do serviço.</p>
+                    <p className="text-xs text-slate-500">O pagamento do Cliente fica seguro na CONTRATTO até a conclusão do serviço.</p>
                   </div>
                   <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                     <div className="text-brand-primary mb-2"><ShieldCheck size={24} /></div>
@@ -160,12 +160,12 @@ const TermsPage: React.FC = () => {
                   <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                     <div className="text-brand-primary mb-2"><AlertTriangle size={24} /></div>
                     <h4 className="font-bold text-slate-900 mb-1">3. Disputa</h4>
-                    <p className="text-xs text-slate-500">Em caso de conflito, a TGT atua como mediadora e retém o valor até a resolução.</p>
+                    <p className="text-xs text-slate-500">Em caso de conflito, a CONTRATTO atua como mediadora e retém o valor até a resolução.</p>
                   </div>
                 </div>
                 <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-100 text-sm text-yellow-800 flex items-start gap-3">
                   <AlertTriangle className="flex-shrink-0 mt-0.5" size={16} />
-                  <p><strong>Proibição de Bypass:</strong> É estritamente proibido realizar pagamentos fora da plataforma para serviços iniciados ou negociados aqui. Tal prática remove todas as proteções da TGT e pode levar ao banimento da conta.</p>
+                  <p><strong>Proibição de Bypass:</strong> É estritamente proibido realizar pagamentos fora da plataforma para serviços iniciados ou negociados aqui. Tal prática remove todas as proteções da CONTRATTO e pode levar ao banimento da conta.</p>
                 </div>
               </div>
             </section>
@@ -214,10 +214,10 @@ const TermsPage: React.FC = () => {
                 <span className="text-slate-300 font-normal">06.</span> Propriedade Intelectual
               </h2>
               <p className="text-slate-600 mb-4">
-                Todo o design, código, logotipos e conteúdo da plataforma TGT são de propriedade exclusiva da TGT Tecnologia LTDA.
+                Todo o design, código, logotipos e conteúdo da plataforma CONTRATTO são de propriedade exclusiva da CONTRATTO Tecnologia LTDA.
               </p>
               <p className="text-slate-600">
-                Ao fazer upload de fotos de portfólio, a Empresa concede à TGT uma licença não exclusiva para exibir esse conteúdo na plataforma para fins de promoção do próprio perfil.
+                Ao fazer upload de fotos de portfólio, a Empresa concede à CONTRATTO uma licença não exclusiva para exibir esse conteúdo na plataforma para fins de promoção do próprio perfil.
               </p>
             </section>
 
@@ -228,7 +228,7 @@ const TermsPage: React.FC = () => {
               <div className="flex justify-center gap-6 text-sm font-semibold">
                 <a href="/contato" className="text-white hover:text-brand-primary transition-colors hover:underline">Central de Ajuda</a>
                 <span className="text-slate-600">|</span>
-                <a href="mailto:support@tgtcontratto.com" className="text-white hover:text-brand-primary transition-colors hover:underline">support@tgtcontratto.com</a>
+                <a href="mailto:support@contratto.com" className="text-white hover:text-brand-primary transition-colors hover:underline">support@contratto.com</a>
               </div>
             </div>
 

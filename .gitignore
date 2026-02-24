@@ -28,5 +28,7 @@ antigravity-kit-main/
 .vercel
 testsprite_tests/
 lint_report_utf8.json
+.env
+.env.*
 .env*.local
 .agent

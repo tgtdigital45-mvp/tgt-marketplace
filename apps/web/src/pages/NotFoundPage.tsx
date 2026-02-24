@@ -8,7 +8,7 @@ const NotFoundPage: React.FC = () => {
     return (
         <div className="min-h-[80vh] flex items-center justify-center bg-white px-4">
             <Helmet>
-                <title>Página Não Encontrada | TGT Contratto</title>
+                <title>Página Não Encontrada | CONTRATTO</title>
                 <meta name="robots" content="noindex, follow" />
             </Helmet>
 

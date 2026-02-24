@@ -27,7 +27,7 @@ const Hero: React.FC = () => {
                             <span className="text-primary-600">contratar serviços locais.</span>
                         </h1>
                         <p className="text-xl text-slate-500 mb-10 max-w-2xl mx-auto leading-relaxed">
-                            Conecte-se com os melhores profissionais da sua região. Segurança, agilidade e a garantia TGT Contratto para o seu negócio ou residência.
+                            Conecte-se com os melhores profissionais da sua região. Segurança, agilidade e a garantia CONTRATTO para o seu negócio ou residência.
                         </p>
                     </motion.div>
 

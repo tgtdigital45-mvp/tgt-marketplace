@@ -27,7 +27,7 @@ const PrivacyPage: React.FC = () => {
   return (
     <div className="bg-slate-50 min-h-screen font-sans text-slate-900 pb-20 pt-32">
       <SEO
-        title="Política de Privacidade | TGT Contratto"
+        title="Política de Privacidade | CONTRATTO"
         description="Entenda como tratamos seus dados com segurança, transparência e conformidade com a LGPD."
       />
 
@@ -42,7 +42,7 @@ const PrivacyPage: React.FC = () => {
             Política de Privacidade
           </h1>
           <p className="text-lg text-slate-500 max-w-2xl mx-auto mb-8">
-            Seu guia definitivo sobre como a TGT Contratto protege, processa e valoriza suas informações pessoais.
+            Seu guia definitivo sobre como a CONTRATTO protege, processa e valoriza suas informações pessoais.
           </p>
           <div className="inline-flex items-center gap-2 text-sm text-slate-400 bg-white py-2 px-4 rounded-full border border-slate-100 shadow-sm">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
@@ -60,8 +60,8 @@ const PrivacyPage: React.FC = () => {
                   key={section.id}
                   onClick={() => scrollToSection(section.id)}
                   className={`flex items-center gap-3 w-full text-left px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${activeSection === section.id
-                      ? 'bg-brand-primary text-white shadow-md'
-                      : 'text-slate-500 hover:bg-white hover:text-brand-primary hover:shadow-sm'
+                    ? 'bg-brand-primary text-white shadow-md'
+                    : 'text-slate-500 hover:bg-white hover:text-brand-primary hover:shadow-sm'
                     }`}
                 >
                   <span className={activeSection === section.id ? 'text-white' : 'text-slate-400'}>
@@ -76,8 +76,8 @@ const PrivacyPage: React.FC = () => {
             <div className="mt-8 bg-white p-5 rounded-xl border border-blue-100 shadow-sm">
               <h4 className="font-bold text-slate-900 text-sm mb-2">DPO / Encarregado</h4>
               <p className="text-xs text-slate-500 mb-4">Dúvidas sobre seus dados?</p>
-              <a href="mailto:dpo@tgtcontratto.com" className="flex items-center gap-2 text-sm font-semibold text-brand-primary hover:text-brand-primary-700 transition-colors">
-                <Mail size={16} /> dpo@tgtcontratto.com
+              <a href="mailto:dpo@contratto.com" className="flex items-center gap-2 text-sm font-semibold text-brand-primary hover:text-brand-primary-700 transition-colors">
+                <Mail size={16} /> dpo@contratto.com
               </a>
             </div>
           </div>
@@ -88,7 +88,7 @@ const PrivacyPage: React.FC = () => {
             {/* Intro */}
             <div className="bg-white p-8 md:p-10 rounded-[var(--radius-box)] shadow-sm border border-slate-100">
               <p className="text-lg text-slate-600 leading-relaxed">
-                A <strong>TGT Contratto</strong> ("nós", "nosso") está comprometida com a proteção de sua privacidade. Esta política descreve como coletamos, usamos e protegemos suas informações pessoais ao utilizar nossa plataforma de Marketplace de Serviços, em conformidade com a <strong>Lei Geral de Proteção de Dados (Lei nº 13.709/2018)</strong>.
+                A <strong>CONTRATTO</strong> ("nós", "nosso") está comprometida com a proteção de sua privacidade. Esta política descreve como coletamos, usamos e protegemos suas informações pessoais ao utilizar nossa plataforma de Marketplace de Serviços, em conformidade com a <strong>Lei Geral de Proteção de Dados (Lei nº 13.709/2018)</strong>.
               </p>
             </div>
 
@@ -133,7 +133,7 @@ const PrivacyPage: React.FC = () => {
                     { title: "Viabilizar o Marketplace", desc: "Conectar clientes a prestadores de serviço e processar transações com segurança." },
                     { title: "Melhoria de Serviços", desc: "Analisar métricas de uso para otimizar a experiência do usuário e corrigir falhas." },
                     { title: "Comunicação", desc: "Enviar notificações sobre status de pedidos, atualizações de conta e ofertas relevantes (com opção de opt-out)." },
-                    { title: "Segurança e Prevenção à Fraude", desc: "Monitorar atividades suspeitas para proteger a comunidade TGT." }
+                    { title: "Segurança e Prevenção à Fraude", desc: "Monitorar atividades suspeitas para proteger a comunidade CONTRATTO." }
                   ].map((item, idx) => (
                     <li key={idx} className="flex items-start p-4 hover:bg-slate-50 rounded-lg transition-colors">
                       <div className="min-w-[24px] mr-4 mt-1 text-green-500">
@@ -196,7 +196,7 @@ const PrivacyPage: React.FC = () => {
                   <div className="flex flex-col justify-center items-start bg-white/10 p-6 rounded-xl backdrop-blur-sm border border-white/10">
                     <h4 className="font-bold text-lg mb-2">Solicitar Atendimento</h4>
                     <p className="text-xs text-blue-200 mb-4">Para exercer seus direitos, entre em contato com nosso DPO.</p>
-                    <a href="mailto:dpo@tgtcontratto.com" className="w-full text-center bg-white text-brand-primary-900 font-bold py-3 px-4 rounded-lg hover:bg-blue-50 transition-colors">
+                    <a href="mailto:dpo@contratto.com" className="w-full text-center bg-white text-brand-primary-900 font-bold py-3 px-4 rounded-lg hover:bg-blue-50 transition-colors">
                       Enviar Solicitação
                     </a>
                   </div>

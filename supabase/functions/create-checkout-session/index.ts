@@ -78,34 +78,29 @@ serve(async (req) => {
         // 3. Calculate Fee (Dynamic Take Rate)
         const sellerCompany = service.companies
         const commissionRate = sellerCompany.commission_rate ?? 0.20
-        
+
         // Stripe expects cents
         const unitAmount = Math.round(priceFromDb * 100)
         const applicationFeeAmount = Math.round(unitAmount * commissionRate)
 
         console.log(`Creating session for Order: ${order.id}. Total: ${unitAmount / 100}. Fee: ${applicationFeeAmount / 100} (${commissionRate * 100}%)`)
 
-        // 3.1 Check for Stripe Connect Account (Split Payment)
+        // 3.1 Verifica Conta Conectada e Configura Separate Charge & Transfer
         const sellerStripeAccountId = sellerCompany.stripe_account_id
         let paymentData = {}
 
         if (sellerStripeAccountId) {
-            console.log(`Routing funds to Seller Connect Account: ${sellerStripeAccountId}`)
+            console.log(`Setting up Separate Charge for Seller Connect Account: ${sellerStripeAccountId}`)
             paymentData = {
                 payment_intent_data: {
-                    application_fee_amount: applicationFeeAmount,
-                    transfer_data: {
-                        destination: sellerStripeAccountId,
-                    },
+                    transfer_group: order.id,
                 },
             }
         } else {
-             console.warn(`Seller ${sellerCompany.id} has no Stripe Connected Account. Funds will remain in Platform Account.`)
-             // Fallback: We still charge the full amount, but it stays in Platform. 
-             // We might want to tag this metadata to settle manually later.
+            console.warn(`Seller ${sellerCompany.id} has no Stripe Connected Account. Funds will remain in Platform Account.`)
         }
 
-        // 4. Create Stripe Checkout Session
+        // 4. Create Stripe Checkout Session (idempotent)
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             line_items: [
@@ -135,7 +130,9 @@ serve(async (req) => {
                 commission_rate: commissionRate,
                 seller_id: sellerCompany.id
             },
-            ...paymentData // Inject Split Payment data if available
+            ...paymentData // Inject Separate Charge transfer_group if available
+        }, {
+            idempotencyKey: `checkout_${order.id}`
         })
 
         return new Response(

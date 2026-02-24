@@ -98,9 +98,8 @@ const DashboardPortfolioPage: React.FC = () => {
                 .from('portfolio_items')
                 .insert({
                     company_id: companyId,
-                    type: 'image',
                     image_url: publicUrl,
-                    caption: 'Novo Item' // Default caption
+                    title: 'Novo Item' // Renamed from caption
                 })
                 .select()
                 .single();
@@ -195,13 +194,13 @@ const DashboardPortfolioPage: React.FC = () => {
                 /* User provided Empty State */
                 <div className="col-span-full py-12 text-center border-2 border-dashed border-gray-200 rounded-xl">
                     <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-camera" ariaTitle="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-camera" aria-hidden="true">
                             <path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"></path>
                             <circle cx="12" cy="13" r="3"></circle>
                         </svg>
                     </div>
-                    <h5 class="text-lg font-medium text-gray-900">Sem projetos ainda</h5>
-                    <p class="text-gray-500 mb-4">Adicione itens ao seu portfólio para exibi-los aqui.</p>
+                    <h5 className="text-lg font-medium text-gray-900">Sem projetos ainda</h5>
+                    <p className="text-gray-500 mb-4">Adicione itens ao seu portfólio para exibi-los aqui.</p>
 
                     {/* Hidden File Upload for the button to trigger */}
                     <div className="hidden">
@@ -227,7 +226,7 @@ const DashboardPortfolioPage: React.FC = () => {
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {items.map(item => (
                         <div key={item.id} className="group relative aspect-square rounded-lg overflow-hidden bg-gray-100 shadow-sm border border-gray-100">
-                            <img src={item.image_url} alt={item.caption || 'Portfolio Item'} className="w-full h-full object-cover" />
+                            <img src={item.image_url} alt={item.title || 'Portfolio Item'} className="w-full h-full object-cover" />
                             <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button
                                     onClick={() => handleDelete(item.id)}

@@ -22,7 +22,7 @@ export async function getCoordinatesFromAddress(
 
         const response = await fetch(url, {
             headers: {
-                'User-Agent': 'TGTContrattoMVP/1.0' // Nominatim requires User-Agent
+                'User-Agent': 'CONTRATTO/1.0' // Nominatim requires User-Agent
             }
         });
 

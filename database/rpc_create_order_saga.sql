@@ -1,16 +1,13 @@
 -- ============================================================
--- TGT Marketplace — SAGA Checkout RPC
--- Migration: rpc_create_order_saga.sql
---
--- This RPC is called by the frontend when user clicks "Contratar".
--- It atomically creates the order + first SAGA job in one transaction.
--- Returns the order_id for the frontend to use.
+-- TGT Marketplace — SAGA Checkout RPC (Updated for Booking)
 -- ============================================================
 
 CREATE OR REPLACE FUNCTION create_order_saga(
   p_service_id UUID,
   p_package_tier TEXT,
-  p_seller_id UUID
+  p_seller_id UUID,
+  p_booking_date DATE DEFAULT NULL,
+  p_booking_time TEXT DEFAULT NULL
 )
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -19,6 +16,7 @@ AS $$
 DECLARE
   v_order_id UUID;
   v_service RECORD;
+  v_company RECORD;
   v_price NUMERIC;
   v_delivery_deadline TIMESTAMPTZ;
   v_delivery_days INT;
@@ -95,8 +93,35 @@ BEGIN
   )
   RETURNING id INTO v_order_id;
 
-  -- 6. Insert first SAGA job: ORDER_CREATED
-  -- This records the start of the saga.
+  -- 6. Insert booking if scheduling info provided
+  IF p_booking_date IS NOT NULL AND p_booking_time IS NOT NULL THEN
+    INSERT INTO public.bookings (
+      client_id,
+      company_id,
+      service_id,
+      order_id,
+      package_tier,
+      service_title,
+      service_price,
+      booking_date,
+      booking_time,
+      status
+    )
+    VALUES (
+      auth.uid(),
+      v_service.company_id,
+      p_service_id,
+      v_order_id,
+      p_package_tier,
+      v_service.title,
+      v_price,
+      p_booking_date,
+      p_booking_time,
+      'pending' -- Will be confirmed when payment is done
+    );
+  END IF;
+
+  -- 7. Insert first SAGA job: ORDER_CREATED
   INSERT INTO public.saga_jobs (
     order_id,
     event_type,
@@ -107,22 +132,20 @@ BEGIN
   VALUES (
     v_order_id,
     'ORDER_CREATED',
-    'completed', -- Mark as completed since we just did it
+    'completed',
     jsonb_build_object(
       'service_id', p_service_id,
       'buyer_id', auth.uid(),
       'seller_id', p_seller_id,
       'price', v_price,
-      'package_tier', p_package_tier
+      'package_tier', p_package_tier,
+      'booking_date', p_booking_date,
+      'booking_time', p_booking_time
     ),
     now()
   );
 
-  -- NOTE: We do NOT insert a 'waiting' job for payment here.
-  -- The Stripe Webhook will receive the payment event and TRIGGER the next step.
-  -- The SAGA remains in PENDING state until then.
-
-  -- 7. Return order details for frontend
+  -- 8. Return order details for frontend
   RETURN jsonb_build_object(
     'order_id', v_order_id,
     'price', v_price,
@@ -137,9 +160,3 @@ EXCEPTION
     RAISE EXCEPTION 'create_order_saga failed: %', SQLERRM;
 END;
 $$;
-
--- Grant execute to authenticated users
-GRANT EXECUTE ON FUNCTION create_order_saga(UUID, TEXT, UUID) TO authenticated;
-
-COMMENT ON FUNCTION create_order_saga IS
-  'SAGA entry point: atomically creates an order + saga jobs in one transaction. Called by frontend checkout. Returns order_id and price for Stripe session creation.';

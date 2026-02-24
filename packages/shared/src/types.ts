@@ -1,246 +1,176 @@
-
-
-export type OrderStatus = 'pending_payment' | 'active' | 'in_review' | 'in_progress' | 'delivered' | 'completed' | 'cancelled';
-
-/** SAGA state machine for distributed checkout transactions (iFood pattern) */
-export type SagaStatus =
-  | 'PENDING'              // Order created, awaiting payment redirect
-  | 'PAYMENT_PROCESSING'   // User redirected to Stripe, awaiting webhook
-  | 'PAYMENT_CONFIRMED'    // Stripe confirmed payment, worker activating
-  | 'PAYMENT_FAILED'       // Stripe reported failure or timeout
-  | 'ORDER_ACTIVE'         // Payment confirmed, order is live
-  | 'CANCELLED'            // Compensated/cancelled after failure
-  | 'REFUNDED';            // Payment reversed
-
-export interface SagaLogEntry {
-  event: SagaStatus | 'ORDER_CREATED';
-  timestamp: string;
-  data?: Record<string, unknown>;
-}
-
-export interface DbOrder {
-  id: string;
-  created_at: string;
-  buyer_id: string;
-  seller_id: string;
-  service_title: string;
-  service_id: string;
-  package_tier: 'basic' | 'standard' | 'premium';
-  price: number;
-  status: OrderStatus;
-  delivery_deadline: string;
-  package_snapshot?: any;
-  // SAGA fields
-  saga_status?: SagaStatus;
-  saga_log?: SagaLogEntry[];
-  stripe_payment_intent_id?: string;
-  payment_status?: 'pending' | 'paid' | 'failed' | 'refunded';
-}
-
-export interface DbMessage {
-  id: string;
-  order_id: string;
-  sender_id: string;
-  content: string;
-  file_url?: string;
-  created_at: string;
-}
-
-export interface DbReview {
-  id: string;
-  order_id: string;
-  reviewer_id: string;
-  rating: number;
-  comment?: string;
-  created_at: string;
-  profiles?: DbProfile; // For joins
-}
-
-export interface DbWallet {
-  id: string;
-  user_id: string;
-  balance: number;
-  pending_balance: number;
-}
-
-export interface DbTransaction {
-  id: string;
-  wallet_id: string;
-  amount: number;
-  type: 'credit' | 'debit';
-  description: string;
-  order_id?: string;
-  created_at: string;
-}
+// Shared Types for CONTRATTO Marketplace
 
 export interface Address {
+  cep: string;
   street: string;
   number: string;
   district: string;
   city: string;
   state: string;
-  cep: string;
+  complement?: string;
   lat?: number;
   lng?: number;
-  h3_index?: string; // Computed H3 cell index (resolution 8)
 }
-
-export interface Company {
-  id: string;
-  profileId: string; // Add this
-  slug: string; // Used for URL routing (e.g. /empresa/nome-da-empresa)
-  companyName: string;
-  legalName: string;
-  cnpj: string;
-  logo: string;
-  coverImage: string;
-  category: string;
-  rating: number;
-  reviewCount: number;
-  description: string;
-  verified?: boolean;
-  clients_count?: number;
-  recurring_clients_percent?: number;
-  level?: 'Iniciante' | 'Nível 1' | 'Pro';
-  address: Address;
-  phone?: string;
-  email: string;
-  website?: string;
-  services: Service[];
-  portfolio: PortfolioItem[];
-  reviews: Review[];
-  distance?: number; // Distance in km from user
-  current_plan_tier?: 'starter' | 'pro' | 'agency';
-  subscription_status?: string;
-  owner?: {
-    id: string;
-    fullName: string;
-    avatar: string;
-    languages: { language: string; level: string }[];
-    skills: string[];
-    education: { institution: string; degree: string; year: string }[];
-    responseTime?: string;
-    memberSince: string;
-    location: string;
-  };
-}
-
-// Database Interfaces (Reflecting Supabase raw response)
-export interface DbProfile {
-  id: string;
-  full_name: string | null;
-  avatar_url: string | null;
-  languages?: { language: string; level: string }[];
-  skills?: string[];
-  education?: { institution: string; degree: string; year: string }[];
-  response_time?: string;
-}
-
-
 
 export interface ServicePackage {
-  name: 'Basic' | 'Standard' | 'Premium';
-  price: number;
-  delivery_time: number; // in days
-  revisions: number; // -1 for unlimited
-  features: string[];
+  name: string;
   description: string;
+  price: number;
+  delivery_time: number;
+  revisions: number;
+  features: string[];
 }
 
 export interface ServicePackages {
-  basic?: ServicePackage;
+  basic: ServicePackage;
   standard?: ServicePackage;
   premium?: ServicePackage;
 }
 
-export interface DbService {
+export interface Company {
+  id: string;
+  profileId: string;
+  slug: string;
+  companyName: string;
+  displayName?: string;
+  logo: string;
+  coverImage?: string;
+  category: string;
+  rating: number;
+  distance?: number;
+  reviewCount: number;
+  verified: boolean;
+  level: string;
+  description: string;
+  location: string;
+  memberSince: string;
+  responseTime: string;
+  services: Service[];
+  reviews: Review[];
+  portfolio: PortfolioItem[];
+  current_plan_tier?: 'basic' | 'pro' | 'agency';
+  stripe_account_id?: string;
+  stripe_charges_enabled?: boolean;
+  is_active?: boolean;
+  social_links?: {
+    facebook?: string;
+    instagram?: string;
+    linkedin?: string;
+  };
+  address?: Address;
+  owner?: {
+    fullName: string;
+    avatar: string;
+    location: string;
+    memberSince: string;
+    responseTime: string;
+    skills?: string[];
+    languages?: { language: string; level: string }[];
+  };
+  website?: string;
+  phone?: string;
+}
+
+export interface Service {
   id: string;
   title: string;
   description: string;
-  price?: number; // kept for backward compatibility (basic price)
-  starting_price?: number; // New field for improved sorting
+  price: number;
+  starting_price?: number;
+  image: string;
+  category: string;
+  rating: number;
+  reviewCount: number;
+  author: {
+    name: string;
+    avatar: string;
+  };
+  deliveryTime?: string;
+  companyId?: string;
+  companyName?: string;
+  companySlug?: string;
   duration?: string;
-  company_id: string;
-  packages?: ServicePackages; // JSONB
-  gallery?: string[]; // Array of image URLs
+  duration_minutes?: number;
+  packages?: ServicePackages;
+  gallery?: string[];
   attributes?: Record<string, string>;
   details?: Record<string, any>;
-  faq?: { question: string; answer: string; }[]; // JSONB
-  // H3 + Marketplace fields
-  service_type?: 'remote' | 'presential' | 'hybrid';
+  faq?: { question: string; answer: string; }[];
+  service_type?: 'remote' | 'presential_customer_goes' | 'presential_company_goes' | 'hybrid' | string;
+  is_single_package?: boolean;
+  requires_quote?: boolean;
   category_tag?: string;
   image_url?: string;
   is_active?: boolean;
   tags?: string[];
   h3_index?: string;
-  // Joined company data (from RPC)
-  company_name?: string;
-  company_logo?: string;
-  company_rating?: number;
-  company_slug?: string;
-}
-
-export interface DbPortfolioItem {
-  id: string;
-  type: 'image' | 'video';
-  image_url: string;
-  caption?: string;
-  company_id: string;
-  created_at: string;
+  use_company_availability?: boolean;
+  pricing_model?: 'hourly' | 'daily' | 'fixed';
+  subcategory?: string;
+  company?: DbCompany;
 }
 
 export interface DbCompany {
   id: string;
   slug: string;
   company_name: string;
-  legal_name: string;
-  cnpj: string;
-  logo_url: string | null;
-  cover_image_url: string | null;
+  logo_url: string;
+  cover_image?: string;
   category: string;
-  description: string | null;
-  address: Address; // JSONB
-  phone: string;
-  email: string;
-  website: string | null;
+  description: string;
+  verified: boolean;
+  address: Address;
   rating?: number;
   review_count?: number;
-  status?: string;
-  verified?: boolean;
+  owner_id: string;
+  member_since?: string;
+  response_time?: string;
+  current_plan_tier?: 'basic' | 'pro' | 'agency';
+  stripe_account_id?: string;
+  stripe_charges_enabled?: boolean;
+  is_active?: boolean;
+  social_links?: {
+    facebook?: string;
+    instagram?: string;
+    linkedin?: string;
+  };
+  level?: string;
   clients_count?: number;
   recurring_clients_percent?: number;
-  level?: 'Iniciante' | 'Nível 1' | 'Pro';
-  current_plan_tier?: 'starter' | 'pro' | 'agency';
-  subscription_status?: string;
-  profile_id: string;
-  h3_index?: string; // Uber H3 cell index (resolution 8) for geo search
 }
 
-export interface Service {
+export interface DbService {
   id: string;
-  company_id?: string;
+  company_id: string;
   title: string;
   description: string;
-  price?: number;
+  price: number;
   starting_price?: number;
   duration?: string;
+  duration_minutes?: number; // New field for precise scheduling
   packages?: ServicePackages;
   gallery?: string[];
   attributes?: Record<string, string>; // e.g. { "Style": "Minimalist", "File Format": "PNG, SVG" }
   details?: Record<string, any>; // e.g. { "methodology": "...", "target_audience": "..." }
   faq?: { question: string; answer: string; }[];
   // H3 + Marketplace fields
-  service_type?: 'remote' | 'presential' | 'hybrid';
+  service_type?: 'remote' | 'presential_customer_goes' | 'presential_company_goes' | 'hybrid' | string;
+  is_single_package?: boolean;
+  requires_quote?: boolean;
   category_tag?: string;
   image_url?: string;
   is_active?: boolean;
   tags?: string[];
   h3_index?: string;
+  use_company_availability?: boolean;
+  pricing_model?: 'hourly' | 'daily' | 'fixed';
+  subcategory?: string;
   // Joined company data
   company_name?: string;
   company_logo?: string;
   company_rating?: number;
   company_slug?: string;
+  company?: DbCompany;
 }
 
 export interface PortfolioItem {
@@ -290,9 +220,14 @@ export interface Booking {
   company_id: string;
   service_title: string;
   service_price?: number;
+  order_id?: string;
   booking_date: string;
   booking_time: string;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  service_duration_minutes?: number;
+  proposed_date?: string;
+  proposed_time?: string;
+  proposal_expires_at?: string;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'pending_client_approval';
   companies?: {
     company_name: string;
   };
@@ -339,12 +274,34 @@ export interface DbBooking {
   company_id: string;
   service_title: string;
   service_price?: number;
+  order_id?: string;
   booking_date: string;
   booking_time: string;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  service_duration_minutes?: number;
+  proposed_date?: string;
+  proposal_expires_at?: string;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'pending_client_approval';
   created_at: string;
   // Joins
   companies?: DbCompany;
+  hiring_responses?: Record<string, any>;
+}
+
+export interface DbOrder {
+  id: string;
+  buyer_id: string;
+  seller_id: string;
+  service_id: string;
+  service_title: string;
+  package_tier: 'basic' | 'standard' | 'premium';
+  price: number;
+  status: 'pending_payment' | 'active' | 'delivered' | 'completed' | 'cancelled' | 'in_progress';
+  saga_status: 'PENDING' | 'COMPLETED' | 'FAILED';
+  delivery_deadline: string;
+  hiring_responses?: Record<string, any>;
+  package_snapshot?: any;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface DbProposal {

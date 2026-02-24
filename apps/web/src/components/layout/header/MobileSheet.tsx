@@ -11,7 +11,7 @@ interface MobileSheetProps {
 }
 
 const MobileSheet: React.FC<MobileSheetProps> = ({ isOpen, onClose }) => {
-    const { user, logout } = useAuth();
+    const { user, loading, logout } = useAuth();
     const { company } = useCompany();
     const navigate = useNavigate();
 
@@ -64,11 +64,12 @@ const MobileSheet: React.FC<MobileSheetProps> = ({ isOpen, onClose }) => {
                     >
                         {/* Header */}
                         <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
-                            <Link to="/" onClick={handleLinkClick} className="flex items-center gap-2">
-                                <div className="bg-brand-primary/10 p-2 rounded-xl">
-                                    <span className="text-brand-primary font-bold text-lg">TGT</span>
-                                </div>
-                                <span className="text-gray-800 font-bold text-lg">Contratto</span>
+                            <Link to="/" onClick={handleLinkClick} className="flex items-center">
+                                <img
+                                    src="/logo-contratto.svg"
+                                    alt="CONTRATTO"
+                                    className="h-8 w-auto object-contain"
+                                />
                             </Link>
                             <button
                                 onClick={onClose}
@@ -84,7 +85,15 @@ const MobileSheet: React.FC<MobileSheetProps> = ({ isOpen, onClose }) => {
                         {/* Content */}
                         <div className="flex-1 px-4 py-6 bg-white">
                             {/* User Profile Card */}
-                            {user && (
+                            {loading ? (
+                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl mb-6 animate-pulse">
+                                    <div className="h-10 w-10 bg-gray-200 rounded-full"></div>
+                                    <div className="flex-1 space-y-2">
+                                        <div className="h-4 w-24 bg-gray-200 rounded"></div>
+                                        <div className="h-3 w-16 bg-gray-100 rounded"></div>
+                                    </div>
+                                </div>
+                            ) : user ? (
                                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl mb-6">
                                     <OptimizedImage
                                         src={(user.type === 'company' && company?.logo_url) || user.avatar || `https://i.pravatar.cc/150?u=${user.id}`}
@@ -98,7 +107,7 @@ const MobileSheet: React.FC<MobileSheetProps> = ({ isOpen, onClose }) => {
                                         <p className="text-xs text-gray-500 capitalize">{user.type === 'client' ? 'Cliente' : 'Empresa'}</p>
                                     </div>
                                 </div>
-                            )}
+                            ) : null}
 
                             <nav className="space-y-1">
                                 <Link
@@ -152,7 +161,7 @@ const MobileSheet: React.FC<MobileSheetProps> = ({ isOpen, onClose }) => {
                         </div>
 
                         {/* Footer Actions (unauthenticated) */}
-                        {!user && (
+                        {!loading && !user && (
                             <div className="p-4 border-t border-gray-100 bg-gray-50 sticky bottom-0 space-y-3">
                                 <Link
                                     to="/login/cliente"

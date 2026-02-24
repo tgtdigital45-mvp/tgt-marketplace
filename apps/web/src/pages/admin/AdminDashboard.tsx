@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import KPICard from '@/components/admin/KPICard';
 import TransactionsTable from '@/components/admin/TransactionsTable';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { Link } from 'react-router-dom';
 
 // Icons
 const MoneyIcon = React.memo(() => (
@@ -122,7 +123,7 @@ const AdminDashboard: React.FC = () => {
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-                            <p className="text-sm text-gray-500 mt-1">Visão global da plataforma TGT Contratto</p>
+                            <p className="text-sm text-gray-500 mt-1">Visão global da plataforma CONTRATTO</p>
                         </div>
                         <div className="flex items-center gap-2">
                             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
@@ -220,6 +221,9 @@ const AdminDashboard: React.FC = () => {
                             <button className="w-full bg-white/20 hover:bg-white/30 transition-colors rounded-lg px-4 py-2 text-left text-sm font-medium">
                                 ⚙️ Configurações
                             </button>
+                            <Link to="/admin/disputas" className="block w-full bg-white/20 hover:bg-white/30 transition-colors rounded-lg px-4 py-2 text-left text-sm font-medium text-white">
+                                ⚖️ Mediação de Disputas
+                            </Link>
                         </div>
                     </div>
                 </div>

@@ -69,7 +69,14 @@ const ClientOrdersPage: React.FC = () => {
             {/* Content */}
             <div className="space-y-6">
                 {loading ? (
-                    <div className="text-center py-10 text-gray-500">Carregando...</div>
+                    <div className="space-y-4">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 animate-pulse">
+                                <div className="h-6 w-1/3 bg-gray-100 rounded mb-2"></div>
+                                <div className="h-4 w-2/3 bg-gray-50 rounded"></div>
+                            </div>
+                        ))}
+                    </div>
                 ) : (
                     <>
                         {/* REQUESTS TAB (JOBS) */}

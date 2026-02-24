@@ -3,14 +3,33 @@ import { supabase } from '@tgt/shared';
 import { DbWallet, DbTransaction, SellerStats } from '@tgt/shared';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import Button from '@/components/ui/Button';
+
+const PLATFORM_FEE_RATE = 0.15;
 
 const DashboardFaturamentoPage: React.FC = () => {
     const { user } = useAuth();
+    const { company } = useCompany();
     const [wallet, setWallet] = useState<DbWallet | null>(null);
     const [transactions, setTransactions] = useState<DbTransaction[]>([]);
     const [sellerStats, setSellerStats] = useState<SellerStats | null>(null);
     const [loading, setLoading] = useState(true);
+
+    // Filter state
+    const [filterType, setFilterType] = useState<'all' | 'credit' | 'debit'>('all');
+    const [filterDateStart, setFilterDateStart] = useState('');
+    const [filterDateEnd, setFilterDateEnd] = useState('');
+
+    // Bank data state
+    const [bankData, setBankData] = useState({
+        pix_key: '',
+        bank_name: '',
+        bank_agency: '',
+        bank_account: '',
+        bank_account_type: 'checking',
+    });
+    const [savingBank, setSavingBank] = useState(false);
 
     const handlePayout = async () => {
         if (!wallet || wallet.balance <= 0) {
@@ -43,6 +62,39 @@ const DashboardFaturamentoPage: React.FC = () => {
             alert(`Erro ao solicitar saque: ${err.message || 'Erro desconhecido'}`);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Load bank data from company record
+    useEffect(() => {
+        if (company) {
+            setBankData({
+                pix_key: (company as any).pix_key || '',
+                bank_name: (company as any).bank_name || '',
+                bank_agency: (company as any).bank_agency || '',
+                bank_account: (company as any).bank_account || '',
+                bank_account_type: (company as any).bank_account_type || 'checking',
+            });
+        }
+    }, [company]);
+
+    const handleSaveBankData = async () => {
+        if (!company?.id) return;
+        try {
+            setSavingBank(true);
+            const { error } = await supabase.from('companies').update({
+                pix_key: bankData.pix_key,
+                bank_name: bankData.bank_name,
+                bank_agency: bankData.bank_agency,
+                bank_account: bankData.bank_account,
+                bank_account_type: bankData.bank_account_type,
+            }).eq('id', company.id);
+            if (error) throw error;
+            alert('Dados bancários salvos com sucesso!');
+        } catch (err: any) {
+            alert(`Erro ao salvar: ${err.message}`);
+        } finally {
+            setSavingBank(false);
         }
     };
 
@@ -107,6 +159,18 @@ const DashboardFaturamentoPage: React.FC = () => {
 
         fetchWallet();
     }, [user]);
+
+    // Filtered transactions
+    const filteredTransactions = transactions.filter(t => {
+        if (filterType !== 'all' && t.type !== filterType) return false;
+        if (filterDateStart && t.created_at < filterDateStart) return false;
+        if (filterDateEnd && t.created_at > filterDateEnd + 'T23:59:59') return false;
+        return true;
+    });
+
+    const grossAmount = transactions.filter(t => t.type === 'credit').reduce((acc, t) => acc + t.amount, 0);
+    const platformFee = grossAmount * PLATFORM_FEE_RATE;
+    const netAmount = grossAmount - platformFee;
 
     if (loading) return (
         <div className="flex items-center justify-center h-64">
@@ -217,6 +281,22 @@ const DashboardFaturamentoPage: React.FC = () => {
                 </div>
             </div>
 
+            {/* Fee Breakdown */}
+            <div className="grid grid-cols-3 gap-4 p-5 bg-white rounded-xl shadow-sm border border-gray-200">
+                <div className="text-center">
+                    <p className="text-xs text-gray-500 mb-1">Faturamento Bruto</p>
+                    <p className="text-xl font-bold text-gray-900">R$ {grossAmount.toFixed(2)}</p>
+                </div>
+                <div className="text-center border-x border-gray-100">
+                    <p className="text-xs text-gray-500 mb-1">Taxa Plataforma (15%)</p>
+                    <p className="text-xl font-bold text-red-500">- R$ {platformFee.toFixed(2)}</p>
+                </div>
+                <div className="text-center">
+                    <p className="text-xs text-gray-500 mb-1">Valor Líquido</p>
+                    <p className="text-xl font-bold text-green-600">R$ {netAmount.toFixed(2)}</p>
+                </div>
+            </div>
+
             {/* Transactions Table */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
@@ -224,7 +304,40 @@ const DashboardFaturamentoPage: React.FC = () => {
                     <Button variant="outline" size="sm" onClick={() => { }}>Exportar CSV</Button>
                 </div>
 
-                {transactions.length === 0 ? (
+                {/* Filters */}
+                <div className="px-6 py-3 border-b border-gray-100 flex flex-wrap gap-3 items-center">
+                    <select
+                        value={filterType}
+                        onChange={e => setFilterType(e.target.value as any)}
+                        className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                    >
+                        <option value="all">Todos os tipos</option>
+                        <option value="credit">Entradas</option>
+                        <option value="debit">Saídas</option>
+                    </select>
+                    <input
+                        type="date"
+                        value={filterDateStart}
+                        onChange={e => setFilterDateStart(e.target.value)}
+                        className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                    />
+                    <input
+                        type="date"
+                        value={filterDateEnd}
+                        onChange={e => setFilterDateEnd(e.target.value)}
+                        className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                    />
+                    {(filterType !== 'all' || filterDateStart || filterDateEnd) && (
+                        <button
+                            onClick={() => { setFilterType('all'); setFilterDateStart(''); setFilterDateEnd(''); }}
+                            className="text-xs text-gray-500 hover:text-red-500 underline"
+                        >
+                            Limpar filtros
+                        </button>
+                    )}
+                </div>
+
+                {filteredTransactions.length === 0 ? (
                     <div className="p-12 text-center text-gray-500 flex flex-col items-center">
                         <div className="bg-gray-100 p-4 rounded-full mb-3">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -235,47 +348,137 @@ const DashboardFaturamentoPage: React.FC = () => {
                         <p className="text-sm">Suas entradas e saídas aparecerão aqui.</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-200">
-                                <tr>
-                                    <th className="px-6 py-3">Data</th>
-                                    <th className="px-6 py-3">Descrição</th>
-                                    <th className="px-6 py-3">Tipo</th>
-                                    <th className="px-6 py-3 text-right">Valor</th>
-                                    <th className="px-6 py-3 text-center">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {transactions.map((t) => (
-                                    <tr key={t.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4 text-gray-600">
-                                            {new Date(t.created_at).toLocaleDateString()} <span className="text-xs text-gray-400 ml-1">{new Date(t.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                        </td>
-                                        <td className="px-6 py-4 font-medium text-gray-900">
-                                            {t.description}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${t.type === 'credit'
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-red-100 text-red-800'
-                                                }`}>
+                    <div className="p-0">
+                        {/* Mobile View (Cards) */}
+                        <div className="block sm:hidden divide-y divide-gray-100">
+                            {filteredTransactions.map((t) => (
+                                <div key={t.id} className="p-4 flex flex-col gap-2 bg-white hover:bg-gray-50 transition-colors">
+                                    <div className="flex justify-between items-start">
+                                        <div className="font-medium text-gray-900">{t.description}</div>
+                                        <div className={`font-bold ${t.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
+                                            {t.type === 'credit' ? '+' : '-'} R$ {t.amount.toFixed(2)}
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-center text-xs mt-1">
+                                        <div className="text-gray-500 flex flex-col">
+                                            <span>{new Date(t.created_at).toLocaleDateString()}</span>
+                                            <span>{new Date(t.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                        </div>
+                                        <div className="flex gap-2 items-center">
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-medium ${t.type === 'credit' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                                 {t.type === 'credit' ? 'Entrada' : 'Saída'}
                                             </span>
-                                        </td>
-                                        <td className={`px-6 py-4 text-right font-bold ${t.type === 'credit' ? 'text-green-600' : 'text-red-600'
-                                            }`}>
-                                            {t.type === 'credit' ? '+' : '-'} R$ {t.amount.toFixed(2)}
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">Concluído</span>
-                                        </td>
+                                            <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-medium">Concluído</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Desktop View (Table) */}
+                        <div className="hidden sm:block overflow-x-auto">
+                            <table className="w-full text-left text-sm min-w-[600px]">
+                                <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-200">
+                                    <tr>
+                                        <th className="px-6 py-3">Data</th>
+                                        <th className="px-6 py-3">Descrição</th>
+                                        <th className="px-6 py-3">Tipo</th>
+                                        <th className="px-6 py-3 text-right">Valor</th>
+                                        <th className="px-6 py-3 text-center">Status</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {filteredTransactions.map((t) => (
+                                        <tr key={t.id} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-4 text-gray-600 whitespace-nowrap">
+                                                {new Date(t.created_at).toLocaleDateString()} <span className="text-xs text-gray-400 ml-1">{new Date(t.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                            </td>
+                                            <td className="px-6 py-4 font-medium text-gray-900">
+                                                {t.description}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${t.type === 'credit'
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-red-100 text-red-800'
+                                                    }`}>
+                                                    {t.type === 'credit' ? 'Entrada' : 'Saída'}
+                                                </span>
+                                            </td>
+                                            <td className={`px-6 py-4 text-right font-bold whitespace-nowrap ${t.type === 'credit' ? 'text-green-600' : 'text-red-600'
+                                                }`}>
+                                                {t.type === 'credit' ? '+' : '-'} R$ {t.amount.toFixed(2)}
+                                            </td>
+                                            <td className="px-6 py-4 text-center whitespace-nowrap">
+                                                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">Concluído</span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 )}
+            </div>
+            {/* Bank Data Section */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 className="font-bold text-gray-900 mb-1">Dados para Recebimento</h3>
+                <p className="text-sm text-gray-500 mb-5">Informe seus dados bancários para receber saques da plataforma.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Chave PIX</label>
+                        <input
+                            type="text"
+                            value={bankData.pix_key}
+                            onChange={e => setBankData(prev => ({ ...prev, pix_key: e.target.value }))}
+                            placeholder="CPF, CNPJ, e-mail ou telefone"
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Banco</label>
+                        <input
+                            type="text"
+                            value={bankData.bank_name}
+                            onChange={e => setBankData(prev => ({ ...prev, bank_name: e.target.value }))}
+                            placeholder="Ex: Nubank, Itaú, Bradesco"
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Agência</label>
+                        <input
+                            type="text"
+                            value={bankData.bank_agency}
+                            onChange={e => setBankData(prev => ({ ...prev, bank_agency: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Conta</label>
+                        <input
+                            type="text"
+                            value={bankData.bank_account}
+                            onChange={e => setBankData(prev => ({ ...prev, bank_account: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Tipo de Conta</label>
+                        <select
+                            value={bankData.bank_account_type}
+                            onChange={e => setBankData(prev => ({ ...prev, bank_account_type: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
+                        >
+                            <option value="checking">Conta Corrente</option>
+                            <option value="savings">Conta Poupança</option>
+                        </select>
+                    </div>
+                </div>
+                <div className="mt-4 flex justify-end">
+                    <Button onClick={handleSaveBankData} isLoading={savingBank} size="sm">
+                        Salvar Dados Bancários
+                    </Button>
+                </div>
             </div>
         </div>
     );
