@@ -38,7 +38,7 @@ const CompanyCard: React.FC<CompanyCardProps> = ({ company }) => {
 
     return (
         <article className="group relative">
-            <Link to={company.slug ? `/empresa/${company.slug}` : '#'} className="block bg-white rounded-[var(--radius-box)] shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ring-1 ring-gray-100 hover:ring-brand-primary">
+            <Link to={company.slug ? `/empresa/${company.slug}` : '#'} className="block bg-white rounded-[var(--radius-box)] shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 ring-1 ring-gray-100 hover:ring-brand-primary">
                 <div className="relative w-full h-48 bg-gray-200">
                     <OptimizedImage
                         src={company.coverImage}
@@ -74,7 +74,7 @@ const CompanyCard: React.FC<CompanyCardProps> = ({ company }) => {
                 <div className="p-4 pt-10">
                     <p className="text-xs font-bold text-brand-primary uppercase tracking-wider">{company.category || 'Serviços'}</p>
                     <div className="flex items-center gap-2 mt-1">
-                        <span className="text-lg font-bold text-gray-900 group-hover:text-brand-primary transition-colors block">
+                        <span className="font-display text-lg font-bold text-gray-900 group-hover:text-brand-primary transition-colors block">
                             {company.companyName}
                         </span>
                         {company.current_plan_tier === 'pro' && (

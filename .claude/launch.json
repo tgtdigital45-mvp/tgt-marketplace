@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["D:\\node\\node_modules\\npm\\bin\\npx-cli.js", "pnpm", "--filter", "@tgt/web", "dev"],
+      "port": 3001
+    },
+    {
+      "name": "mobile",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["D:\\node\\node_modules\\npm\\bin\\npx-cli.js", "pnpm", "--filter", "@tgt/mobile", "start"],
+      "port": 8081
+    }
+  ]
+}

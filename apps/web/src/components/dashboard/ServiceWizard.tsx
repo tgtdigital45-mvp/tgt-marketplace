@@ -788,7 +788,7 @@ const ServiceWizard = ({ onCancel, initialData, onSuccess }: { onCancel?: () => 
                 duration: durationLabel, // Readable string
                 duration_minutes: durationMinutes, // NEW: Minutes for scheduling
                 packages: finalPackages,
-                gallery: formData.gallery,
+                gallery: (formData.gallery || []).filter((url: string) => !url.startsWith('blob:')),
                 service_type: formData.serviceType,
                 h3_index: serviceH3Index,
                 category_tag: formData.category, // Syncing category_tag
@@ -800,7 +800,7 @@ const ServiceWizard = ({ onCancel, initialData, onSuccess }: { onCancel?: () => 
                 // Registration fields
                 registration_number: formData.registrationNumber,
                 registration_state: formData.registrationState,
-                registration_image: formData.registrationImage,
+                registration_image: (formData.registrationImage?.startsWith('blob:')) ? null : formData.registrationImage,
                 certification_id: formData.certificationId
             };
 

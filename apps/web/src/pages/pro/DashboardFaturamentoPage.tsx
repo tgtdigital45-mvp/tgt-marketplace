@@ -5,6 +5,10 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import Button from '@/components/ui/Button';
+import { Sparkles, Loader2, TrendingUp, Lightbulb } from 'lucide-react';
+import { gemini } from '@/utils/gemini';
+import { useToast } from '@/contexts/ToastContext';
+import { motion } from 'framer-motion';
 
 const PLATFORM_FEE_RATE = 0.15;
 
@@ -15,6 +19,9 @@ const DashboardFaturamentoPage: React.FC = () => {
     const [transactions, setTransactions] = useState<DbTransaction[]>([]);
     const [sellerStats, setSellerStats] = useState<SellerStats | null>(null);
     const [loading, setLoading] = useState(true);
+    const { addToast } = useToast();
+    const [aiTips, setAiTips] = useState<string[]>([]);
+    const [loadingTips, setLoadingTips] = useState(false);
 
     // Filter state
     const [filterType, setFilterType] = useState<'all' | 'credit' | 'debit'>('all');
@@ -62,6 +69,21 @@ const DashboardFaturamentoPage: React.FC = () => {
             alert(`Erro ao solicitar saque: ${err.message || 'Erro desconhecido'}`);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleGetAITips = async () => {
+        if (!wallet) return;
+        try {
+            setLoadingTips(true);
+            const tips = await gemini.generateBillingTips(wallet, transactions);
+            setAiTips(tips);
+            addToast('Insights gerados com sucesso!', 'success');
+        } catch (err) {
+            console.error(err);
+            addToast('Erro ao gerar insights financeiros.', 'error');
+        } finally {
+            setLoadingTips(false);
         }
     };
 
@@ -279,6 +301,55 @@ const DashboardFaturamentoPage: React.FC = () => {
                     {/* Decorative Icon */}
                     <svg className="absolute -bottom-4 -right-4 w-24 h-24 text-gray-700/20" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" /></svg>
                 </div>
+            </div>
+
+            {/* AI Insights Section */}
+            <div className="bg-gradient-to-br from-primary-50 to-white p-6 rounded-2xl border border-primary-100 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-primary-100 flex items-center justify-center text-primary-600">
+                            <Lightbulb size={18} />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-gray-900">Insights com Inteligencia Artificial</h3>
+                            <p className="text-xs text-gray-500">Dicas personalizadas para aumentar seu faturamento</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={handleGetAITips}
+                        disabled={loadingTips}
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-primary-200 text-primary-700 rounded-xl text-xs font-bold hover:bg-primary-50 transition-all shadow-sm disabled:opacity-50"
+                    >
+                        {loadingTips ? (
+                            <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                            <Sparkles size={14} className="text-primary-500" />
+                        )}
+                        {aiTips.length > 0 ? 'Atualizar Dicas' : 'Gerar Insights'}
+                    </button>
+                </div>
+
+                {aiTips.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {aiTips.map((tip, index) => (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                key={index}
+                                className="p-4 bg-white border border-gray-100 rounded-xl flex gap-3 items-start"
+                            >
+                                <div className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 flex-shrink-0 mt-0.5">
+                                    <TrendingUp size={12} />
+                                </div>
+                                <p className="text-sm text-gray-700 leading-relaxed font-medium">"{tip}"</p>
+                            </motion.div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="py-4 text-center">
+                        <p className="text-sm text-gray-400 italic">Clique no botao acima para analisar seu desempenho e receber dicas.</p>
+                    </div>
+                )}
             </div>
 
             {/* Fee Breakdown */}

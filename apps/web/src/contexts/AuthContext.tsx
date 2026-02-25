@@ -18,6 +18,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const fetchIdRef = React.useRef(0); // Track fetch attempts
+  const abortControllerRef = React.useRef<AbortController | null>(null);
   const mountedRef = React.useRef(true); // Track component mount status
   const lastProcessedUserIdRef = React.useRef<string | null>(null); // Deduplicate SIGNED_IN events
   const navigate = useNavigate();
@@ -32,7 +33,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const fetchUserProfile = async (session: any) => {
     if (!session?.user) return;
 
+    // Cancel previous fetch if any
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
     const currentFetchId = ++fetchIdRef.current;
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
 
     // Ensure we are in loading state while fetching profile
     setLoading(true);
@@ -44,87 +52,89 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         email: session.user.email || '',
         type: (session.user.user_metadata.type as 'client' | 'company') || 'client',
         role: 'user', // Default role
-        avatar: session.user.user_metadata.avatar_url,
+        avatar: session.user.user_metadata.avatar_url || '',
       };
 
       console.log(`[AuthContext] Fetching profile data (ID: ${currentFetchId}) for:`, session.user.id);
 
-      console.log(`[AuthContext] (ID: ${currentFetchId}) Checking companies table...`);
+      console.log(`[AuthContext] (ID: ${currentFetchId}) Fetching profile and company in parallel...`);
 
-      // 1. Check if user has a company (with timeout)
-      const fetchCompany = async () => {
-        return supabase
-          .from('companies')
-          .select('id, slug, profile_id')
-          .eq('profile_id', session.user.id);
+      // Helper for race with timeout that respects abort signal
+      const raceWithTimeout = async <T,>(promise: Promise<T>, ms: number, signal: AbortSignal, label: string) => {
+        let timer: NodeJS.Timeout;
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new Error('TIMEOUT')), ms);
+        });
+
+        // Cleanup function for the timer
+        const cleanup = () => clearTimeout(timer);
+
+        try {
+          const result = await Promise.race([promise, timeoutPromise]);
+          cleanup();
+          return result;
+        } catch (err: any) {
+          cleanup();
+          // If aborted, don't throw TIMEOUT, throw AbortError or just return null
+          if (signal.aborted) throw new Error('AbortError');
+          throw err;
+        }
       };
 
-      const timeout = (ms: number) => new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), ms));
+      const TIMEOUT_MS = 15000;
 
-      let result: any;
-      try {
-        result = await Promise.race([fetchCompany(), timeout(5000)]);
-      } catch (err: any) {
-        console.error(`[AuthContext] (ID: ${currentFetchId}) Company check timed out or failed:`, err);
-        result = { data: null, error: err };
-      }
+      const [companyResult, profileResult] = await Promise.allSettled([
+        raceWithTimeout(
+          supabase.from('companies').select('id, slug, profile_id').eq('profile_id', session.user.id).abortSignal(abortController.signal),
+          TIMEOUT_MS,
+          abortController.signal,
+          'Company'
+        ),
+        raceWithTimeout(
+          supabase.from('profiles').select('role, full_name, avatar_url, user_type').eq('id', session.user.id).maybeSingle().abortSignal(abortController.signal),
+          TIMEOUT_MS,
+          abortController.signal,
+          'Profile'
+        )
+      ]);
 
-      const { data: companyData, error: companyError } = result;
-
-      // If a newer fetch started, stop immediately
-      if (currentFetchId !== fetchIdRef.current) {
-        console.log(`[AuthContext] (ID: ${currentFetchId}) Superseded, stopping.`);
+      // If a newer fetch started or aborted, stop immediately
+      if (currentFetchId !== fetchIdRef.current || abortController.signal.aborted) {
         return;
       }
 
-      if (companyError) {
-        if (!companyError.message?.includes('AbortError')) {
-          console.error(`[AuthContext] (ID: ${currentFetchId}) Error checking company existence:`, companyError);
+      // 1. Process Company Result
+      if (companyResult.status === 'fulfilled') {
+        const { data: companyData, error: companyError } = companyResult.value as any;
+        if (companyError) {
+          console.error(`[AuthContext] (ID: ${currentFetchId}) Company query error:`, companyError);
+        } else if (companyData && companyData.length > 0) {
+          userData.type = 'company';
+          userData.companySlug = companyData[0].slug;
         }
-      } else if (companyData && companyData.length > 0) {
-        console.log(`[AuthContext] (ID: ${currentFetchId}) Found company:`, companyData[0].slug);
-        userData.type = 'company';
-        userData.companySlug = companyData[0].slug;
-      }
-
-      // 2. Fetch role and latest profile data
-      console.log(`[AuthContext] (ID: ${currentFetchId}) Fetching profile data...`);
-
-      const fetchProfile = async () => {
-        return supabase
-          .from('profiles')
-          .select('role, full_name, avatar_url, user_type')
-          .eq('id', session.user.id)
-          .maybeSingle();
-      };
-
-      let profileResult: any;
-      try {
-        profileResult = await Promise.race([fetchProfile(), timeout(5000)]);
-      } catch (err: any) {
-        console.error(`[AuthContext] (ID: ${currentFetchId}) Profile fetch timed out or failed:`, err);
-        profileResult = { data: null, error: err };
-      }
-
-      const { data: profileData, error: profileError } = profileResult;
-
-      if (currentFetchId !== fetchIdRef.current) {
-        console.log(`[AuthContext] (ID: ${currentFetchId}) Superseded, stopping.`);
-        return;
-      }
-
-      if (profileError) {
-        if (!profileError.message?.includes('AbortError')) {
-          console.error(`[AuthContext] (ID: ${currentFetchId}) Error fetching profile data:`, profileError);
+      } else {
+        const reason = companyResult.reason;
+        if (reason?.message !== 'AbortError') {
+          console.warn(`[AuthContext] (ID: ${currentFetchId}) Company fetch failed/timed out:`, reason);
         }
       }
 
-      if (profileData) {
-        console.log(`[AuthContext] (ID: ${currentFetchId}) Profile found:`, profileData.full_name);
-        if (profileData.role) userData.role = profileData.role as any;
-        if (profileData.full_name) userData.name = profileData.full_name;
-        if (profileData.avatar_url) userData.avatar = profileData.avatar_url;
-        if (profileData.user_type) userData.type = profileData.user_type as any;
+      // 2. Process Profile Result
+      if (profileResult.status === 'fulfilled') {
+        const { data: profileData, error: profileError } = profileResult.value as any;
+        if (profileError) {
+          console.error(`[AuthContext] (ID: ${currentFetchId}) Profile query error:`, profileError);
+        } else if (profileData) {
+          if (profileData.role) userData.role = profileData.role as any;
+          if (profileData.full_name) userData.name = profileData.full_name;
+          if (profileData.avatar_url) userData.avatar = profileData.avatar_url;
+          if (profileData.user_type) userData.type = profileData.user_type as any;
+        }
+      } else {
+        const reason = profileResult.reason;
+        if (reason?.message !== 'AbortError') {
+          console.warn(`[AuthContext] (ID: ${currentFetchId}) Profile fetch failed/timed out:`, reason);
+        }
       }
 
       // Final check before committing state
@@ -141,8 +151,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (mountedRef.current && currentFetchId === fetchIdRef.current) {
         console.log(`[AuthContext] (ID: ${currentFetchId}) Fetch complete. Releasing loading state.`);
         setLoading(false);
-      } else {
-        console.log(`[AuthContext] (ID: ${currentFetchId}) Finally cleanup, but not latest. Current: ${fetchIdRef.current}`);
       }
     }
   };

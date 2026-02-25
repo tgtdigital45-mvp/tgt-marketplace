@@ -14,7 +14,7 @@ const PlansPage: React.FC = () => {
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center max-w-3xl mx-auto mb-16">
-                    <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl">
+                    <h1 className="font-display text-4xl font-extrabold text-gray-900 sm:text-5xl">
                         Acelere o crescimento do seu negócio
                     </h1>
                     <p className="mt-4 text-xl text-gray-600">
@@ -26,7 +26,7 @@ const PlansPage: React.FC = () => {
                     {/* Grátis */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 flex flex-col hover:shadow-lg transition-shadow duration-300">
                         <div className="mb-6">
-                            <h3 className="text-xl font-semibold text-gray-900">Básico</h3>
+                            <h3 className="font-display text-xl font-semibold text-gray-900">Básico</h3>
                             <div className="mt-4 flex items-baseline">
                                 <span className="text-4xl font-extrabold text-gray-900">Grátis</span>
                                 <span className="ml-1 text-gray-500">/sempre</span>
@@ -68,7 +68,7 @@ const PlansPage: React.FC = () => {
                             </span>
                         </div>
                         <div className="mb-6">
-                            <h3 className="text-xl font-semibold text-brand-primary">Profissional</h3>
+                            <h3 className="font-display text-xl font-semibold text-brand-primary">Profissional</h3>
                             <div className="mt-4 flex items-baseline">
                                 <span className="text-4xl font-extrabold text-gray-900">R$ 59</span>
                                 <span className="ml-1 text-gray-500">/mês</span>
@@ -107,7 +107,7 @@ const PlansPage: React.FC = () => {
                     {/* Enterprise */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 flex flex-col hover:shadow-lg transition-shadow duration-300">
                         <div className="mb-6">
-                            <h3 className="text-xl font-semibold text-gray-900">Enterprise</h3>
+                            <h3 className="font-display text-xl font-semibold text-gray-900">Enterprise</h3>
                             <div className="mt-4 flex items-baseline">
                                 <span className="text-4xl font-extrabold text-gray-900">Sob Consulta</span>
                             </div>

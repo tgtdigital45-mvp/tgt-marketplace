@@ -3,7 +3,8 @@ import FileUpload from '@/components/FileUpload';
 import { supabase } from '@tgt/shared';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import { DbPortfolioItem } from '@tgt/shared';
+import { PortfolioItem as DbPortfolioItem } from '@tgt/shared';
+import OptimizedImage from '@/components/ui/OptimizedImage';
 
 const DashboardPortfolioPage: React.FC = () => {
     const { user } = useAuth();
@@ -175,7 +176,6 @@ const DashboardPortfolioPage: React.FC = () => {
                                 onFileChange={handleFileUpload}
                                 accept="image/*"
                                 maxSizeMb={5}
-                                className="w-full sm:w-auto"
                             />
                             {uploading && <span className="text-sm text-gray-500 ml-2">Enviando...</span>}
                         </div>
@@ -208,14 +208,13 @@ const DashboardPortfolioPage: React.FC = () => {
                             onFileChange={handleFileUpload}
                             accept="image/*"
                             maxSizeMb={5}
-                            className=""
                         />
                     </div>
 
                     <button
                         onClick={triggerUpload}
                         disabled={uploading}
-                        className="inline-flex items-center justify-center font-bold rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm active:scale-95 bg-[#FF6B35] text-white hover:bg-[#E85D2E] focus:ring-[#FF6B35] shadow-orange-200 px-6 py-3 text-sm ">
+                        className="inline-flex items-center justify-center font-bold rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm active:scale-95 bg-brand-primary text-white hover:bg-brand-primary-hover focus:ring-brand-primary shadow-orange-200 px-6 py-3 text-sm ">
                         {uploading ? 'Enviando...' : 'Adicionar ao Portfólio'}
                     </button>
 
@@ -226,7 +225,12 @@ const DashboardPortfolioPage: React.FC = () => {
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {items.map(item => (
                         <div key={item.id} className="group relative aspect-square rounded-lg overflow-hidden bg-gray-100 shadow-sm border border-gray-100">
-                            <img src={item.image_url} alt={item.title || 'Portfolio Item'} className="w-full h-full object-cover" />
+                            <OptimizedImage
+                                src={item.image_url}
+                                alt={item.title || 'Portfolio Item'}
+                                className="w-full h-full object-cover"
+                                optimizedWidth={400}
+                            />
                             <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button
                                     onClick={() => handleDelete(item.id)}

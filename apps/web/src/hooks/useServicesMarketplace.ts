@@ -72,7 +72,8 @@ export function useServicesMarketplace({
                     status
                 )
             `, { count: 'exact' })
-            .eq('is_active', true);
+            .eq('is_active', true)
+            .is('deleted_at', null); // Soft Delete Filter
 
         // Service type filter
         if (serviceFilter === 'remote') {

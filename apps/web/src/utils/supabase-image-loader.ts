@@ -40,8 +40,8 @@ export function getOptimizedImageUrl(
     quality: number = 75
 ): string {
     // Para MVP no plano gratuito, a API render/image pode falhar. Usando URL direta.
-    if (path.startsWith('http')) {
-        return path; // Retorna a URL direta, seja do Supabase ou externa
+    if (path.startsWith('http') || path.startsWith('blob:') || path.startsWith('data:')) {
+        return path; // Retorna a URL direta, seja do Supabase, externa ou blob local
     }
     return `${SUPABASE_URL}/storage/v1/object/public/${path}`;
 }
@@ -51,7 +51,7 @@ export function getOptimizedImageUrlByHeight(
     height: number,
     quality: number = 75
 ): string {
-    if (path.startsWith('http')) {
+    if (path.startsWith('http') || path.startsWith('blob:') || path.startsWith('data:')) {
         return path;
     }
     return `${SUPABASE_URL}/storage/v1/object/public/${path}`;
@@ -63,7 +63,7 @@ export function getOptimizedImageUrlExact(
     height: number,
     quality: number = 75
 ): string {
-    if (path.startsWith('http')) {
+    if (path.startsWith('http') || path.startsWith('blob:') || path.startsWith('data:')) {
         return path;
     }
     return `${SUPABASE_URL}/storage/v1/object/public/${path}`;

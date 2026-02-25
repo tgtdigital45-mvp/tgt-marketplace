@@ -3,12 +3,12 @@ import { supabase } from '@tgt/shared';
 import { Service } from '@tgt/shared';
 
 export const useFeaturedServices = () => {
-    return useQuery({
-        queryKey: ['featured-services'],
-        queryFn: async () => {
-            const { data, error } = await supabase
-                .from('services')
-                .select(`
+  return useQuery({
+    queryKey: ['featured-services'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('services')
+        .select(`
                   *,
                   companies (
                     id,
@@ -21,13 +21,14 @@ export const useFeaturedServices = () => {
                     verified
                   )
                 `)
-                .order('created_at', { ascending: false })
-                .limit(6);
+        .order('created_at', { ascending: false })
+        .is('deleted_at', null)
+        .limit(6);
 
-            if (error) throw error;
+      if (error) throw error;
 
-            return data as Service[];
-        },
-        staleTime: 1000 * 60 * 30, // 30 minutes
-    });
+      return data as Service[];
+    },
+    staleTime: 1000 * 60 * 30, // 30 minutes
+  });
 };

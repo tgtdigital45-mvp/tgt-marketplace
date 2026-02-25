@@ -9,21 +9,21 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ({ className = '', children, isLoading, variant = 'primary', size = 'md', disabled, ...props }, ref) => {
-        const baseStyles = 'inline-flex items-center justify-center font-bold rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-95 disabled:hover:translate-y-0 disabled:hover:shadow-sm';
+        const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-[var(--radius-box)] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 transition-all duration-250 ease-out disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:hover:translate-y-0 disabled:hover:shadow-none whitespace-nowrap';
 
         const variants = {
-            primary: 'bg-[#FF6B35] text-white hover:bg-[#E85D2E] focus:ring-[#FF6B35] shadow-orange-200',
-            solid: 'bg-[#FF6B35] text-white hover:bg-[#E85D2E] focus:ring-[#FF6B35] shadow-orange-200', // Alias for primary/orange
-            secondary: 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 focus:ring-gray-200',
-            outline: 'border-2 border-brand-primary text-brand-primary bg-transparent hover:bg-brand-primary/5 focus:ring-brand-primary',
-            ghost: 'bg-transparent text-gray-600 hover:bg-gray-100 focus:ring-gray-500 shadow-none',
-            danger: 'bg-red-500 text-white hover:bg-red-600 focus:ring-red-500 shadow-red-200',
+            primary: 'bg-brand-primary text-white hover:bg-brand-primary-hover focus-visible:ring-brand-primary shadow-sm',
+            solid: 'bg-brand-primary text-white hover:bg-brand-primary-hover focus-visible:ring-brand-primary shadow-sm',
+            secondary: 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 focus-visible:ring-gray-200 shadow-sm',
+            outline: 'border-2 border-brand-primary text-brand-primary bg-transparent hover:bg-brand-primary/5 focus-visible:ring-brand-primary',
+            ghost: 'bg-transparent text-gray-600 hover:bg-gray-100 focus-visible:ring-gray-500 shadow-none hover:shadow-none',
+            danger: 'bg-red-500 text-white hover:bg-red-600 focus-visible:ring-red-500 shadow-sm',
         };
 
         const sizes = {
-            sm: 'px-3 py-1.5 text-xs',
-            md: 'px-6 py-3 text-sm',
-            lg: 'px-8 py-4 text-base',
+            sm: 'px-3 py-1.5 text-xs gap-1.5',
+            md: 'px-5 sm:px-6 py-2.5 sm:py-3 text-sm gap-2',
+            lg: 'px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base gap-2',
         };
 
         return (
@@ -33,7 +33,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                 className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
                 {...props}
             >
-                {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {isLoading && <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />}
                 {children}
             </button>
         );

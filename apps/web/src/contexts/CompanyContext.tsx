@@ -10,6 +10,8 @@ interface Address {
     city: string;
     state: string;
     cep: string;
+    latitude?: number;
+    longitude?: number;
 }
 
 export interface CompanyData {
@@ -31,6 +33,7 @@ export interface CompanyData {
     current_plan_tier?: 'starter' | 'pro' | 'agency';
     subscription_status?: string;
     availability?: Record<string, any>;
+    h3_index?: string | null;
 }
 
 interface CompanyContextType {
@@ -101,7 +104,9 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
                 state: rawAddress?.state || '',
                 cep: rawAddress?.cep || '',
                 number: rawAddress?.number || '',
-                district: rawAddress?.district || ''
+                district: rawAddress?.district || '',
+                latitude: rawAddress?.latitude,
+                longitude: rawAddress?.longitude
             };
 
             console.log("[CompanyContext] Successfully loaded company for slug:", companyRecord.slug);

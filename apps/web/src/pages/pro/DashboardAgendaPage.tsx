@@ -4,8 +4,9 @@ import { supabase } from '@tgt/shared';
 import Button from '@/components/ui/Button';
 import { useToast } from '@/contexts/ToastContext';
 import { BookingWithCompany } from '@tgt/shared';
-import { Calendar as CalendarIcon, List, Check, X, ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, List, Check, X, ChevronLeft, ChevronRight, MessageCircle, Sparkles, Loader2, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { gemini } from '@/utils/gemini';
 
 import { DAYS, DAY_LABELS, DaySchedule, CompanyAvailability } from '@/utils/availability';
 
@@ -28,6 +29,7 @@ const DashboardAgendaPage = () => {
     // Availability State
     const [availability, setAvailability] = useState<Record<string, DaySchedule>>({});
     const [worksOnHolidays, setWorksOnHolidays] = useState(false);
+    const [generatingEmailId, setGeneratingEmailId] = useState<string | null>(null);
 
     useEffect(() => {
         if (company?.availability) {
@@ -90,6 +92,25 @@ const DashboardAgendaPage = () => {
         } catch (err) {
             console.error(err);
             addToast('Erro ao atualizar agendamento.', 'error');
+        }
+    };
+
+    const handleGenerateRescheduleEmail = async (booking: any) => {
+        try {
+            setGeneratingEmailId(booking.id);
+            const email = await gemini.generateRescheduleEmail({
+                service_title: booking.service_title,
+                booking_date: new Date(booking.booking_date).toLocaleDateString(),
+                booking_time: booking.booking_time
+            });
+
+            await navigator.clipboard.writeText(email);
+            addToast('E-mail de reagendamento copiado para o clipboard!', 'success');
+        } catch (err: any) {
+            console.error(err);
+            addToast('Erro ao gerar e-mail sugerido.', 'error');
+        } finally {
+            setGeneratingEmailId(null);
         }
     };
 
@@ -380,6 +401,22 @@ const DashboardAgendaPage = () => {
                                                         <MessageCircle size={16} />
                                                     </button>
                                                 </div>
+                                            )}
+
+                                            {(booking.status as string) === 'rejected' && (
+                                                <button
+                                                    onClick={() => handleGenerateRescheduleEmail(booking)}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-primary/5 text-brand-primary rounded-lg text-xs font-bold hover:bg-brand-primary/10 transition-colors disabled:opacity-50"
+                                                    title="Gerar Sugestão de Reagendamento"
+                                                    disabled={!!generatingEmailId}
+                                                >
+                                                    {generatingEmailId === booking.id ? (
+                                                        <Loader2 size={14} className="animate-spin" />
+                                                    ) : (
+                                                        <Sparkles size={14} />
+                                                    )}
+                                                    Reagendar
+                                                </button>
                                             )}
                                         </div>
                                     </div>

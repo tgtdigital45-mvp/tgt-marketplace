@@ -61,10 +61,26 @@ const CompanyProfilePage: React.FC = () => {
   if (loading) {
     return (
       <div className="bg-gray-50 min-h-screen">
-        <div className="w-full h-64 bg-gray-200 animate-pulse mt-14" />
-        <div className="container mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-4"><LoadingSkeleton className="h-96 w-full rounded-xl" /></div>
-          <div className="lg:col-span-8 space-y-6"><LoadingSkeleton className="h-40 w-full rounded-xl" /></div>
+        {/* Full width banner skeleton */}
+        <div className="w-full h-64 md:h-80 bg-gray-200 animate-pulse" />
+
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 -mt-20 md:-mt-8 relative z-10 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Sidebar skeleton */}
+            <div className="lg:col-span-4 order-2 lg:order-1 sticky top-24">
+              <LoadingSkeleton className="h-[600px] w-full rounded-2xl shadow-sm" />
+            </div>
+            {/* Main content skeleton */}
+            <div className="lg:col-span-8 order-1 lg:order-2 space-y-6">
+              <LoadingSkeleton className="h-16 w-full rounded-xl shadow-sm" />
+              <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <LoadingSkeleton className="aspect-video w-full rounded-xl" />
+                  <LoadingSkeleton className="aspect-video w-full rounded-xl" />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -210,7 +226,7 @@ const CompanyProfilePage: React.FC = () => {
                 {activeTab === 'about' && (
                   <div className="space-y-8 animate-in fade-in duration-300">
                     <section>
-                      <h3 className="text-lg font-bold text-gray-900 mb-3">Sobre</h3>
+                      <h3 className="font-display text-lg font-bold text-gray-900 mb-3">Sobre</h3>
                       <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">{company.description || "Sem descrição."}</p>
                     </section>
 
@@ -248,11 +264,16 @@ const CompanyProfilePage: React.FC = () => {
                     {/* Portfolio */}
                     {company.portfolio.length > 0 && (
                       <section className="pt-6 border-t border-gray-100">
-                        <h3 className="text-lg font-bold text-gray-900 mb-4">Portfólio</h3>
+                        <h3 className="font-display text-lg font-bold text-gray-900 mb-4">Portfólio</h3>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                           {company.portfolio.map((item, idx) => (
                             <div key={item.id || idx} className="aspect-square rounded-xl overflow-hidden bg-gray-100 hover:opacity-90 transition-opacity shadow-sm border border-gray-200">
-                              <img src={item.url} alt={item.caption} className="w-full h-full object-cover" />
+                              <OptimizedImage
+                                src={item.image_url}
+                                alt={item.title}
+                                className="w-full h-full object-cover"
+                                optimizedWidth={400}
+                              />
                             </div>
                           ))}
                         </div>
@@ -263,7 +284,7 @@ const CompanyProfilePage: React.FC = () => {
                     <section className="pt-8 border-t border-gray-100 mt-8">
                       <div className="flex items-center gap-2 mb-4">
                         <MapPinIcon className="w-5 h-5 text-brand-primary" />
-                        <h3 className="text-lg font-bold text-gray-900">Localização</h3>
+                        <h3 className="font-display text-lg font-bold text-gray-900">Localização</h3>
                       </div>
 
                       {company.address ? (
@@ -320,7 +341,7 @@ const CompanyProfilePage: React.FC = () => {
             {/* Similar Companies */}
             {similarCompanies.length > 0 && (
               <div className="mt-12">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Também em {company.category}</h2>
+                <h2 className="font-display text-xl font-bold text-gray-900 mb-6">Também em {company.category}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {deduplicateCompanies(similarCompanies).slice(0, 2).map(comp => (
                     <CompanyCard key={comp.id} company={comp} />
@@ -341,11 +362,11 @@ const CompanyProfilePage: React.FC = () => {
           onClose={() => setIsBookingModalOpen(false)}
           service={selectedService}
           companyName={company.companyName}
-          canCheckout={company?.stripe_charges_enabled && company?.is_active !== false}
+          canCheckout={company?.is_active !== false && (!selectedService || selectedService.requires_quote || company?.stripe_charges_enabled !== false)}
           checkoutDisabledReason={
             company?.is_active === false
               ? "Esta empresa está temporariamente suspensa."
-              : !company?.stripe_charges_enabled
+              : (selectedService && !selectedService.requires_quote && company?.stripe_charges_enabled === false)
                 ? "Esta empresa está finalizando a configuração de pagamentos e não pode receber agendamentos no momento."
                 : undefined
           }

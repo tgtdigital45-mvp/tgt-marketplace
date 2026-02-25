@@ -275,7 +275,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
                                 <Link
                                     to="/cadastro/cliente"
                                     onClick={handleLinkClick}
-                                    className="flex items-center justify-center w-full px-4 py-3 bg-[#FF6B35] text-white rounded-xl font-bold hover:bg-[#FF5722] transition-all min-h-[48px] shadow-md hover:shadow-lg"
+                                    className="flex items-center justify-center w-full px-4 py-3 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-primary-hover transition-all min-h-[48px] shadow-md hover:shadow-lg"
                                 >
                                     Cadastrar
                                 </Link>

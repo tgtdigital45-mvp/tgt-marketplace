@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@tgt/shared';
 import { Service, DbCompany } from '@tgt/shared';
@@ -11,6 +11,8 @@ import SEO from '@/components/SEO';
 import ServiceGallery from '@/components/service/ServiceGallery';
 import ServiceAttributes from '@/components/service/ServiceAttributes';
 import ServiceComparisonTable from '@/components/service/ServiceComparisonTable';
+const ServiceBookingModal = lazy(() => import('@/components/ServiceBookingModal'));
+
 import { Disclosure } from '@headlessui/react';
 import { ChevronUpIcon, CheckIcon, StarIcon, MapPinIcon, ClockIcon, GlobeAmericasIcon, UserGroupIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/solid';
 
@@ -139,6 +141,7 @@ const ServiceDetailsPage = () => {
     const [relatedServices, setRelatedServices] = useState<Service[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
     useEffect(() => {
         if (!id) return;
@@ -150,6 +153,7 @@ const ServiceDetailsPage = () => {
                     .from('services')
                     .select(`*, company:companies (*) `)
                     .eq('id', id)
+                    .is('deleted_at', null)
                     .single();
 
                 if (error) throw error;
@@ -164,6 +168,7 @@ const ServiceDetailsPage = () => {
                         .from('services')
                         .select(`*, company:companies(slug, company_name, logo_url)`)
                         .eq('category_tag', data.category_tag)
+                        .is('deleted_at', null)
                         .neq('id', data.id)
                         .limit(4);
                     setRelatedServices((related as any) || []);
@@ -183,9 +188,7 @@ const ServiceDetailsPage = () => {
 
     const handleCheckout = (tier: string) => {
         if (service?.requires_quote) {
-            // For now, redirect to company profile where they can use "Fale Comigo"
-            // In the future, this could open a direct message modal
-            navigate(`/empresa/${company?.slug}`);
+            setIsBookingModalOpen(true);
             return;
         }
 
@@ -204,7 +207,30 @@ const ServiceDetailsPage = () => {
         }
     };
 
-    if (loading) return <div className="min-h-screen pt-20 flex justify-center"><LoadingSkeleton className="w-full max-w-4xl h-screen" /></div>;
+    if (loading) return (
+        <div className="min-h-screen bg-white pb-20 pt-28">
+            <div className="container mx-auto px-4 max-w-7xl animate-pulse">
+                <div className="mb-8 space-y-4">
+                    <div className="h-4 w-32 bg-gray-200 rounded" />
+                    <div className="h-10 w-3/4 bg-gray-200 rounded" />
+                    <div className="flex gap-4">
+                        <div className="h-8 w-32 bg-gray-200 rounded" />
+                        <div className="h-8 w-32 bg-gray-200 rounded" />
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                    <div className="lg:col-span-8 space-y-8">
+                        <div className="aspect-video w-full bg-gray-200 rounded-2xl" />
+                        <div className="h-40 w-full bg-gray-100 rounded-xl" />
+                        <div className="h-60 w-full bg-gray-100 rounded-xl" />
+                    </div>
+                    <div className="lg:col-span-4">
+                        <div className="h-[450px] w-full bg-gray-100 rounded-2xl" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
     if (error || !service) return <div className="min-h-screen pt-20 text-center">Erro ao carregar serviço</div>;
 
     const sellerName = company?.company_name || "Vendedor";
@@ -227,7 +253,7 @@ const ServiceDetailsPage = () => {
                         <span>/</span>
                         <Link to={`/servicos?category=${service.category_tag}`} className="hover:text-brand-primary">{service.category_tag || 'Serviços'}</Link>
                     </nav>
-                    <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4 leading-tight">{service.title}</h1>
+                    <h1 className="font-display text-3xl md:text-4xl font-extrabold text-gray-900 mb-4 leading-tight">{service.title}</h1>
 
                     <div className="flex flex-wrap items-center gap-4 text-sm">
                         <div className="flex items-center gap-2">
@@ -264,7 +290,7 @@ const ServiceDetailsPage = () => {
 
                         {/* 3. Highlighted Reviews (Mocked for now) */}
                         <div className="border-b border-gray-100 pb-8">
-                            <h3 className="font-bold text-xl text-gray-900 mb-4">O que as pessoas estão dizendo</h3>
+                            <h3 className="font-display font-bold text-xl text-gray-900 mb-4">O que as pessoas estão dizendo</h3>
                             <div className="grid md:grid-cols-2 gap-4">
                                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
                                     <div className="flex items-center gap-2 mb-2">
@@ -291,7 +317,7 @@ const ServiceDetailsPage = () => {
 
                         {/* 4. About Service */}
                         <div className="space-y-6">
-                            <h2 className="text-2xl font-bold text-gray-900">Sobre este serviço</h2>
+                            <h2 className="font-display text-2xl font-bold text-gray-900">Sobre este serviço</h2>
                             <div className="prose prose-purple max-w-none text-gray-600 whitespace-pre-wrap">
                                 {service.description}
                             </div>
@@ -317,7 +343,7 @@ const ServiceDetailsPage = () => {
 
                         {/* 5 & 8. Plans & Comparison */}
                         <div id="compare-packages" className="space-y-6">
-                            <h2 className="text-2xl font-bold text-gray-900">Compare os Pacotes</h2>
+                            <h2 className="font-display text-2xl font-bold text-gray-900">Compare os Pacotes</h2>
                             <p className="text-gray-600">Escolha o plano ideal para a sua necessidade.</p>
 
                             {service.packages && (
@@ -331,7 +357,7 @@ const ServiceDetailsPage = () => {
 
                         {/* 7. About The Company (Advanced) */}
                         <div className="bg-gray-50 rounded-2xl p-8 border border-gray-200">
-                            <h2 className="text-xl font-bold text-gray-900 mb-6">Sobre a Empresa</h2>
+                            <h2 className="font-display text-xl font-bold text-gray-900 mb-6">Sobre a Empresa</h2>
                             <div className="flex flex-col md:flex-row gap-8">
                                 <div className="flex-shrink-0 text-center md:text-left">
                                     <div className="w-24 h-24 rounded-full bg-white mx-auto md:mx-0 overflow-hidden border border-gray-200 shadow-sm mb-3">
@@ -373,7 +399,7 @@ const ServiceDetailsPage = () => {
                         {/* 11. FAQ */}
                         {service.faq && service.faq.length > 0 && (
                             <div className="space-y-6">
-                                <h2 className="text-xl font-bold text-gray-900">Perguntas Frequentes</h2>
+                                <h2 className="font-display text-xl font-bold text-gray-900">Perguntas Frequentes</h2>
                                 <div className="space-y-4">
                                     {service.faq.map((item, index) => (
                                         <Disclosure key={index} as="div" className="border-b border-gray-200 pb-4">
@@ -397,7 +423,7 @@ const ServiceDetailsPage = () => {
                         {/* 9. Related Services */}
                         {relatedServices.length > 0 && (
                             <div className="pt-10 border-t border-gray-100">
-                                <h2 className="text-xl font-bold text-gray-900 mb-6">Serviços Semelhantes</h2>
+                                <h2 className="font-display text-xl font-bold text-gray-900 mb-6">Serviços Semelhantes</h2>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                                     {relatedServices.map(rel => (
                                         <Link key={rel.id} to={`/servico/${rel.id}`} className="group block">
@@ -424,11 +450,11 @@ const ServiceDetailsPage = () => {
                             packages={service.packages}
                             onCheckout={handleCheckout}
                             requiresQuote={service.requires_quote}
-                            canCheckout={company?.is_active !== false && (company as any).checkout_enabled !== false}
+                            canCheckout={company?.is_active !== false && (service.requires_quote || company?.stripe_charges_enabled !== false)}
                             checkoutDisabledReason={
                                 company?.is_active === false
                                     ? "Esta empresa está temporariamente suspensa."
-                                    : (company as any).checkout_enabled === false
+                                    : (!service.requires_quote && company?.stripe_charges_enabled === false)
                                         ? "Esta empresa está finalizando a configuração de pagamentos e não pode receber agendamentos no momento."
                                         : undefined
                             }
@@ -444,6 +470,25 @@ const ServiceDetailsPage = () => {
                     </div>
                 </div>
             </div>
+
+            <Suspense fallback={null}>
+                {isBookingModalOpen && (
+                    <ServiceBookingModal
+                        isOpen={isBookingModalOpen}
+                        onClose={() => setIsBookingModalOpen(false)}
+                        service={service}
+                        companyName={company?.company_name || ""}
+                        canCheckout={company?.is_active !== false && (service.requires_quote || company?.stripe_charges_enabled !== false)}
+                        checkoutDisabledReason={
+                            company?.is_active === false
+                                ? "Esta empresa está temporariamente suspensa."
+                                : (!service.requires_quote && company?.stripe_charges_enabled === false)
+                                    ? "Esta empresa está finalizando a configuração de pagamentos e não pode receber agendamentos no momento."
+                                    : undefined
+                        }
+                    />
+                )}
+            </Suspense>
         </main>
     );
 };

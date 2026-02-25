@@ -139,7 +139,7 @@ const AboutPage: React.FC = () => {
               <Button
                 size="lg"
                 variant="solid"
-                className="bg-[#FF6B35] hover:bg-[#E85D2E] text-white border-none px-12 py-4 h-auto text-lg font-bold shadow-lg hover:shadow-orange-500/20 rounded-xl transition-all transform hover:-translate-y-1"
+                className="bg-brand-primary hover:bg-brand-primary-hover text-white border-none px-12 py-4 h-auto text-lg font-bold shadow-lg hover:shadow-orange-500/20 rounded-xl transition-all transform hover:-translate-y-1"
               >
                 Falar com Consultor
               </Button>

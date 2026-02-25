@@ -53,6 +53,7 @@ const DashboardServicosPage: React.FC = () => {
           .from('services')
           .select('*')
           .eq('company_id', companyData.id)
+          .is('deleted_at', null) // Soft Delete Filter
           .order('created_at', { ascending: false });
 
         if (servicesError) throw servicesError;
@@ -92,7 +93,14 @@ const DashboardServicosPage: React.FC = () => {
   const handleDelete = async (serviceId: string) => {
     if (window.confirm("Tem certeza que deseja excluir este serviço?")) {
       try {
-        const { error } = await supabase.from('services').delete().eq('id', serviceId);
+        const { error } = await supabase
+          .from('services')
+          .update({
+            deleted_at: new Date().toISOString(),
+            is_active: false
+          })
+          .eq('id', serviceId);
+
         if (error) throw error;
 
         setServices(prev => prev.filter(s => s.id !== serviceId));

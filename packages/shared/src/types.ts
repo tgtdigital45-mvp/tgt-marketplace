@@ -32,6 +32,8 @@ export interface Company {
   profileId: string;
   slug: string;
   companyName: string;
+  legalName?: string;
+  cnpj?: string;
   displayName?: string;
   logo: string;
   coverImage?: string;
@@ -39,12 +41,12 @@ export interface Company {
   rating: number;
   distance?: number;
   reviewCount: number;
-  verified: boolean;
+  verified?: boolean;
   level: string;
   description: string;
-  location: string;
-  memberSince: string;
-  responseTime: string;
+  location?: string;
+  memberSince?: string;
+  responseTime?: string;
   services: Service[];
   reviews: Review[];
   portfolio: PortfolioItem[];
@@ -69,6 +71,7 @@ export interface Company {
   };
   website?: string;
   phone?: string;
+  email?: string;
 }
 
 export interface Service {
@@ -107,6 +110,10 @@ export interface Service {
   use_company_availability?: boolean;
   pricing_model?: 'hourly' | 'daily' | 'fixed';
   subcategory?: string;
+  registration_number?: string;
+  registration_state?: string;
+  registration_image?: string;
+  certification_id?: string;
   company?: DbCompany;
 }
 
@@ -137,6 +144,24 @@ export interface DbCompany {
   level?: string;
   clients_count?: number;
   recurring_clients_percent?: number;
+  profile_id: string;
+  legal_name?: string;
+  cnpj?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  cover_image_url?: string;
+  city?: string;
+  state?: string;
+  created_at?: string;
+}
+
+export interface DbProfile {
+  id: string;
+  full_name: string;
+  avatar_url?: string;
+  user_type?: 'client' | 'company';
+  role?: string;
 }
 
 export interface DbService {
@@ -165,6 +190,10 @@ export interface DbService {
   use_company_availability?: boolean;
   pricing_model?: 'hourly' | 'daily' | 'fixed';
   subcategory?: string;
+  registration_number?: string;
+  registration_state?: string;
+  registration_image?: string;
+  certification_id?: string;
   // Joined company data
   company_name?: string;
   company_logo?: string;
@@ -175,11 +204,11 @@ export interface DbService {
 
 export interface PortfolioItem {
   id: string;
-  type: 'image' | 'video';
-  url: string;
-  thumbnailUrl?: string;
-  caption: string;
-  service_id?: string;
+  title: string;
+  description?: string;
+  image_url: string;
+  company_id?: string;
+  created_at?: string;
 }
 
 export interface Review {

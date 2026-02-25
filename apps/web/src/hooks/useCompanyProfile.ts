@@ -27,6 +27,7 @@ export const useCompanyProfile = (slug: string | undefined) => {
           portfolio_items (*)
         `)
                 .eq('slug', slug)
+                .is('services.deleted_at', null)
                 .single();
 
             if (error) throw error;
@@ -66,6 +67,14 @@ export const useCompanyProfile = (slug: string | undefined) => {
                 description: s.description,
                 price: s.price,
                 starting_price: s.starting_price || s.price, // Map starting_price
+                image: s.image_url || 'https://placehold.co/600x400',
+                category: s.category_tag || raw.category,
+                rating: raw.rating || 5,
+                reviewCount: raw.review_count || 0,
+                author: {
+                    name: raw.company_name,
+                    avatar: raw.logo_url
+                },
                 duration: s.duration,
                 company_id: s.company_id,
                 gallery: s.gallery
@@ -74,9 +83,9 @@ export const useCompanyProfile = (slug: string | undefined) => {
             // Map Portfolio (fixing image_url vs url mismatch if needed)
             const portfolio = (raw.portfolio_items || []).map(p => ({
                 id: p.id,
-                type: p.type,
-                url: p.image_url,
-                caption: p.caption || ''
+                title: p.title,
+                image_url: p.image_url,
+                description: p.description || ''
             }));
 
             // Map Owner Profile & Fetch Stats
@@ -118,6 +127,10 @@ export const useCompanyProfile = (slug: string | undefined) => {
                 rating: parseFloat(avgRating.toFixed(1)),
                 reviewCount: reviews.length,
                 description: raw.description || '',
+                verified: raw.verified || false,
+                location: raw.city && raw.state ? `${raw.city}, ${raw.state}` : '',
+                memberSince: raw.created_at ? new Date(raw.created_at).toLocaleDateString('pt-BR') : '',
+                responseTime: '1 hora', // Default value
 
                 address: {
                     street: raw.address?.street || '',

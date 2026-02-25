@@ -27,7 +27,7 @@ const UserActions: React.FC = () => {
                     <Link to="/empresa/cadastro">
                         <Button
                             variant="primary"
-                            className="bg-brand-primary text-white border border-transparent hover:bg-brand-primary/90 transition-all duration-300 rounded-xl px-6 py-2.5 font-semibold shadow-none hover:shadow-md"
+                            className="rounded-[var(--radius-box)]"
                         >
                             Começar Grátis
                         </Button>

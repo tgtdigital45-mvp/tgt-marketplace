@@ -326,22 +326,22 @@ const DashboardOverviewPage: React.FC = () => {
                             <AreaChart data={filteredChart}>
                                 <defs>
                                     <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#004E89" stopOpacity={0.8} />
-                                        <stop offset="95%" stopColor="#004E89" stopOpacity={0} />
+                                        <stop offset="5%" stopColor="var(--color-brand-secondary)" stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor="var(--color-brand-secondary)" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#A0AEC0', fontSize: 12 }} />
                                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#A0AEC0', fontSize: 12 }} />
                                 <Tooltip formatter={(value: number) => [`R$ ${value}`, 'Vendas']} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
-                                <Area type="monotone" dataKey="sales" stroke="#004E89" strokeWidth={3} fillOpacity={1} fill="url(#colorSales)" />
+                                <Area type="monotone" dataKey="sales" stroke="var(--color-brand-secondary)" strokeWidth={3} fillOpacity={1} fill="url(#colorSales)" />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
                 {/* Secondary Chart (Orders Count) */}
-                <div className="bg-gradient-to-br from-[#FF6B35] to-[#FF8C61] rounded-2xl shadow-sm p-6 text-white relative overflow-hidden">
+                <div className="bg-gradient-to-br from-brand-primary to-brand-primary/70 rounded-2xl shadow-sm p-6 text-white relative overflow-hidden">
                     <div className="relative z-10 w-full h-full flex flex-col">
                         <h3 className="text-lg font-bold mb-2">Pedidos Realizados</h3>
                         <p className="text-white/80 text-sm mb-6">Volume mensal</p>

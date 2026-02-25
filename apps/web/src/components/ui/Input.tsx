@@ -24,9 +24,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                         ref={ref}
                         id={inputId}
                         className={`
-              appearance-none block w-full px-4 py-3 border border-gray-200 
-              rounded-xl shadow-sm placeholder-gray-400 text-gray-700 bg-white
-              focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary 
+              appearance-none block w-full px-4 py-3 border border-gray-200
+              rounded-[var(--radius-box)] shadow-sm placeholder-gray-400 text-gray-700 bg-white
+              focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary
               transition-all duration-200
               sm:text-sm
               disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed

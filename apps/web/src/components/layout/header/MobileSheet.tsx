@@ -60,45 +60,45 @@ const MobileSheet: React.FC<MobileSheetProps> = ({ isOpen, onClose }) => {
                         animate={{ x: 0 }}
                         exit={{ x: '100%' }}
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                        className="relative w-[85%] max-w-sm h-full bg-white shadow-2xl flex flex-col overflow-y-auto"
+                        className="relative w-[80%] max-w-[320px] h-full bg-white shadow-2xl flex flex-col overflow-y-auto"
                     >
                         {/* Header */}
-                        <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                        <div className="p-4 sm:p-6 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
                             <Link to="/" onClick={handleLinkClick} className="flex items-center">
                                 <img
-                                    src="/logo-contratto.svg"
+                                    src="/logo-contratto.png"
                                     alt="CONTRATTO"
-                                    className="h-8 w-auto object-contain"
+                                    className="h-10 sm:h-12 w-auto object-contain"
                                 />
                             </Link>
                             <button
                                 onClick={onClose}
                                 className="p-2 rounded-xl hover:bg-gray-100 text-gray-600 transition-colors"
-                                aria-label="Close menu"
+                                aria-label="Fechar menu"
                             >
-                                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         </div>
 
                         {/* Content */}
-                        <div className="flex-1 px-4 py-6 bg-white">
+                        <div className="flex-1 px-3 sm:px-4 py-4 sm:py-6 bg-white">
                             {/* User Profile Card */}
                             {loading ? (
-                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl mb-6 animate-pulse">
-                                    <div className="h-10 w-10 bg-gray-200 rounded-full"></div>
+                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl mb-4 sm:mb-6 animate-pulse">
+                                    <div className="h-9 w-9 sm:h-10 sm:w-10 bg-gray-200 rounded-full"></div>
                                     <div className="flex-1 space-y-2">
                                         <div className="h-4 w-24 bg-gray-200 rounded"></div>
                                         <div className="h-3 w-16 bg-gray-100 rounded"></div>
                                     </div>
                                 </div>
                             ) : user ? (
-                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl mb-6">
+                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl mb-4 sm:mb-6">
                                     <OptimizedImage
                                         src={(user.type === 'company' && company?.logo_url) || user.avatar || `https://i.pravatar.cc/150?u=${user.id}`}
                                         alt={user.name}
-                                        className="h-10 w-10 rounded-full"
+                                        className="h-9 w-9 sm:h-10 sm:w-10 rounded-full flex-shrink-0"
                                     />
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-bold text-gray-900 truncate">
@@ -109,36 +109,28 @@ const MobileSheet: React.FC<MobileSheetProps> = ({ isOpen, onClose }) => {
                                 </div>
                             ) : null}
 
-                            <nav className="space-y-1">
-                                <Link
-                                    to="/servicos"
-                                    onClick={handleLinkClick}
-                                    className="flex items-center gap-3 px-4 py-3 text-base font-medium text-gray-700 hover:bg-brand-primary/5 hover:text-brand-primary rounded-xl transition-colors"
-                                >
-                                    Serviços
-                                </Link>
-                                <Link
-                                    to="/empresas"
-                                    onClick={handleLinkClick}
-                                    className="flex items-center gap-3 px-4 py-3 text-base font-medium text-gray-700 hover:bg-brand-primary/5 hover:text-brand-primary rounded-xl transition-colors"
-                                >
-                                    Empresas
-                                </Link>
-                                <Link
-                                    to="/para-empresas"
-                                    onClick={handleLinkClick}
-                                    className="flex items-center gap-3 px-4 py-3 text-base font-medium text-gray-700 hover:bg-brand-primary/5 hover:text-brand-primary rounded-xl transition-colors"
-                                >
-                                    Para Empresas
-                                </Link>
+                            <nav className="space-y-0.5 sm:space-y-1">
+                                {[
+                                    { to: '/servicos', label: 'Servicos' },
+                                    { to: '/empresas', label: 'Empresas' },
+                                    { to: '/para-empresas', label: 'Para Empresas' },
+                                ].map((link) => (
+                                    <Link
+                                        key={link.to}
+                                        to={link.to}
+                                        onClick={handleLinkClick}
+                                        className="flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base font-medium text-gray-700 hover:bg-brand-primary/5 hover:text-brand-primary rounded-xl transition-colors"
+                                    >
+                                        {link.label}
+                                    </Link>
+                                ))}
 
                                 <div className="my-2 border-t border-gray-100"></div>
 
-                                {/* Additional links can go here */}
                                 <Link
                                     to="/ajuda"
                                     onClick={handleLinkClick}
-                                    className="flex items-center gap-3 px-4 py-3 text-base font-medium text-gray-700 hover:bg-brand-primary/5 hover:text-brand-primary rounded-xl transition-colors"
+                                    className="flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base font-medium text-gray-700 hover:bg-brand-primary/5 hover:text-brand-primary rounded-xl transition-colors"
                                 >
                                     Ajuda / FAQ
                                 </Link>
@@ -146,12 +138,12 @@ const MobileSheet: React.FC<MobileSheetProps> = ({ isOpen, onClose }) => {
 
                             {/* Account Links */}
                             {user && (
-                                <div className="mt-6 pt-6 border-t border-gray-100">
-                                    <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Conta</p>
+                                <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-100">
+                                    <p className="px-3 sm:px-4 text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Conta</p>
                                     <div className="space-y-1">
                                         <button
                                             onClick={handleLogout}
-                                            className="w-full text-left flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                                            className="w-full text-left flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-colors"
                                         >
                                             Sair
                                         </button>
@@ -162,20 +154,20 @@ const MobileSheet: React.FC<MobileSheetProps> = ({ isOpen, onClose }) => {
 
                         {/* Footer Actions (unauthenticated) */}
                         {!loading && !user && (
-                            <div className="p-4 border-t border-gray-100 bg-gray-50 sticky bottom-0 space-y-3">
+                            <div className="p-3 sm:p-4 border-t border-gray-100 bg-gray-50 sticky bottom-0 space-y-2 sm:space-y-3">
                                 <Link
                                     to="/login/cliente"
                                     onClick={handleLinkClick}
-                                    className="flex items-center justify-center w-full px-4 py-3 border border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-white hover:border-gray-300 transition-all shadow-sm"
+                                    className="flex items-center justify-center w-full px-4 py-2.5 sm:py-3 border border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-white hover:border-gray-300 transition-all shadow-sm text-sm"
                                 >
                                     Entrar
                                 </Link>
                                 <Link
                                     to="/empresa/cadastro"
                                     onClick={handleLinkClick}
-                                    className="flex items-center justify-center w-full px-4 py-3 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-primary/90 transition-all shadow-md"
+                                    className="flex items-center justify-center w-full px-4 py-2.5 sm:py-3 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-primary/90 transition-all shadow-md text-sm"
                                 >
-                                    Começar Grátis
+                                    Comecar Gratis
                                 </Link>
                             </div>
                         )}

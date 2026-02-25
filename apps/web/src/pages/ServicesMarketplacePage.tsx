@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, MapPin, Wifi, Layers, Star, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { useServicesMarketplace, ServiceFilter } from '@/hooks/useServicesMarketplace';
+import OptimizedImage from '@/components/ui/OptimizedImage';
 import { DbService } from '@tgt/shared';
 
 // ─── Category definitions (must match DB category_tag values) ────────────────
@@ -37,23 +38,17 @@ const ServiceCard: React.FC<{ service: DbService }> = ({ service }) => {
             className="group block bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
         >
             {/* Thumbnail */}
-            <div className="relative h-44 bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
-                {service.image_url ? (
-                    <img
-                        src={service.image_url}
-                        alt={service.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                        <span className="text-4xl font-bold text-slate-300">
-                            {service.title.charAt(0)}
-                        </span>
-                    </div>
-                )}
+            <div className="relative aspect-video bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
+                <OptimizedImage
+                    src={service.image_url}
+                    alt={service.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    optimizedWidth={400}
+                />
+
                 {/* Service type badge */}
                 <span
-                    className={`absolute top-3 left-3 flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${isPresential
+                    className={`absolute top-3 left-3 flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold z-10 ${isPresential
                         ? 'bg-amber-100 text-amber-700'
                         : 'bg-blue-100 text-blue-700'
                         }`}
@@ -63,7 +58,7 @@ const ServiceCard: React.FC<{ service: DbService }> = ({ service }) => {
                 </span>
                 {/* Category tag */}
                 {service.category_tag && (
-                    <span className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm text-slate-600 text-xs font-medium px-2 py-1 rounded-full">
+                    <span className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm text-slate-600 text-xs font-medium px-2 py-1 rounded-full z-10">
                         {service.category_tag}
                     </span>
                 )}
@@ -73,19 +68,14 @@ const ServiceCard: React.FC<{ service: DbService }> = ({ service }) => {
             <div className="p-4">
                 {/* Company info */}
                 <div className="flex items-center gap-2 mb-2">
-                    {service.company_logo ? (
-                        <img
+                    <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-100">
+                        <OptimizedImage
                             src={service.company_logo}
                             alt={service.company_name}
-                            className="w-6 h-6 rounded-full object-cover"
+                            className="w-full h-full object-cover"
+                            optimizedWidth={64}
                         />
-                    ) : (
-                        <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center">
-                            <span className="text-xs font-bold text-slate-500">
-                                {service.company_name?.charAt(0) ?? '?'}
-                            </span>
-                        </div>
-                    )}
+                    </div>
                     <span className="text-xs text-slate-500 truncate">{service.company_name}</span>
                     {service.company_rating && service.company_rating > 0 && (
                         <span className="ml-auto flex items-center gap-0.5 text-xs text-amber-500 font-semibold">
@@ -96,7 +86,7 @@ const ServiceCard: React.FC<{ service: DbService }> = ({ service }) => {
                 </div>
 
                 {/* Title */}
-                <h3 className="font-semibold text-slate-800 text-sm leading-snug line-clamp-2 mb-3 group-hover:text-blue-600 transition-colors">
+                <h3 className="font-semibold text-slate-800 text-sm leading-snug line-clamp-2 h-10 mb-3 group-hover:text-blue-600 transition-colors">
                     {service.title}
                 </h3>
 
@@ -258,7 +248,7 @@ export default function ServicesMarketplacePage({ hideHeader = false }: { hideHe
                                 {Array.from(grouped.entries()).map(([category, items]) => (
                                     <section key={category}>
                                         <div className="flex items-center justify-between mb-4">
-                                            <h2 className="text-lg font-bold text-slate-800">{category}</h2>
+                                            <h2 className="font-display text-lg font-bold text-slate-800">{category}</h2>
                                             <button
                                                 onClick={() => setActiveCategory(category)}
                                                 className="text-sm text-blue-600 hover:underline flex items-center gap-1"
@@ -298,7 +288,7 @@ export default function ServicesMarketplacePage({ hideHeader = false }: { hideHe
                         <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-6">
                             <Search className="text-blue-500 w-10 h-10" />
                         </div>
-                        <h3 className="text-2xl font-bold text-slate-800 mb-3">
+                        <h3 className="font-display text-2xl font-bold text-slate-800 mb-3">
                             Não encontramos prestadores para "{searchQuery || activeCategory || 'esta busca'}"
                         </h3>
                         <p className="text-slate-500 mb-8 max-w-md">

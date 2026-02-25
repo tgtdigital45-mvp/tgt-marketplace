@@ -1,60 +1,65 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import Button from '@/components/ui/Button';
-import { ArrowRight, Sparkles } from 'lucide-react';
-import OptimizedImage from '@/components/ui/OptimizedImage';
+import { ArrowRight, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const SpecialistCTA: React.FC = () => {
-    return (
-        <section className="py-24 bg-white">
-            <div className="container mx-auto px-6">
-                <div className="bg-primary-600 rounded-[48px] p-10 md:p-20 relative overflow-hidden shadow-2xl flex flex-col lg:flex-row items-center gap-12">
-                    <div className="lg:w-3/5 relative z-10 text-white">
-                        <div className="flex items-center gap-2 mb-6">
-                            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white">
-                                <Sparkles size={20} />
-                            </div>
-                            <span className="text-primary-100 font-bold tracking-widest text-[10px] uppercase">Seja um Parceiro CONTRATTO</span>
-                        </div>
-
-                        <h2 className="text-4xl md:text-6xl font-bold mb-8 tracking-tight leading-tight">
-                            Compartilhe sua <span className="text-primary-200">Expertise</span> e impulsione suas vendas
-                        </h2>
-
-                        <p className="text-xl text-primary-100 mb-12 max-w-xl leading-relaxed">
-                            Junte-se a mais de 5.000 profissionais que estão transformando o comércio local através da CONTRATTO. Escala, visibilidade e tecnologia a seu favor.
-                        </p>
-
-                        <div className="flex flex-col sm:flex-row items-center gap-4">
-                            <Button className="bg-white text-primary-600 border-none h-16 px-10 rounded-2xl font-black text-lg hover:bg-primary-50 hover:scale-[1.05] transition-all shadow-xl">
-                                Cadastrar minha Empresa <ArrowRight size={22} className="ml-2" />
-                            </Button>
-                            <div className="text-primary-100 font-medium text-sm">
-                                Cadastro gratuito e verificação em até 24h.
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="lg:w-2/5 relative z-10">
-                        <div className="relative">
-                            <div className="absolute -inset-4 bg-white/10 rounded-[40px] blur-2xl" />
-                            <div className="bg-white/10 backdrop-blur-md p-4 rounded-[40px] border border-white/20 shadow-2xl">
-                                <OptimizedImage
-                                    src="https://images.unsplash.com/photo-1556761175-4b46a572b786?auto=format&fit=crop&q=80&w=800"
-                                    alt="Join as Professional"
-                                    className="rounded-[32px] w-full h-auto object-cover"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Background Decor */}
-                    <div className="absolute -top-20 -right-20 w-80 h-80 bg-white/10 rounded-full blur-[80px]" />
-                    <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-slate-900/20 rounded-full blur-[60px]" />
-                </div>
+  return (
+    <section className="py-16 sm:py-20 lg:py-28 bg-slate-50">
+      <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.6 }}
+          className="bg-primary-600 rounded-2xl sm:rounded-3xl lg:rounded-[48px] p-8 sm:p-12 md:p-16 lg:p-20 relative overflow-hidden shadow-2xl shadow-primary-600/20"
+        >
+          <div className="relative z-10 max-w-3xl mx-auto text-center text-white">
+            <div className="inline-flex items-center gap-2 mb-6 sm:mb-8">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/20 flex items-center justify-center">
+                <Sparkles size={16} className="sm:w-5 sm:h-5" />
+              </div>
+              <span className="text-primary-100 font-bold tracking-[0.15em] text-[9px] sm:text-[10px] uppercase">
+                Para Prestadores de Servico
+              </span>
             </div>
-        </section>
-    );
+
+            <h2 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4 sm:mb-6 tracking-tight leading-tight">
+              Faca parte da maior rede de prestadores do <span className="text-primary-200">Parana</span>
+            </h2>
+
+            <p className="text-sm sm:text-base lg:text-lg text-primary-100 mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed">
+              Cadastro gratuito. Verificacao em ate 24h. Comece a receber orcamentos e novos clientes ainda esta semana.
+            </p>
+
+            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mb-8 sm:mb-10 text-primary-100 text-xs sm:text-sm font-medium">
+              {['Sem mensalidade para comecar', 'Perfil verificado', 'Suporte dedicado'].map((item, i) => (
+                <span key={i} className="flex items-center gap-1.5">
+                  <CheckCircle2 size={14} className="text-primary-200" />
+                  {item}
+                </span>
+              ))}
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+              <Link
+                to="/empresa/cadastro"
+                className="inline-flex items-center justify-center bg-white !text-primary-600 h-12 sm:h-14 lg:h-16 px-8 sm:px-10 rounded-xl sm:rounded-2xl font-black text-sm sm:text-base lg:text-lg hover:bg-primary-50 hover:scale-[1.02] transition-all shadow-xl"
+              >
+                Cadastrar minha Empresa <ArrowRight size={18} className="ml-2" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Background Decorations */}
+          <div className="absolute -top-20 -right-20 w-60 sm:w-96 h-60 sm:h-96 bg-white/[0.06] rounded-full blur-[60px] sm:blur-[80px]" />
+          <div className="absolute -bottom-20 -left-20 w-48 sm:w-72 h-48 sm:h-72 bg-slate-900/10 rounded-full blur-[40px] sm:blur-[60px]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary-500/20 rounded-full blur-[150px]" />
+        </motion.div>
+      </div>
+    </section>
+  );
 };
 
 export default SpecialistCTA;
