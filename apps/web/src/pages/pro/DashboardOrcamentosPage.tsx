@@ -4,6 +4,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import Button from '@/components/ui/Button';
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
+import { motion } from 'framer-motion';
+import {
+  ChevronRight,
+  FileText,
+  Paperclip,
+  X as XIcon,
+  Inbox,
+  Send,
+  History,
+} from 'lucide-react';
 
 interface Quote {
   id: string;
@@ -128,39 +138,70 @@ const DashboardOrcamentosPage: React.FC = () => {
   const sentCount = quotes.filter(q => q.status === 'proposal_sent').length;
 
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Orçamentos</h2>
-        <p className="text-gray-500 text-sm mt-1">Responda às solicitações e envie propostas para seus clientes.</p>
-      </div>
+    <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6">
+      {/* ─── Page Header ─────────────────────────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
+          <span>Dashboard</span><ChevronRight size={12} />
+          <span className="text-gray-600 font-medium">Orcamentos</span>
+        </div>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Orcamentos</h1>
+        <p className="text-xs sm:text-sm text-gray-400 mt-0.5">
+          Responda solicitacoes e envie propostas para seus clientes
+        </p>
+      </motion.div>
 
-      {/* Tabs */}
-      <div className="flex space-x-1 border-b border-gray-200">
+      {/* ─── Pill-Style Tabs ─────────────────────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="flex gap-1 bg-gray-100 p-1 rounded-xl overflow-x-auto"
+      >
         <button
           onClick={() => setActiveTab('pending')}
-          className={`px-4 py-2 text-sm font-medium flex items-center gap-2 transition-colors ${activeTab === 'pending' ? 'text-brand-primary border-b-2 border-brand-primary' : 'text-gray-500 hover:text-gray-700'}`}
+          className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap ${
+            activeTab === 'pending'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'
+          }`}
         >
-          Recebidos
+          <Inbox size={14} className={activeTab === 'pending' ? 'text-primary-500' : ''} />
+          <span className="hidden sm:inline">Recebidos</span>
           {pendingCount > 0 && (
-            <span className="bg-yellow-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">{pendingCount}</span>
+            <span className="bg-amber-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{pendingCount}</span>
           )}
         </button>
         <button
           onClick={() => setActiveTab('sent')}
-          className={`px-4 py-2 text-sm font-medium flex items-center gap-2 transition-colors ${activeTab === 'sent' ? 'text-brand-primary border-b-2 border-brand-primary' : 'text-gray-500 hover:text-gray-700'}`}
+          className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap ${
+            activeTab === 'sent'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'
+          }`}
         >
-          Propostas Enviadas
+          <Send size={14} className={activeTab === 'sent' ? 'text-primary-500' : ''} />
+          <span className="hidden sm:inline">Propostas Enviadas</span>
           {sentCount > 0 && (
-            <span className="bg-purple-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">{sentCount}</span>
+            <span className="bg-purple-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{sentCount}</span>
           )}
         </button>
         <button
           onClick={() => setActiveTab('history')}
-          className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'history' ? 'text-brand-primary border-b-2 border-brand-primary' : 'text-gray-500 hover:text-gray-700'}`}
+          className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap ${
+            activeTab === 'history'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'
+          }`}
         >
-          Histórico
+          <History size={14} className={activeTab === 'history' ? 'text-primary-500' : ''} />
+          <span className="hidden sm:inline">Historico</span>
         </button>
-      </div>
+      </motion.div>
 
       {/* Quote List */}
       <div className="space-y-3">
@@ -169,25 +210,25 @@ const DashboardOrcamentosPage: React.FC = () => {
             <LoadingSkeleton key={i} className="h-28 w-full rounded-xl" />
           ))
         ) : filteredQuotes.length === 0 ? (
-          <div className="text-center py-16 text-gray-500">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <p className="font-medium">Nenhuma solicitação aqui.</p>
-            <p className="text-sm mt-1">
-              {activeTab === 'pending' && 'Quando clientes solicitarem orçamentos, eles aparecerão aqui.'}
-              {activeTab === 'sent' && 'As propostas enviadas aparecerão aqui.'}
-              {activeTab === 'history' && 'Orçamentos aprovados ou recusados aparecerão aqui.'}
+          <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 py-16 px-6 text-center">
+            <div className="w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FileText size={24} className="text-gray-300" />
+            </div>
+            <h3 className="text-sm font-bold text-gray-700 mb-1">Nenhuma solicitacao aqui</h3>
+            <p className="text-xs text-gray-400 max-w-sm mx-auto">
+              {activeTab === 'pending' && 'Quando clientes solicitarem orcamentos, eles aparecerao aqui.'}
+              {activeTab === 'sent' && 'As propostas enviadas aparecerao aqui.'}
+              {activeTab === 'history' && 'Orcamentos aprovados ou recusados aparecerao aqui.'}
             </p>
           </div>
         ) : (
           filteredQuotes.map(quote => {
             const badge = STATUS_MAP[quote.status] || { label: quote.status, color: 'bg-gray-100 text-gray-800' };
             return (
-              <div key={quote.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition-shadow">
+              <div key={quote.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="w-10 h-10 bg-brand-primary/10 rounded-full flex items-center justify-center text-brand-primary font-bold text-sm flex-shrink-0 overflow-hidden">
+                    <div className="w-10 h-10 bg-primary-500/10 rounded-full flex items-center justify-center text-primary-500 font-bold text-sm flex-shrink-0 overflow-hidden">
                       {quote.client?.avatar_url ? (
                         <img src={quote.client.avatar_url} alt="" className="w-full h-full object-cover" />
                       ) : (
@@ -208,9 +249,7 @@ const DashboardOrcamentosPage: React.FC = () => {
 
                 {quote.photos.length > 0 && (
                   <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                    </svg>
+                    <Paperclip size={12} />
                     {quote.photos.length} foto{quote.photos.length > 1 ? 's' : ''} anexada{quote.photos.length > 1 ? 's' : ''}
                   </p>
                 )}
@@ -254,9 +293,7 @@ const DashboardOrcamentosPage: React.FC = () => {
                   onClick={() => { setSelectedQuote(null); setShowProposalForm(false); }}
                   className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <XIcon size={18} />
                 </button>
               </div>
 
@@ -308,7 +345,7 @@ const DashboardOrcamentosPage: React.FC = () => {
                         type="number" min="0" step="0.01"
                         value={proposalForm.value}
                         onChange={e => setProposalForm(p => ({ ...p, value: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
                         placeholder="Ex: 350.00"
                       />
                     </div>
@@ -318,7 +355,7 @@ const DashboardOrcamentosPage: React.FC = () => {
                         rows={3} maxLength={1000}
                         value={proposalForm.scope}
                         onChange={e => setProposalForm(p => ({ ...p, scope: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary resize-none transition-all"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 resize-none transition-all"
                         placeholder="Descreva o que está incluso nesta proposta..."
                       />
                     </div>
@@ -329,7 +366,7 @@ const DashboardOrcamentosPage: React.FC = () => {
                           type="number" min="1" max="30"
                           value={proposalForm.validity_days}
                           onChange={e => setProposalForm(p => ({ ...p, validity_days: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 transition-all"
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-all"
                         />
                       </div>
                       <div>
@@ -339,7 +376,7 @@ const DashboardOrcamentosPage: React.FC = () => {
                           value={proposalForm.deadline}
                           min={new Date().toISOString().split('T')[0]}
                           onChange={e => setProposalForm(p => ({ ...p, deadline: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 transition-all"
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-all"
                         />
                       </div>
                     </div>

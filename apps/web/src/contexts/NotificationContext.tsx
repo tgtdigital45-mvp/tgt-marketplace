@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect, ReactNode } from
 import { Notification } from '@tgt/shared';
 import { supabase } from '@tgt/shared';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/contexts/ToastContext';
 
 interface NotificationContextType {
     notifications: Notification[];
@@ -15,6 +16,7 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 
 export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { user, logout } = useAuth();
+    const { addToast } = useToast();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
     const isMounted = React.useRef(true);
@@ -90,7 +92,9 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
                     console.log('Realtime notification received:', payload);
 
                     if (payload.eventType === 'INSERT') {
-                        setNotifications((prev) => [payload.new as Notification, ...prev]);
+                        const newNotification = payload.new as Notification;
+                        setNotifications((prev) => [newNotification, ...prev]);
+                        addToast(newNotification.title, 'info');
                     } else if (payload.eventType === 'UPDATE') {
                         setNotifications((prev) =>
                             prev.map((n) => (n.id === payload.new.id ? (payload.new as Notification) : n))

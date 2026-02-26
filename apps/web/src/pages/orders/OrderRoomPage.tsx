@@ -57,6 +57,7 @@ const OrderRoomPage = () => {
     const [order, setOrder] = useState<DbOrder | null>(null);
     const [loading, setLoading] = useState(true);
     const [service, setService] = useState<Service | null>(null);
+    const [isPollingSuccess, setIsPollingSuccess] = useState(false);
 
     // Mock user roles for current order
     const isBuyer = user?.id === order?.buyer_id;
@@ -122,19 +123,8 @@ const OrderRoomPage = () => {
             return;
         }
 
-        // Redirect UNPAID buyers back to checkout
-        if (order && isBuyer && (order.status as string) === 'pending_payment') {
-            if (order.service_id) {
-                console.log("[OrderRoom] Unpaid order detected for buyer. Redirecting to checkout.");
-                navigate(`/checkout/${order.service_id}?orderId=${order.id}`, { replace: true });
-            } else {
-                console.warn("[OrderRoom] Unpaid order but service_id missing. Redirecting to home.");
-                navigate('/', { replace: true });
-            }
-            return;
-        }
-
-        if (isSuccess && orderId) {
+        if (isSuccess && orderId && !isPollingSuccess) {
+            setIsPollingSuccess(true);
             addToast("Pagamento realizado com sucesso! Atualizando pedido...", "success");
 
             // Remove the query param to prevent re-toast on refresh
@@ -149,8 +139,9 @@ const OrderRoomPage = () => {
                         .eq('id', orderId)
                         .maybeSingle();
 
-                    if (updatedOrder && (updatedOrder.status === 'paid' || updatedOrder.status === 'in_progress' || updatedOrder.status === 'active')) {
+                    if (updatedOrder && (updatedOrder.status !== 'pending_payment')) {
                         clearInterval(pollInterval);
+                        setIsPollingSuccess(false);
                         fetchOrder();
                         addToast("Status do pedido atualizado!", "success");
                     }
@@ -162,11 +153,24 @@ const OrderRoomPage = () => {
             // Stop polling after 30 seconds to avoid infinite loop
             setTimeout(() => {
                 clearInterval(pollInterval);
+                setIsPollingSuccess(false);
             }, 30000);
 
             return () => clearInterval(pollInterval);
         }
-    }, [location.search, orderId, order, isBuyer, addToast, navigate]);
+
+        // Redirect UNPAID buyers back to checkout (only if not polling from recent success)
+        if (!isSuccess && !isPollingSuccess && order && isBuyer && (order.status as string) === 'pending_payment') {
+            if (order.service_id) {
+                console.log("[OrderRoom] Unpaid order detected for buyer. Redirecting to checkout.");
+                navigate(`/checkout/${order.service_id}?orderId=${order.id}`, { replace: true });
+            } else {
+                console.warn("[OrderRoom] Unpaid order but service_id missing. Redirecting to home.");
+                navigate('/', { replace: true });
+            }
+            return;
+        }
+    }, [location.search, orderId, order, isBuyer, addToast, navigate, isPollingSuccess]);
 
     const updateStatus = async (newStatus: string) => {
         if (!order) return;
@@ -416,7 +420,7 @@ const OrderRoomPage = () => {
                                             className="w-full text-red-600 border-red-200 hover:bg-red-50"
                                             onClick={async () => {
                                                 if (order.revision_count >= 3) {
-                                                    addToast("Limite de revisões atingido. Por favor, abra uma disputa se ainda houver problemas.", "warning");
+                                                    addToast("Limite de revisões atingido. Por favor, abra uma disputa se ainda houver problemas.", "error");
                                                     return;
                                                 }
                                                 // Increment revision_count and set back to in_progress

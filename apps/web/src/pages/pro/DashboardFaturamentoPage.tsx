@@ -5,7 +5,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import Button from '@/components/ui/Button';
-import { Sparkles, Loader2, TrendingUp, Lightbulb } from 'lucide-react';
+import { Sparkles, Loader2, TrendingUp, Lightbulb, ChevronRight, Wallet, Clock, DollarSign, Zap, Landmark } from 'lucide-react';
 import { gemini } from '@/utils/gemini';
 import { useToast } from '@/contexts/ToastContext';
 import { motion } from 'framer-motion';
@@ -37,6 +37,33 @@ const DashboardFaturamentoPage: React.FC = () => {
         bank_account_type: 'checking',
     });
     const [savingBank, setSavingBank] = useState(false);
+    const [connectingStripe, setConnectingStripe] = useState(false);
+
+    const handleConnectStripe = async () => {
+        if (!company?.id) return;
+        try {
+            setConnectingStripe(true);
+            const { data, error } = await supabase.functions.invoke('create-connect-onboarding', {
+                body: {
+                    company_id: company.id,
+                    return_url: window.location.href,
+                    refresh_url: window.location.href,
+                }
+            });
+
+            if (error) throw error;
+            if (data?.url) {
+                window.location.href = data.url;
+            } else {
+                throw new Error('Não foi possível gerar o link de onboarding.');
+            }
+        } catch (err: any) {
+            console.error('Stripe Connect error:', err);
+            addToast(err.message || 'Erro ao conectar com Stripe', 'error');
+        } finally {
+            setConnectingStripe(false);
+        }
+    };
 
     const handlePayout = async () => {
         if (!wallet || wallet.balance <= 0) {
@@ -214,27 +241,75 @@ const DashboardFaturamentoPage: React.FC = () => {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
+        <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6">
+            {/* ─── Page Header ─────────────────────────────────────────────── */}
+            <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3"
+            >
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Faturamento & Carteira</h1>
-                    <p className="text-gray-500 mt-1">Gerencie seus ganhos, transações e saques.</p>
+                    <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
+                        <span>Dashboard</span><ChevronRight size={12} />
+                        <span className="text-gray-600 font-medium">Faturamento</span>
+                    </div>
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Faturamento & Carteira</h1>
+                    <p className="text-xs sm:text-sm text-gray-400 mt-0.5">
+                        Gerencie seus ganhos, transacoes e saques
+                    </p>
                 </div>
 
-                {/* Seller Level Badge (Top Right) */}
                 {sellerStats && (
-                    <div className={`px-4 py-2 rounded-full border flex items-center shadow-sm ${getLevelBadgeColor(sellerStats.current_level)}`}>
-                        <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.699-3.181a1 1 0 011.827.872l-.78 7.373a3 3 0 01-1.385 2.115l-4.316 2.47V18a1 1 0 11-2 0v-3.818l-4.316-2.47a3 3 0 01-1.385-2.115l-.78-7.373a1 1 0 011.827-.872l1.699 3.181L9 4.323V3a1 1 0 011-1zm-5 8.274l-.818 2.552a1 1 0 01-.1.218 1 1 0 01-.986.096l4.09 2.338L10 13.5l2.814 1.977 4.09-2.337a1 1 0 01-.986-.097l-.818-2.552-2.9 1.16a1 1 0 01-.748 0L10 10.98l-1.452.68a1 1 0 01-.748 0l-2.9-1.16z" clipRule="evenodd" /></svg>
-                        <span className="font-bold">{sellerStats.current_level}</span>
+                    <div className={`px-3 py-1.5 rounded-full border flex items-center gap-1.5 shadow-sm ${getLevelBadgeColor(sellerStats.current_level)}`}>
+                        <Zap size={14} />
+                        <span className="text-xs font-bold">{sellerStats.current_level}</span>
                     </div>
                 )}
-            </div>
+            </motion.div>
+
+            {/* Stripe Connect Onboarding Card */}
+            <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className={`p-6 rounded-2xl border flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm ${company?.stripe_charges_enabled
+                        ? 'bg-emerald-50 border-emerald-100'
+                        : 'bg-amber-50 border-amber-100'
+                    }`}
+            >
+                <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${company?.stripe_charges_enabled ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'
+                        }`}>
+                        <DollarSign size={24} />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-gray-900">
+                            {company?.stripe_charges_enabled ? 'Pagamentos Online Ativados' : 'Ative Recebimentos Online'}
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-0.5 max-w-md">
+                            {company?.stripe_charges_enabled
+                                ? 'Sua conta está conectada e pronta para receber pagamentos via cartão de crédito e PIX no checkout.'
+                                : 'Conecte sua conta Stripe para aceitar pagamentos diretamente pela plataforma e automatizar seus recebimentos.'}
+                        </p>
+                    </div>
+                </div>
+                <Button
+                    onClick={handleConnectStripe}
+                    isLoading={connectingStripe}
+                    variant={company?.stripe_charges_enabled ? 'secondary' : 'primary'}
+                    size="sm"
+                    className="w-full sm:w-auto"
+                >
+                    {company?.stripe_charges_enabled ? 'Configurações Stripe' : 'Conectar Agora'}
+                </Button>
+            </motion.div>
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Available Balance */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Saldo Disponível</h3>
+                <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Saldo Disponivel</h3>
                     <div className="text-3xl font-bold text-gray-900">
                         R$ {wallet?.balance.toFixed(2) || '0.00'}
                     </div>
@@ -250,8 +325,8 @@ const DashboardFaturamentoPage: React.FC = () => {
                 </div>
 
                 {/* Pending Balance */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 opacity-90">
-                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Em Análise</h3>
+                <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Em Analise</h3>
                     <div className="text-3xl font-bold text-gray-900">
                         R$ {wallet?.pending_balance.toFixed(2) || '0.00'}
                     </div>
@@ -259,19 +334,19 @@ const DashboardFaturamentoPage: React.FC = () => {
                 </div>
 
                 {/* Total Earnings */}
-                <div className="bg-brand-primary/5 p-6 rounded-xl shadow-sm border border-brand-primary/20">
-                    <h3 className="text-xs font-bold text-brand-primary uppercase tracking-wider mb-2">Total Ganho</h3>
-                    <div className="text-3xl font-bold text-brand-primary">
+                <div className="bg-primary-50 p-5 rounded-2xl shadow-sm border border-primary-100">
+                    <h3 className="text-xs font-bold text-primary-500 uppercase tracking-wider mb-2">Total Ganho</h3>
+                    <div className="text-3xl font-bold text-primary-600">
                         R$ {transactions
                             .filter(t => t.type === 'credit')
                             .reduce((acc, curr) => acc + curr.amount, 0)
                             .toFixed(2)}
                     </div>
-                    <p className="text-xs text-brand-primary/70 mt-2">Sua receita total na plataforma.</p>
+                    <p className="text-xs text-primary-400 mt-2">Sua receita total na plataforma.</p>
                 </div>
 
                 {/* Gamification / Level Progress */}
-                <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-xl shadow-lg shadow-gray-200 text-white relative overflow-hidden group">
+                <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-5 rounded-2xl shadow-sm text-white relative overflow-hidden group">
                     <div className="relative z-10">
                         <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Próximo Nível</h3>
                         {sellerStats ? (
@@ -286,7 +361,7 @@ const DashboardFaturamentoPage: React.FC = () => {
                                         </p>
                                         <div className="w-full bg-gray-700/50 rounded-full h-1.5 mt-2">
                                             <div
-                                                className="bg-brand-secondary h-1.5 rounded-full transition-all duration-500"
+                                                className="bg-secondary-500 h-1.5 rounded-full transition-all duration-500"
                                                 style={{ width: `${Math.min(100, Math.max(0, ((20 - sellerStats.orders_to_next_level) / 20) * 100))}%` }}
                                             ></div>
                                         </div>
@@ -298,8 +373,8 @@ const DashboardFaturamentoPage: React.FC = () => {
                             <p className="text-sm text-gray-400">Sem dados de nível</p>
                         )}
                     </div>
-                    {/* Decorative Icon */}
-                    <svg className="absolute -bottom-4 -right-4 w-24 h-24 text-gray-700/20" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" /></svg>
+                    {/* Decorative */}
+                    <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/5 rounded-full blur-2xl" />
                 </div>
             </div>
 
@@ -353,7 +428,7 @@ const DashboardFaturamentoPage: React.FC = () => {
             </div>
 
             {/* Fee Breakdown */}
-            <div className="grid grid-cols-3 gap-4 p-5 bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="grid grid-cols-3 gap-4 p-5 bg-white rounded-2xl shadow-sm border border-gray-100">
                 <div className="text-center">
                     <p className="text-xs text-gray-500 mb-1">Faturamento Bruto</p>
                     <p className="text-xl font-bold text-gray-900">R$ {grossAmount.toFixed(2)}</p>
@@ -369,7 +444,7 @@ const DashboardFaturamentoPage: React.FC = () => {
             </div>
 
             {/* Transactions Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
                     <h3 className="font-bold text-gray-900">Histórico de Transações</h3>
                     <Button variant="outline" size="sm" onClick={() => { }}>Exportar CSV</Button>
@@ -380,7 +455,7 @@ const DashboardFaturamentoPage: React.FC = () => {
                     <select
                         value={filterType}
                         onChange={e => setFilterType(e.target.value as any)}
-                        className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                        className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
                     >
                         <option value="all">Todos os tipos</option>
                         <option value="credit">Entradas</option>
@@ -390,13 +465,13 @@ const DashboardFaturamentoPage: React.FC = () => {
                         type="date"
                         value={filterDateStart}
                         onChange={e => setFilterDateStart(e.target.value)}
-                        className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                        className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
                     />
                     <input
                         type="date"
                         value={filterDateEnd}
                         onChange={e => setFilterDateEnd(e.target.value)}
-                        className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                        className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
                     />
                     {(filterType !== 'all' || filterDateStart || filterDateEnd) && (
                         <button
@@ -409,14 +484,12 @@ const DashboardFaturamentoPage: React.FC = () => {
                 </div>
 
                 {filteredTransactions.length === 0 ? (
-                    <div className="p-12 text-center text-gray-500 flex flex-col items-center">
-                        <div className="bg-gray-100 p-4 rounded-full mb-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
+                    <div className="p-12 text-center flex flex-col items-center">
+                        <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+                            <DollarSign size={20} className="text-gray-300" />
                         </div>
-                        <p>Nenhuma transação encontrada.</p>
-                        <p className="text-sm">Suas entradas e saídas aparecerão aqui.</p>
+                        <p className="text-sm font-medium text-gray-600">Nenhuma transacao encontrada.</p>
+                        <p className="text-xs text-gray-400 mt-1">Suas entradas e saidas aparecerao aqui.</p>
                     </div>
                 ) : (
                     <div className="p-0">
@@ -491,9 +564,12 @@ const DashboardFaturamentoPage: React.FC = () => {
                 )}
             </div>
             {/* Bank Data Section */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="font-bold text-gray-900 mb-1">Dados para Recebimento</h3>
-                <p className="text-sm text-gray-500 mb-5">Informe seus dados bancários para receber saques da plataforma.</p>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
+                <div className="flex items-center gap-2 mb-1">
+                    <Landmark size={16} className="text-gray-400" />
+                    <h3 className="text-sm font-bold text-gray-800">Dados para Recebimento</h3>
+                </div>
+                <p className="text-xs text-gray-400 mb-5">Informe seus dados bancarios para receber saques da plataforma.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-xs font-medium text-gray-600 mb-1">Chave PIX</label>
@@ -502,7 +578,7 @@ const DashboardFaturamentoPage: React.FC = () => {
                             value={bankData.pix_key}
                             onChange={e => setBankData(prev => ({ ...prev, pix_key: e.target.value }))}
                             placeholder="CPF, CNPJ, e-mail ou telefone"
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                         />
                     </div>
                     <div>
@@ -512,7 +588,7 @@ const DashboardFaturamentoPage: React.FC = () => {
                             value={bankData.bank_name}
                             onChange={e => setBankData(prev => ({ ...prev, bank_name: e.target.value }))}
                             placeholder="Ex: Nubank, Itaú, Bradesco"
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                         />
                     </div>
                     <div>
@@ -521,7 +597,7 @@ const DashboardFaturamentoPage: React.FC = () => {
                             type="text"
                             value={bankData.bank_agency}
                             onChange={e => setBankData(prev => ({ ...prev, bank_agency: e.target.value }))}
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                         />
                     </div>
                     <div>
@@ -530,7 +606,7 @@ const DashboardFaturamentoPage: React.FC = () => {
                             type="text"
                             value={bankData.bank_account}
                             onChange={e => setBankData(prev => ({ ...prev, bank_account: e.target.value }))}
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                         />
                     </div>
                     <div>
@@ -538,7 +614,7 @@ const DashboardFaturamentoPage: React.FC = () => {
                         <select
                             value={bankData.bank_account_type}
                             onChange={e => setBankData(prev => ({ ...prev, bank_account_type: e.target.value }))}
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary"
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                         >
                             <option value="checking">Conta Corrente</option>
                             <option value="savings">Conta Poupança</option>

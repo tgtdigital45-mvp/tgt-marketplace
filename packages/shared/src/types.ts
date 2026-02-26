@@ -99,7 +99,8 @@ export interface Service {
   attributes?: Record<string, string>;
   details?: Record<string, any>;
   faq?: { question: string; answer: string; }[];
-  service_type?: 'remote' | 'presential_customer_goes' | 'presential_company_goes' | 'hybrid' | string;
+  service_type?: 'remote_fixed' | 'local_client_fixed' | 'local_provider_fixed' | 'requires_quote' | string;
+  allows_escrow?: boolean;
   is_single_package?: boolean;
   requires_quote?: boolean;
   category_tag?: string;
@@ -179,7 +180,8 @@ export interface DbService {
   details?: Record<string, any>; // e.g. { "methodology": "...", "target_audience": "..." }
   faq?: { question: string; answer: string; }[];
   // H3 + Marketplace fields
-  service_type?: 'remote' | 'presential_customer_goes' | 'presential_company_goes' | 'hybrid' | string;
+  service_type?: 'remote_fixed' | 'local_client_fixed' | 'local_provider_fixed' | 'requires_quote' | string;
+  allows_escrow?: boolean;
   is_single_package?: boolean;
   requires_quote?: boolean;
   category_tag?: string;
@@ -243,6 +245,20 @@ export interface UserProfile extends User {
   address_zip?: string;
 }
 
+export type BookingStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'cancelled'
+  | 'completed'
+  | 'pending_client_approval'
+  | 'on_the_way'
+  | 'in_progress'
+  | 'rejected'
+  | 'pending_quote'
+  | 'answered_quote'
+  | 'accepted_quote'
+  | 'rejected_quote';
+
 export interface Booking {
   id: string;
   client_id: string;
@@ -256,7 +272,7 @@ export interface Booking {
   proposed_date?: string;
   proposed_time?: string;
   proposal_expires_at?: string;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'pending_client_approval';
+  status: BookingStatus;
   companies?: {
     company_name: string;
   };
@@ -297,6 +313,27 @@ export interface JobRequest {
 }
 
 // Database Types for Joins
+export interface DbWallet {
+  id: string;
+  user_id: string;
+  balance: number;
+  pending_balance: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbTransaction {
+  id: string;
+  wallet_id: string;
+  amount: number;
+  type: 'credit' | 'debit';
+  status: 'pending' | 'completed' | 'failed' | 'cancelled';
+  order_id?: string;
+  description?: string;
+  metadata?: any;
+  created_at: string;
+}
+
 export interface DbBooking {
   id: string;
   client_id: string;
@@ -309,12 +346,15 @@ export interface DbBooking {
   service_duration_minutes?: number;
   proposed_date?: string;
   proposal_expires_at?: string;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'pending_client_approval';
+  status: BookingStatus;
   created_at: string;
   // Joins
   companies?: DbCompany;
   hiring_responses?: Record<string, any>;
 }
+
+export type OrderStatus = 'pending_payment' | 'active' | 'delivered' | 'completed' | 'cancelled' | 'in_progress' | 'payment_held' | 'work_submitted_by_provider' | 'approved_by_client' | 'payment_released' | 'disputed';
+export type SagaStatus = 'PENDING' | 'COMPLETED' | 'FAILED';
 
 export interface DbOrder {
   id: string;
@@ -324,15 +364,49 @@ export interface DbOrder {
   service_title: string;
   package_tier: 'basic' | 'standard' | 'premium';
   price: number;
-  status: 'pending_payment' | 'active' | 'delivered' | 'completed' | 'cancelled' | 'in_progress';
-  saga_status: 'PENDING' | 'COMPLETED' | 'FAILED';
+  status: OrderStatus;
+  saga_status: SagaStatus;
   delivery_deadline: string;
   hiring_responses?: Record<string, any>;
   package_snapshot?: any;
   revision_count?: number;
+  quote_id?: string;
   created_at: string;
   updated_at: string;
 }
+
+export type QuoteStatus = 'pending' | 'replied' | 'accepted' | 'rejected';
+
+export interface DbQuote {
+  id: string;
+  user_id: string;
+  service_id: string;
+  description: string;
+  budget_expectation?: number;
+  status: QuoteStatus;
+  attachments?: string[];
+  created_at: string;
+  updated_at: string;
+  // Joins
+  service?: DbService;
+  user?: DbProfile;
+  replies?: DbQuoteReply[];
+}
+
+export interface DbQuoteReply {
+  id: string;
+  quote_id: string;
+  provider_id: string;
+  final_price: number;
+  estimated_time: string;
+  conditions?: string;
+  created_at: string;
+  // Joins
+  provider?: DbProfile;
+  quote?: DbQuote;
+}
+
+export type ProposalStatus = 'pending' | 'accepted' | 'rejected';
 
 export interface DbProposal {
   id: string;
@@ -340,17 +414,19 @@ export interface DbProposal {
   company_id: string;
   price: number;
   cover_letter: string;
-  status: 'pending' | 'accepted' | 'rejected';
+  status: ProposalStatus;
   created_at: string;
   companies?: DbCompany; // Joined
 }
+
+export type JobRequestStatus = 'open' | 'in_progress' | 'completed' | 'cancelled';
 
 export interface DbJobRequest {
   id: string;
   user_id: string;
   title: string;
   description: string;
-  status: 'open' | 'in_progress' | 'completed' | 'cancelled';
+  status: JobRequestStatus;
   created_at: string;
   budget_min?: number;
   budget_max?: number;

@@ -40,13 +40,18 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ orderId, reviewerId, reviewee
 
             if (reviewError) throw reviewError;
 
-            // 2. Update Order Status to completed
-            const { error: orderError } = await supabase
-                .from('orders')
-                .update({ status: 'completed' })
-                .eq('id', orderId);
+            if (reviewError) throw reviewError;
 
-            if (orderError) throw orderError;
+            // 2. Safely capture Escrow payment via backend Edge Function
+            const { data: fnData, error: fnError } = await supabase.functions.invoke('capture-payment', {
+                body: { order_id: orderId }
+            });
+
+            if (fnError) {
+                // If there's an error from the function, check if it's already caught in response
+                throw new Error(fnError.message || 'Falha ao liberar pagamento Escrow no backend');
+            }
+            if (fnData?.error) throw new Error(fnData.error);
 
             addToast('Avaliação enviada e pedido finalizado!', 'success');
             onSuccess();

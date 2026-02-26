@@ -7,15 +7,11 @@ interface ServiceComparisonTableProps {
     packages: ServicePackages;
     onSelect: (tier: string) => void;
     requiresQuote?: boolean;
+    selectedTier?: string;
 }
 
-const ServiceComparisonTable: React.FC<ServiceComparisonTableProps> = ({ packages, onSelect, requiresQuote }) => {
+const ServiceComparisonTable: React.FC<ServiceComparisonTableProps> = ({ packages, onSelect, requiresQuote, selectedTier }) => {
     // Helper to get features list (union of all features across packages for rows)
-    // For simplicity, we'll just list common known features or map from available packages.
-    // In a real app, you might want a defined list of comparison points.
-    // Here we'll stick to fixed rows based on the Figma/Upwork style:
-    // "Delivery Time", "Revisions", and then dynamic features.
-
     const tiers = [
         { id: 'basic', label: 'Básico', data: packages.basic },
         { id: 'standard', label: 'Padrão', data: packages.standard },
@@ -38,7 +34,11 @@ const ServiceComparisonTable: React.FC<ServiceComparisonTableProps> = ({ package
                             <span className="text-gray-500 font-medium text-sm uppercase tracking-wider">Pacote</span>
                         </th>
                         {tiers.map(tier => (
-                            <th key={tier.id} className="p-6 border-b border-gray-200 w-1/4">
+                            <th
+                                key={tier.id}
+                                className={`p-6 border-b border-gray-200 w-1/4 transition-colors ${selectedTier === tier.id ? 'bg-brand-primary/5 ring-2 ring-inset ring-brand-primary/20' : ''
+                                    }`}
+                            >
                                 <div className="text-xl font-bold text-gray-900 mb-1">
                                     {requiresQuote ? 'Sob Consulta' : tier.data?.price?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                                 </div>
@@ -53,7 +53,7 @@ const ServiceComparisonTable: React.FC<ServiceComparisonTableProps> = ({ package
                     <tr>
                         <td className="p-4 text-gray-600 font-medium bg-gray-50/30">Prazo de Entrega</td>
                         {tiers.map(tier => (
-                            <td key={tier.id} className="p-4 text-center text-gray-700">
+                            <td key={tier.id} className={`p-4 text-center text-gray-700 ${selectedTier === tier.id ? 'bg-brand-primary/5' : ''}`}>
                                 {tier.data?.delivery_time} dias
                             </td>
                         ))}
@@ -61,7 +61,7 @@ const ServiceComparisonTable: React.FC<ServiceComparisonTableProps> = ({ package
                     <tr>
                         <td className="p-4 text-gray-600 font-medium bg-gray-50/30">Revisões</td>
                         {tiers.map(tier => (
-                            <td key={tier.id} className="p-4 text-center text-gray-700">
+                            <td key={tier.id} className={`p-4 text-center text-gray-700 ${selectedTier === tier.id ? 'bg-brand-primary/5' : ''}`}>
                                 {tier.data?.revisions === -1 ? 'Ilimitadas' : tier.data?.revisions}
                             </td>
                         ))}
@@ -74,7 +74,7 @@ const ServiceComparisonTable: React.FC<ServiceComparisonTableProps> = ({ package
                             {tiers.map(tier => {
                                 const hasFeature = tier.data?.features.includes(feature);
                                 return (
-                                    <td key={tier.id} className="p-4 text-center">
+                                    <td key={tier.id} className={`p-4 text-center ${selectedTier === tier.id ? 'bg-brand-primary/5' : ''}`}>
                                         {hasFeature ? (
                                             <CheckIcon className="w-5 h-5 text-gray-900 mx-auto" />
                                         ) : (
@@ -90,13 +90,13 @@ const ServiceComparisonTable: React.FC<ServiceComparisonTableProps> = ({ package
                     <tr>
                         <td className="p-6 border-t border-gray-100 bg-gray-50/50"></td>
                         {tiers.map(tier => (
-                            <td key={tier.id} className="p-6 border-t border-gray-100 text-center">
+                            <td key={tier.id} className={`p-6 border-t border-gray-100 text-center ${selectedTier === tier.id ? 'bg-brand-primary/5' : ''}`}>
                                 <Button
-                                    variant="primary"
-                                    className="w-full py-2.5 text-sm font-bold"
+                                    variant={selectedTier === tier.id ? 'solid' : 'primary'}
+                                    className="w-full py-2.5 text-sm font-bold shadow-none"
                                     onClick={() => onSelect(tier.id)}
                                 >
-                                    Selecionar
+                                    {selectedTier === tier.id ? 'Selecionado' : 'Selecionar'}
                                 </Button>
                             </td>
                         ))}

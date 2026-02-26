@@ -44,16 +44,18 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
         selectedDate: date,
         setSelectedDate,
         bookedSlots // For future use or consistency
-    } = useAvailability(service?.company_id, service?.duration_minutes || 30);
+    } = useAvailability(service?.companyId, service?.duration_minutes || 30);
 
     const [formData, setFormData] = useState({
         date: '',
         endDate: '',
         time: '',
         notes: '',
+        budgetExpectation: '', // For quotes
     });
 
     const isDaily = service?.pricing_model === 'daily';
+    const isQuote = service?.requires_quote || false;
 
     let totalDays = 1;
     if (isDaily && formData.date && formData.endDate) {
@@ -82,8 +84,8 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
             return;
         }
 
-        // Validate availability again
-        if (service.use_company_availability && availability) {
+        // Validate availability again, only if not quote
+        if (!isQuote && service.use_company_availability && availability) {
             const dateObj = new Date(formData.date + 'T00:00:00');
             const dayName = DAYS[dateObj.getDay()];
             if (!availability[dayName]?.active) {
@@ -100,24 +102,45 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
         setLoading(true);
 
         try {
-            const { error } = await supabase.from('bookings').insert({
-                client_id: user.id,
-                company_id: service.company_id,
-                service_title: service.title,
-                service_price: finalPrice,
-                booking_date: formData.date,
-                booking_time: isDaily ? '00:00:00' : formData.time,
-                service_duration_minutes: isDaily ? totalDays * 1440 : service.duration_minutes,
-                notes: formData.notes,
-                status: 'pending'
-            });
+            if (isQuote) {
+                if (!formData.notes.trim()) {
+                    addToast("Descreva sua necessidade para o orçamento.", "error");
+                    setLoading(false);
+                    return;
+                }
+                const { error } = await supabase.from('quotes').insert({
+                    user_id: user.id,
+                    service_id: service.id,
+                    description: formData.notes,
+                    budget_expectation: formData.budgetExpectation ? parseFloat(formData.budgetExpectation) : null,
+                    status: 'pending'
+                });
 
-            if (error) throw error;
+                if (error) throw error;
 
-            addToast("Solicitação enviada com sucesso!", "success");
-            onClose();
-            navigate('/perfil/pedidos');
+                // Close modal and redirect to quotes or orders (depending on platform strategy)
+                addToast("Orçamento solicitado com sucesso!", "success");
+                onClose();
+                navigate('/perfil/pedidos'); // Replace with quotes page if we build one
+            } else {
+                const { error } = await supabase.from('bookings').insert({
+                    client_id: user.id,
+                    company_id: service.companyId,
+                    service_title: service.title,
+                    service_price: finalPrice,
+                    booking_date: formData.date,
+                    booking_time: isDaily ? '00:00:00' : formData.time,
+                    service_duration_minutes: isDaily ? totalDays * 1440 : service.duration_minutes,
+                    notes: formData.notes,
+                    status: 'pending'
+                });
 
+                if (error) throw error;
+
+                addToast("Solicitação enviada com sucesso!", "success");
+                onClose();
+                navigate('/perfil/pedidos');
+            }
         } catch (err) {
             console.error("Booking error:", err);
             const message = err instanceof Error ? err.message : "Erro ao solicitar agendamento.";
@@ -170,118 +193,145 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
 
                             {/* Body */}
                             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                                {/* Date & Time Selection */}
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            {isDaily ? 'Data de Início' : 'Data Preferencial'}
-                                        </label>
-                                        <input
-                                            type="date"
-                                            required
-                                            min={new Date().toISOString().split('T')[0]}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-all"
-                                            value={formData.date}
-                                            onChange={(e) => {
-                                                setFormData({ ...formData, date: e.target.value, time: isDaily ? '00:00:00' : '' }); // Reset time on date change
-                                            }}
-                                        />
-                                        {/* Warning if selected day is closed */}
-                                        {formData.date && !isDaily && isDateDisabled(formData.date) && (
-                                            <p className="text-xs text-red-500 mt-1">Empresa fechada neste dia.</p>
-                                        )}
-                                    </div>
-
-                                    {isDaily ? (
+                                {/* Date & Time Selection (Hidden for Quotes) */}
+                                {!isQuote && (
+                                    <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Data de Término</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                {isDaily ? 'Data de Início' : 'Data Preferencial'}
+                                            </label>
                                             <input
                                                 type="date"
                                                 required
-                                                min={formData.date || new Date().toISOString().split('T')[0]}
+                                                min={new Date().toISOString().split('T')[0]}
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-all"
-                                                value={formData.endDate}
-                                                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                                                disabled={!formData.date}
+                                                value={formData.date}
+                                                onChange={(e) => {
+                                                    setFormData({ ...formData, date: e.target.value, time: isDaily ? '00:00:00' : '' }); // Reset time on date change
+                                                }}
                                             />
-                                        </div>
-                                    ) : (
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Horário</label>
-
-                                            {fetchingAvailability ? (
-                                                <div className="h-10 w-full bg-gray-100 rounded animate-pulse" />
-                                            ) : (
-                                                service.use_company_availability && availability ? (
-                                                    <select
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-all"
-                                                        value={formData.time}
-                                                        onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                                                        disabled={!formData.date || isDateDisabled(formData.date) || availableSlots.length === 0}
-                                                    >
-                                                        <option value="">Selecione...</option>
-                                                        {availableSlots.map(slot => (
-                                                            <option key={slot} value={slot}>{slot}</option>
-                                                        ))}
-                                                        {availableSlots.length === 0 && formData.date && !isDateDisabled(formData.date) && (
-                                                            <option disabled>Sem horários</option>
-                                                        )}
-                                                    </select>
-                                                ) : (
-                                                    // Legacy / Remote Behavior
-                                                    <select
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-all"
-                                                        value={formData.time}
-                                                        onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                                                    >
-                                                        <option value="">Selecione...</option>
-                                                        <option value="morning">Manhã (08:00 - 12:00)</option>
-                                                        <option value="afternoon">Tarde (13:00 - 18:00)</option>
-                                                        <option value="evening">Noite (18:00 - 20:00)</option>
-                                                    </select>
-                                                )
+                                            {/* Warning if selected day is closed */}
+                                            {formData.date && !isDaily && isDateDisabled(formData.date) && (
+                                                <p className="text-xs text-red-500 mt-1">Empresa fechada neste dia.</p>
                                             )}
                                         </div>
-                                    )}
-                                </div>
+
+                                        {isDaily ? (
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Data de Término</label>
+                                                <input
+                                                    type="date"
+                                                    required
+                                                    min={formData.date || new Date().toISOString().split('T')[0]}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-all"
+                                                    value={formData.endDate}
+                                                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                                                    disabled={!formData.date}
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Horário</label>
+
+                                                {fetchingAvailability ? (
+                                                    <div className="h-10 w-full bg-gray-100 rounded animate-pulse" />
+                                                ) : (
+                                                    service.use_company_availability && availability ? (
+                                                        <select
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-all"
+                                                            value={formData.time}
+                                                            onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                                                            disabled={!formData.date || isDateDisabled(formData.date) || availableSlots.length === 0}
+                                                        >
+                                                            <option value="">Selecione...</option>
+                                                            {availableSlots.map(slot => (
+                                                                <option key={slot} value={slot}>{slot}</option>
+                                                            ))}
+                                                            {availableSlots.length === 0 && formData.date && !isDateDisabled(formData.date) && (
+                                                                <option disabled>Sem horários</option>
+                                                            )}
+                                                        </select>
+                                                    ) : (
+                                                        // Legacy / Remote Behavior
+                                                        <select
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-all"
+                                                            value={formData.time}
+                                                            onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                                                        >
+                                                            <option value="">Selecione...</option>
+                                                            <option value="morning">Manhã (08:00 - 12:00)</option>
+                                                            <option value="afternoon">Tarde (13:00 - 18:00)</option>
+                                                            <option value="evening">Noite (18:00 - 20:00)</option>
+                                                        </select>
+                                                    )
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
 
                                 {/* Service Details */}
-                                <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className="text-sm text-gray-600">Valor Estimado {' '}
-                                            {isDaily && totalDays > 1 && <span className="font-normal">({totalDays} dias)</span>}
-                                        </span>
-                                        <span className="font-bold text-brand-primary text-lg">
-                                            {finalPrice > 0 ? `R$ ${finalPrice.toFixed(2)}` : 'A combinar'}
-                                        </span>
+                                {!isQuote && (
+                                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-sm text-gray-600">Valor Estimado {' '}
+                                                {isDaily && totalDays > 1 && <span className="font-normal">({totalDays} dias)</span>}
+                                            </span>
+                                            <span className="font-bold text-brand-primary text-lg">
+                                                {finalPrice > 0 ? `R$ ${finalPrice.toFixed(2)}` : 'A combinar'}
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            {service.duration && (
+                                                <div className="flex items-center text-sm text-gray-500">
+                                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                    Duração: {service.duration}
+                                                </div>
+                                            )}
+                                            {service.duration_minutes && (
+                                                <div className="flex items-center text-xs text-gray-400 ml-5">
+                                                    ({service.duration_minutes} minutos estimados)
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="flex flex-col gap-1">
-                                        {service.duration && (
-                                            <div className="flex items-center text-sm text-gray-500">
-                                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                                Duração: {service.duration}
-                                            </div>
-                                        )}
-                                        {service.duration_minutes && (
-                                            <div className="flex items-center text-xs text-gray-400 ml-5">
-                                                ({service.duration_minutes} minutos estimados)
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
+                                )}
 
-                                {/* Notes */}
+                                {/* Notes / Quote Description */}
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Observações (Opcional)</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        {isQuote ? 'Descreva o que você precisa *' : 'Observações (Opcional)'}
+                                    </label>
                                     <textarea
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-all h-24 resize-none"
-                                        placeholder="Descreva detalhes específicos do que você precisa..."
+                                        placeholder={isQuote ? "Descreva os detalhes do projeto em detalhes para receber um orçamento ideal..." : "Descreva detalhes específicos do que você precisa..."}
                                         value={formData.notes}
                                         onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                                        required={isQuote}
                                     />
                                 </div>
+
+                                {isQuote && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Expectativa de Orçamento (Opcional)</label>
+                                        <div className="relative">
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <span className="text-gray-500 sm:text-sm">R$</span>
+                                            </div>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                className="w-full pl-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-all"
+                                                placeholder="0.00"
+                                                value={formData.budgetExpectation}
+                                                onChange={(e) => setFormData({ ...formData, budgetExpectation: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Footer */}
                                 {canCheckout === false && checkoutDisabledReason && (
@@ -303,7 +353,12 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
                                         variant="primary"
                                         className="flex-2 w-full"
                                         isLoading={loading}
-                                        disabled={loading || canCheckout === false || (!isDaily && service.use_company_availability && !!availability && (!formData.date || isDateDisabled(formData.date) || !formData.time)) || (isDaily && (!formData.date || !formData.endDate))}
+                                        disabled={
+                                            loading ||
+                                            canCheckout === false ||
+                                            (!isQuote && !isDaily && service.use_company_availability && !!availability && (!formData.date || isDateDisabled(formData.date) || !formData.time)) ||
+                                            (!isQuote && isDaily && (!formData.date || !formData.endDate))
+                                        }
                                     >
                                         {user ? 'Confirmar Solicitação' : 'Faça login para solicitar'}
                                     </Button>

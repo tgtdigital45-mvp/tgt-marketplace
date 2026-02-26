@@ -28,8 +28,8 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({ isEmbedded = false }) =
     const queryClient = useQueryClient();
 
     const bookings = data?.bookings || [];
-    const activeBookings = bookings.filter(b => ['pending', 'confirmed', 'pending_client_approval', 'on_the_way', 'in_progress'].includes(b.status));
-    const pastBookings = bookings.filter(b => ['completed', 'cancelled', 'rejected'].includes(b.status));
+    const activeBookings = bookings.filter(b => ['pending', 'confirmed', 'pending_client_approval', 'on_the_way', 'in_progress', 'pending_quote', 'answered_quote'].includes(b.status));
+    const pastBookings = bookings.filter(b => ['completed', 'cancelled', 'rejected', 'rejected_quote', 'accepted_quote'].includes(b.status));
 
     const getStatusStep = (status: string) => {
         switch (status) {
@@ -125,12 +125,14 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({ isEmbedded = false }) =
                                             </div>
                                             <div className="flex flex-col items-end gap-2">
                                                 <Badge variant={
-                                                    booking.status === 'confirmed' ? 'success' :
-                                                        booking.status === 'pending_client_approval' ? 'warning' : 'info'
+                                                    booking.status === 'confirmed' || booking.status === 'accepted_quote' ? 'success' :
+                                                        booking.status === 'pending_client_approval' || booking.status === 'answered_quote' ? 'warning' : 'info'
                                                 }>
                                                     {booking.status === 'confirmed' ? 'Confirmado' :
                                                         booking.status === 'pending_client_approval' ? 'Aguardando sua Resposta' :
-                                                            booking.status === 'pending' ? 'Aguardando Empresa' : booking.status}
+                                                            booking.status === 'pending' ? 'Aguardando Empresa' :
+                                                                booking.status === 'pending_quote' ? 'Orçamento Pendente' :
+                                                                    booking.status === 'answered_quote' ? 'Orçamento Respondido' : booking.status}
                                                 </Badge>
                                                 <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">ID: #{booking.id.slice(0, 8)}</span>
                                             </div>

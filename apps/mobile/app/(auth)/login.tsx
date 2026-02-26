@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@/lib/supabase';
 import { Lock, Mail } from 'lucide-react-native';
 
 export default function LoginScreen() {
@@ -76,7 +76,7 @@ export default function LoginScreen() {
                             />
                         </View>
 
-                        <TouchableOpacity className="items-end mt-2">
+                        <TouchableOpacity className="items-end mt-2" onPress={() => router.push('/(auth)/forgot-password')}>
                             <Text className="text-brand-accent font-medium">Esqueceu a senha?</Text>
                         </TouchableOpacity>
 
@@ -94,7 +94,7 @@ export default function LoginScreen() {
                     {/* Footer */}
                     <View className="flex-row justify-center mt-12">
                         <Text className="text-brand-secondary">Ainda não tem conta?</Text>
-                        <TouchableOpacity onPress={() => { }}>
+                        <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
                             <Text className="text-brand-accent font-bold ml-1">Cadastre-se</Text>
                         </TouchableOpacity>
                     </View>

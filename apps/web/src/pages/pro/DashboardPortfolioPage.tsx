@@ -5,247 +5,258 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { PortfolioItem as DbPortfolioItem } from '@tgt/shared';
 import OptimizedImage from '@/components/ui/OptimizedImage';
+import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
+import Button from '@/components/ui/Button';
+import { motion } from 'framer-motion';
+import ImageCropModal from '@/components/ImageCropModal';
+import {
+  ChevronRight,
+  Camera,
+  Plus,
+  Trash2,
+  ImageIcon,
+  Lightbulb,
+} from 'lucide-react';
 
 const DashboardPortfolioPage: React.FC = () => {
-    const { user } = useAuth();
-    const { addToast } = useToast();
-    const [items, setItems] = useState<DbPortfolioItem[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [uploading, setUploading] = useState(false);
-    const [companyId, setCompanyId] = useState<string | null>(null);
+  const { user } = useAuth();
+  const { addToast } = useToast();
+  const [items, setItems] = useState<DbPortfolioItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [companyId, setCompanyId] = useState<string | null>(null);
 
-    // Fetch Items
-    useEffect(() => {
-        if (!user) return;
+  // Crop Modal State
+  const [cropModal, setCropModal] = useState<{
+    isOpen: boolean;
+    imageSrc: string;
+  }>({ isOpen: false, imageSrc: '' });
 
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-                // Get Company ID
-                const { data: companyData, error: companyError } = await supabase
-                    .from('companies')
-                    .select('id')
-                    .eq('profile_id', user.id)
-                    .single();
+  useEffect(() => {
+    if (!user) return;
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const { data: companyData, error: companyError } = await supabase
+          .from('companies').select('id').eq('profile_id', user.id).single();
+        if (companyError) {
+          if (user.companySlug) {
+            const { data: cData } = await supabase.from('companies').select('id').eq('slug', user.companySlug).single();
+            if (cData) { setCompanyId(cData.id); await fetchItems(cData.id); }
+          }
+          return;
+        }
+        setCompanyId(companyData.id);
+        await fetchItems(companyData.id);
+      } catch (err) {
+        console.error('Error fetching portfolio:', err);
+        addToast('Erro ao carregar portfolio.', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [user, addToast]);
 
-                if (companyError) {
-                    // Fallback for company slug
-                    if (user.companySlug) {
-                        const { data: cData } = await supabase.from('companies').select('id').eq('slug', user.companySlug).single();
-                        if (cData) {
-                            setCompanyId(cData.id);
-                            await fetchItems(cData.id);
-                        }
-                    }
-                    return;
-                }
+  const fetchItems = async (compId: string) => {
+    const { data, error } = await supabase
+      .from('portfolio_items').select('*').eq('company_id', compId).order('created_at', { ascending: false });
+    if (error) throw error;
+    setItems(data || []);
+  };
 
-                setCompanyId(companyData.id);
-                await fetchItems(companyData.id);
+  const handleFileSelect = (file: File | null) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setCropModal({ isOpen: true, imageSrc: reader.result as string });
+    };
+    reader.readAsDataURL(file);
+  };
 
-            } catch (err) {
-                console.error("Error fetching portfolio:", err);
-                addToast("Erro ao carregar portfólio.", "error");
-            } finally {
-                setLoading(false);
-            }
-        };
+  const handleCropComplete = async (croppedFile: File) => {
+    setCropModal({ isOpen: false, imageSrc: '' });
+    await uploadToPortfolio(croppedFile);
+  };
 
-        fetchData();
-    }, [user, addToast]);
-
-    const fetchItems = async (compId: string) => {
-        // Get Portfolio Items
-        const { data: itemsData, error: itemsError } = await supabase
-            .from('portfolio_items')
-            .select('*')
-            .eq('company_id', compId)
-            .order('created_at', { ascending: false });
-
-        if (itemsError) throw itemsError;
-        setItems(itemsData || []);
+  const uploadToPortfolio = async (file: File) => {
+    if (!companyId) return;
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${companyId}/${Math.random()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from('portfolio').upload(filePath, file);
+      if (uploadError) {
+        if (uploadError.message.includes('Bucket not found'))
+          throw new Error("Erro de configuracao: Bucket 'portfolio' nao encontrado.");
+        throw uploadError;
+      }
+      const { data: { publicUrl } } = supabase.storage.from('portfolio').getPublicUrl(filePath);
+      const { data: newItem, error: dbError } = await supabase
+        .from('portfolio_items').insert({ company_id: companyId, image_url: publicUrl, title: 'Novo Item' }).select().single();
+      if (dbError) throw dbError;
+      setItems(prev => [newItem, ...prev]);
+      addToast('Imagem adicionada com sucesso!', 'success');
+    } catch (err: any) {
+      console.error('Error uploading:', err);
+      addToast(err.message || 'Erro ao adicionar imagem.', 'error');
+    } finally {
+      setUploading(false);
     }
+  };
 
-
-    const handleFileUpload = async (file: File | null) => {
-        if (!file) return; // Ignore null files (e.g. from removeFile)
-        if (!companyId) return;
-        setUploading(true);
-
-        try {
-            // 1. Upload Image
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${companyId}/${Math.random()}.${fileExt}`;
-            const filePath = `${fileName}`;
-
-            const { error: uploadError } = await supabase.storage
-                .from('portfolio')
-                .upload(filePath, file);
-
-            if (uploadError) {
-                if (uploadError.message.includes('Bucket not found')) {
-                    throw new Error("Erro de configuração: Bucket 'portfolio' não encontrado.");
-                }
-                throw uploadError;
-            }
-
-            // 2. Get Public URL
-            const { data: { publicUrl } } = supabase.storage
-                .from('portfolio')
-                .getPublicUrl(filePath);
-
-            // 3. Insert into Database
-            const { data: newItem, error: dbError } = await supabase
-                .from('portfolio_items')
-                .insert({
-                    company_id: companyId,
-                    image_url: publicUrl,
-                    title: 'Novo Item' // Renamed from caption
-                })
-                .select()
-                .single();
-
-            if (dbError) throw dbError;
-
-            setItems(prev => [newItem, ...prev]);
-            addToast("Imagem adicionada com sucesso!", "success");
-
-        } catch (err) {
-            const error = err as Error;
-            console.error("Error uploading item:", error);
-            addToast(error.message || "Erro ao adicionar imagem.", "error");
-        } finally {
-            setUploading(false);
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Tem certeza que deseja excluir esta imagem?')) return;
+    try {
+      const { error: dbError } = await supabase.from('portfolio_items').delete().eq('id', id);
+      if (dbError) throw dbError;
+      const itemToDelete = items.find(i => i.id === id);
+      if (itemToDelete) {
+        const path = itemToDelete.image_url.split('portfolio/').pop();
+        if (path) {
+          await supabase.storage.from('portfolio').remove([path]).catch(console.error);
         }
-    };
+      }
+      setItems(prev => prev.filter(i => i.id !== id));
+      addToast('Item excluido.', 'info');
+    } catch (err) {
+      console.error('Error deleting:', err);
+      addToast('Erro ao excluir item.', 'error');
+    }
+  };
 
-    const handleDelete = async (id: string) => {
-        if (!window.confirm("Tem certeza que deseja excluir esta imagem?")) return;
+  const triggerUpload = () => {
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    if (fileInput) fileInput.click();
+  };
 
-        try {
-            // 1. Delete from DB
-            const { error: dbError } = await supabase
-                .from('portfolio_items')
-                .delete()
-                .eq('id', id);
+  return (
+    <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6">
 
-            if (dbError) throw dbError;
-
-            // 2. Delete from Storage
-            const itemToDelete = items.find(i => i.id === id);
-            if (itemToDelete) {
-                const path = itemToDelete.image_url.split('portfolio/').pop();
-                if (path) {
-                    const { error: storageError } = await supabase.storage
-                        .from('portfolio')
-                        .remove([path]);
-
-                    if (storageError) {
-                        console.error("Error deleting file from storage:", storageError);
-                        // We don't throw here to avoid blocking UI update since DB delete succeeded
-                    }
-                }
-            }
-
-            setItems(prev => prev.filter(i => i.id !== id));
-            addToast("Item excluído.", "info");
-        } catch (err) {
-            console.error("Error deleting item:", err);
-            addToast("Erro ao excluir item.", "error");
-        }
-    };
-
-    // Trigger file upload from custom button
-    const triggerUpload = () => {
-        const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-        if (fileInput) fileInput.click();
-    };
-
-
-    return (
-        <div className="space-y-6 p-6">
-            <div className="sm:flex sm:items-center sm:justify-between">
-                <div>
-                    <h3 className="text-lg leading-6 font-medium text-gray-900">Portfólio / Galeria</h3>
-                    <p className="mt-1 text-sm text-gray-500">Gerencie as imagens e vídeos que aparecem no seu perfil.</p>
-                </div>
-                {items.length > 0 && (
-                    <div className="mt-4 sm:mt-0 w-full sm:w-auto">
-                        <div className="relative">
-                            <FileUpload
-                                onFileChange={handleFileUpload}
-                                accept="image/*"
-                                maxSizeMb={5}
-                            />
-                            {uploading && <span className="text-sm text-gray-500 ml-2">Enviando...</span>}
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {loading ? (
-                <div className="flex justify-center items-center py-20">
-                    <svg className="animate-spin -ml-1 mr-3 h-8 w-8 text-brand-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                </div>
-            ) : items.length === 0 ? (
-                /* User provided Empty State */
-                <div className="col-span-full py-12 text-center border-2 border-dashed border-gray-200 rounded-xl">
-                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-camera" aria-hidden="true">
-                            <path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"></path>
-                            <circle cx="12" cy="13" r="3"></circle>
-                        </svg>
-                    </div>
-                    <h5 className="text-lg font-medium text-gray-900">Sem projetos ainda</h5>
-                    <p className="text-gray-500 mb-4">Adicione itens ao seu portfólio para exibi-los aqui.</p>
-
-                    {/* Hidden File Upload for the button to trigger */}
-                    <div className="hidden">
-                        <FileUpload
-                            onFileChange={handleFileUpload}
-                            accept="image/*"
-                            maxSizeMb={5}
-                        />
-                    </div>
-
-                    <button
-                        onClick={triggerUpload}
-                        disabled={uploading}
-                        className="inline-flex items-center justify-center font-bold rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm active:scale-95 bg-brand-primary text-white hover:bg-brand-primary-hover focus:ring-brand-primary shadow-orange-200 px-6 py-3 text-sm ">
-                        {uploading ? 'Enviando...' : 'Adicionar ao Portfólio'}
-                    </button>
-
-                    {/* Fallback if company not found */}
-                    {!companyId && <p className="text-red-500 mt-4 text-sm">Erro: Perfil de empresa não encontrado.</p>}
-                </div>
-            ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {items.map(item => (
-                        <div key={item.id} className="group relative aspect-square rounded-lg overflow-hidden bg-gray-100 shadow-sm border border-gray-100">
-                            <OptimizedImage
-                                src={item.image_url}
-                                alt={item.title || 'Portfolio Item'}
-                                className="w-full h-full object-cover"
-                                optimizedWidth={400}
-                            />
-                            <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button
-                                    onClick={() => handleDelete(item.id)}
-                                    className="text-white hover:text-red-400 transition-colors p-3 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm"
-                                    title="Excluir imagem"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
+      {/* ─── Page Header ─────────────────────────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3"
+      >
+        <div>
+          <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
+            <span>Dashboard</span><ChevronRight size={12} />
+            <span className="text-gray-600 font-medium">Portfolio</span>
+          </div>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Meu Portfolio</h1>
+          <p className="text-xs sm:text-sm text-gray-400 mt-0.5">
+            {items.length > 0
+              ? `${items.length} imagen${items.length > 1 ? 's' : ''} no portfolio`
+              : 'Mostre seus melhores trabalhos'}
+          </p>
         </div>
-    );
+        {items.length > 0 && (
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <FileUpload onFileChange={handleFileSelect} accept="image/*" maxSizeMb={5} />
+              {uploading && <span className="text-xs text-gray-400 ml-2">Enviando...</span>}
+            </div>
+          </div>
+        )}
+      </motion.div>
+
+      {/* ─── Tip Box ─────────────────────────────────────────────────── */}
+      {items.length > 0 && items.length < 6 && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex items-start gap-3"
+        >
+          <Lightbulb size={16} className="text-blue-500 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-blue-700 leading-relaxed">
+            <strong>Dica:</strong> Portfolios com pelo menos 6 fotos recebem ate 5x mais visualizacoes. Adicione mais {6 - items.length} imagen{6 - items.length > 1 ? 's' : ''} para maximizar sua visibilidade.
+          </p>
+        </motion.div>
+      )}
+
+      {/* ─── Content ─────────────────────────────────────────────────── */}
+      {loading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {[1, 2, 3, 4, 5, 6].map(i => <LoadingSkeleton key={i} className="aspect-square rounded-2xl" />)}
+        </div>
+      ) : items.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="bg-white rounded-2xl border-2 border-dashed border-gray-200 py-16 px-6 text-center"
+        >
+          <div className="w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Camera size={24} className="text-gray-300" />
+          </div>
+          <h3 className="text-sm sm:text-base font-bold text-gray-700 mb-1">Sem projetos ainda</h3>
+          <p className="text-xs text-gray-400 mb-5 max-w-sm mx-auto">
+            Empresas com portfolio recebem ate 5x mais orcamentos. Mostre seus melhores trabalhos e conquiste mais clientes.
+          </p>
+          <div className="hidden">
+            <FileUpload onFileChange={handleFileSelect} accept="image/*" maxSizeMb={5} />
+          </div>
+          <Button onClick={triggerUpload} disabled={uploading || !companyId} size="sm" className="!rounded-xl">
+            <Plus size={14} className="mr-1.5" />
+            {uploading ? 'Enviando...' : 'Adicionar ao Portfolio'}
+          </Button>
+          {!companyId && <p className="text-red-500 mt-3 text-xs">Erro: Perfil de empresa nao encontrado.</p>}
+        </motion.div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {items.map((item, idx) => (
+            <motion.div
+              key={item.id}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.05 * idx }}
+              className="group relative aspect-square rounded-2xl overflow-hidden bg-gray-100 border border-gray-100 shadow-sm hover:shadow-md transition-all"
+            >
+              <OptimizedImage
+                src={item.image_url}
+                alt={item.title || 'Portfolio'}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                optimizedWidth={400}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-between p-3">
+                <p className="text-white text-xs font-bold truncate mr-2">{item.title}</p>
+                <button
+                  onClick={() => handleDelete(item.id)}
+                  className="p-2 rounded-lg bg-black/40 hover:bg-red-500 text-white backdrop-blur-sm transition-colors flex-shrink-0"
+                  title="Excluir"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </motion.div>
+          ))}
+
+          {/* Add Card */}
+          <div
+            onClick={triggerUpload}
+            className="aspect-square rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 hover:border-primary-300 hover:text-primary-500 transition-all cursor-pointer group"
+          >
+            <div className="w-10 h-10 rounded-full bg-gray-50 group-hover:bg-primary-50 flex items-center justify-center mb-2 transition-colors">
+              <Plus size={20} />
+            </div>
+            <span className="text-[10px] sm:text-xs font-medium">Adicionar</span>
+          </div>
+        </div>
+      )}
+
+      {/* Image Crop Modal */}
+      <ImageCropModal
+        isOpen={cropModal.isOpen}
+        imageSrc={cropModal.imageSrc}
+        aspectRatio={1} // Square for portfolio
+        onClose={() => setCropModal({ isOpen: false, imageSrc: '' })}
+        onCropComplete={handleCropComplete}
+      />
+    </div>
+  );
 };
 
 export default DashboardPortfolioPage;

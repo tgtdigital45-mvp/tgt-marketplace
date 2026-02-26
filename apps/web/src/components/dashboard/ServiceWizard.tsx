@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ImageCropModal from '@/components/ImageCropModal';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
@@ -30,10 +31,10 @@ const StepOverview = ({ data, updateData, errors }: any) => {
     const selectedSubcategory = selectedCategory?.subcategories.find(sub => sub.id === data.subcategory);
 
     const serviceTypeOptions = [
-        { label: 'Presencial (Cliente vai até a empresa)', value: 'presential_customer_goes' },
-        { label: 'Presencial (Empresa vai até o cliente)', value: 'presential_company_goes' },
-        { label: 'Remoto (Online)', value: 'remote' },
-        { label: 'Híbrido', value: 'hybrid' },
+        { label: 'Presencial (Cliente vai até a empresa)', value: 'local_client_fixed' },
+        { label: 'Presencial (Empresa vai até o cliente)', value: 'local_provider_fixed' },
+        { label: 'Remoto (Online)', value: 'remote_fixed' },
+        { label: 'Sob Demanda (Orçamento Prévio)', value: 'requires_quote' },
     ];
 
     return (
@@ -155,6 +156,24 @@ const StepOverview = ({ data, updateData, errors }: any) => {
                                         Necessita de Orçamento Prévio
                                     </label>
                                     <p className="text-gray-500">Os clientes solicitarão um orçamento antes de visualizar o preço final.</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-start p-3 bg-green-50 rounded-lg border border-green-100">
+                                <div className="flex h-5 items-center">
+                                    <input
+                                        id="allowsEscrow"
+                                        type="checkbox"
+                                        checked={data.allowsEscrow}
+                                        onChange={(e) => updateData({ allowsEscrow: e.target.checked })}
+                                        className="h-4 w-4 text-green-600 focus:ring-green-600 border-gray-300 rounded"
+                                    />
+                                </div>
+                                <div className="ml-3 text-sm">
+                                    <label htmlFor="allowsEscrow" className="font-medium text-gray-700">
+                                        Permitir Pagamento Custodiado (Escrow)
+                                    </label>
+                                    <p className="text-gray-500">Receba o valor retido pela plataforma até a entrega final, garantindo a proteção de ambas as partes.</p>
                                 </div>
                             </div>
                         </div>
@@ -589,34 +608,50 @@ const StepGallery = ({ data, updateData }: any) => {
     const { addToast } = useToast();
     const [uploading, setUploading] = useState(false);
 
-    const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0] && user) {
-            setUploading(true);
-            try {
-                const file = e.target.files[0];
-                const fileExt = file.name.split('.').pop();
-                const fileName = `${user.id}/${Math.random()}.${fileExt}`;
-                const filePath = `services/${fileName}`;
+    // Crop Modal State
+    const [cropModal, setCropModal] = useState<{
+        isOpen: boolean;
+        imageSrc: string;
+    }>({ isOpen: false, imageSrc: '' });
 
-                // Upload to 'portfolio' bucket as it's already configured and likely has correct policies
-                const { error: uploadError } = await supabase.storage
-                    .from('portfolio')
-                    .upload(filePath, file);
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setCropModal({ isOpen: true, imageSrc: reader.result as string });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
-                if (uploadError) throw uploadError;
+    const handleCropComplete = async (croppedFile: File) => {
+        setCropModal({ isOpen: false, imageSrc: '' });
+        if (!user) return;
 
-                const { data: { publicUrl } } = supabase.storage
-                    .from('portfolio')
-                    .getPublicUrl(filePath);
+        setUploading(true);
+        try {
+            const fileExt = croppedFile.name.split('.').pop();
+            const fileName = `${user.id}/${Math.random()}.${fileExt}`;
+            const filePath = `services/${fileName}`;
 
-                updateData({ gallery: [...(data.gallery || []), publicUrl] });
-                addToast("Imagem carregada com sucesso!", "success");
-            } catch (err: any) {
-                console.error("Error uploading image:", err);
-                addToast(err.message || "Erro ao carregar imagem.", "error");
-            } finally {
-                setUploading(false);
-            }
+            const { error: uploadError } = await supabase.storage
+                .from('portfolio')
+                .upload(filePath, croppedFile);
+
+            if (uploadError) throw uploadError;
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('portfolio')
+                .getPublicUrl(filePath);
+
+            updateData({ gallery: [...(data.gallery || []), publicUrl] });
+            addToast("Imagem carregada com sucesso!", "success");
+        } catch (err: any) {
+            console.error("Error uploading image:", err);
+            addToast(err.message || "Erro ao carregar imagem.", "error");
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -675,6 +710,14 @@ const StepGallery = ({ data, updateData }: any) => {
                     </div>
                 )}
             </div>
+
+            <ImageCropModal
+                isOpen={cropModal.isOpen}
+                imageSrc={cropModal.imageSrc}
+                aspectRatio={16 / 9} // aspect-video
+                onClose={() => setCropModal({ isOpen: false, imageSrc: '' })}
+                onCropComplete={handleCropComplete}
+            />
         </div>
     );
 };
@@ -698,6 +741,7 @@ const ServiceWizard = ({ onCancel, initialData, onSuccess }: { onCancel?: () => 
         useCompanyAvailability: initialData?.use_company_availability ?? true, // Default to true
         isSinglePackage: initialData?.is_single_package ?? false,
         requiresQuote: initialData?.requires_quote ?? false,
+        allowsEscrow: initialData?.allows_escrow ?? true,
         // Registration fields
         registrationNumber: initialData?.registration_number || '',
         registrationState: initialData?.registration_state || '',
@@ -754,7 +798,7 @@ const ServiceWizard = ({ onCancel, initialData, onSuccess }: { onCancel?: () => 
 
             // Determine H3 for service
             // If remote, h3_index is null. If presential/hybrid, inherit from company.
-            const serviceH3Index = (formData.serviceType === 'remote') ? null : companyH3;
+            const serviceH3Index = (formData.serviceType === 'remote_fixed' || formData.serviceType === 'requires_quote') ? null : companyH3;
 
             let finalPackages = formData.packages;
             if (formData.isSinglePackage) {
@@ -796,6 +840,7 @@ const ServiceWizard = ({ onCancel, initialData, onSuccess }: { onCancel?: () => 
                 use_company_availability: formData.useCompanyAvailability,
                 is_single_package: formData.isSinglePackage,
                 requires_quote: formData.requiresQuote,
+                allows_escrow: formData.allowsEscrow,
                 tags: formData.tags.split(',').map((t: string) => t.trim()).filter(Boolean),
                 // Registration fields
                 registration_number: formData.registrationNumber,

@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@tgt/shared';
 import { BookingWithCompany, JobRequest, DbJobRequest, DbBooking } from '@tgt/shared';
 
-interface ClientOrdersData {
+export interface ClientOrdersData {
     jobs: JobRequest[];
     bookings: BookingWithCompany[];
 }
@@ -15,7 +15,7 @@ export const useClientOrders = (userId: string | undefined) => {
 
             // Parallel Fetching using Promise.all
             try {
-                const [jobsResponse, bookingsResponse] = await Promise.all([
+                const [jobsResponse, bookingsResponse, quotesResponse] = await Promise.all([
                     supabase
                         .from('jobs')
                         .select(`
@@ -39,6 +39,24 @@ export const useClientOrders = (userId: string | undefined) => {
             companies(company_name, logo_url)
           `)
                         .eq('client_id', userId)
+                        .order('created_at', { ascending: false }),
+
+                    // 3. Fetch Quotes with Company details (via Service)
+                    supabase
+                        .from('quotes')
+                        .select(`
+            *,
+            services (
+                title,
+                duration_minutes,
+                companies (
+                    id,
+                    company_name,
+                    logo_url
+                )
+            )
+          `)
+                        .eq('user_id', userId)
                         .order('created_at', { ascending: false })
                 ]);
 
@@ -76,7 +94,7 @@ export const useClientOrders = (userId: string | undefined) => {
 
                 // Transform Bookings Data
                 const rawBookings = (bookingsResponse.data || []) as unknown as DbBooking[];
-                const bookings: BookingWithCompany[] = rawBookings.map((b) => ({
+                const mappedBookings: BookingWithCompany[] = rawBookings.map((b) => ({
                     id: b.id,
                     client_id: b.client_id,
                     company_id: b.company_id,
@@ -98,6 +116,37 @@ export const useClientOrders = (userId: string | undefined) => {
                     // Linking
                     order_id: (b as any).order_id
                 }));
+
+                // Transform Quotes Data to blend perfectly with Bookings 
+                const rawQuotes = (quotesResponse.data || []) as any[];
+                const mappedQuotes: BookingWithCompany[] = rawQuotes.map((q) => {
+                    let mappedStatus = q.status; // pending, answered, rejected, accepted
+                    if (q.status === 'pending') mappedStatus = 'pending_quote';
+                    if (q.status === 'answered') mappedStatus = 'answered_quote';
+
+                    const companyData = q.services?.companies;
+                    return {
+                        id: q.id,
+                        is_quote: true,
+                        client_id: q.user_id,
+                        company_id: companyData?.id || '',
+                        service_title: q.services?.title || 'Serviço Personalizado',
+                        service_price: q.budget_expectation || 0,
+                        booking_date: q.created_at, // use created at to sort and display cleanly
+                        booking_time: 'A Combinar',
+                        status: mappedStatus as any, // 'pending_quote' | 'answered_quote' | etc
+                        companyName: companyData?.company_name || 'Empresa',
+                        serviceName: q.services?.title || 'Orçamento',
+                        price: q.budget_expectation || 0,
+                        date: q.created_at,
+                        time: 'A Combinar',
+                        order_id: q.order_id
+                    };
+                });
+
+                const bookings = [...mappedBookings, ...mappedQuotes].sort((a, b) => {
+                    return new Date(b.created_at || b.date).getTime() - new Date(a.created_at || a.date).getTime();
+                });
 
                 return { jobs, bookings };
 

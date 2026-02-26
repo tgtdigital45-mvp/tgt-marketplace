@@ -66,51 +66,62 @@ async function processEvent(event: Stripe.Event) {
             }
         }
 
-        if (event.type === 'checkout.session.completed') {
-            const session = event.data.object
-            sessionId = session.id
-            const metadata = session.metadata
+        if (event.type === 'checkout.session.completed' || event.type === 'payment_intent.succeeded') {
+            const isPI = event.type === 'payment_intent.succeeded'
+            const object = event.data.object
+            const sessionId = isPI ? undefined : object.id
+            const paymentIntentId = isPI ? object.id : object.payment_intent
+            const metadata = object.metadata
 
-            logStructured('info', 'Processing checkout.session.completed', {
-                session_id: sessionId,
-                amount_total: session.amount_total
+            logStructured('info', `Processing ${event.type}`, {
+                id: object.id,
+                amount_total: isPI ? object.amount : object.amount_total
             })
 
             if (!metadata || !metadata.order_id) {
-                logStructured('error', 'Missing order_id in session metadata', {
-                    session_id: sessionId,
+                logStructured('error', `Missing order_id in ${event.type} metadata`, {
+                    id: object.id,
                     metadata: metadata
                 })
                 return
             }
 
             const { order_id } = metadata
-            const amountTotal = session.amount_total
+            const amountTotal = isPI ? object.amount : object.amount_total
 
             // IDEMPOTENCY CHECK
-            const { data: existingOrder } = await supabaseClient
-                .from('orders')
-                .select('id, payment_status, stripe_session_id')
-                .eq('stripe_session_id', sessionId)
-                .single()
+            const query = supabaseClient.from('orders').select('id, payment_status, stripe_payment_intent_id, stripe_session_id')
+            if (isPI) {
+                query.eq('stripe_payment_intent_id', object.id)
+            } else {
+                query.eq('stripe_session_id', object.id)
+            }
 
-            if (existingOrder) {
+            const { data: existingOrder } = await query.single()
+
+            if (existingOrder && existingOrder.payment_status === 'paid') {
                 logStructured('info', 'Webhook already processed (idempotent)', {
-                    session_id: sessionId,
+                    id: object.id,
                     order_id: existingOrder.id
                 })
                 return
             }
 
             // PROCESS PAYMENT
+            const updateData = {
+                payment_status: 'paid',
+                amount_total: amountTotal,
+            }
+            if (isPI) {
+                updateData.stripe_payment_intent_id = object.id
+            } else {
+                updateData.stripe_session_id = object.id
+                updateData.receipt_url = object.url
+            }
+
             const { data: order, error: orderError } = await supabaseClient
                 .from('orders')
-                .update({
-                    payment_status: 'paid',
-                    stripe_session_id: sessionId,
-                    amount_total: amountTotal,
-                    receipt_url: session.url
-                })
+                .update(updateData)
                 .eq('id', order_id)
                 .select()
                 .single()
@@ -127,11 +138,11 @@ async function processEvent(event: Stripe.Event) {
             await supabaseClient.rpc('transition_saga_status', {
                 p_order_id: order.id,
                 p_new_status: 'PAYMENT_CONFIRMED',
-                p_log_data: { stripe_session_id: sessionId, amount: amountTotal }
+                p_log_data: { [isPI ? 'stripe_pi' : 'stripe_session_id']: object.id, amount: amountTotal }
             });
 
             // COMMISSION SPLIT & WALLET
-            const commissionRate = session.metadata?.commission_rate ? parseFloat(session.metadata.commission_rate) : 0.20
+            const commissionRate = metadata.commission_rate ? parseFloat(metadata.commission_rate) : 0.20
             const totalOrderValue = order.agreed_price || order.price || 0
             const sellerNetIncome = totalOrderValue * (1 - commissionRate)
             const seller_id = order.seller_id
@@ -187,7 +198,7 @@ async function processEvent(event: Stripe.Event) {
                 order_id: order.id,
                 event_type: 'ACTIVATE_ORDER',
                 status: 'completed',
-                payload: { session_id: sessionId, processed_at: new Date().toISOString() }
+                payload: { [isPI ? 'stripe_pi' : 'stripe_session_id']: object.id, processed_at: new Date().toISOString() }
             });
 
         } else if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {

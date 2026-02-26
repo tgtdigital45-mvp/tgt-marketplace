@@ -12,6 +12,7 @@ import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
 import { PortfolioItem } from '@tgt/shared';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import ImageCropModal from '@/components/ImageCropModal';
 import { getCoordinatesFromAddress } from '@/utils/geocoding';
 import { coordsToH3 } from '@/utils/h3Utils';
 import {
@@ -40,6 +41,8 @@ import {
   Plus,
   Shield,
   Loader2,
+  DollarSign,
+  Landmark,
 } from 'lucide-react';
 import { gemini } from '@/utils/gemini';
 
@@ -407,6 +410,14 @@ const DashboardPerfilPage: React.FC = () => {
   const [neighborhoodInput, setNeighborhoodInput] = useState('');
   const [improvingBio, setImprovingBio] = useState(false);
 
+  // ─── Crop Modal State ──────────────────────────────────────────────────────
+  const [cropModal, setCropModal] = useState<{
+    isOpen: boolean;
+    imageSrc: string;
+    aspectRatio: number;
+    type: 'avatar' | 'cover';
+  }>({ isOpen: false, imageSrc: '', aspectRatio: 1, type: 'avatar' });
+
   // ─── Form State ─────────────────────────────────────────────────────────────
   const [formData, setFormData] = useState<FormState>(initialFormState);
   const [initialSnapshot, setInitialSnapshot] = useState<string>('');
@@ -430,7 +441,11 @@ const DashboardPerfilPage: React.FC = () => {
           city: company.address?.city || '',
           state: company.address?.state || '',
         },
-        socialLinks: (company as any).social_links || { facebook: '', instagram: '', linkedin: '' },
+        socialLinks: {
+          facebook: (company as any).social_links?.facebook || '',
+          instagram: (company as any).social_links?.instagram || '',
+          linkedin: (company as any).social_links?.linkedin || '',
+        },
         coverage_radius_km: (company as any).coverage_radius_km ?? 30,
         coverage_neighborhoods: (company as any).coverage_neighborhoods || [],
         terms_and_policies: (company as any).terms_and_policies || '',
@@ -474,9 +489,15 @@ const DashboardPerfilPage: React.FC = () => {
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     if (['street', 'number', 'district', 'city', 'state', 'cep'].includes(name)) {
-      setFormData(prev => ({ ...prev, address: { ...prev.address, [name]: value } }));
+      setFormData(prev => ({
+        ...prev,
+        address: { ...prev.address, [name]: value }
+      }));
     } else if (['facebook', 'instagram', 'linkedin'].includes(name)) {
-      setFormData(prev => ({ ...prev, socialLinks: { ...prev.socialLinks, [name]: value } }));
+      setFormData(prev => ({
+        ...prev,
+        socialLinks: { ...prev.socialLinks, [name]: value }
+      }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -506,6 +527,33 @@ const DashboardPerfilPage: React.FC = () => {
       coverage_neighborhoods: prev.coverage_neighborhoods.filter(n => n !== nb),
     }));
   }, []);
+
+  // ─── Crop modal handlers ───────────────────────────────────────────────────
+  const handleAvatarSelect = useCallback((file: File) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setCropModal({ isOpen: true, imageSrc: reader.result as string, aspectRatio: 1, type: 'avatar' });
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const handleCoverSelect = useCallback((file: File) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setCropModal({ isOpen: true, imageSrc: reader.result as string, aspectRatio: 16 / 9, type: 'cover' });
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const handleCropConfirm = useCallback((croppedFile: File) => {
+    const cropType = cropModal.type;
+    setCropModal(prev => ({ ...prev, isOpen: false }));
+    if (cropType === 'avatar') {
+      uploadAvatar(croppedFile);
+    } else {
+      uploadCover(croppedFile);
+    }
+  }, [cropModal.type]);
 
   // ─── Upload avatar ─────────────────────────────────────────────────────────
   const uploadAvatar = async (file: File) => {
@@ -634,6 +682,34 @@ const DashboardPerfilPage: React.FC = () => {
     }
   };
 
+  const [connectingStripe, setConnectingStripe] = useState(false);
+
+  const handleConnectStripe = async () => {
+    if (!company?.id) return;
+    try {
+      setConnectingStripe(true);
+      const { data, error } = await supabase.functions.invoke('create-connect-onboarding', {
+        body: {
+          company_id: company.id,
+          return_url: window.location.href,
+          refresh_url: window.location.href,
+        }
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        addToast('Não foi possível gerar o link de onboarding.', 'error');
+      }
+    } catch (err: any) {
+      console.error('Stripe Connect error:', err);
+      addToast(err.message || 'Erro ao conectar com Stripe', 'error');
+    } finally {
+      setConnectingStripe(false);
+    }
+  };
+
   // ─── Loading State ─────────────────────────────────────────────────────────
   if (companyLoading || !company) {
     return (
@@ -682,12 +758,40 @@ const DashboardPerfilPage: React.FC = () => {
       {/* ─── Completion Bar ──────────────────────────────────────────────────── */}
       <CompletionBar percentage={completion} />
 
+      {/* ─── Stripe Connect Alert ──────────────────────────────────────────────── */}
+      {!company.stripe_charges_enabled && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 shadow-sm"
+        >
+          <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+            <DollarSign size={20} className="text-amber-600" />
+          </div>
+          <div className="flex-grow">
+            <h3 className="text-sm font-bold text-amber-900">Configure seus Recebimentos</h3>
+            <p className="text-xs text-amber-700 mt-0.5">
+              Conecte sua conta bancária para poder aceitar pagamentos diretamente pela plataforma.
+            </p>
+          </div>
+          <Button
+            onClick={handleConnectStripe}
+            isLoading={connectingStripe}
+            variant="primary"
+            className="w-full sm:w-auto flex-shrink-0 bg-amber-600 hover:bg-amber-700 text-white border-none shadow-sm shadow-amber-600/20"
+          >
+            Configurar agora
+          </Button>
+        </motion.div>
+      )}
+
       {/* ─── Profile Header Card ─────────────────────────────────────────────── */}
       <ProfileHeaderCard
         company={company}
         completion={completion}
-        onAvatarChange={uploadAvatar}
-        onCoverChange={uploadCover}
+        onAvatarChange={handleAvatarSelect}
+        onCoverChange={handleCoverSelect}
         uploading={uploading}
       />
 
@@ -722,14 +826,14 @@ const DashboardPerfilPage: React.FC = () => {
                   <Input
                     label="Nome Fantasia"
                     name="companyName"
-                    value={formData.companyName}
+                    value={formData.companyName || ''}
                     onChange={handleChange}
                     placeholder="Ex: Studio Digital Cascavel"
                   />
                   <Input
                     label="Razao Social"
                     name="legalName"
-                    value={formData.legalName}
+                    value={formData.legalName || ''}
                     onChange={handleChange}
                     placeholder="Ex: Studio Digital LTDA"
                     helperText="Usado apenas internamente"
@@ -737,7 +841,7 @@ const DashboardPerfilPage: React.FC = () => {
                 </div>
                 <Select
                   label="Categoria Principal"
-                  value={formData.category}
+                  value={formData.category || ''}
                   onChange={handleCategoryChange}
                   options={categoryOptions}
                   placeholder="Selecione sua area de atuacao"
@@ -769,13 +873,13 @@ const DashboardPerfilPage: React.FC = () => {
                     name="description"
                     rows={5}
                     maxLength={1000}
-                    value={formData.description}
+                    value={formData.description || ''}
                     onChange={handleChange}
                     placeholder="Descreva seus servicos, experiencia, diferenciais competitivos e por que clientes devem escolher sua empresa..."
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all resize-none"
                   />
                   <span className="absolute bottom-3 right-3 text-[10px] text-gray-300">
-                    {formData.description.length}/1000
+                    {(formData.description || '').length}/1000
                   </span>
                 </div>
               </FormSection>
@@ -789,7 +893,7 @@ const DashboardPerfilPage: React.FC = () => {
                   <Input
                     label="Telefone / WhatsApp"
                     name="phone"
-                    value={formData.phone}
+                    value={formData.phone || ''}
                     onChange={handleChange}
                     placeholder="(45) 99999-0000"
                   />
@@ -797,7 +901,7 @@ const DashboardPerfilPage: React.FC = () => {
                     label="E-mail Comercial"
                     name="email"
                     type="email"
-                    value={formData.email}
+                    value={formData.email || ''}
                     onChange={handleChange}
                     placeholder="contato@suaempresa.com"
                   />
@@ -805,7 +909,7 @@ const DashboardPerfilPage: React.FC = () => {
                 <Input
                   label="Website"
                   name="website"
-                  value={formData.website}
+                  value={formData.website || ''}
                   onChange={handleChange}
                   placeholder="https://www.suaempresa.com.br"
                 />
@@ -824,7 +928,7 @@ const DashboardPerfilPage: React.FC = () => {
                     <Input
                       name="instagram"
                       placeholder="https://instagram.com/suaempresa"
-                      value={formData.socialLinks.instagram}
+                      value={formData.socialLinks.instagram || ''}
                       onChange={handleChange}
                     />
                   </div>
@@ -835,7 +939,7 @@ const DashboardPerfilPage: React.FC = () => {
                     <Input
                       name="facebook"
                       placeholder="https://facebook.com/suaempresa"
-                      value={formData.socialLinks.facebook}
+                      value={formData.socialLinks.facebook || ''}
                       onChange={handleChange}
                     />
                   </div>
@@ -846,7 +950,7 @@ const DashboardPerfilPage: React.FC = () => {
                     <Input
                       name="linkedin"
                       placeholder="https://linkedin.com/company/suaempresa"
-                      value={formData.socialLinks.linkedin}
+                      value={formData.socialLinks.linkedin || ''}
                       onChange={handleChange}
                     />
                   </div>
@@ -867,7 +971,7 @@ const DashboardPerfilPage: React.FC = () => {
                   <Input
                     label="CEP"
                     name="cep"
-                    value={formData.address.cep}
+                    value={formData.address.cep || ''}
                     onChange={handleChange}
                     placeholder="85810-000"
                   />
@@ -875,7 +979,7 @@ const DashboardPerfilPage: React.FC = () => {
                     <Input
                       label="Rua / Avenida"
                       name="street"
-                      value={formData.address.street}
+                      value={formData.address.street || ''}
                       onChange={handleChange}
                       placeholder="Rua Parana"
                     />
@@ -885,28 +989,28 @@ const DashboardPerfilPage: React.FC = () => {
                   <Input
                     label="Numero"
                     name="number"
-                    value={formData.address.number}
+                    value={formData.address.number || ''}
                     onChange={handleChange}
                     placeholder="1234"
                   />
                   <Input
                     label="Bairro"
                     name="district"
-                    value={formData.address.district}
+                    value={formData.address.district || ''}
                     onChange={handleChange}
                     placeholder="Centro"
                   />
                   <Input
                     label="Cidade"
                     name="city"
-                    value={formData.address.city}
+                    value={formData.address.city || ''}
                     onChange={handleChange}
                     placeholder="Cascavel"
                   />
                   <Input
                     label="Estado (UF)"
                     name="state"
-                    value={formData.address.state}
+                    value={formData.address.state || ''}
                     onChange={handleChange}
                     placeholder="PR"
                   />
@@ -1002,15 +1106,16 @@ const DashboardPerfilPage: React.FC = () => {
               >
                 <div className="relative">
                   <textarea
+                    name="terms_and_policies"
                     rows={10}
                     maxLength={3000}
-                    value={formData.terms_and_policies}
+                    value={formData.terms_and_policies || ''}
                     onChange={e => setFormData(prev => ({ ...prev, terms_and_policies: e.target.value }))}
                     placeholder={`Exemplo:\n\n• Cancelamento: Ate 24h antes do servico, sem custo.\n• Garantia: 30 dias para revisoes.\n• Pagamento: 50% na aprovacao, 50% na entrega.\n• Prazos: Definidos em contrato individual.\n• Deslocamento: Incluso no raio de 30km.`}
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all resize-none leading-relaxed"
                   />
                   <span className="absolute bottom-3 right-3 text-[10px] text-gray-300">
-                    {formData.terms_and_policies.length}/3000
+                    {(formData.terms_and_policies || '').length}/3000
                   </span>
                 </div>
                 <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 flex gap-3">
@@ -1098,6 +1203,15 @@ const DashboardPerfilPage: React.FC = () => {
         saving={saving}
         onSave={saveProfile}
         onDiscard={handleDiscard}
+      />
+
+      {/* ─── Image Crop Modal ──────────────────────────────────────────────────── */}
+      <ImageCropModal
+        isOpen={cropModal.isOpen}
+        imageSrc={cropModal.imageSrc}
+        aspectRatio={cropModal.aspectRatio}
+        onClose={() => setCropModal(prev => ({ ...prev, isOpen: false }))}
+        onCropComplete={handleCropConfirm}
       />
     </div>
   );

@@ -77,7 +77,8 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks: {
             vendor: ['react', 'react-dom', 'react-router-dom'],
-            ui: ['framer-motion', '@headlessui/react'],
+            ui: ['framer-motion', '@headlessui/react', 'lucide-react'],
+            ai: ['@google/genai'],
             maps: ['leaflet', 'react-leaflet']
           }
         }

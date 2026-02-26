@@ -4,6 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@tgt/shared';
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
 import Button from '@/components/ui/Button';
+import { motion } from 'framer-motion';
+import { ChevronRight, MessageSquare, Paperclip, Zap, ArrowLeft } from 'lucide-react';
 
 const QUICK_REPLIES = [
     'Estou a caminho do local',
@@ -276,14 +278,32 @@ const DashboardMensagensPage: React.FC = () => {
     };
 
     return (
-        <div className="h-[calc(100vh-140px)] flex bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+        <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6">
             <Helmet>
                 <title>Mensagens | Dashboard CONTRATTO</title>
             </Helmet>
+
+            {/* ─── Page Header ─────────────────────────────────────────────── */}
+            <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+            >
+                <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
+                    <span>Dashboard</span><ChevronRight size={12} />
+                    <span className="text-gray-600 font-medium">Mensagens</span>
+                </div>
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Mensagens</h1>
+                <p className="text-xs sm:text-sm text-gray-400 mt-0.5">
+                    {threads.length > 0 ? `${threads.length} conversa${threads.length > 1 ? 's' : ''}` : 'Converse com seus clientes em tempo real'}
+                </p>
+            </motion.div>
+
+        <div className="h-[calc(100vh-240px)] flex bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             {/* Sidebar List */}
             <div className={`${activeThread ? 'hidden md:flex' : 'flex'} w-full md:w-1/3 border-r border-gray-100 flex-col`}>
-                <div className="p-4 border-b border-gray-100 bg-gray-50">
-                    <h2 className="text-lg font-bold text-gray-800">Mensagens</h2>
+                <div className="p-4 border-b border-gray-100 bg-gray-50/50">
+                    <h2 className="text-sm font-bold text-gray-800">Conversas</h2>
                 </div>
                 <div className="flex-grow overflow-y-auto custom-scrollbar">
                     {loading ? (
@@ -301,7 +321,7 @@ const DashboardMensagensPage: React.FC = () => {
                             <button
                                 key={thread.threadId}
                                 onClick={() => setActiveThread(thread)}
-                                className={`w-full p-4 flex items-start gap-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-50 last:border-0 ${activeThread?.threadId === thread.threadId ? 'bg-blue-50 border-r-4 border-brand-primary' : ''}`}
+                                className={`w-full p-4 flex items-start gap-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-50 last:border-0 ${activeThread?.threadId === thread.threadId ? 'bg-blue-50 border-r-4 border-primary-500' : ''}`}
                             >
                                 <div className="w-10 h-10 bg-gray-200 rounded-full flex-shrink-0 flex items-center justify-center text-gray-500 font-bold overflow-hidden relative">
                                     {thread.partnerAvatar ? (
@@ -318,7 +338,7 @@ const DashboardMensagensPage: React.FC = () => {
                                         </span>
                                     </div>
                                     <div className="flex justify-between items-center">
-                                        <p className="text-xs text-brand-primary truncate max-w-[150px]">{thread.jobTitle}</p>
+                                        <p className="text-xs text-primary-500 truncate max-w-[150px]">{thread.jobTitle}</p>
                                         {thread.unreadCount > 0 && (
                                             <span className="w-2 h-2 bg-red-500 rounded-full"></span>
                                         )}
@@ -338,10 +358,10 @@ const DashboardMensagensPage: React.FC = () => {
                 {activeThread ? (
                     <>
                         <div className="p-4 bg-white border-b border-gray-100 flex items-center gap-3 shadow-sm z-10 shrink-0">
-                            <button onClick={() => setActiveThread(null)} className="md:hidden text-gray-500 mr-2">
-                                ←
+                            <button onClick={() => setActiveThread(null)} className="md:hidden text-gray-500 mr-2 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+                                <ArrowLeft size={18} />
                             </button>
-                            <div className="w-10 h-10 bg-brand-primary rounded-full flex items-center justify-center text-white font-bold overflow-hidden">
+                            <div className="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center text-white font-bold overflow-hidden">
                                 {activeThread.partnerAvatar ? (
                                     <img src={activeThread.partnerAvatar} alt="" className="w-full h-full object-cover" />
                                 ) : (
@@ -350,7 +370,7 @@ const DashboardMensagensPage: React.FC = () => {
                             </div>
                             <div>
                                 <h3 className="font-bold text-gray-800">{activeThread.partnerName}</h3>
-                                <p className="text-xs text-brand-primary">{activeThread.jobTitle}</p>
+                                <p className="text-xs text-primary-500">{activeThread.jobTitle}</p>
                             </div>
                         </div>
 
@@ -364,7 +384,7 @@ const DashboardMensagensPage: React.FC = () => {
                                     <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                                         <div
                                             className={`max-w-[70%] px-4 py-3 rounded-2xl shadow-sm text-sm break-words ${isMe
-                                                ? 'bg-brand-primary text-white rounded-br-none'
+                                                ? 'bg-primary-500 text-white rounded-br-none'
                                                 : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'
                                                 }`}
                                         >
@@ -376,7 +396,7 @@ const DashboardMensagensPage: React.FC = () => {
                                                     onClick={() => window.open(msg.content, '_blank')}
                                                 />
                                             ) : msg.type === 'file' ? (
-                                                <a href={msg.content} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-2 underline ${isMe ? 'text-blue-100' : 'text-brand-primary'}`}>
+                                                <a href={msg.content} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-2 underline ${isMe ? 'text-blue-100' : 'text-primary-500'}`}>
                                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
                                                     Abrir arquivo
                                                 </a>
@@ -413,13 +433,13 @@ const DashboardMensagensPage: React.FC = () => {
                                     type="button"
                                     title="Respostas Rápidas"
                                     onClick={() => setShowQuickReplies(v => !v)}
-                                    className={`p-2 rounded-lg transition-colors flex-shrink-0 ${showQuickReplies ? 'bg-brand-primary/10 text-brand-primary' : 'text-gray-400 hover:text-brand-primary hover:bg-gray-100'}`}
+                                    className={`p-2 rounded-lg transition-colors flex-shrink-0 ${showQuickReplies ? 'bg-primary-500/10 text-primary-500' : 'text-gray-400 hover:text-primary-500 hover:bg-gray-100'}`}
                                 >
                                     ⚡
                                 </button>
                                 {/* Attachment */}
-                                <label htmlFor="chat-attachment" className="cursor-pointer p-2 rounded-lg text-gray-400 hover:text-brand-primary hover:bg-gray-100 transition-colors flex-shrink-0" title="Anexar arquivo">
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                                <label htmlFor="chat-attachment" className="cursor-pointer p-2 rounded-lg text-gray-400 hover:text-primary-500 hover:bg-gray-100 transition-colors flex-shrink-0" title="Anexar arquivo">
+                                    <Paperclip size={18} />
                                     <input id="chat-attachment" type="file" className="hidden" accept="image/*,.pdf,.doc,.docx" onChange={handleAttachment} disabled={uploadingFile} />
                                 </label>
                                 <input
@@ -428,7 +448,7 @@ const DashboardMensagensPage: React.FC = () => {
                                     onChange={(e) => setNewMessage(e.target.value)}
                                     placeholder={uploadingFile ? 'Enviando arquivo...' : 'Digite sua mensagem...'}
                                     disabled={uploadingFile}
-                                    className="flex-grow p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm disabled:opacity-60"
+                                    className="flex-grow p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm disabled:opacity-60"
                                 />
                                 <Button variant="primary" type="submit" disabled={!newMessage.trim() || uploadingFile}>
                                     Enviar
@@ -438,13 +458,15 @@ const DashboardMensagensPage: React.FC = () => {
                     </>
                 ) : (
                     <div className="flex-grow flex flex-col items-center justify-center text-gray-400">
-                        <svg className="w-16 h-16 mb-4 opacity-20" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clipRule="evenodd" />
-                        </svg>
-                        <p>Selecione uma conversa para começar</p>
+                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                            <MessageSquare size={28} className="text-gray-300" />
+                        </div>
+                        <p className="text-sm font-medium">Selecione uma conversa para comecar</p>
+                        <p className="text-xs mt-1">Suas mensagens com clientes aparecem aqui</p>
                     </div>
                 )}
             </div>
+        </div>
         </div>
     );
 };

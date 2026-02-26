@@ -11,6 +11,7 @@ import SEO from '@/components/SEO';
 import ServiceGallery from '@/components/service/ServiceGallery';
 import ServiceAttributes from '@/components/service/ServiceAttributes';
 import ServiceComparisonTable from '@/components/service/ServiceComparisonTable';
+import { BookingCalendar } from '@/components/booking/BookingCalendar';
 const ServiceBookingModal = lazy(() => import('@/components/ServiceBookingModal'));
 
 import { Disclosure } from '@headlessui/react';
@@ -142,6 +143,8 @@ const ServiceDetailsPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+    const [selectedTier, setSelectedTier] = useState<string | null>(null);
+    const [selectedSlot, setSelectedSlot] = useState<{ date: string, time: string, endDate?: string } | null>(null);
 
     useEffect(() => {
         if (!id) return;
@@ -187,6 +190,8 @@ const ServiceDetailsPage = () => {
     }, [id]);
 
     const handleCheckout = (tier: string) => {
+        setSelectedTier(tier);
+
         if (service?.requires_quote) {
             setIsBookingModalOpen(true);
             return;
@@ -200,10 +205,21 @@ const ServiceDetailsPage = () => {
             return;
         }
 
+        // Focus on the calendar section if it exists
         if (service?.use_company_availability) {
-            navigate(`/agendar/${id}?tier=${tier}`);
+            document.getElementById('booking-section')?.scrollIntoView({ behavior: 'smooth' });
         } else {
             navigate(`/checkout/${id}?tier=${tier}`);
+        }
+    };
+
+    const handleSlotSelect = (date: string, time: string, endDate?: string) => {
+        setSelectedSlot({ date, time, endDate });
+
+        if (selectedTier) {
+            let url = `/checkout/${id}?tier=${selectedTier}&date=${date}&time=${time}`;
+            if (endDate) url += `&endDate=${endDate}`;
+            navigate(url);
         }
     };
 
@@ -351,9 +367,34 @@ const ServiceDetailsPage = () => {
                                     packages={service.packages}
                                     onSelect={(tier) => handleCheckout(tier)}
                                     requiresQuote={service.requires_quote}
+                                    selectedTier={selectedTier || undefined}
                                 />
                             )}
                         </div>
+
+                        {/* 6. Booking Calendar Section (If direct booking & availability enabled) */}
+                        {!service.requires_quote && service.use_company_availability && company && (
+                            <div id="booking-section" className="space-y-6 pt-4">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <div>
+                                        <h2 className="font-display text-2xl font-bold text-gray-900">Agenda de Atendimento</h2>
+                                        <p className="text-gray-600">Escolha uma data e horário disponível para prosseguir.</p>
+                                    </div>
+                                    {selectedTier && (
+                                        <div className="bg-brand-primary/5 px-4 py-2 rounded-xl border border-brand-primary/10">
+                                            <span className="text-[10px] font-bold text-brand-primary uppercase tracking-wider block">Pacote Selecionado</span>
+                                            <span className="text-sm font-bold text-gray-900 capitalize">{selectedTier}</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <BookingCalendar
+                                    service={service}
+                                    company={company}
+                                    onSelect={handleSlotSelect}
+                                />
+                            </div>
+                        )}
 
                         {/* 7. About The Company (Advanced) */}
                         <div className="bg-gray-50 rounded-2xl p-8 border border-gray-200">

@@ -34,6 +34,8 @@ export interface CompanyData {
     subscription_status?: string;
     availability?: Record<string, any>;
     h3_index?: string | null;
+    stripe_account_id?: string;
+    stripe_charges_enabled?: boolean;
 }
 
 interface CompanyContextType {

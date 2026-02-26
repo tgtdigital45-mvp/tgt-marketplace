@@ -81,7 +81,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       };
 
-      const TIMEOUT_MS = 15000;
+      const TIMEOUT_MS = 30000;
 
       const [companyResult, profileResult] = await Promise.allSettled([
         raceWithTimeout(
@@ -174,15 +174,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Handle both INITIAL_SESSION and SIGNED_IN
       if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (!session?.user) {
-          // No session — not logged in
+          // Check if we were already in INITIAL_SESSION with no user to avoid redundant state resets
+          if (event === 'INITIAL_SESSION') {
+            console.log('[AuthContext] INITIAL_SESSION with no user, resetting loading.');
+          }
           setUser(null);
           setLoading(false);
           return;
         }
 
-        // Deduplicate: skip if this exact user was already fully processed
-        if (event === 'SIGNED_IN' && session.user.id === lastProcessedUserIdRef.current) {
-          console.log(`[AuthContext] Skipping duplicate SIGNED_IN for user: ${session.user.id}`);
+        // Deduplicate: skip if this user ID was already processed in the current mount cycle
+        // to avoid redundant fetches between INITIAL_SESSION and SIGNED_IN
+        if (session.user.id === lastProcessedUserIdRef.current) {
+          console.log(`[AuthContext] Skipping redundant ${event} for user: ${session.user.id}`);
+          // If we had a session but were loading, stop loading
+          setLoading(false);
           return;
         }
 

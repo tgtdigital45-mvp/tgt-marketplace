@@ -4,9 +4,10 @@ import { supabase } from '@tgt/shared';
 import Button from '@/components/ui/Button';
 import { useToast } from '@/contexts/ToastContext';
 import { BookingWithCompany } from '@tgt/shared';
-import { Calendar as CalendarIcon, List, Check, X, ChevronLeft, ChevronRight, MessageCircle, Sparkles, Loader2, Mail } from 'lucide-react';
+import { Calendar as CalendarIcon, List, Check, X, ChevronLeft, ChevronRight as ChevronRightIcon, MessageCircle, Sparkles, Loader2, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { gemini } from '@/utils/gemini';
+import { motion } from 'framer-motion';
 
 import { DAYS, DAY_LABELS, DaySchedule, CompanyAvailability } from '@/utils/availability';
 
@@ -200,31 +201,46 @@ const DashboardAgendaPage = () => {
     const previousMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
 
     return (
-        <div className="space-y-8">
-            <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold text-gray-900">Agenda & Disponibilidade</h1>
+        <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6">
+            {/* ─── Page Header ─────────────────────────────────────────────── */}
+            <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3"
+            >
+                <div>
+                    <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
+                        <span>Dashboard</span><ChevronRightIcon size={12} />
+                        <span className="text-gray-600 font-medium">Agenda</span>
+                    </div>
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Agenda & Disponibilidade</h1>
+                    <p className="text-xs sm:text-sm text-gray-400 mt-0.5">
+                        Gerencie seus horarios e agendamentos
+                    </p>
+                </div>
 
-                <div className="flex bg-gray-100 p-1 rounded-lg">
+                <div className="flex bg-gray-100 p-1 rounded-xl">
                     <button
                         onClick={() => setViewMode('list')}
-                        className={`px-4 py-2 rounded-md flex items-center gap-2 text-sm font-medium transition-colors ${viewMode === 'list' ? 'bg-white text-brand-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                        className={`px-3 py-2 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-all ${viewMode === 'list' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'}`}
                     >
-                        <List size={18} />
+                        <List size={14} className={viewMode === 'list' ? 'text-primary-500' : ''} />
                         Lista
                     </button>
                     <button
                         onClick={() => setViewMode('calendar')}
-                        className={`px-4 py-2 rounded-md flex items-center gap-2 text-sm font-medium transition-colors ${viewMode === 'calendar' ? 'bg-white text-brand-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                        className={`px-3 py-2 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-all ${viewMode === 'calendar' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'}`}
                     >
-                        <CalendarIcon size={18} />
-                        Calendário
+                        <CalendarIcon size={14} className={viewMode === 'calendar' ? 'text-primary-500' : ''} />
+                        Calendario
                     </button>
                 </div>
-            </div>
+            </motion.div>
             {/* 1. Availability Settings */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-lg font-bold">Horários de Atendimento</h2>
+                    <h2 className="text-sm font-bold text-gray-800">Horarios de Atendimento</h2>
 
                     <div className="flex items-center gap-2">
                         <label htmlFor="holidays" className="text-sm font-medium text-gray-700">
@@ -233,7 +249,7 @@ const DashboardAgendaPage = () => {
                         <button
                             id="holidays"
                             onClick={() => setWorksOnHolidays(!worksOnHolidays)}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 ${worksOnHolidays ? 'bg-brand-primary' : 'bg-gray-200'
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${worksOnHolidays ? 'bg-primary-500' : 'bg-gray-200'
                                 }`}
                         >
                             <span
@@ -257,7 +273,7 @@ const DashboardAgendaPage = () => {
                                         type="checkbox"
                                         checked={availability[day]?.active ?? false}
                                         onChange={() => toggleDay(day)}
-                                        className="w-5 h-5 rounded text-brand-primary focus:ring-brand-primary"
+                                        className="w-5 h-5 rounded text-primary-500 focus:ring-primary-500"
                                     />
                                     <span className="font-medium text-gray-700 w-28">{DAY_LABELS[day]}</span>
                                 </div>
@@ -269,7 +285,7 @@ const DashboardAgendaPage = () => {
                                             id={`break-${day}`}
                                             checked={availability[day]?.hasBreak ?? false}
                                             onChange={() => toggleBreak(day)}
-                                            className="w-4 h-4 rounded text-brand-primary focus:ring-brand-primary"
+                                            className="w-4 h-4 rounded text-primary-500 focus:ring-primary-500"
                                         />
                                         <label htmlFor={`break-${day}`} className="text-xs text-gray-500 cursor-pointer select-none">
                                             Com Intervalo?
@@ -340,9 +356,9 @@ const DashboardAgendaPage = () => {
             </div>
 
             {/* 2. Bookings View */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-lg font-bold">
+                    <h2 className="text-sm font-bold text-gray-800">
                         {viewMode === 'list' ? 'Próximos Agendamentos' : currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
                     </h2>
 
@@ -352,7 +368,7 @@ const DashboardAgendaPage = () => {
                                 <ChevronLeft size={20} className="text-gray-600" />
                             </button>
                             <button onClick={nextMonth} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                                <ChevronRight size={20} className="text-gray-600" />
+                                <ChevronRightIcon size={20} className="text-gray-600" />
                             </button>
                         </div>
                     )}
@@ -406,7 +422,7 @@ const DashboardAgendaPage = () => {
                                             {(booking.status as string) === 'rejected' && (
                                                 <button
                                                     onClick={() => handleGenerateRescheduleEmail(booking)}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-primary/5 text-brand-primary rounded-lg text-xs font-bold hover:bg-brand-primary/10 transition-colors disabled:opacity-50"
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary-500/5 text-primary-500 rounded-lg text-xs font-bold hover:bg-primary-500/10 transition-colors disabled:opacity-50"
                                                     title="Gerar Sugestão de Reagendamento"
                                                     disabled={!!generatingEmailId}
                                                 >
@@ -426,7 +442,7 @@ const DashboardAgendaPage = () => {
                                             {new Date(booking.booking_date).toLocaleDateString()}
                                         </div>
                                         <div className="flex items-center gap-1">
-                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                            <CalendarIcon className="w-4 h-4" />
                                             {booking.booking_time}
                                         </div>
                                     </div>
@@ -449,8 +465,8 @@ const DashboardAgendaPage = () => {
                             const isToday = new Date().toISOString().split('T')[0] === dateStr;
 
                             return (
-                                <div key={dateStr} className={`bg-white min-h-[100px] p-2 hover:bg-gray-50 transition-colors group relative ${isToday ? 'ring-2 ring-brand-primary ring-inset' : ''}`}>
-                                    <span className={`text-sm font-medium ${isToday ? 'text-brand-primary' : 'text-gray-700'}`}>
+                                <div key={dateStr} className={`bg-white min-h-[100px] p-2 hover:bg-gray-50 transition-colors group relative ${isToday ? 'ring-2 ring-primary-500 ring-inset' : ''}`}>
+                                    <span className={`text-sm font-medium ${isToday ? 'text-primary-500' : 'text-gray-700'}`}>
                                         {date.getDate()}
                                     </span>
 
@@ -473,7 +489,7 @@ const DashboardAgendaPage = () => {
                                     </div>
 
                                     {dayBookings.length > 0 && (
-                                        <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-brand-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                                     )}
                                 </div>
                             );
