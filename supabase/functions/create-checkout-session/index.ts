@@ -124,6 +124,7 @@ serve(async (req) => {
             success_url: `${req.headers.get('origin')}/orders/${order.id}?success=true&session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${req.headers.get('origin')}/orders/${order.id}?canceled=true`,
             metadata: {
+                order_id: order.id,
                 buyer_id: user.id,
                 service_id: service.id,
                 application_fee_amount: applicationFeeAmount,

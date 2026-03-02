@@ -76,6 +76,35 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({ isEmbedded = false }) =
         }
     };
 
+    const handleCancel = async (bookingId: string) => {
+        if (!confirm('Deseja realmente cancelar este agendamento? Esta ação não pode ser desfeita.')) return;
+        try {
+            const { error } = await supabase.from('bookings').update({
+                status: 'cancelled'
+            }).eq('id', bookingId);
+
+            if (error) throw error;
+            addToast('Agendamento cancelado com sucesso.', 'info');
+            queryClient.invalidateQueries({ queryKey: ['client-orders', user?.id] });
+        } catch (err) {
+            console.error(err);
+            addToast('Erro ao cancelar agendamento.', 'error');
+        }
+    };
+
+    const handleReschedule = (companyId: string) => {
+        // Redireciona para a página da empresa para escolher novo horário
+        // Idealmente levaria para uma tela de reagendamento específica, mas 
+        // por agora enviamos para o perfil para nova contratação/contato.
+        navigate(`/empresa/${companyId}`);
+    };
+
+    const handleChat = (booking: any) => {
+        // Navega para as mensagens
+        // Se houver um ID de conversa específico no futuro, poderíamos usá-lo.
+        navigate('/minhas-mensagens');
+    };
+
     if (isLoading) return (
         <div className={`space-y-6 ${!isEmbedded ? 'container px-4 py-12 max-w-5xl mx-auto' : ''}`}>
             {[1, 2].map((i) => (
@@ -197,10 +226,16 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({ isEmbedded = false }) =
 
                                         <div className="flex flex-wrap justify-between items-center gap-4">
                                             <div className="flex items-center gap-2">
-                                                <button className="p-3 text-slate-400 hover:text-brand-primary hover:bg-brand-primary/5 rounded-xl transition-all group/btn">
+                                                <button
+                                                    onClick={() => handleChat(booking)}
+                                                    className="p-3 text-slate-400 hover:text-brand-primary hover:bg-brand-primary/5 rounded-xl transition-all group/btn"
+                                                >
                                                     <MessageSquare size={20} className="group-hover/btn:scale-110 transition-transform" />
                                                 </button>
-                                                <button className="flex items-center gap-2 px-4 py-3 text-xs font-black text-red-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all uppercase tracking-widest">
+                                                <button
+                                                    onClick={() => handleCancel(booking.id)}
+                                                    className="flex items-center gap-2 px-4 py-3 text-xs font-black text-red-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all uppercase tracking-widest"
+                                                >
                                                     <AlertCircle size={16} /> Emergência / Cancelar
                                                 </button>
                                             </div>
@@ -212,7 +247,14 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({ isEmbedded = false }) =
                                                     </div>
                                                 ) : (
                                                     <>
-                                                        <Button variant="outline" size="sm" className="rounded-xl border-slate-200">Reagendar</Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="rounded-xl border-slate-200"
+                                                            onClick={() => handleReschedule(booking.company_id)}
+                                                        >
+                                                            Reagendar
+                                                        </Button>
                                                         <Button variant="primary" size="sm" className="rounded-xl shadow-lg shadow-slate-200" onClick={() => navigate(`/orders/${booking.order_id || booking.id}`)}>
                                                             Gerenciar Detalhes
                                                         </Button>

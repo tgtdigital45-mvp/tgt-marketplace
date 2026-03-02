@@ -9,7 +9,8 @@ export const useFeaturedCompanies = () => {
             const { data, error } = await supabase
                 .from('companies')
                 .select(`
-                  *,
+                  id, company_name, slug, logo_url, cover_image_url, category, rating, 
+                  description, address, phone, email, website, legal_name, cnpj,
                   services(*)
                 `)
                 .order('created_at', { ascending: false })

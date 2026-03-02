@@ -22,9 +22,9 @@ export const useClientOrders = (userId: string | undefined) => {
             *,
             proposals (
               *,
-              professional:profiles!proposals_user_id_fkey (
-                full_name, avatar_url,
-                companies (company_name, logo_url)
+              professional:profiles!proposals_user_id_profiles_fkey (
+                id,
+                full_name, avatar_url
               )
             )
           `)
@@ -68,7 +68,28 @@ export const useClientOrders = (userId: string | undefined) => {
                 }
 
                 // Transform Jobs Data
-                const rawJobs = (jobsResponse.data || []) as unknown as DbJobRequest[];
+                const rawJobs = (jobsResponse.data || []) as any[];
+
+                // Fetch companies for proposals
+                let professionalIds: string[] = [];
+                rawJobs.forEach(j => {
+                    j.proposals?.forEach((p: any) => {
+                        if (p.professional?.id) professionalIds.push(p.professional.id);
+                    });
+                });
+                professionalIds = [...new Set(professionalIds)].filter(Boolean);
+                let companiesMap: Record<string, any> = {};
+
+                if (professionalIds.length > 0) {
+                    const { data: companiesData } = await supabase
+                        .from('companies')
+                        .select('profile_id, company_name, logo_url')
+                        .in('profile_id', professionalIds);
+                    if (companiesData) {
+                        companiesData.forEach(c => companiesMap[c.profile_id] = c);
+                    }
+                }
+
                 const jobs: JobRequest[] = rawJobs.map((j) => ({
                     id: j.id,
                     title: j.title,
@@ -78,7 +99,7 @@ export const useClientOrders = (userId: string | undefined) => {
                     budget_min: j.budget_min,
                     budget_max: j.budget_max,
                     category: undefined, // Category join removed due to schema issues
-                    proposals: (j.proposals || []).map((p) => ({
+                    proposals: (j.proposals || []).map((p: any) => ({
                         id: p.id,
                         company_id: p.user_id, // professional user_id
                         price: p.price,
@@ -86,8 +107,8 @@ export const useClientOrders = (userId: string | undefined) => {
                         status: p.status,
                         created_at: p.created_at,
                         company: {
-                            name: ((p as any).professional?.companies as any)?.[0]?.company_name || (p as any).professional?.full_name || 'Profissional',
-                            avatar_url: ((p as any).professional?.companies as any)?.[0]?.logo_url || (p as any).professional?.avatar_url
+                            name: companiesMap[p.professional?.id]?.company_name || p.professional?.full_name || 'Profissional',
+                            avatar_url: companiesMap[p.professional?.id]?.logo_url || p.professional?.avatar_url
                         }
                     }))
                 }));

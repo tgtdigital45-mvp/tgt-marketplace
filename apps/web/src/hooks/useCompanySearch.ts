@@ -71,9 +71,9 @@ export const useCompanySearch = (itemsPerPage: number = 8) => {
             const from = (currentPage - 1) * itemsPerPage;
             const to = from + itemsPerPage - 1;
 
-            // Base query
+            // Base query - Using the secure public view
             let query = supabase
-                .from('companies')
+                .from('public_company_profiles')
                 .select(`
                   *,
                   services (*)
@@ -81,7 +81,7 @@ export const useCompanySearch = (itemsPerPage: number = 8) => {
 
             // 1. Text Search
             if (searchTerm) {
-                query = query.or(`company_name.ilike.%${searchTerm}%,services.title.ilike.%${searchTerm}%`);
+                query = query.or(`company_name.ilike.%${searchTerm}%`);
             }
 
             // 2. Location

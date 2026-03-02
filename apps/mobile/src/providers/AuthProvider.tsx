@@ -87,6 +87,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return () => subscription.unsubscribe();
     }, []);
 
+    useEffect(() => {
+        // Redirection logic based on auth state
+        if (!loading) {
+            if (!session) {
+                // Not using router.replace here to avoid race conditions with Expo Router's initialization
+                // Instead, we let the app components handle the redirect or show the Auth stack
+            }
+        }
+    }, [session, loading]);
+
     const signOut = async () => {
         await supabase.auth.signOut();
         setSession(null);

@@ -4,20 +4,22 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
+    StyleSheet,
+    ActivityIndicator,
+    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
-    Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
-import { Mail, ArrowLeft } from 'lucide-react-native';
+import { Mail, ArrowLeft, Send } from 'lucide-react-native';
+import { StatusBar } from 'expo-status-bar';
 
 export default function ForgotPasswordScreen() {
+    const router = useRouter();
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
-    const [sent, setSent] = useState(false);
-    const router = useRouter();
 
     const handleResetPassword = async () => {
         if (!email) {
@@ -33,92 +35,136 @@ export default function ForgotPasswordScreen() {
 
             if (error) throw error;
 
-            setSent(true);
+            Alert.alert('Sucesso', 'E-mail de recuperação enviado! Verifique sua caixa de entrada.', [
+                { text: 'OK', onPress: () => router.back() }
+            ]);
         } catch (error: any) {
-            Alert.alert(
-                'Erro',
-                error.message || 'Não foi possível enviar o e-mail de recuperação.'
-            );
+            Alert.alert('Erro', error.message || 'Ocorreu um erro.');
         } finally {
             setLoading(false);
         }
     };
 
-    if (sent) {
-        return (
-            <View className="flex-1 bg-brand-background justify-center items-center px-6">
-                <View className="w-20 h-20 bg-brand-success/10 rounded-full items-center justify-center mb-6">
-                    <Mail size={40} color="#10b981" />
-                </View>
-                <Text className="text-brand-primary text-2xl font-bold text-center mb-3">
-                    E-mail enviado!
-                </Text>
-                <Text className="text-brand-secondary text-center text-base mb-8">
-                    Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.
-                </Text>
-                <TouchableOpacity
-                    onPress={() => router.replace('/(auth)/login')}
-                    className="bg-brand-primary rounded-xl py-4 px-10 shadow-md"
-                >
-                    <Text className="text-white font-bold text-lg">Voltar ao Login</Text>
-                </TouchableOpacity>
-            </View>
-        );
-    }
-
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className="flex-1 bg-brand-background"
-        >
-            <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-6">
-                <View className="flex-1 justify-center py-12">
-                    {/* Back Button */}
-                    <TouchableOpacity
-                        onPress={() => router.back()}
-                        className="flex-row items-center mb-10"
-                    >
-                        <ArrowLeft size={20} color="#334155" />
-                        <Text className="text-brand-secondary font-medium ml-2">Voltar</Text>
-                    </TouchableOpacity>
+        <View style={styles.container}>
+            <StatusBar style="light" />
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                <ArrowLeft size={24} color="#f8fafc" />
+            </TouchableOpacity>
 
-                    {/* Header */}
-                    <View className="mb-8">
-                        <Text className="text-brand-primary text-3xl font-bold mb-2">
-                            Recuperar Senha
-                        </Text>
-                        <Text className="text-brand-secondary text-base">
-                            Informe seu e-mail e enviaremos um link para redefinir sua senha.
-                        </Text>
-                    </View>
+            <ScrollView contentContainerStyle={styles.scrollContent}>
+                <View style={styles.header}>
+                    <Text style={styles.title}>Recupere sua senha</Text>
+                    <Text style={styles.subtitle}>Enviaremos um link de recuperação para o seu e-mail.</Text>
+                </View>
 
-                    {/* Form */}
-                    <View>
-                        <View className="bg-white rounded-xl border border-slate-200 px-4 py-3 flex-row items-center">
+                <View style={styles.form}>
+                    <View style={styles.inputContainer}>
+                        <Text style={styles.label}>E-mail</Text>
+                        <View style={styles.inputWrapper}>
                             <Mail size={20} color="#94a3b8" />
                             <TextInput
-                                className="flex-1 ml-3 text-brand-primary h-6"
-                                placeholder="E-mail cadastrado"
+                                style={styles.input}
+                                placeholder="seu@email.com"
+                                placeholderTextColor="#94a3b8"
                                 value={email}
                                 onChangeText={setEmail}
                                 autoCapitalize="none"
                                 keyboardType="email-address"
-                                placeholderTextColor="#94a3b8"
                             />
                         </View>
-
-                        <TouchableOpacity
-                            onPress={handleResetPassword}
-                            disabled={loading}
-                            className={`bg-brand-primary rounded-xl py-4 items-center mt-8 shadow-md ${loading ? 'opacity-70' : ''}`}
-                        >
-                            <Text className="text-white font-bold text-lg">
-                                {loading ? 'Enviando...' : 'Enviar link de recuperação'}
-                            </Text>
-                        </TouchableOpacity>
                     </View>
+
+                    <TouchableOpacity
+                        style={styles.resetButton}
+                        onPress={handleResetPassword}
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <>
+                                <Text style={styles.resetButtonText}>Enviar Link</Text>
+                                <Send size={20} color="#fff" />
+                            </>
+                        )}
+                    </TouchableOpacity>
                 </View>
             </ScrollView>
-        </KeyboardAvoidingView>
+        </View>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#0f172a',
+    },
+    backButton: {
+        position: 'absolute',
+        top: 60,
+        left: 20,
+        zIndex: 10,
+        padding: 8,
+    },
+    scrollContent: {
+        paddingHorizontal: 24,
+        paddingTop: 140,
+        paddingBottom: 40,
+    },
+    header: {
+        marginBottom: 40,
+    },
+    title: {
+        fontSize: 32,
+        color: '#f8fafc',
+        fontWeight: '800',
+    },
+    subtitle: {
+        fontSize: 16,
+        color: '#94a3b8',
+        marginTop: 8,
+        lineHeight: 24,
+    },
+    form: {
+        gap: 32,
+    },
+    inputContainer: {
+        gap: 8,
+    },
+    label: {
+        fontSize: 14,
+        color: '#f8fafc',
+        fontWeight: '600',
+    },
+    inputWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#1e293b',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        borderWidth: 1,
+        borderColor: '#334155',
+    },
+    input: {
+        flex: 1,
+        height: 56,
+        color: '#f8fafc',
+        marginLeft: 12,
+        fontSize: 16,
+    },
+    resetButton: {
+        backgroundColor: '#2563eb',
+        height: 56,
+        borderRadius: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+    },
+    resetButtonText: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: '700',
+    },
+});

@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import type { DbService } from '@tgt/shared';
-import { cellToLatLng, latLngToCell, gridDisk } from 'h3-js';
 
 export interface ServiceListItem {
     id: string;
@@ -47,17 +46,35 @@ async function fetchServices(search?: string, lat?: number, lng?: number): Promi
         query = query.ilike('title', `%${search}%`);
     }
 
+    // Use dynamic import for h3-js to avoid Metro loading it eagerly at startup.
+    // h3-js uses TextDecoder with 'utf-16le' encoding which Expo does not support.
+    // By lazy-importing, we only pay the cost if the user has location access.
     if (lat && lng) {
-        // H3 Resolution 8 was used as default urban resolution.
-        // A kRing of 12 covers roughly 6-10km radius depending on distortion.
-        const centerCell = latLngToCell(lat, lng, 8);
-        const searchCells = gridDisk(centerCell, 12);
-        query = query.in('h3_index', searchCells);
+        try {
+            const h3 = await import('h3-js');
+            const centerCell = h3.latLngToCell(lat, lng, 8);
+            const searchCells = h3.gridDisk(centerCell, 12);
+            query = query.in('h3_index', searchCells);
+        } catch (h3Error) {
+            // h3-js not available or unsupported encoding — skip geo filter gracefully
+            console.warn('[useServices] h3-js unavailable, skipping geo filter:', h3Error);
+        }
     }
 
     const { data, error } = await query;
 
     if (error) throw error;
+
+    // Helper to safely decode h3 cell center (may fail if h3-js unavailable)
+    const safeH3Center = (h3Index: string): [number, number] | null => {
+        try {
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
+            const h3 = require('h3-js');
+            return h3.cellToLatLng(h3Index);
+        } catch {
+            return null;
+        }
+    };
 
     return (data ?? []).map((row: any) => ({
         id: row.id,
@@ -72,8 +89,8 @@ async function fetchServices(search?: string, lat?: number, lng?: number): Promi
         company_slug: row.companies?.slug,
         rating: row.companies?.rating ?? 0,
         h3_index: row.h3_index,
-        latitude: row.h3_index ? cellToLatLng(row.h3_index)[0] : undefined,
-        longitude: row.h3_index ? cellToLatLng(row.h3_index)[1] : undefined,
+        latitude: row.h3_index ? safeH3Center(row.h3_index)?.[0] : undefined,
+        longitude: row.h3_index ? safeH3Center(row.h3_index)?.[1] : undefined,
     }));
 }
 

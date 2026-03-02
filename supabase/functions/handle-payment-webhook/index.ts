@@ -186,10 +186,10 @@ async function processEvent(event: Stripe.Event) {
                 }
             }
 
-            // SAGA: ORDER_ACTIVE
+            // SAGA: WAITING_ACCEPTANCE
             await supabaseClient.rpc('transition_saga_status', {
                 p_order_id: order.id,
-                p_new_status: 'ORDER_ACTIVE',
+                p_new_status: 'WAITING_ACCEPTANCE',
                 p_log_data: { wallet_tx: wallet.id }
             });
 

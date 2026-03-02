@@ -354,7 +354,7 @@ export interface DbBooking {
 }
 
 export type OrderStatus = 'pending_payment' | 'active' | 'delivered' | 'completed' | 'cancelled' | 'in_progress' | 'payment_held' | 'work_submitted_by_provider' | 'approved_by_client' | 'payment_released' | 'disputed';
-export type SagaStatus = 'PENDING' | 'COMPLETED' | 'FAILED';
+export type SagaStatus = 'PENDING' | 'PAYMENT_PROCESSING' | 'PAYMENT_CONFIRMED' | 'PAYMENT_FAILED' | 'WAITING_ACCEPTANCE' | 'ORDER_ACTIVE' | 'DELIVERED' | 'REVISION_REQUESTED' | 'CANCELLED' | 'REFUNDED' | 'COMPLETED' | 'FAILED';
 
 export interface DbOrder {
   id: string;

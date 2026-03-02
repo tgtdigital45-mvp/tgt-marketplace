@@ -26,7 +26,7 @@ export const useClientProfileData = (userId: string | undefined) => {
                     // 2. Bookings
                     supabase
                         .from('bookings')
-                        .select('*, companies(company_name)')
+                        .select('*, companies(id, company_name, slug)')
                         .eq('client_id', userId)
                         .order('created_at', { ascending: false }),
 
@@ -42,7 +42,7 @@ export const useClientProfileData = (userId: string | undefined) => {
                         .from('favorites')
                         .select(`
             *,
-            company:companies(id, company_name, logo_url, description, category, address)
+            company:companies(id, company_name, logo_url, description, category, address, slug)
           `)
                         .eq('user_id', userId)
                 ]);

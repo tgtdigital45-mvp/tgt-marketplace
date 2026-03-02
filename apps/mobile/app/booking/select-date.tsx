@@ -70,32 +70,19 @@ export default function SelectDateScreen() {
             return;
         }
 
-        // For now, show confirmation — will navigate to checkout in next sprint
-        Alert.alert(
-            'Agendamento',
-            `Serviço: ${data.serviceTitle}\nData: ${data.selectedDate}\nHorário: ${data.selectedTime}\nPreço: R$ ${data.servicePrice.toFixed(2).replace('.', ',')}`,
-            [
-                { text: 'Alterar', style: 'cancel' },
-                {
-                    text: 'Confirmar',
-                    onPress: () => {
-                        router.push({
-                            pathname: '/checkout',
-                            params: {
-                                serviceId: data.serviceId,
-                                serviceTitle: data.serviceTitle,
-                                servicePrice: String(data.servicePrice),
-                                companyName: data.companyName,
-                                durationMinutes: String(data.durationMinutes),
-                                selectedDate: data.selectedDate,
-                                selectedTime: data.selectedTime,
-                                packageTier: 'basic', // Default for now
-                            },
-                        });
-                    },
-                },
-            ]
-        );
+        router.push({
+            pathname: '/checkout',
+            params: {
+                serviceId: data.serviceId,
+                serviceTitle: data.serviceTitle,
+                servicePrice: String(data.servicePrice),
+                companyName: data.companyName,
+                durationMinutes: String(data.durationMinutes),
+                selectedDate: data.selectedDate,
+                selectedTime: data.selectedTime,
+                packageTier: 'basic', // Default for now
+            },
+        });
     };
 
     return (

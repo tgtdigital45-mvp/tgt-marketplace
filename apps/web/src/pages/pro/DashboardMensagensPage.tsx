@@ -1,11 +1,17 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/contexts/ToastContext';
 import { supabase } from '@tgt/shared';
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import Button from '@/components/ui/Button';
+import Badge from '@/components/ui/Badge';
 import { motion } from 'framer-motion';
-import { ChevronRight, MessageSquare, Paperclip, Zap, ArrowLeft } from 'lucide-react';
+import { ChevronRight, MessageSquare, Paperclip, Zap, ArrowLeft, Clock, MessagesSquare } from 'lucide-react';
+
+const DeliveryModal = lazy(() => import('@/components/orders/DeliveryModal'));
 
 const QUICK_REPLIES = [
     'Estou a caminho do local',
@@ -28,7 +34,7 @@ interface Message {
 }
 
 interface Thread {
-    threadId: string; // The unified ID (jobId or orderId)
+    threadId: string;
     jobId?: string;
     orderId?: string;
     jobTitle: string;
@@ -50,6 +56,7 @@ const DashboardMensagensPage: React.FC = () => {
     const [showQuickReplies, setShowQuickReplies] = useState(false);
     const [uploadingFile, setUploadingFile] = useState(false);
     const chatContainerRef = useRef<HTMLDivElement>(null);
+    const navigate = useNavigate();
 
     const scrollToBottom = () => {
         if (chatContainerRef.current) {
@@ -64,76 +71,28 @@ const DashboardMensagensPage: React.FC = () => {
     const fetchThreads = useCallback(async () => {
         if (!user) return;
         try {
-            // Fetch all messages where user is sender or receiver
-            const { data: sent, error: sentError } = await supabase
-                .from('messages')
-                .select('*, jobs(title), orders(service_title)')
-                .eq('sender_id', user.id);
-
-            const { data: received, error: receivedError } = await supabase
-                .from('messages')
-                .select('*, jobs(title), orders(service_title)')
-                .eq('receiver_id', user.id);
-
-            if (sentError || receivedError) throw new Error('Failed to fetch messages');
-
-            const allMessages = [...(sent || []), ...(received || [])];
-            allMessages.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-            const uniqueThreads = new Map<string, Thread>();
-            const partnerIdsToFetch = new Set<string>();
-
-            // Helper to identify partner (the client)
-            const getPartnerId = (msg: any) => msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
-
-            allMessages.forEach(msg => {
-                const partnerId = getPartnerId(msg);
-                if (partnerId && (msg.job_id || msg.order_id)) {
-                    partnerIdsToFetch.add(partnerId);
-                }
+            const { data, error } = await supabase.rpc('get_chat_threads', {
+                p_user_id: user.id
             });
 
-            // Fetch profiles for partners (clients)
-            let profilesMap: Record<string, any> = {};
-            if (partnerIdsToFetch.size > 0) {
-                const { data: profiles } = await supabase
-                    .from('profiles')
-                    .select('id, full_name, avatar_url')
-                    .in('id', Array.from(partnerIdsToFetch));
+            if (error) throw error;
 
-                profiles?.forEach(p => profilesMap[p.id] = p);
-            }
+            const mappedThreads: Thread[] = (data || []).map((t: any) => ({
+                threadId: t.thread_id,
+                jobId: t.job_id,
+                orderId: t.order_id,
+                jobTitle: t.job_title,
+                partnerId: t.partner_id,
+                partnerName: t.partner_name,
+                partnerAvatar: t.partner_avatar,
+                lastMessage: t.last_message_content,
+                lastMessageTime: t.last_message_time,
+                unreadCount: Number(t.unread_count)
+            }));
 
-            allMessages.forEach((msg: any) => {
-                if (!msg.job_id && !msg.order_id) return;
-
-                const threadId = msg.job_id || msg.order_id;
-                if (!uniqueThreads.has(threadId)) {
-                    const partnerId = getPartnerId(msg);
-                    const profile = profilesMap[partnerId];
-
-                    let jobTitle = 'Serviço';
-                    if (msg.job_id && msg.jobs?.title) jobTitle = msg.jobs.title;
-                    else if (msg.order_id && msg.orders?.service_title) jobTitle = msg.orders.service_title;
-
-                    uniqueThreads.set(threadId, {
-                        threadId: threadId,
-                        jobId: msg.job_id,
-                        orderId: msg.order_id,
-                        jobTitle: jobTitle,
-                        partnerId: partnerId,
-                        partnerName: profile?.full_name || 'Cliente',
-                        partnerAvatar: profile?.avatar_url,
-                        lastMessage: msg.content,
-                        lastMessageTime: msg.created_at,
-                        unreadCount: (msg.receiver_id === user.id && !msg.read_at) ? 1 : 0
-                    });
-                }
-            });
-
-            setThreads(Array.from(uniqueThreads.values()));
+            setThreads(mappedThreads);
         } catch (err) {
-            console.error(err);
+            console.error('[DashboardMensagens] Error fetching threads:', err);
         } finally {
             setLoading(false);
         }
@@ -141,15 +100,12 @@ const DashboardMensagensPage: React.FC = () => {
 
     const fetchMessages = useCallback(async (threadId: string, isJob: boolean) => {
         if (!user) return;
-
         const filterColumn = isJob ? 'job_id' : 'order_id';
-
         const { data } = await supabase
             .from('messages')
             .select('*')
             .eq(filterColumn, threadId)
             .order('created_at', { ascending: true });
-
         if (data) setMessages(data);
     }, [user]);
 
@@ -160,14 +116,11 @@ const DashboardMensagensPage: React.FC = () => {
     useEffect(() => {
         if (activeThread && user) {
             fetchMessages(activeThread.threadId, !!activeThread.jobId);
-            // Mark as read in UI
             setThreads(prev => prev.map(t =>
                 t.threadId === activeThread.threadId ? { ...t, unreadCount: 0 } : t
             ));
 
             const filterColumn = activeThread.jobId ? 'job_id' : 'order_id';
-
-            // Subscribe to new messages for this Job/Order
             const subscription = supabase
                 .channel(`chat_thread_pro:${activeThread.threadId}`)
                 .on('postgres_changes', {
@@ -177,27 +130,21 @@ const DashboardMensagensPage: React.FC = () => {
                     filter: `${filterColumn}=eq.${activeThread.threadId}`
                 }, (payload) => {
                     const newMsg = payload.new as Message;
-
-                    // Only add if it's NOT from the current user (to avoid dupes with optimistic UI)
                     if (newMsg.sender_id !== user.id) {
                         setMessages(prev => {
                             if (prev.some(m => m.id === newMsg.id)) return prev;
                             return [...prev, newMsg];
                         });
-
-                        // Update thread list last message
                         setThreads(prev => prev.map(t =>
                             t.threadId === activeThread.threadId
-                                ? { ...t, lastMessage: newMsg.content, lastMessageTime: newMsg.created_at, unreadCount: 0 } // Mark as read since we are viewing it
+                                ? { ...t, lastMessage: newMsg.content, lastMessageTime: newMsg.created_at, unreadCount: 0 }
                                 : t
                         ));
                     }
                 })
                 .subscribe();
 
-            return () => {
-                subscription.unsubscribe();
-            };
+            return () => { subscription.unsubscribe(); };
         }
     }, [activeThread, user, fetchMessages]);
 
@@ -205,35 +152,23 @@ const DashboardMensagensPage: React.FC = () => {
         e.preventDefault();
         if (!newMessage.trim() || !activeThread || !user) return;
 
-        const optimisticMsg: Message = {
-            id: 'temp-' + Date.now(),
+        const insertPayload: any = {
             sender_id: user.id,
             receiver_id: activeThread.partnerId,
             content: newMessage,
-            created_at: new Date().toISOString(),
-            read_at: null,
             job_id: activeThread.jobId,
             order_id: activeThread.orderId
         };
 
-        setMessages(prev => [...prev, optimisticMsg]);
-        setNewMessage('');
-
-        const insertPayload: any = {
-            sender_id: user.id,
-            receiver_id: activeThread.partnerId,
-            content: optimisticMsg.content
-        };
-
-        if (activeThread.jobId) insertPayload.job_id = activeThread.jobId;
-        if (activeThread.orderId) insertPayload.order_id = activeThread.orderId;
-
         const { error } = await supabase.from('messages').insert(insertPayload);
-
-        if (error) {
-            console.error('Error sending:', error);
-            // Remove optimistic message if needed
-            setMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
+        if (!error) {
+            setMessages(prev => [...prev, {
+                id: 'temp-' + Date.now(),
+                ...insertPayload,
+                created_at: new Date().toISOString(),
+                read_at: null
+            }]);
+            setNewMessage('');
         }
     };
 
@@ -243,32 +178,26 @@ const DashboardMensagensPage: React.FC = () => {
         try {
             setUploadingFile(true);
             const path = `messages/${activeThread.threadId}/${Date.now()}-${file.name}`;
-            const { error: uploadError } = await supabase.storage.from('attachments').upload(path, file);
-            if (uploadError) throw uploadError;
+            await supabase.storage.from('attachments').upload(path, file);
             const { data: { publicUrl } } = supabase.storage.from('attachments').getPublicUrl(path);
             const msgType = file.type.startsWith('image/') ? 'image' : 'file';
+
             const insertPayload: any = {
                 sender_id: user.id,
                 receiver_id: activeThread.partnerId,
                 content: publicUrl,
                 type: msgType,
-            };
-            if (activeThread.jobId) insertPayload.job_id = activeThread.jobId;
-            if (activeThread.orderId) insertPayload.order_id = activeThread.orderId;
-            const optimisticMsg: Message = {
-                id: 'temp-' + Date.now(),
-                sender_id: user.id,
-                receiver_id: activeThread.partnerId,
-                content: publicUrl,
-                type: msgType,
-                created_at: new Date().toISOString(),
-                read_at: null,
                 job_id: activeThread.jobId,
-                order_id: activeThread.orderId,
+                order_id: activeThread.orderId
             };
-            setMessages(prev => [...prev, optimisticMsg]);
-            const { error } = await supabase.from('messages').insert(insertPayload);
-            if (error) setMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
+
+            await supabase.from('messages').insert(insertPayload);
+            setMessages(prev => [...prev, {
+                id: 'temp-' + Date.now(),
+                ...insertPayload,
+                created_at: new Date().toISOString(),
+                read_at: null
+            }]);
         } catch (err) {
             console.error('Attachment error:', err);
         } finally {
@@ -283,190 +212,202 @@ const DashboardMensagensPage: React.FC = () => {
                 <title>Mensagens | Dashboard CONTRATTO</title>
             </Helmet>
 
-            {/* ─── Page Header ─────────────────────────────────────────────── */}
-            <motion.div
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-            >
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
                 <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
                     <span>Dashboard</span><ChevronRight size={12} />
                     <span className="text-gray-600 font-medium">Mensagens</span>
                 </div>
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Mensagens</h1>
-                <p className="text-xs sm:text-sm text-gray-400 mt-0.5">
-                    {threads.length > 0 ? `${threads.length} conversa${threads.length > 1 ? 's' : ''}` : 'Converse com seus clientes em tempo real'}
-                </p>
             </motion.div>
 
-        <div className="h-[calc(100vh-240px)] flex bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            {/* Sidebar List */}
-            <div className={`${activeThread ? 'hidden md:flex' : 'flex'} w-full md:w-1/3 border-r border-gray-100 flex-col`}>
-                <div className="p-4 border-b border-gray-100 bg-gray-50/50">
-                    <h2 className="text-sm font-bold text-gray-800">Conversas</h2>
+            <div className="h-[calc(100vh-240px)] flex bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                {/* Sidebar */}
+                <div className={`${activeThread ? 'hidden md:flex' : 'flex'} w-full md:w-1/3 border-r border-gray-100 flex-col`}>
+                    <div className="p-4 border-b border-gray-100 bg-gray-50/50 font-bold text-sm">Conversas</div>
+                    <div className="flex-grow overflow-y-auto custom-scrollbar">
+                        {loading ? <div className="p-4"><LoadingSkeleton className="h-16 w-full" /></div> :
+                            threads.length === 0 ? <div className="p-8 text-center text-gray-400 text-sm">Nenhuma conversa.</div> :
+                                threads.map(t => (
+                                    <button key={t.threadId} onClick={() => setActiveThread(t)} className={`w-full p-4 flex gap-3 hover:bg-gray-50 text-left border-b border-gray-50 ${activeThread?.threadId === t.threadId ? 'bg-primary-50 border-r-4 border-primary-500' : ''}`}>
+                                        <div className="w-10 h-10 bg-gray-200 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-gray-500 overflow-hidden">
+                                            {t.partnerAvatar ? <img src={t.partnerAvatar} className="w-full h-full object-cover" /> : t.partnerName.charAt(0)}
+                                        </div>
+                                        <div className="flex-grow min-w-0">
+                                            <div className="flex justify-between items-baseline mb-1">
+                                                <span className="font-semibold text-gray-900 truncate">{t.partnerName}</span>
+                                                <span className="text-[10px] text-gray-400">{new Date(t.lastMessageTime).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                                            </div>
+                                            <p className="text-xs text-primary-500 truncate">{t.jobTitle}</p>
+                                            <p className="text-sm text-gray-500 truncate mt-1">{t.lastMessage}</p>
+                                        </div>
+                                    </button>
+                                ))
+                        }
+                    </div>
                 </div>
-                <div className="flex-grow overflow-y-auto custom-scrollbar">
-                    {loading ? (
-                        <div className="p-4 space-y-4">
-                            <LoadingSkeleton className="h-16 w-full rounded-lg" />
-                            <LoadingSkeleton className="h-16 w-full rounded-lg" />
-                            <LoadingSkeleton className="h-16 w-full rounded-lg" />
-                        </div>
-                    ) : threads.length === 0 ? (
-                        <div className="p-8 text-center text-gray-500 text-sm">
-                            Nenhuma conversa iniciada.
-                        </div>
-                    ) : (
-                        threads.map(thread => (
-                            <button
-                                key={thread.threadId}
-                                onClick={() => setActiveThread(thread)}
-                                className={`w-full p-4 flex items-start gap-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-50 last:border-0 ${activeThread?.threadId === thread.threadId ? 'bg-blue-50 border-r-4 border-primary-500' : ''}`}
-                            >
-                                <div className="w-10 h-10 bg-gray-200 rounded-full flex-shrink-0 flex items-center justify-center text-gray-500 font-bold overflow-hidden relative">
-                                    {thread.partnerAvatar ? (
-                                        <img src={thread.partnerAvatar} alt="" className="w-full h-full object-cover" />
-                                    ) : (
-                                        thread.partnerName.charAt(0)
+
+                {/* Chat & Widget */}
+                <div className={`${!activeThread ? 'hidden md:flex' : 'flex'} w-full md:w-2/3 flex-row relative`}>
+                    <div className="flex flex-col flex-grow bg-slate-50 relative border-r border-gray-100 min-w-0">
+                        {activeThread ? (
+                            <>
+                                <div className="p-4 bg-white border-b border-gray-100 flex items-center gap-3 shadow-sm z-10">
+                                    <button onClick={() => setActiveThread(null)} className="md:hidden text-gray-500"><ArrowLeft size={18} /></button>
+                                    <div className="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center text-white font-bold overflow-hidden">
+                                        {activeThread.partnerAvatar ? <img src={activeThread.partnerAvatar} className="w-full h-full object-cover" /> : activeThread.partnerName.charAt(0)}
+                                    </div>
+                                    <div className="flex-grow min-w-0">
+                                        <h3 className="font-bold text-gray-800 truncate">{activeThread.partnerName}</h3>
+                                        <p className="text-[10px] text-primary-500 uppercase font-bold">{activeThread.jobTitle}</p>
+                                    </div>
+                                </div>
+
+                                <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                                    {messages.map((msg) => {
+                                        const isMe = msg.sender_id === user?.id;
+                                        return (
+                                            <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                                <div className={`max-w-[75%] px-4 py-3 rounded-2xl shadow-sm text-sm break-words ${isMe ? 'bg-primary-500 text-white rounded-br-none' : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'}`}>
+                                                    {msg.type === 'image' ? <img src={msg.content} className="max-w-xs rounded-lg cursor-pointer" onClick={() => window.open(msg.content, '_blank')} /> :
+                                                        msg.type === 'file' ? <a href={msg.content} target="_blank" className={`flex items-center gap-2 underline ${isMe ? 'text-blue-100' : 'text-primary-500'}`}>Arquivos</a> :
+                                                            msg.content}
+                                                    <div className={`text-[10px] mt-1 text-right ${isMe ? 'text-blue-100' : 'text-gray-400'}`}>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                <div className="p-4 bg-white border-t border-gray-100">
+                                    {showQuickReplies && (
+                                        <div className="mb-2 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+                                            {QUICK_REPLIES.map(r => <button key={r} onClick={() => { setNewMessage(r); setShowQuickReplies(false); }} className="block w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 border-b last:border-0">{r}</button>)}
+                                        </div>
                                     )}
+                                    <form onSubmit={handleSendMessage} className="flex gap-2 items-center">
+                                        <button type="button" onClick={() => setShowQuickReplies(!showQuickReplies)} className={`p-2 rounded-lg ${showQuickReplies ? 'bg-primary-50 text-primary-500' : 'text-gray-400'}`}><Zap size={18} /></button>
+                                        <label className="cursor-pointer p-2 text-gray-400"><Paperclip size={18} /><input type="file" className="hidden" onChange={handleAttachment} /></label>
+                                        <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Digite sua mensagem..." className="flex-grow p-2.5 bg-gray-50 border rounded-xl focus:outline-none focus:ring-1 focus:ring-primary-500 text-sm" />
+                                        <Button variant="primary" size="sm" type="submit">Enviar</Button>
+                                    </form>
                                 </div>
-                                <div className="flex-grow min-w-0">
-                                    <div className="flex justify-between items-baseline mb-1">
-                                        <span className="font-semibold text-gray-900 truncate">{thread.partnerName}</span>
-                                        <span className="text-xs text-gray-400 flex-shrink-0">
-                                            {new Date(thread.lastMessageTime).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <p className="text-xs text-primary-500 truncate max-w-[150px]">{thread.jobTitle}</p>
-                                        {thread.unreadCount > 0 && (
-                                            <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                                        )}
-                                    </div>
-                                    <p className={`text-sm truncate mt-1 ${thread.unreadCount > 0 ? 'font-medium text-gray-800' : 'text-gray-500'}`}>
-                                        {thread.lastMessage}
-                                    </p>
-                                </div>
-                            </button>
-                        ))
+                            </>
+                        ) : (
+                            <div className="flex-grow flex flex-col items-center justify-center text-gray-400">
+                                <MessagesSquare size={48} className="opacity-20 mb-3" />
+                                <p className="text-sm font-medium">Selecione uma conversa</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Order Widget */}
+                    {activeThread?.orderId && (
+                        <div className="hidden lg:flex w-72 flex-col bg-white shrink-0">
+                            <OrderSummaryWidget orderId={activeThread.orderId} />
+                        </div>
                     )}
                 </div>
             </div>
+        </div>
+    );
+};
 
-            {/* Chat Area */}
-            <div className={`${!activeThread ? 'hidden md:flex' : 'flex'} w-full md:w-2/3 flex-col bg-slate-50 relative`}>
-                {activeThread ? (
+const OrderSummaryWidget: React.FC<{ orderId: string }> = ({ orderId }) => {
+    const [order, setOrder] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
+    const { addToast } = useToast();
+
+    const fetchOrder = useCallback(async () => {
+        const { data } = await supabase.from('orders').select('*').eq('id', orderId).single();
+        if (data) setOrder(data);
+        setLoading(false);
+    }, [orderId]);
+
+    useEffect(() => {
+        fetchOrder();
+        const ch = supabase.channel(`ow_${orderId}`).on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `id=eq.${orderId}` }, fetchOrder).subscribe();
+        return () => { ch.unsubscribe(); };
+    }, [orderId, fetchOrder]);
+
+    if (loading) return <div className="p-6 space-y-4"><LoadingSkeleton className="h-20 w-full" /></div>;
+    if (!order) return null;
+
+    return (
+        <div className="p-6 space-y-6">
+            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b pb-2">Gestão de Pedido</h3>
+            <div className="space-y-3">
+                <h4 className="font-bold text-sm text-gray-900 leading-tight">{order.service_title}</h4>
+                <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="bg-transparent border border-gray-200 text-gray-600 text-[9px] h-4 py-0">{order.package_tier}</Badge>
+                    <span className="text-sm font-bold text-primary-600">R$ {order.price}</span>
+                </div>
+                <div className="flex gap-1.5 pt-1">
+                    {order.status === 'active' && <Badge className="bg-blue-600 text-white text-[9px]">Ativo</Badge>}
+                    {order.status === 'delivered' && <Badge className="bg-amber-500 text-white text-[9px]">Entregue</Badge>}
+                    {order.status === 'completed' && <Badge className="bg-emerald-600 text-white text-[9px]">Concluído</Badge>}
+                </div>
+            </div>
+
+            <div className="space-y-2 pt-4 border-t">
+                {order.saga_status === 'WAITING_ACCEPTANCE' && (
+                    <Button size="sm" className="w-full text-xs" onClick={async () => {
+                        await supabase.rpc('transition_saga_status', { p_order_id: orderId, p_new_status: 'ORDER_ACTIVE' });
+                        addToast("Pedido aceito!", "success");
+                    }}>Aceitar Pedido</Button>
+                )}
+                {(order.status === 'active' || order.status === 'in_progress') && order.saga_status === 'ORDER_ACTIVE' && (
                     <>
-                        <div className="p-4 bg-white border-b border-gray-100 flex items-center gap-3 shadow-sm z-10 shrink-0">
-                            <button onClick={() => setActiveThread(null)} className="md:hidden text-gray-500 mr-2 p-1 rounded-lg hover:bg-gray-100 transition-colors">
-                                <ArrowLeft size={18} />
-                            </button>
-                            <div className="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center text-white font-bold overflow-hidden">
-                                {activeThread.partnerAvatar ? (
-                                    <img src={activeThread.partnerAvatar} alt="" className="w-full h-full object-cover" />
-                                ) : (
-                                    activeThread.partnerName.charAt(0)
-                                )}
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-gray-800">{activeThread.partnerName}</h3>
-                                <p className="text-xs text-primary-500">{activeThread.jobTitle}</p>
-                            </div>
-                        </div>
-
-                        <div
-                            ref={chatContainerRef}
-                            className="flex-grow overflow-y-auto p-4 space-y-4 custom-scrollbar"
-                        >
-                            {messages.map((msg) => {
-                                const isMe = msg.sender_id === user?.id;
-                                return (
-                                    <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                        <div
-                                            className={`max-w-[70%] px-4 py-3 rounded-2xl shadow-sm text-sm break-words ${isMe
-                                                ? 'bg-primary-500 text-white rounded-br-none'
-                                                : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'
-                                                }`}
-                                        >
-                                            {msg.type === 'image' ? (
-                                                <img
-                                                    src={msg.content}
-                                                    alt="Imagem"
-                                                    className="max-w-xs rounded-lg cursor-pointer"
-                                                    onClick={() => window.open(msg.content, '_blank')}
-                                                />
-                                            ) : msg.type === 'file' ? (
-                                                <a href={msg.content} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-2 underline ${isMe ? 'text-blue-100' : 'text-primary-500'}`}>
-                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                                                    Abrir arquivo
-                                                </a>
-                                            ) : (
-                                                msg.content
-                                            )}
-                                            <div className={`text-[10px] mt-1 text-right ${isMe ? 'text-blue-100' : 'text-gray-400'}`}>
-                                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        <div className="p-4 bg-white border-t border-gray-100">
-                            {/* Quick Replies Panel */}
-                            {showQuickReplies && (
-                                <div className="mb-2 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
-                                    {QUICK_REPLIES.map(reply => (
-                                        <button
-                                            key={reply}
-                                            onClick={() => { setNewMessage(reply); setShowQuickReplies(false); }}
-                                            className="block w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0 transition-colors"
-                                        >
-                                            {reply}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                            <form onSubmit={handleSendMessage} className="flex gap-2 items-center">
-                                {/* Quick Replies Toggle */}
-                                <button
-                                    type="button"
-                                    title="Respostas Rápidas"
-                                    onClick={() => setShowQuickReplies(v => !v)}
-                                    className={`p-2 rounded-lg transition-colors flex-shrink-0 ${showQuickReplies ? 'bg-primary-500/10 text-primary-500' : 'text-gray-400 hover:text-primary-500 hover:bg-gray-100'}`}
-                                >
-                                    ⚡
-                                </button>
-                                {/* Attachment */}
-                                <label htmlFor="chat-attachment" className="cursor-pointer p-2 rounded-lg text-gray-400 hover:text-primary-500 hover:bg-gray-100 transition-colors flex-shrink-0" title="Anexar arquivo">
-                                    <Paperclip size={18} />
-                                    <input id="chat-attachment" type="file" className="hidden" accept="image/*,.pdf,.doc,.docx" onChange={handleAttachment} disabled={uploadingFile} />
-                                </label>
-                                <input
-                                    type="text"
-                                    value={newMessage}
-                                    onChange={(e) => setNewMessage(e.target.value)}
-                                    placeholder={uploadingFile ? 'Enviando arquivo...' : 'Digite sua mensagem...'}
-                                    disabled={uploadingFile}
-                                    className="flex-grow p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm disabled:opacity-60"
-                                />
-                                <Button variant="primary" type="submit" disabled={!newMessage.trim() || uploadingFile}>
-                                    Enviar
-                                </Button>
-                            </form>
+                        <Button size="sm" className="w-full text-xs bg-emerald-600 hover:bg-emerald-700" onClick={() => setIsDeliveryModalOpen(true)}>
+                            {order.status === 'in_progress' ? 'Enviar Nova Versão' : 'Entregar Trabalho'}
+                        </Button>
+                        <div className="grid grid-cols-2 gap-2">
+                            <Button size="sm" variant="secondary" className="text-[10px] h-8 bg-gray-100">Formulário</Button>
+                            <Button size="sm" variant="secondary" className="text-[10px] h-8 bg-gray-100">Documento</Button>
                         </div>
                     </>
-                ) : (
-                    <div className="flex-grow flex flex-col items-center justify-center text-gray-400">
-                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                            <MessageSquare size={28} className="text-gray-300" />
-                        </div>
-                        <p className="text-sm font-medium">Selecione uma conversa para comecar</p>
-                        <p className="text-xs mt-1">Suas mensagens com clientes aparecem aqui</p>
-                    </div>
+                )}
+
+                {(order.status === 'active' || order.status === 'in_progress' || order.status === 'delivered') && (
+                    <Button
+                        variant="secondary"
+                        className="w-full bg-white text-red-500 hover:bg-red-50 border border-red-200 text-xs mt-2"
+                        onClick={async () => {
+                            if (confirm("Tem certeza? Esta ação cancelará o pedido e estornará o valor integralmente para o comprador. O dinheiro sairá de sua carteira pendente.")) {
+                                try {
+                                    const { data, error } = await supabase.functions.invoke('process-refund', {
+                                        body: { order_id: order.id, reason: 'requested_by_customer' }
+                                    });
+                                    if (error) throw error;
+                                    if (data?.error) throw new Error(data.error);
+                                    addToast("Pedido estornado com sucesso.", "success");
+                                    fetchOrder();
+                                } catch (err: any) {
+                                    addToast("Erro ao estornar: " + err.message, "error");
+                                }
+                            }
+                        }}
+                    >
+                        Cancelar e Estornar Cliente
+                    </Button>
                 )}
             </div>
-        </div>
+            <div className="pt-4 border-t text-[9px] text-gray-400 flex items-center gap-1.5"><Clock size={10} /> Criado em {new Date(order.created_at).toLocaleDateString()}</div>
+
+            {isDeliveryModalOpen && (
+                <Suspense fallback={
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                        <LoadingSpinner />
+                    </div>
+                }>
+                    <DeliveryModal
+                        orderId={order.id}
+                        isOpen={isDeliveryModalOpen}
+                        onClose={() => setIsDeliveryModalOpen(false)}
+                        onSuccess={fetchOrder}
+                    />
+                </Suspense>
+            )}
         </div>
     );
 };

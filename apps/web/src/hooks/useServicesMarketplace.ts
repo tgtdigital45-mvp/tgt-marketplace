@@ -64,7 +64,7 @@ export function useServicesMarketplace({
             .from('services')
             .select(`
                 *,
-                companies!inner (
+                public_company_profiles!inner (
                     company_name,
                     logo_url,
                     rating,
@@ -114,10 +114,10 @@ export function useServicesMarketplace({
 
         return (data || []).map((s: any) => ({
             ...s,
-            company_name: s.companies?.company_name,
-            company_logo: s.companies?.logo_url,
-            company_rating: s.companies?.rating,
-            company_slug: s.companies?.slug,
+            company_name: s.public_company_profiles?.company_name,
+            company_logo: s.public_company_profiles?.logo_url,
+            company_rating: s.public_company_profiles?.rating,
+            company_slug: s.public_company_profiles?.slug,
         }));
     }, [category, searchQuery, serviceFilter, limit]);
 

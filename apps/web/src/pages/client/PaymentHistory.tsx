@@ -3,6 +3,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@tgt/shared';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import {
+    AreaChart,
+    Area,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer
+} from 'recharts';
+import {
     CreditCard,
     Receipt,
     CheckCircle,
@@ -25,33 +34,96 @@ interface PaymentHistoryProps {
 const PaymentHistory: React.FC<PaymentHistoryProps> = ({ isEmbedded = false }) => {
     const { user } = useAuth();
     const [orders, setOrders] = useState<any[]>([]);
+    const [walletBalance, setWalletBalance] = useState<number>(0);
     const [loading, setLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState<'all' | 'paid' | 'pending' | 'failed'>('all');
 
     useEffect(() => {
-        const fetchOrders = async () => {
+        const fetchData = async () => {
             if (!user) return;
             try {
-                const { data, error } = await supabase
-                    .from('orders')
-                    .select('*, seller:profiles!orders_seller_id_fkey(companies(company_name, logo_url))')
-                    .eq('buyer_id', user.id)
-                    .order('created_at', { ascending: false });
+                // Fetch Orders and Wallet in parallel
+                const [ordersRes, walletRes] = await Promise.all([
+                    supabase
+                        .from('orders')
+                        .select('*, seller:profiles!orders_seller_id_fkey(*)')
+                        .eq('buyer_id', user.id)
+                        .order('created_at', { ascending: false }),
+                    supabase
+                        .from('wallets')
+                        .select('balance')
+                        .eq('user_id', user.id)
+                        .maybeSingle()
+                ]);
 
-                if (error) throw error;
-                setOrders(data || []);
+                if (ordersRes.error) throw ordersRes.error;
+
+                let ordersData = ordersRes.data || [];
+
+                // Fetch seller companies separately
+                if (ordersData.length > 0) {
+                    const sellerIds = [...new Set(ordersData.map((o: any) => o.seller_id))].filter(Boolean);
+                    if (sellerIds.length > 0) {
+                        const { data: companiesData } = await supabase
+                            .from('companies')
+                            .select('profile_id, company_name, logo_url')
+                            .in('profile_id', sellerIds);
+
+                        if (companiesData) {
+                            ordersData = ordersData.map((o: any) => {
+                                const comp = companiesData.find((c: any) => c.profile_id === o.seller_id);
+                                if (comp && o.seller) {
+                                    o.seller.companies = [comp];
+                                }
+                                return o;
+                            });
+                        }
+                    }
+                }
+
+                setOrders(ordersData);
+
+                if (walletRes.data) {
+                    setWalletBalance(Number(walletRes.data.balance));
+                }
             } catch (error) {
-                console.error("Error fetching payment history", error);
+                console.error("Error fetching payment data", error);
             } finally {
                 setLoading(false);
             }
         };
-        fetchOrders();
+        fetchData();
     }, [user]);
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
     };
+
+    // Prepare chart data (last 6 months)
+    const getChartData = () => {
+        const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+        const data = [];
+        const now = new Date();
+
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const monthLabel = monthNames[d.getMonth()];
+
+            const monthlyTotal = orders
+                .filter(o => {
+                    const orderDate = new Date(o.created_at);
+                    return o.payment_status === 'paid' &&
+                        orderDate.getMonth() === d.getMonth() &&
+                        orderDate.getFullYear() === d.getFullYear();
+                })
+                .reduce((acc, curr) => acc + (Number(curr.price) || 0), 0);
+
+            data.push({ name: monthLabel, total: monthlyTotal });
+        }
+        return data;
+    };
+
+    const chartData = getChartData();
 
     const filteredOrders = orders.filter(o => {
         if (activeFilter === 'all') return true;
@@ -63,11 +135,11 @@ const PaymentHistory: React.FC<PaymentHistoryProps> = ({ isEmbedded = false }) =
 
     const totalInvestedMonth = orders
         .filter(o => o.payment_status === 'paid' && new Date(o.created_at).getMonth() === new Date().getMonth())
-        .reduce((acc, curr) => acc + (curr.price || 0), 0);
+        .reduce((acc, curr) => acc + (Number(curr.price) || 0), 0);
 
     const pendingInvoices = orders
         .filter(o => o.payment_status === 'pending' || !o.payment_status)
-        .reduce((acc, curr) => acc + (curr.price || 0), 0);
+        .reduce((acc, curr) => acc + (Number(curr.price) || 0), 0);
 
     if (loading) return <div className="h-64 flex items-center justify-center"><LoadingSpinner /></div>;
 
@@ -84,7 +156,7 @@ const PaymentHistory: React.FC<PaymentHistoryProps> = ({ isEmbedded = false }) =
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Investimento Mensal</p>
                     <h3 className="text-2xl font-black text-slate-800 tracking-tight">{formatCurrency(totalInvestedMonth)}</h3>
                     <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-green-500">
-                        <span className="px-2 py-0.5 bg-green-50 rounded-full">+12% vs mês anterior</span>
+                        <span className="px-2 py-0.5 bg-green-50 rounded-full">Referente a {new Date().toLocaleDateString('pt-BR', { month: 'long' })}</span>
                     </div>
                 </div>
 
@@ -96,7 +168,7 @@ const PaymentHistory: React.FC<PaymentHistoryProps> = ({ isEmbedded = false }) =
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Faturas Pendentes</p>
                     <h3 className="text-2xl font-black text-slate-800 tracking-tight">{formatCurrency(pendingInvoices)}</h3>
                     <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-orange-400">
-                        <span className="px-2 py-0.5 bg-orange-50 rounded-full">{orders.filter(o => o.payment_status === 'pending').length} faturas aguardando</span>
+                        <span className="px-2 py-0.5 bg-orange-50 rounded-full">{orders.filter(o => o.payment_status === 'pending' || !o.payment_status).length} faturas aguardando</span>
                     </div>
                 </div>
 
@@ -106,8 +178,53 @@ const PaymentHistory: React.FC<PaymentHistoryProps> = ({ isEmbedded = false }) =
                         <Wallet size={24} />
                     </div>
                     <p className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em] mb-1">Saldo em Carteira</p>
-                    <h3 className="text-3xl font-black tracking-tight">R$ 45,90</h3>
-                    <p className="mt-4 text-[10px] font-bold text-white/80">Créditos de estorno ou bônus</p>
+                    <h3 className="text-3xl font-black tracking-tight">{formatCurrency(walletBalance)}</h3>
+                    <p className="mt-4 text-[10px] font-bold text-white/80">Disponível para novos agendamentos</p>
+                </div>
+            </div>
+
+            {/* CHART SECTION */}
+            <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
+                <div className="flex justify-between items-center mb-8">
+                    <div>
+                        <h2 className="text-xl font-black text-slate-800 tracking-tight mb-1">Evolução de Investimentos</h2>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Seu gasto com serviços nos últimos 6 meses</p>
+                    </div>
+                </div>
+                <div className="h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={chartData}>
+                            <defs>
+                                <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#00b09b" stopOpacity={0.1} />
+                                    <stop offset="95%" stopColor="#00b09b" stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                            <XAxis
+                                dataKey="name"
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }}
+                                dy={10}
+                            />
+                            <YAxis
+                                hide={true}
+                            />
+                            <Tooltip
+                                contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                formatter={(value: number) => [formatCurrency(value), 'Investido']}
+                            />
+                            <Area
+                                type="monotone"
+                                dataKey="total"
+                                stroke="#00b09b"
+                                strokeWidth={3}
+                                fillOpacity={1}
+                                fill="url(#colorTotal)"
+                            />
+                        </AreaChart>
+                    </ResponsiveContainer>
                 </div>
             </div>
 

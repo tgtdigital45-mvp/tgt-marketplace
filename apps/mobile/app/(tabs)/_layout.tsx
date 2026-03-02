@@ -1,10 +1,21 @@
-import React from 'react';
-import { Tabs } from 'expo-router';
+import React, { useEffect } from 'react';
+import { Tabs, useRouter } from 'expo-router';
 import { Home, ClipboardList, User } from 'lucide-react-native';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useAuth } from '@/providers/AuthProvider';
 
 export default function TabLayout() {
     const colorScheme = useColorScheme();
+    const { session, loading } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!loading && !session) {
+            router.replace('/(auth)/login');
+        }
+    }, [session, loading]);
+
+    if (loading) return null;
 
     return (
         <Tabs

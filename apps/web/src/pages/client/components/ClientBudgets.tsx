@@ -24,7 +24,7 @@ const ClientBudgets: React.FC = () => {
           *,
           proposals(
             *,
-            professional:profiles!proposals_user_id_fkey(full_name, avatar_url)
+            professional:profiles!proposals_user_id_profiles_fkey(full_name, avatar_url)
           )
         `)
                 .eq('user_id', user?.id)

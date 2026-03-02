@@ -6,11 +6,12 @@ module.exports = {
         extend: {
             colors: {
                 brand: {
-                    primary: "#0f172a", // Navy Blue
-                    secondary: "#334155", // Slate
-                    accent: "#2563eb", // Royal Blue
-                    success: "#10b981", // Emerald Green
-                    background: "#f8fafc", // Off-White
+                    primary: "#0f172a",    /* Slate 900 */
+                    secondary: "#475569",  /* Slate 600 */
+                    accent: "#2563eb",     /* Blue 600 */
+                    background: "#f8fafc", /* Slate 50 */
+                    surface: "#ffffff",
+                    success: "#10b981",    /* Emerald Green */
                 },
             },
             borderRadius: {

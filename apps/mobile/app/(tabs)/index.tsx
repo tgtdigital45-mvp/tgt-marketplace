@@ -9,13 +9,10 @@ import {
     Image,
     RefreshControl,
 } from 'react-native';
-import { Search, MapPin, Bell, Star } from 'lucide-react-native';
+import { Search, MapPin, Bell, Star, Map } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useServices, ServiceListItem } from '@/hooks/useServices';
 import { useNotifications } from '@/providers/NotificationProvider';
-import MapView, { Marker } from 'react-native-maps';
-import * as Location from 'expo-location';
-import { useEffect } from 'react';
 
 const CATEGORIES = [
     { name: 'Limpeza', emoji: '🧹' },
@@ -100,32 +97,12 @@ function ServiceCard({ service }: { service: ServiceListItem }) {
 }
 
 export default function HomeScreen() {
+    const router = useRouter();
     const [searchText, setSearchText] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
-    const [location, setLocation] = useState<Location.LocationObject | null>(null);
-    const { data: services, isLoading, isError, refetch } = useServices(
-        debouncedSearch,
-        location?.coords.latitude,
-        location?.coords.longitude
-    );
+    const { data: services, isLoading, isError, refetch } = useServices(debouncedSearch);
     const { unreadCount } = useNotifications();
     const [refreshing, setRefreshing] = useState(false);
-
-    // Initial Location
-    useEffect(() => {
-        (async () => {
-            let { status } = await Location.requestForegroundPermissionsAsync();
-            if (status !== 'granted') {
-                return;
-            }
-            try {
-                let loc = await Location.getCurrentPositionAsync({});
-                setLocation(loc);
-            } catch (err) {
-                console.log("Could not get location:", err);
-            }
-        })();
-    }, []);
 
     // Simple debounce on search submit
     const handleSearchSubmit = useCallback(() => {
@@ -182,32 +159,19 @@ export default function HomeScreen() {
 
             {/* Map Preview */}
             <View className="px-6 mt-6">
-                <View className="h-64 rounded-3xl overflow-hidden border border-slate-200 shadow-sm bg-slate-100">
-                    <MapView
-                        style={{ width: '100%', height: '100%' }}
-                        initialRegion={{
-                            latitude: location?.coords.latitude ?? -24.9573,    // Default to Cascavel if not found
-                            longitude: location?.coords.longitude ?? -53.4590,
-                            latitudeDelta: 0.0922,
-                            longitudeDelta: 0.0421,
-                        }}
-                        showsUserLocation={true}
-                    >
-                        {services?.map((service) => {
-                            if (service.latitude && service.longitude) {
-                                return (
-                                    <Marker
-                                        key={service.id}
-                                        coordinate={{ latitude: service.latitude, longitude: service.longitude }}
-                                        title={service.company_name}
-                                        description={service.title}
-                                    />
-                                );
-                            }
-                            return null;
-                        })}
-                    </MapView>
-                </View>
+                <TouchableOpacity
+                    onPress={() => router.push('/map')}
+                    className="h-40 rounded-3xl overflow-hidden border border-slate-200 shadow-sm bg-brand-primary/5 items-center justify-center"
+                    activeOpacity={0.85}
+                >
+                    <View className="items-center gap-2">
+                        <Map size={36} color="#2563eb" />
+                        <Text className="text-brand-primary font-bold text-base">Ver no Mapa</Text>
+                        <Text className="text-brand-secondary text-xs text-center px-8">
+                            Encontre profissionais próximos a você
+                        </Text>
+                    </View>
+                </TouchableOpacity>
             </View>
 
             {/* Categories */}

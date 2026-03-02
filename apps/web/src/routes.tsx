@@ -66,7 +66,6 @@ const AdminDisputesPage = lazy(() => import('@/pages/admin/AdminDisputesPage'));
 const ServiceDetailsPage = lazy(() => import('@/pages/service/ServiceDetailsPage'));
 const CheckoutPage = lazy(() => import('@/pages/checkout/CheckoutPage'));
 const BookingPage = lazy(() => import('@/pages/booking/BookingPage'));
-const OrderRoomPage = lazy(() => import('@/pages/orders/OrderRoomPage'));
 const WalletPage = lazy(() => import('@/pages/dashboard/WalletPage'));
 
 // Info Pages
@@ -183,6 +182,18 @@ const DashboardRedirect = () => {
     return <LoadingSpinner />;
 };
 
+const OrderRedirect = () => {
+    const { user } = useAuth();
+    // Assuming useLocation and navigation needed
+    if (!user) return <Navigate to="/login/cliente" replace />;
+
+    if (user.type === 'company' && user.companySlug) {
+        return <Navigate to={`/dashboard/empresa/${user.companySlug}/mensagens`} replace />;
+    }
+
+    return <Navigate to="/minhas-mensagens" replace />;
+};
+
 const MainRoutes = () => {
     const location = useLocation();
 
@@ -200,7 +211,7 @@ const MainRoutes = () => {
                         <Route path="/servico/:id" element={<AnimatedElement><ServiceDetailsPage /></AnimatedElement>} />
                         <Route path="/agendar/:serviceId" element={<AnimatedElement><BookingPage /></AnimatedElement>} />
                         <Route path="/checkout/:serviceId" element={<AnimatedElement><CheckoutPage /></AnimatedElement>} />
-                        <Route path="/orders/:orderId" element={<AnimatedElement><OrderRoomPage /></AnimatedElement>} />
+                        <Route path="/orders/:orderId" element={<OrderRedirect />} />
 
                         {/* Auth Routes - Clients */}
                         <Route path="/login/cliente" element={<AnimatedElement><ClientLoginPage /></AnimatedElement>} />

@@ -14,18 +14,19 @@ export const useCompanyProfile = (slug: string | undefined) => {
             const { data, error } = await supabase
                 .from('companies')
                 .select(`
-          *,
-          services (*),
-
-          reviews (
-            *,
-            profiles:client_id (
-              full_name,
-              avatar_url
-            )
-          ),
-          portfolio_items (*)
-        `)
+                  id, profile_id, company_name, slug, description, logo_url, cover_image_url, 
+                  category, status, city, state, address, phone, email, website, 
+                  verified, rating, created_at, legal_name, cnpj,
+                  services (*),
+                  reviews (
+                    *,
+                    profiles:client_id (
+                      full_name,
+                      avatar_url
+                    )
+                  ),
+                  portfolio_items (*)
+                `)
                 .eq('slug', slug)
                 .is('services.deleted_at', null)
                 .single();

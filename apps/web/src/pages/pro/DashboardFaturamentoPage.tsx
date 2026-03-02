@@ -10,7 +10,6 @@ import { gemini } from '@/utils/gemini';
 import { useToast } from '@/contexts/ToastContext';
 import { motion } from 'framer-motion';
 
-const PLATFORM_FEE_RATE = 0.15;
 
 const DashboardFaturamentoPage: React.FC = () => {
     const { user } = useAuth();
@@ -217,8 +216,9 @@ const DashboardFaturamentoPage: React.FC = () => {
         return true;
     });
 
+    const effectiveCommissionRate = company?.commission_rate ?? 0.20;
     const grossAmount = transactions.filter(t => t.type === 'credit').reduce((acc, t) => acc + t.amount, 0);
-    const platformFee = grossAmount * PLATFORM_FEE_RATE;
+    const platformFee = grossAmount * effectiveCommissionRate;
     const netAmount = grossAmount - platformFee;
 
     if (loading) return (
@@ -274,8 +274,8 @@ const DashboardFaturamentoPage: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
                 className={`p-6 rounded-2xl border flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm ${company?.stripe_charges_enabled
-                        ? 'bg-emerald-50 border-emerald-100'
-                        : 'bg-amber-50 border-amber-100'
+                    ? 'bg-emerald-50 border-emerald-100'
+                    : 'bg-amber-50 border-amber-100'
                     }`}
             >
                 <div className="flex items-center gap-4">
@@ -434,7 +434,7 @@ const DashboardFaturamentoPage: React.FC = () => {
                     <p className="text-xl font-bold text-gray-900">R$ {grossAmount.toFixed(2)}</p>
                 </div>
                 <div className="text-center border-x border-gray-100">
-                    <p className="text-xs text-gray-500 mb-1">Taxa Plataforma (15%)</p>
+                    <p className="text-xs text-gray-500 mb-1">Taxa Plataforma ({Math.round(effectiveCommissionRate * 100)}%)</p>
                     <p className="text-xl font-bold text-red-500">- R$ {platformFee.toFixed(2)}</p>
                 </div>
                 <div className="text-center">

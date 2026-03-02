@@ -36,6 +36,12 @@ export interface CompanyData {
     h3_index?: string | null;
     stripe_account_id?: string;
     stripe_charges_enabled?: boolean;
+    commission_rate?: number;
+    pix_key?: string;
+    bank_name?: string;
+    bank_agency?: string;
+    bank_account?: string;
+    bank_account_type?: string;
 }
 
 interface CompanyContextType {

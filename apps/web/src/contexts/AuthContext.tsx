@@ -26,7 +26,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Initialize loading based on whether we expect a session
   const [loading, setLoading] = useState(() => {
-    return !!localStorage.getItem('contratto-auth-session');
+    const hasSession = !!localStorage.getItem('contratto-auth-session');
+    if (hasSession) console.log('[AuthContext] Initializing with loading=true (found session in storage)');
+    return hasSession;
   });
 
   // Extract profile fetching logic for reuse
@@ -55,108 +57,79 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         avatar: session.user.user_metadata.avatar_url || '',
       };
 
-      console.log(`[AuthContext] Fetching profile data (ID: ${currentFetchId}) for:`, session.user.id);
+      console.log(`[AuthContext] (ID: ${currentFetchId}) Starting parallel profile/company fetch...`);
 
-      console.log(`[AuthContext] (ID: ${currentFetchId}) Fetching profile and company in parallel...`);
+      console.log(`[AuthContext] (ID: ${currentFetchId}) Fetching Profile...`);
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('role, full_name, avatar_url, user_type')
+        .eq('id', session.user.id)
+        .maybeSingle();
 
-      // Helper for race with timeout that respects abort signal
-      const raceWithTimeout = async <T,>(promise: Promise<T>, ms: number, signal: AbortSignal, label: string) => {
-        let timer: NodeJS.Timeout;
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          timer = setTimeout(() => reject(new Error('TIMEOUT')), ms);
-        });
+      console.log(`[AuthContext] (ID: ${currentFetchId}) Profile fetch done. Error:`, profileError);
 
-        // Cleanup function for the timer
-        const cleanup = () => clearTimeout(timer);
+      console.log(`[AuthContext] (ID: ${currentFetchId}) Fetching Company...`);
+      const { data: companyData, error: companyError } = await supabase
+        .from('companies')
+        .select('id, slug, profile_id')
+        .eq('profile_id', session.user.id)
+        .maybeSingle();
 
-        try {
-          const result = await Promise.race([promise, timeoutPromise]);
-          cleanup();
-          return result;
-        } catch (err: any) {
-          cleanup();
-          // If aborted, don't throw TIMEOUT, throw AbortError or just return null
-          if (signal.aborted) throw new Error('AbortError');
-          throw err;
-        }
-      };
+      console.log(`[AuthContext] (ID: ${currentFetchId}) Company fetch done. Error:`, companyError);
 
-      const TIMEOUT_MS = 30000;
+      if (currentFetchId !== fetchIdRef.current) return;
 
-      const [companyResult, profileResult] = await Promise.allSettled([
-        raceWithTimeout(
-          supabase.from('companies').select('id, slug, profile_id').eq('profile_id', session.user.id).abortSignal(abortController.signal),
-          TIMEOUT_MS,
-          abortController.signal,
-          'Company'
-        ),
-        raceWithTimeout(
-          supabase.from('profiles').select('role, full_name, avatar_url, user_type').eq('id', session.user.id).maybeSingle().abortSignal(abortController.signal),
-          TIMEOUT_MS,
-          abortController.signal,
-          'Profile'
-        )
-      ]);
+      let databaseUserType: 'client' | 'company' | null = null;
+      let databaseCompanySlug: string | null = null;
 
-      // If a newer fetch started or aborted, stop immediately
-      if (currentFetchId !== fetchIdRef.current || abortController.signal.aborted) {
-        return;
+      // 1. Process Profile
+      if (profileData) {
+        if (profileData.role) userData.role = profileData.role as any;
+        if (profileData.full_name) userData.name = profileData.full_name;
+        if (profileData.avatar_url) userData.avatar = profileData.avatar_url;
+        databaseUserType = profileData.user_type as any;
       }
 
-      // 1. Process Company Result
-      if (companyResult.status === 'fulfilled') {
-        const { data: companyData, error: companyError } = companyResult.value as any;
-        if (companyError) {
-          console.error(`[AuthContext] (ID: ${currentFetchId}) Company query error:`, companyError);
-        } else if (companyData && companyData.length > 0) {
-          userData.type = 'company';
-          userData.companySlug = companyData[0].slug;
-        }
-      } else {
-        const reason = companyResult.reason;
-        if (reason?.message !== 'AbortError') {
-          console.warn(`[AuthContext] (ID: ${currentFetchId}) Company fetch failed/timed out:`, reason);
-        }
+      // 2. Process Company (Company table is source of truth for 'company' type)
+      if (companyData) {
+        databaseUserType = 'company';
+        databaseCompanySlug = companyData.slug;
       }
 
-      // 2. Process Profile Result
-      if (profileResult.status === 'fulfilled') {
-        const { data: profileData, error: profileError } = profileResult.value as any;
-        if (profileError) {
-          console.error(`[AuthContext] (ID: ${currentFetchId}) Profile query error:`, profileError);
-        } else if (profileData) {
-          if (profileData.role) userData.role = profileData.role as any;
-          if (profileData.full_name) userData.name = profileData.full_name;
-          if (profileData.avatar_url) userData.avatar = profileData.avatar_url;
-          if (profileData.user_type) userData.type = profileData.user_type as any;
-        }
-      } else {
-        const reason = profileResult.reason;
-        if (reason?.message !== 'AbortError') {
-          console.warn(`[AuthContext] (ID: ${currentFetchId}) Profile fetch failed/timed out:`, reason);
-        }
-      }
+      // Final Application
+      if (databaseUserType) userData.type = databaseUserType;
+      if (databaseCompanySlug) userData.companySlug = databaseCompanySlug;
 
-      // Final check before committing state
       if (mountedRef.current && currentFetchId === fetchIdRef.current) {
-        console.log(`[AuthContext] (ID: ${currentFetchId}) Committing user state.`);
+        console.log(`[AuthContext] (ID: ${currentFetchId}) Committing user state:`, userData.id);
         setUser(userData);
       }
     } catch (err: any) {
-      if (!err.message?.includes('AbortError')) {
-        console.error(`[AuthContext] (ID: ${currentFetchId}) Failed to fetch user profile:`, err);
-      }
+      console.error(`[AuthContext] (ID: ${currentFetchId}) CRITICAL fetch error:`, err);
     } finally {
-      // Release loading state ONLY if we are the LATEST fetch
       if (mountedRef.current && currentFetchId === fetchIdRef.current) {
-        console.log(`[AuthContext] (ID: ${currentFetchId}) Fetch complete. Releasing loading state.`);
         setLoading(false);
       }
     }
   };
 
+  // 1.5 Safety timeout for initial loading
+  useEffect(() => {
+    if (loading) {
+      console.log('[AuthContext] Starting 15s safety timeout check (VER_2026_03_02_1645)...');
+      const timer = setTimeout(() => {
+        if (loading && mountedRef.current) {
+          console.warn('[AuthContext] (VER_2026_03_02_1645) Loading stuck for 15s. Forcing loading=false.');
+          setLoading(false);
+        }
+      }, 15000);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
+
   useEffect(() => {
     mountedRef.current = true;
+    console.log('[AuthContext] (VER_2026_03_02_1645) Mounting AuthProvider...');
 
     // Single listener: let INITIAL_SESSION bootstrap state, then handle subsequent events.
     // This avoids concurrent getSession() + onAuthStateChange lock contention.
@@ -183,10 +156,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           return;
         }
 
+        // Optimization: Set basic user info from session metadata IMMEDIATELY 
+        // to update UI (Header) while fetchUserProfile runs in background.
+        if (!user || user.id !== session.user.id) {
+          const initialUserData: User = {
+            id: session.user.id,
+            name: session.user.user_metadata.full_name || session.user.user_metadata.name || session.user.email?.split('@')[0] || 'User',
+            email: session.user.email || '',
+            type: (session.user.user_metadata.user_type as 'client' | 'company') || (session.user.user_metadata.type as 'client' | 'company') || 'client',
+            avatar: session.user.user_metadata.avatar_url || '',
+            role: 'user', // Default
+          };
+          console.log(`[AuthContext] Setting immediate user state from ${event} metadata:`, initialUserData.id);
+          setUser(initialUserData);
+        }
+
         // Deduplicate: skip if this user ID was already processed in the current mount cycle
         // to avoid redundant fetches between INITIAL_SESSION and SIGNED_IN
         if (session.user.id === lastProcessedUserIdRef.current) {
-          console.log(`[AuthContext] Skipping redundant ${event} for user: ${session.user.id}`);
+          console.log(`[AuthContext] Skipping redundant fetch for ${event} for user: ${session.user.id}`);
           // If we had a session but were loading, stop loading
           setLoading(false);
           return;

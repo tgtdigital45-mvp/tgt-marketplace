@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@tgt/shared';
 import { useAuth } from '@/contexts/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -59,69 +59,79 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, change, icon, accent 
 );
 
 // ─── Activity Table ─────────────────────────────────────────────────────────────
-const ActivityTable: React.FC<{ data: any[] }> = ({ data }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 12 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.4, delay: 0.6 }}
-    className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6"
-  >
-    <div className="flex items-center justify-between mb-4">
-      <h3 className="text-sm sm:text-base font-bold text-gray-900">Atividade Recente</h3>
-      <span className="text-[10px] text-gray-400 font-medium">Ultimas transacoes</span>
-    </div>
-    <div className="overflow-x-auto -mx-5 sm:-mx-6 px-5 sm:px-6">
-      <table className="w-full text-left">
-        <thead>
-          <tr>
-            <th className="text-gray-400 text-[10px] font-bold uppercase py-2.5 border-b border-gray-100 pr-4">Servico</th>
-            <th className="text-gray-400 text-[10px] font-bold uppercase py-2.5 border-b border-gray-100 pr-4">Valor</th>
-            <th className="text-gray-400 text-[10px] font-bold uppercase py-2.5 border-b border-gray-100">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.length === 0 ? (
+const ActivityTable: React.FC<{ data: any[] }> = ({ data }) => {
+  const navigate = useNavigate();
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: 0.6 }}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm sm:text-base font-bold text-gray-900">Atividade Recente</h3>
+        <span className="text-[10px] text-gray-400 font-medium">Ultimas transacoes</span>
+      </div>
+      <div className="overflow-x-auto -mx-5 sm:-mx-6 px-5 sm:px-6">
+        <table className="w-full text-left">
+          <thead>
             <tr>
-              <td colSpan={3} className="py-8 text-center text-gray-400 text-sm">
-                Nenhuma atividade recente.
-              </td>
+              <th className="text-gray-400 text-[10px] font-bold uppercase py-2.5 border-b border-gray-100 pr-4">Servico</th>
+              <th className="text-gray-400 text-[10px] font-bold uppercase py-2.5 border-b border-gray-100 pr-4">Valor</th>
+              <th className="text-gray-400 text-[10px] font-bold uppercase py-2.5 border-b border-gray-100">Status</th>
             </tr>
-          ) : (
-            data.map((item, idx) => (
-              <tr key={item.id || item.order_id || idx} className="hover:bg-gray-50/50 transition-colors">
-                <td className="py-3 pr-4 border-b border-gray-50">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-secondary-50 flex items-center justify-center text-[10px] font-bold text-secondary-600 flex-shrink-0">
-                      {item.service_title ? item.service_title.charAt(0).toUpperCase() : 'S'}
+          </thead>
+          <tbody>
+            {data.length === 0 ? (
+              <tr>
+                <td colSpan={3} className="py-8 text-center text-gray-400 text-sm">
+                  Nenhuma atividade recente.
+                </td>
+              </tr>
+            ) : (
+              data.map((item, idx) => (
+                <tr
+                  key={item.id || item.order_id || idx}
+                  className="hover:bg-gray-50/50 transition-colors cursor-pointer group/row"
+                  onClick={() => {
+                    const orderId = item.id || item.order_id;
+                    if (orderId) navigate(`/orders/${orderId}`);
+                  }}
+                >
+                  <td className="py-3 pr-4 border-b border-gray-50">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-secondary-50 flex items-center justify-center text-[10px] font-bold text-secondary-600 flex-shrink-0 group-hover/row:bg-secondary-100 transition-colors">
+                        {item.service_title ? item.service_title.charAt(0).toUpperCase() : 'S'}
+                      </div>
+                      <span className="text-xs sm:text-sm font-medium text-gray-700 truncate max-w-[120px] sm:max-w-[200px] group-hover/row:text-primary-600 transition-colors">
+                        {item.service_title || 'Servico sem titulo'}
+                      </span>
                     </div>
-                    <span className="text-xs sm:text-sm font-medium text-gray-700 truncate max-w-[120px] sm:max-w-[200px]">
-                      {item.service_title || 'Servico sem titulo'}
-                    </span>
-                  </div>
-                </td>
-                <td className="py-3 pr-4 border-b border-gray-50 text-xs sm:text-sm text-gray-600 font-semibold whitespace-nowrap">
-                  R$ {item.agreed_price?.toFixed(2)}
-                </td>
-                <td className="py-3 border-b border-gray-50">
-                  <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${item.status === 'in_progress' ? 'bg-blue-50 text-blue-600' :
+                  </td>
+                  <td className="py-3 pr-4 border-b border-gray-50 text-xs sm:text-sm text-gray-600 font-semibold whitespace-nowrap">
+                    R$ {item.agreed_price?.toFixed(2)}
+                  </td>
+                  <td className="py-3 border-b border-gray-50">
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${item.status === 'in_progress' ? 'bg-blue-50 text-blue-600' :
                       item.status === 'completed' ? 'bg-emerald-50 text-emerald-600' :
                         item.status === 'cancelled' ? 'bg-red-50 text-red-600' :
                           'bg-gray-50 text-gray-500'
-                    }`}>
-                    {item.status === 'in_progress' ? 'Em Progresso' :
-                      item.status === 'completed' ? 'Concluido' :
-                        item.status === 'pending_payment' ? 'Aguardando Pgto' :
-                          item.status}
-                  </span>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
-  </motion.div>
-);
+                      }`}>
+                      {item.status === 'in_progress' ? 'Em Progresso' :
+                        item.status === 'completed' ? 'Concluido' :
+                          item.status === 'pending_payment' ? 'Aguardando Pgto' :
+                            item.status}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </motion.div>
+  );
+};
 
 // ─── Greeting Helper ────────────────────────────────────────────────────────────
 const getGreeting = () => {
