@@ -17,7 +17,7 @@ type CalendarOrder = {
     scheduled_for: string;
     status: string;
     total_price: number;
-    profiles: { first_name: string; last_name: string } | null;
+    profiles: { full_name: string } | null;
     services: { title: string; estimated_duration: number; duration_unit: string } | null;
 };
 
@@ -50,7 +50,7 @@ export default function CalendarScreen() {
 
             const { data, error: fetchError } = await supabase
                 .from('service_orders')
-                .select('id, scheduled_for, status, total_price, profiles(first_name, last_name), services(title, estimated_duration, duration_unit)')
+                .select('id, scheduled_for, status, total_price, profiles(full_name), services(title, estimated_duration, duration_unit)')
                 .eq('company_id', company.id)
                 .eq('status', 'accepted')
                 .gte('scheduled_for', startOfDay.toISOString())
@@ -191,7 +191,7 @@ export default function CalendarScreen() {
                                     <View style={styles.clientInfo}>
                                         <Ionicons name="person-outline" size={14} color={Colors.textTertiary} />
                                         <Text style={styles.clientName}>
-                                            {item.profiles?.first_name} {item.profiles?.last_name}
+                                            {item.profiles?.full_name}
                                         </Text>
                                     </View>
 

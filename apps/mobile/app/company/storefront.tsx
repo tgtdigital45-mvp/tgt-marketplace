@@ -34,11 +34,11 @@ export default function StorefrontScreen() {
         setLoading(true);
         setError(false);
         try {
-            const { data, error: fetchError } = await supabase.from('companies').select('id, business_name, bio, logo_url, cover_url, is_public, portfolio, description').eq('owner_id', user.id).maybeSingle();
+            const { data, error: fetchError } = await supabase.from('companies').select('id, company_name, logo_url, cover_url, is_public, portfolio, description').eq('owner_id', user.id).maybeSingle();
             if (fetchError) throw fetchError;
             if (data) {
                 setCompany(data);
-                setBusinessName(data.business_name || '');
+                setBusinessName(data.company_name || '');
                 setDescription(data.description || '');
                 setLogoUrl(data.logo_url);
                 setCoverUrl(data.cover_url);
@@ -132,7 +132,7 @@ export default function StorefrontScreen() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         try {
             await supabase.from('companies').update({
-                business_name: businessName,
+                company_name: businessName,
                 description: description,
                 is_public: isPublic
             }).eq('id', company.id);

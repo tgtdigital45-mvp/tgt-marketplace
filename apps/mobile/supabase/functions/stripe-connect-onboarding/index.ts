@@ -31,7 +31,7 @@ Deno.serve(async (req: Request) => {
 
         // Fetch company from Supabase
         const companyRes = await fetch(
-            `${supabaseUrl}/rest/v1/companies?id=eq.${company_id}&select=id,stripe_account_id,business_name,owner_id`,
+            `${supabaseUrl}/rest/v1/companies?id=eq.${company_id}&select=id,stripe_account_id,company_name,owner_id`,
             {
                 headers: {
                     apikey: supabaseKey,
