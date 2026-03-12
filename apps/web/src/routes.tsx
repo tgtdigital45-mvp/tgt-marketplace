@@ -29,7 +29,7 @@ const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
 
 // URL of the Pro app — set VITE_PRO_APP_URL in .env for production
 // Dev default: http://localhost:3002
-const PRO_APP_URL = (import.meta as any).env?.VITE_PRO_APP_URL || 'http://localhost:3002';
+const PRO_APP_URL = (import.meta as any).env?.VITE_PRO_APP_URL || 'https://web-pro-xi-seven.vercel.app';
 
 // Client Pages (authenticated)
 const ClientProfilePage = lazy(() => import('@/pages/client/ClientProfilePage'));
@@ -69,6 +69,18 @@ const AnimatedElement = ({ children }: { children: React.ReactElement }) => (
 /** Hard-redirects to a URL in another app (e.g., web-pro). Not an SPA navigate. */
 const ExternalRedirect = ({ to }: { to: string }) => {
     React.useEffect(() => { window.location.replace(to); }, [to]);
+    return <LoadingSpinner />;
+};
+
+import { useParams } from 'react-router-dom';
+/** Redireciona mantendo parâmetros da URL (ex: :slug) */
+const ExternalRedirectWithParams = ({ to }: { to: string }) => {
+    const params = useParams();
+    let finalUrl = to;
+    Object.entries(params).forEach(([key, value]) => {
+        if (value) finalUrl = finalUrl.replace(`:${key}`, value);
+    });
+    React.useEffect(() => { window.location.replace(finalUrl); }, [finalUrl]);
     return <LoadingSpinner />;
 };
 
@@ -139,6 +151,7 @@ const MainRoutes = () => {
                         <Route path="/cliente/novo-pedido" element={<ProtectedRoute userType="client" element={<AnimatedElement><ClientPostJobPage /></AnimatedElement>} />} />
 
                         {/* Dashboard routes redirect to Pro app entry point */}
+                        <Route path="/dashboard/empresa/:slug/*" element={<ExternalRedirectWithParams to={`${PRO_APP_URL}/dashboard/empresa/:slug`} />} />
                         <Route path="/dashboard/*" element={<Navigate to="/login/empresa" replace />} />
 
                         {/* Info Pages */}
