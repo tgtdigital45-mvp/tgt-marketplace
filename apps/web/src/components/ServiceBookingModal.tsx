@@ -35,6 +35,8 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
     const { addToast } = useToast();
     const [loading, setLoading] = useState(false);
     const [showAuthModal, setShowAuthModal] = useState(false);
+    const [serviceForm, setServiceForm] = useState<{ id: string; questions: string[] } | null>(null);
+    const [responses, setResponses] = useState<Record<string, string>>({});
 
     // Availability Logic
     const {
@@ -74,6 +76,29 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
         }
     }, [formData.date]);
 
+    // Fetch dynamic form
+    React.useEffect(() => {
+        if (service?.id) {
+            const fetchForm = async () => {
+                const { data } = await supabase
+                    .from('service_forms')
+                    .select('*')
+                    .eq('service_id', service.id)
+                    .maybeSingle();
+                setServiceForm(data);
+                if (data?.questions) {
+                    const initialResponses: Record<string, string> = {};
+                    data.questions.forEach((q: string) => initialResponses[q] = '');
+                    setResponses(initialResponses);
+                }
+            };
+            fetchForm();
+        } else {
+            setServiceForm(null);
+            setResponses({});
+        }
+    }, [service?.id]);
+
     if (!isOpen || !service) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -103,15 +128,24 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
 
         try {
             if (isQuote) {
-                if (!formData.notes.trim()) {
-                    addToast("Descreva sua necessidade para o orçamento.", "error");
-                    setLoading(false);
                     return;
                 }
+                
+                // Mix responses into description for quotes as they lack hiring_responses column
+                let detailedDescription = formData.notes;
+                if (Object.keys(responses).length > 0) {
+                    detailedDescription += "\n\n--- Perguntas Adicionais ---\n";
+                    Object.entries(responses).forEach(([q, a]) => {
+                        detailedDescription += `${q}: ${a}\n`;
+                    });
+                }
+
                 const { error } = await supabase.from('quotes').insert({
-                    user_id: user.id,
+                    client_id: user.id, // Fixed field name match from client_id in migration (client_id references profiles)
+                    company_id: service.companyId,
                     service_id: service.id,
-                    description: formData.notes,
+                    title: service.title,
+                    description: detailedDescription,
                     budget_expectation: formData.budgetExpectation ? parseFloat(formData.budgetExpectation) : null,
                     status: 'pending'
                 });
@@ -132,6 +166,7 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
                     booking_time: isDaily ? '00:00:00' : formData.time,
                     service_duration_minutes: isDaily ? totalDays * 1440 : service.duration_minutes,
                     notes: formData.notes,
+                    hiring_responses: responses,
                     status: 'pending'
                 });
 
@@ -312,6 +347,27 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
                                         required={isQuote}
                                     />
                                 </div>
+
+                                {/* Dynamic Questions */}
+                                {serviceForm && serviceForm.questions.length > 0 && (
+                                    <div className="space-y-4 pt-4 border-t border-gray-100">
+                                        <p className="text-sm font-semibold text-gray-900">Perguntas Complementares</p>
+                                        <p className="text-xs text-gray-500 -mt-2">Responda para ajudar o profissional a entender seu caso.</p>
+                                        {serviceForm.questions.map((q, idx) => (
+                                            <div key={idx}>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">{q}</label>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-all"
+                                                    value={responses[q] || ''}
+                                                    onChange={(e) => setResponses({ ...responses, [q]: e.target.value })}
+                                                    placeholder="Sua resposta..."
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
 
                                 {isQuote && (
                                     <div>

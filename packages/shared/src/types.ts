@@ -159,6 +159,9 @@ export interface DbCompany {
   city?: string;
   state?: string;
   created_at?: string;
+  coverage_radius_km?: number;
+  coverage_neighborhoods?: string[];
+  terms_and_policies?: string;
 }
 
 export interface DbProfile {
@@ -206,6 +209,7 @@ export interface DbService {
   company_rating?: number;
   company_slug?: string;
   company?: DbCompany;
+  service_forms?: { id: string; questions: string[] }[];
 }
 
 export interface PortfolioItem {
