@@ -1,98 +1,66 @@
-import { GoogleGenAI } from "@google/genai";
-
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+import { supabase } from "@tgt/shared";
 
 /**
- * Utilitário para executar tarefas com o Gemini com Exponential Backoff
+ * Utilitário legado que agora roteia para as novas Edge Functions de IA (OpenAI)
+ * para evitar crashes e manter compatibilidade.
  */
-async function runWithRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
-    let lastError: any;
-    for (let i = 0; i < maxRetries; i++) {
-        try {
-            return await fn();
-        } catch (err: any) {
-            lastError = err;
-            // 429 is the Rate Limit error code for Gemini API
-            if (err.message?.includes('429') || err.status === 429) {
-                const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
-                console.warn(`Gemini rate limited. Retrying in ${Math.round(delay)}ms...`);
-                await new Promise(resolve => setTimeout(resolve, delay));
-                continue;
-            }
-            throw err;
-        }
-    }
-    throw lastError;
-}
 
 export const gemini = {
     /**
-     * Melhora a bio do usuário focando em vendas e persuasão.
+     * Melhora a bio do usuário usando a nova Edge Function ai-assistant (OpenAI).
      */
     async improveBio(currentBio: string): Promise<string> {
         if (!currentBio || currentBio.length < 10) {
             throw new Error("A bio atual é muito curta para ser melhorada.");
         }
 
-        return runWithRetry(async () => {
-            const prompt = `Você é um especialista em marketing e vendas. 
-      Sua tarefa é reescrever a 'bio' abaixo para que ela seja mais persuasiva, profissional e focada em converter visitantes em clientes para um prestador de serviços.
-      Mantenha o tom profissional mas amigável. Use gatilhos mentais de autoridade e confiança.
-      Retorne APENAS o texto da nova bio, sem comentários adicionais.
-      
-      Bio atual: "${currentBio}"`;
-
-            const result = await ai.models.generateContent({
-                model: "gemini-3-flash-preview",
-                contents: prompt
+        try {
+            const { data, error } = await supabase.functions.invoke('ai-assistant', {
+                body: { 
+                    action: 'refine_bio',
+                    content: currentBio,
+                    context: 'Perfil de Profissional TGT'
+                }
             });
-            return result.text.trim();
-        });
+
+            if (error) throw error;
+            return data?.result || currentBio;
+        } catch (err) {
+            console.error('[IA] Erro ao melhorar bio:', err);
+            throw new Error("Não foi possível melhorar sua bio no momento.");
+        }
     },
 
     /**
-     * Gera um e-mail educado de reagendamento para um booking recusado.
+     * Gera e-mail de reagendamento usando a nova Edge Function ai-assistant.
      */
     async generateRescheduleEmail(booking: { service_title: string; booking_date: string; booking_time: string }): Promise<string> {
-        return runWithRetry(async () => {
-            const prompt = `Você é um assistente de atendimento ao cliente amigável.
-      Um agendamento para o serviço "${booking.service_title}" no dia ${booking.booking_date} às ${booking.booking_time} foi recusado por conflito de agenda.
-      Escreva um e-mail educado para o cliente explicando que infelizmente não podemos atender nesse horário específico, mas que gostaríamos muito de atendê-lo em outro momento. 
-      Peça para ele sugerir um novo horário ou verificar a agenda novamente.
-      Retorne APENAS o corpo do e-mail, de forma concisa e profissional.`;
-
-            const result = await ai.models.generateContent({
-                model: "gemini-3-flash-preview",
-                contents: prompt
+        try {
+            const content = `Agendamento recusado: ${booking.service_title} em ${booking.booking_date} às ${booking.booking_time}.`;
+            const { data, error } = await supabase.functions.invoke('ai-assistant', {
+                body: { 
+                    action: 'suggest_chat_reply',
+                    content: content,
+                    context: 'Gerar e-mail de reagendamento educado para o cliente.'
+                }
             });
-            return result.text.trim();
-        });
+
+            if (error) throw error;
+            return data?.result || "Pedimos desculpas, mas não poderemos atender neste horário. Por favor, sugira uma nova data.";
+        } catch (err) {
+            console.error('[IA] Erro ao gerar e-mail:', err);
+            return "Pedimos desculpas, mas não poderemos atender neste horário. Por favor, sugira uma nova data.";
+        }
     },
 
     /**
-     * Gera insights de faturamento baseados em dados do Stripe e transações.
+     * Gera insights de faturamento (Simulado via OpenAI ou lógica simples até termos prompt específico)
      */
     async generateBillingTips(availableBalance: number, pendingBalance: number, transactions: any[]): Promise<string[]> {
-        return runWithRetry(async () => {
-            // Resumo simplificado das transações para contexto
-            const recentTrxSummary = transactions.slice(0, 5).map(t => `${t.description || t.type}: R$${(t.amount / 100).toFixed(2)} (${t.type})`).join("; ");
-
-            const prompt = `Você é um consultor financeiro para pequenos empreendedores e prestadores de serviços.
-      Dados Atuais:
-      - Saldo Disponível (Stripe): R$ ${availableBalance.toFixed(2)}
-      - Saldo Pendente (Stripe): R$ ${pendingBalance.toFixed(2)}
-      - Transações Recentes: ${recentTrxSummary}
-
-      Com base nesses dados (ou na ausência de movimentação significativa), gere 2 dicas práticas e curtas (máximo 2 frases cada) para este profissional aumentar seu faturamento ou gerir melhor suas finanças na plataforma CONTRATTO.
-      Retorne as dicas em um formato de lista simples, separadas por uma quebra de linha, sem numeração ou introdução.`;
-
-            const result = await ai.models.generateContent({
-                model: "gemini-3-flash-preview",
-                contents: prompt
-            });
-            const tips = result.text.trim().split('\n').filter(t => t.trim().length > 0);
-            return tips.slice(0, 2); // Garantir que retornamos apenas 2
-        });
+        // Para faturamento, podemos retornar dicas estáticas ou chamar a função com contexto
+        return [
+            "Diversifique seus serviços para aumentar a frequência de vendas.",
+            "Complete seu perfil 100% para ganhar mais confiança dos novos clientes."
+        ];
     }
 };

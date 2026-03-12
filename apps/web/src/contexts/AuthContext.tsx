@@ -66,7 +66,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Timeout de segurança para a RPC
       const rpcPromise = supabase.rpc('get_user_session_context', { p_user_id: session.user.id });
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('RPC Timeout')), 8000)
+        setTimeout(() => reject(new Error('RPC Timeout')), 30000)
       );
 
       const { data: sessionCtx, error: rpcError } = (await Promise.race([
@@ -94,6 +94,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     } catch (err: any) {
       console.error(`[AuthContext] (ID: ${currentFetchId}) Erro crítico no fetch:`, err);
+      if (mountedRef.current && currentFetchId === fetchIdRef.current) {
+        setLoading(false);
+      }
     } finally {
       if (mountedRef.current && currentFetchId === fetchIdRef.current) {
         setLoading(false);
@@ -113,7 +116,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.warn('[AuthContext] Safety timeout reached! Forcing loading=false');
         setLoading(false);
       }
-    }, 10000); // 10 seconds is safer for initial session check, matching/exceeding RPC timeout
+    }, 40000); // 40 seconds is safer for initial session check, matching/exceeding RPC timeout
 
     // Single listener: let INITIAL_SESSION bootstrap state, then handle subsequent events.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -143,9 +146,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         // Optimization: Set basic user info from session metadata IMMEDIATELY
-        // to update UI (Header) while fetchUserProfile runs in background.
-        // Only apply if metadata has a reliable type — never assume 'client' as default,
-        // as this causes company users to be redirected to client routes before RPC completes.
+        // to update UI (Header/Routing) while fetchUserProfile runs in background.
         const metadataType = (session.user.user_metadata.user_type || session.user.user_metadata.type) as 'client' | 'company' | undefined;
         if ((!user || user.id !== session.user.id) && metadataType) {
           const initialUserData: User = {
@@ -156,8 +157,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             avatar: session.user.user_metadata.avatar_url || '',
             role: 'user',
           };
-          console.log(`[AuthContext] Setting immediate user state from ${event} metadata (type=${metadataType}):`, initialUserData.id);
+          console.log(`[AuthContext] Setting optimistic user state from ${event} metadata (type=${metadataType}):`, initialUserData.id);
           setUser(initialUserData);
+          setLoading(false); // <--- IMPACT: UI becomes interactive immediately
         }
 
         // Deduplicate: skip if this user ID was already processed in the current mount cycle

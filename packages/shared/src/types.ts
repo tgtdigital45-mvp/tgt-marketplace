@@ -485,9 +485,11 @@ export interface Conversation {
 export interface SellerStats {
   seller_id: string;
   total_completed_orders: number;
-  average_rating: number;
-  on_time_delivery_rate: number;
-  current_level: 'Beginner' | 'Level 1' | 'Level 2' | 'Pro';
-  next_level: 'Level 1' | 'Level 2' | 'Pro' | null;
+  total_orders: number;
+  total_earnings: number;
+  level: string;
+  current_level: string;
+  next_level: string | null;
   orders_to_next_level: number;
+  level_progress: number;
 }

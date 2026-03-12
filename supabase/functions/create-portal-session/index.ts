@@ -13,6 +13,7 @@ serve(async (req) => {
     }
 
     try {
+        console.log('Headers:', req.headers)
         const supabaseClient = createClient(
             Deno.env.get('SUPABASE_URL') ?? '',
             Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -26,6 +27,7 @@ serve(async (req) => {
         const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
 
         if (userError || !user) {
+            console.error('User auth error:', userError)
             throw new Error('Unauthorized')
         }
 
@@ -34,18 +36,22 @@ serve(async (req) => {
             httpClient: Stripe.createFetchHttpClient(),
         })
 
-        const { return_url } = await req.json()
+        const body = await req.json()
+        const { return_url } = body
+        console.log('Request body:', body)
 
         if (!return_url) throw new Error('Missing return_url')
 
         // Get Company & Customer ID
+        console.log(`Fetching company for profile_id: ${user.id}`)
         const { data: company, error: companyError } = await supabaseClient
             .from('companies')
             .select('stripe_customer_id')
-            .eq('owner_id', user.id)
+            .eq('profile_id', user.id)
             .single()
 
         if (companyError || !company) {
+            console.error('Company error:', companyError)
             throw new Error('Company not found')
         }
 

@@ -44,6 +44,15 @@ export interface CompanyData {
     bank_account_type?: string;
     kyc_status?: 'pending' | 'in_review' | 'approved' | 'rejected';
     kyc_documents?: any[];
+    terms_and_policies?: string;
+    social_links?: {
+        facebook?: string;
+        instagram?: string;
+        linkedin?: string;
+    };
+    coverage_radius_km?: number;
+    coverage_neighborhoods?: string[];
+    slug_updated_at?: string;
 }
 
 interface CompanyContextType {

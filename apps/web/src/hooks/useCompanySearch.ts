@@ -72,69 +72,118 @@ export const useCompanySearch = (itemsPerPage: number = 8) => {
             const to = from + itemsPerPage - 1;
 
             // Base query - Using the secure public view
-            let query = supabase
-                .from('public_company_profiles')
-                .select(`
-                  *,
-                  services (*)
-                `, { count: 'exact' });
+            let queryData: any[] = [];
+            let totalCount = 0;
 
-            // 1. Text Search
-            if (searchTerm) {
-                query = query.or(`company_name.ilike.%${searchTerm}%`);
+            const isSemanticSearch = searchTerm && searchTerm.split(' ').length > 2;
+
+            if (isSemanticSearch) {
+                try {
+                    // 1. Get embedding from Edge Function
+                    const { data: embeddingData, error: embeddingError } = await supabase.functions.invoke('generate-embeddings', {
+                        body: { input: searchTerm }
+                    });
+
+                    if (!embeddingError && embeddingData?.embedding) {
+                        // 2. Call the match_companies RPC
+                        const { data: matchData, error: matchError } = await supabase.rpc('match_companies', {
+                            query_embedding: embeddingData.embedding,
+                            match_threshold: 0.3, // Reduzido para ser mais permissivo na busca semântica
+                            match_count: itemsPerPage,
+                            filter_category: selectedCategory === 'all' ? null : selectedCategory,
+                            filter_city: locationTerm || null
+                        });
+
+                        if (!matchError && matchData) {
+                            queryData = matchData;
+                            totalCount = matchData.length;
+                        }
+                    }
+                } catch (err) {
+                    console.error('Semantic search error, falling back to text search:', err);
+                }
             }
 
-            // 2. Location
-            if (locationTerm) {
-                query = query.or(`city.ilike.%${locationTerm}%,state.ilike.%${locationTerm}%`);
+            // Fallback to standard TST search if AI search fails or isn't needed
+            if (!queryData.length) {
+                let query = supabase
+                    .from('public_company_profiles')
+                    .select(`
+                      *,
+                      services (*)
+                    `, { count: 'exact' });
+
+                // 1. Text Search
+                if (searchTerm) {
+                    query = query.or(`company_name.ilike.%${searchTerm}%`);
+                }
+
+                // 2. Location
+                if (locationTerm) {
+                    query = query.or(`city.ilike.%${locationTerm}%,state.ilike.%${locationTerm}%`);
+                }
+
+                // 3. Category
+                if (selectedCategory !== 'all') {
+                    query = query.eq('category', selectedCategory);
+                }
+
+                // 4. Sorting (Server-side)
+                if (sortBy === 'name') {
+                    query = query.order('company_name', { ascending: true });
+                } else if (sortBy === 'rating') {
+                    query = query.order('created_at', { ascending: false });
+                }
+
+                // 5. Pagination
+                query = query.range(from, to);
+
+                const { data, count: supabaseCount, error } = await query;
+                if (error) throw error;
+                
+                queryData = data || [];
+                totalCount = supabaseCount || 0;
             }
-
-            // 3. Category
-            if (selectedCategory !== 'all') {
-                query = query.eq('category', selectedCategory);
-            }
-
-            // 4. Sorting (Server-side)
-            if (sortBy === 'name') {
-                query = query.order('company_name', { ascending: true });
-            } else if (sortBy === 'rating') {
-                query = query.order('created_at', { ascending: false });
-            }
-
-            // 5. Pagination
-            query = query.range(from, to);
-
-            const { data, count, error } = await query;
-
-            if (error) throw error;
 
             // Map to UI types
-            let mappedCompanies: Company[] = (data || []).map((c) => ({
-                id: c.id,
-                slug: c.slug,
-                companyName: c.company_name,
-                legalName: c.legal_name,
-                cnpj: c.cnpj,
-                logo: c.logo_url || 'https://placehold.co/150',
-                coverImage: c.cover_image_url || 'https://placehold.co/1200x400',
-                category: c.category,
-                rating: 5.0,
-                reviewCount: 0,
-                description: c.description,
-                address: typeof c.address === 'string' ? JSON.parse(c.address) : c.address,
-                phone: c.phone,
-                email: c.email,
-                website: c.website,
-                services: c.services || [],
-                portfolio: [],
-                reviews: []
-            }));
+            let mappedCompanies: Company[] = queryData.map((c) => {
+                let parsedAddress = {};
+                try {
+                    parsedAddress = typeof c.address === 'string' ? JSON.parse(c.address) : (c.address || {});
+                } catch (e) {
+                    console.warn('Failed to parse company address:', c.address);
+                }
+
+                return {
+                    id: c.id,
+                    profileId: c.profile_id || c.id,
+                    slug: c.slug,
+                    companyName: c.company_name,
+                    legalName: c.legal_name,
+                    cnpj: c.cnpj,
+                    logo: c.logo_url || 'https://placehold.co/150',
+                    coverImage: c.cover_image_url || 'https://placehold.co/1200x400',
+                    category: c.category,
+                    rating: c.rating || 5.0,
+                    reviewCount: c.review_count || 0,
+                    level: c.level || 'Bronze',
+                    description: c.description || '',
+                    address: parsedAddress as any, // Cast to any to avoid strict Address interface issues for now since we are mapping from DB
+                    phone: c.phone || '',
+                    email: c.email || '',
+                    website: c.website || '',
+                    services: c.services || [],
+                    portfolio: [],
+                    reviews: []
+                };
+            }) as Company[];
 
             // Price Filtering (Client Side)
             if (priceRange !== 'all') {
                 mappedCompanies = mappedCompanies.filter(c => {
-                    const minPrice = c.services.length > 0
-                        ? Math.min(...c.services.map((s: any) => (typeof s === 'object' && s && 'price' in s ? Number(s.price) || 0 : 0)))
+                    const services = c.services || [];
+                    const minPrice = services.length > 0
+                        ? Math.min(...services.map((s: any) => (typeof s === 'object' && s && 'price' in s ? Number(s.price) || 0 : 0)))
                         : 0;
                     if (priceRange === 'low') return minPrice < 100;
                     if (priceRange === 'mid') return minPrice >= 100 && minPrice < 300;
@@ -160,7 +209,7 @@ export const useCompanySearch = (itemsPerPage: number = 8) => {
                 }
             }
 
-            return { companies: mappedCompanies, count: count || 0 };
+            return { companies: mappedCompanies, count: totalCount };
         },
         staleTime: 1000 * 60 * 60, // 1 hora - dados de empresas são relativamente estáticos
         gcTime: 1000 * 60 * 60 * 2, // 2 horas - garbage collection após 2h

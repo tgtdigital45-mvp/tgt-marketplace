@@ -13,6 +13,7 @@ import { supabase } from '@tgt/shared';
 import { Store, Briefcase, ChevronRight, Check } from 'lucide-react';
 import { getCoordinatesFromAddress } from '@/utils/geocoding';
 import { coordsToH3 } from '@/utils/h3Utils';
+import AiAssistButton from '@/components/AiAssistButton';
 
 const CompanyRegistrationPage: React.FC = () => {
   const { user } = useAuth();
@@ -526,11 +527,17 @@ const CompanyRegistrationPage: React.FC = () => {
                     </div>
 
                     <div>
-                      <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Breve Descrição</label>
+                      <div className="flex justify-between items-end mb-1">
+                        <label htmlFor="description" className="block text-sm font-medium text-gray-700">Breve Descrição</label>
+                        <AiAssistButton 
+                          content={formData.description} 
+                          onRefine={(text) => setFormData(prev => ({ ...prev, description: text }))}
+                        />
+                      </div>
                       <textarea
                         id="description"
                         name="description"
-                        rows={3}
+                        rows={4}
                         placeholder="Descreva seus serviços e diferenciais..."
                         value={formData.description}
                         onChange={handleChange}

@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+/* Importa as definições globais do monorepo (que já contêm o @theme) */
+@import "../../web/src/index.css";
+
+/* Define as fontes de scan para o Tailwind v4 compilar as classes */
+@source "./src/**/*.{js,ts,jsx,tsx}";
+@source "../../web/src/components/**/*.{js,ts,jsx,tsx}";
+@source "../../web/src/pages/**/*.{js,ts,jsx,tsx}";
+@source "../../web/src/contexts/**/*.{js,ts,jsx,tsx}";
+@source "../../web/src/hooks/**/*.{js,ts,jsx,tsx}";

@@ -38,7 +38,7 @@ export default function StripeOnboardingScreen() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
         try {
-            const { data, error } = await supabase.functions.invoke('stripe-connect-onboarding', {
+            const { data, error } = await supabase.functions.invoke('create-stripe-onboarding', {
                 body: {
                     company_id: company.id,
                     return_url: 'myapp://stripe-return'

@@ -9,6 +9,8 @@ import { Store, Briefcase, ShieldCheck } from 'lucide-react';
 
 const CompanyLoginPage: React.FC = () => {
     const isPro = (process.env as any).VITE_APP_TYPE === 'pro';
+    const isPortal = (process.env as any).VITE_APP_TYPE === 'portal';
+    const hideToggle = isPro || isPortal;
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -110,8 +112,8 @@ const CompanyLoginPage: React.FC = () => {
                         </p>
                     </div>
 
-                    {/* Account Type Toggle - Hidden in Pro app by user request */}
-                    {!isPro && (
+                    {/* Account Type Toggle - Hidden in Pro/Portal app by user request */}
+                    {!hideToggle && (
                         <div className="bg-gray-100 p-1 rounded-xl flex mb-8">
                             <Link
                                 to="/login/cliente"

@@ -10,13 +10,12 @@ interface State {
     error?: Error;
 }
 
-class ErrorBoundary extends Component<Props, State> {
-    readonly state: State = {
+export class ErrorBoundary extends Component<Props, State> {
+    public state: State = {
         hasError: false
     };
 
     public static getDerivedStateFromError(error: Error): State {
-        // Update state so the next render will show the fallback UI.
         return { hasError: true, error };
     }
 
@@ -28,7 +27,7 @@ class ErrorBoundary extends Component<Props, State> {
         window.location.reload();
     };
 
-    public render() {
+    public render(): ReactNode {
         if (this.state.hasError) {
             if (this.props.fallback) {
                 return this.props.fallback;
@@ -38,25 +37,18 @@ class ErrorBoundary extends Component<Props, State> {
                 this.state.error?.message.includes('Importing a module script failed');
 
             return (
-                <div className="flex flex-col items-center justify-center min-h-[50vh] p-6 text-center">
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-8 max-w-md w-full shadow-sm">
-                        <h2 className="text-xl font-semibold text-red-700 mb-2">Ops! Algo deu errado.</h2>
-                        <p className="text-gray-600 mb-6">
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '50vh', padding: '1.5rem', textAlign: 'center' }}>
+                    <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '0.5rem', padding: '2rem', maxWidth: '28rem', width: '100%', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#B91C1C', marginBottom: '0.5rem' }}>Ops! Algo deu errado.</h2>
+                        <p style={{ color: '#4B5563', marginBottom: '1.5rem' }}>
                             {isChunkError
                                 ? "Foi detectada uma nova versão da aplicação. Por favor, recarregue a página."
                                 : "Encontramos um erro inesperado ao carregar esta página."}
                         </p>
 
-                        {/* Dev details - hidden in prod normally, but helpful here */}
-                        {process.env.NODE_ENV === 'development' && !isChunkError && (
-                            <pre className="text-xs text-left bg-gray-100 p-2 rounded mb-4 overflow-auto max-h-32 text-red-900 border border-red-100">
-                                {this.state.error?.toString()}
-                            </pre>
-                        )}
-
                         <button
                             onClick={this.handleReload}
-                            className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors font-medium shadow-sm active:transform active:scale-95"
+                            style={{ padding: '0.5rem 1.5rem', backgroundColor: '#DC2626', color: 'white', borderRadius: '0.375rem', border: 'none', cursor: 'pointer', fontWeight: 500 }}
                         >
                             Recarregar Página
                         </button>

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@tgt/shared';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { LoadingSpinner } from '@tgt/shared';
 
 const AdminGuard = ({ children }: { children: React.ReactElement }) => {
     const { user, loading } = useAuth();

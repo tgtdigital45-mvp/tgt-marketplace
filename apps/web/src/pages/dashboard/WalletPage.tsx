@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@tgt/shared';
 import { DbWallet, DbTransaction, SellerStats } from '@tgt/shared';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { LoadingSpinner } from '@tgt/shared';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/layout/Header';
 import Button from '@/components/ui/Button';

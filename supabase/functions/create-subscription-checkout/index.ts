@@ -9,7 +9,7 @@ console.log('Create Subscription Checkout Function Invoked')
 serve(async (req) => {
     // CORS Preflight
     if (req.method === 'OPTIONS') {
-        return new Response('ok', { headers: corsHeaders })
+        return new Response(null, { headers: corsHeaders, status: 204 })
     }
 
     try {
@@ -39,14 +39,22 @@ serve(async (req) => {
         })
 
         // 4. Parse Request
-        const { priceId, successUrl, cancelUrl } = await req.json()
+        const body = await req.json()
+        console.log('Request body:', body)
+        
+        const priceId = body.priceId || body.price_id
+        const successUrl = body.successUrl || body.success_url
+        const cancelUrl = body.cancelUrl || body.cancel_url
 
-        if (!priceId) throw new Error('Missing priceId')
+        if (!priceId) {
+            console.error('Missing priceId in body:', body)
+            throw new Error('Missing priceId')
+        }
         if (!successUrl) throw new Error('Missing successUrl')
         if (!cancelUrl) throw new Error('Missing cancelUrl')
 
         // 5. Get Company & Customer Info
-        // We use profile_id based on schema logic (companies linked to profiles)
+        console.log(`Fetching company for profile_id: ${user.id}`)
         const { data: company, error: companyError } = await supabaseClient
             .from('companies')
             .select('id, company_name, stripe_customer_id, profile_id')
@@ -54,8 +62,8 @@ serve(async (req) => {
             .single()
 
         if (companyError || !company) {
-            console.error('Company error:', companyError)
-            throw new Error('Company not found for this user')
+            console.error('Company fetch error:', companyError)
+            throw new Error(`Company not found for user ${user.id}`)
         }
 
         let customerId = company.stripe_customer_id

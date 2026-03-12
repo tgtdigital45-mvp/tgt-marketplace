@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClientOrders } from '@/hooks/useClientOrders';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { LoadingSpinner } from '@tgt/shared';
 import {
     CalendarIcon, ClockIcon, MapPinIcon,
     ChevronRight, AlertCircle, MessageSquare,

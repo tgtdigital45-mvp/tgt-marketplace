@@ -2,11 +2,11 @@ import React, { lazy } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { LoadingSpinner, PageTransition, ErrorBoundary } from '@tgt/shared';
+
 
 // Layouts & Global Components
-import PageTransition from '@/components/PageTransition';
-import ErrorBoundary from '@/components/ErrorBoundary';
+
 import InstitutionalLayout from '@/components/layout/InstitutionalLayout';
 
 // Pro/Admin pages live in apps/web-pro (port 3002 / contrattoex.com/parceiros)

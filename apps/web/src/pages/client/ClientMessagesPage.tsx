@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { supabase } from '@tgt/shared';
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { LoadingSpinner } from '@tgt/shared';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import { ArrowLeft, MessageSquare, Clock, ShieldCheck, Download, AlertCircle, CheckCircle } from 'lucide-react';

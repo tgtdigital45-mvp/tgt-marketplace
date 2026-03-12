@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SEO from '@/components/SEO';
 import { useCompanySearch } from '@/hooks/useCompanySearch';
 import Select from '@/components/ui/Select';
@@ -80,6 +80,32 @@ const CompaniesListPage: React.FC = () => {
     currentPage,
     setCurrentPage,
   } = useCompanySearch(itemsPerPage);
+
+  // Local state for smooth typing
+  const [internalSearch, setInternalSearch] = useState(searchTerm);
+  const [internalLocation, setInternalLocation] = useState(locationTerm);
+
+  // Sync internal state with URL when URL changes (e.g. back button)
+  useEffect(() => {
+    setInternalSearch(searchTerm);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    setInternalLocation(locationTerm);
+  }, [locationTerm]);
+
+  const handleSearchTrigger = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setSearchTerm(internalSearch);
+    setLocationTerm(internalLocation);
+    setCurrentPage(1);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearchTrigger();
+    }
+  };
 
   const getDynamicTitle = () => {
     let title = 'Guia de Empresas e Servicos';
@@ -232,7 +258,8 @@ const CompaniesListPage: React.FC = () => {
           </div>
 
           {/* Search Bar */}
-          <motion.div
+          <motion.form
+            onSubmit={handleSearchTrigger}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -244,8 +271,9 @@ const CompaniesListPage: React.FC = () => {
               </div>
               <input
                 type="text"
-                value={searchTerm}
-                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                value={internalSearch}
+                onChange={(e) => setInternalSearch(e.target.value)}
+                onKeyPress={handleKeyPress}
                 placeholder="O que voce precisa hoje?"
                 className="w-full pl-10 sm:pl-14 pr-3 sm:pr-4 py-3 sm:py-4 bg-transparent border-none outline-none text-slate-900 placeholder:text-slate-400 font-medium text-sm sm:text-base"
               />
@@ -255,16 +283,20 @@ const CompaniesListPage: React.FC = () => {
                 <MapPin size={18} />
               </div>
               <input
-                value={locationTerm}
-                onChange={(e) => setLocationTerm(e.target.value)}
+                value={internalLocation}
+                onChange={(e) => setInternalLocation(e.target.value)}
+                onKeyPress={handleKeyPress}
                 placeholder="Localizacao"
                 className="w-full pl-10 sm:pl-14 pr-3 sm:pr-4 py-3 sm:py-4 bg-transparent border-none outline-none text-slate-900 placeholder:text-slate-400 font-medium text-sm sm:text-base"
               />
             </div>
-            <button className="bg-primary-600 hover:bg-primary-700 text-white px-5 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-[28px] font-bold shadow-xl transition-all active:scale-95 text-sm sm:text-base whitespace-nowrap">
+            <button 
+              type="submit"
+              className="bg-primary-600 hover:bg-primary-700 text-white px-5 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-[28px] font-bold shadow-xl transition-all active:scale-95 text-sm sm:text-base whitespace-nowrap"
+            >
               Pesquisar
             </button>
-          </motion.div>
+          </motion.form>
         </div>
 
         {/* Decor */}

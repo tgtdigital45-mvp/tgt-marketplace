@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@tgt/shared';
 import { Service, DbCompany } from '@tgt/shared';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { LoadingSpinner } from '@tgt/shared';
 import { BookingCalendar } from '@/components/booking/BookingCalendar';
 import SEO from '@/components/SEO';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';

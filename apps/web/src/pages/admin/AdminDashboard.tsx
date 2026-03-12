@@ -3,7 +3,7 @@ import { supabase } from '@tgt/shared';
 import { useAuth } from '@/contexts/AuthContext';
 import KPICard from '@/components/admin/KPICard';
 import TransactionsTable from '@/components/admin/TransactionsTable';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { LoadingSpinner } from '@tgt/shared';
 import { Link } from 'react-router-dom';
 
 // Icons

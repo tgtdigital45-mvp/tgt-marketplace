@@ -11,6 +11,7 @@ interface ImageCropModalProps {
     imageSrc: string;
     aspectRatio: number;
     onCropComplete: (file: File) => void;
+    isAnalyzing?: boolean;
 }
 
 const ImageCropModal: React.FC<ImageCropModalProps> = ({
@@ -19,6 +20,7 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
     imageSrc,
     aspectRatio,
     onCropComplete,
+    isAnalyzing = false,
 }) => {
     const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
@@ -26,10 +28,17 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
     const [processing, setProcessing] = useState(false);
 
     const isAvatar = aspectRatio === 1;
+    const isCover = aspectRatio === 16 / 9;
     const title = isAvatar ? 'Ajustar Foto de Perfil' : 'Ajustar Imagem de Capa';
 
-    // Output dimensions based on aspect ratio
-    const outputWidth = isAvatar ? 400 : 1200;
+    // Output dimensions and recommendations
+    const recommendations = isAvatar 
+        ? { width: 400, height: 400, label: '400x400px (Quadrado)' } 
+        : isCover 
+            ? { width: 1200, height: 675, label: '1200x675px (Widescreen)' }
+            : { width: 800, height: 800, label: 'Tamanho sugerido: 800x800px' };
+
+    const outputWidth = recommendations.width;
 
     const handleCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
         setCroppedAreaPixels(croppedAreaPixels);
@@ -122,16 +131,28 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
 
                         {/* Zoom Controls */}
                         <div className="px-5 py-3 border-t border-gray-100">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Ajuste de Zoom</span>
+                                <span className="text-[10px] font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">
+                                    {Math.round(zoom * 100)}%
+                                </span>
+                            </div>
                             <div className="flex items-center gap-3">
-                                <ZoomOut size={14} className="text-gray-400 flex-shrink-0" />
+                                <button
+                                    onClick={() => setZoom(Math.max(1, zoom - 0.1))}
+                                    className="p-1.5 rounded-lg text-gray-400 hover:text-primary-500 hover:bg-primary-50 transition-all"
+                                    title="Diminuir"
+                                >
+                                    <ZoomOut size={16} />
+                                </button>
                                 <input
                                     type="range"
                                     min={1}
                                     max={3}
-                                    step={0.05}
+                                    step={0.01}
                                     value={zoom}
                                     onChange={(e) => setZoom(Number(e.target.value))}
-                                    className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer
+                                    className="w-full h-1.5 bg-gray-100 rounded-full appearance-none cursor-pointer
                     [&::-webkit-slider-thumb]:appearance-none
                     [&::-webkit-slider-thumb]:w-4
                     [&::-webkit-slider-thumb]:h-4
@@ -142,7 +163,17 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
                     [&::-webkit-slider-thumb]:transition-transform
                     [&::-webkit-slider-thumb]:hover:scale-110"
                                 />
-                                <ZoomIn size={14} className="text-gray-400 flex-shrink-0" />
+                                <button
+                                    onClick={() => setZoom(Math.min(3, zoom + 0.1))}
+                                    className="p-1.5 rounded-lg text-gray-400 hover:text-primary-500 hover:bg-primary-50 transition-all"
+                                    title="Aumentar"
+                                >
+                                    <ZoomIn size={16} />
+                                </button>
+                            </div>
+                            <div className="mt-3 py-2 px-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between">
+                                <span className="text-[10px] text-gray-500 font-medium">Tamanho recomendado:</span>
+                                <span className="text-[10px] text-gray-700 font-bold">{recommendations.label}</span>
                             </div>
                         </div>
 
@@ -150,20 +181,20 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
                         <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-gray-100 bg-gray-50/50">
                             <button
                                 onClick={handleClose}
-                                disabled={processing}
+                                disabled={processing || isAnalyzing}
                                 className="px-4 py-2.5 text-xs font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all disabled:opacity-50"
                             >
                                 Cancelar
                             </button>
                             <button
                                 onClick={handleConfirm}
-                                disabled={processing || !croppedAreaPixels}
+                                disabled={processing || isAnalyzing || !croppedAreaPixels}
                                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-500 text-white text-xs font-bold rounded-xl hover:bg-primary-600 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {processing ? (
+                                {processing || isAnalyzing ? (
                                     <>
                                         <Loader2 size={14} className="animate-spin" />
-                                        Processando...
+                                        {isAnalyzing ? 'Analisando via IA...' : 'Processando...'}
                                     </>
                                 ) : (
                                     <>
