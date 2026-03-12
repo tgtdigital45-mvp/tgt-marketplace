@@ -113,7 +113,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.warn('[AuthContext] Safety timeout reached! Forcing loading=false');
         setLoading(false);
       }
-    }, 6000); // 6 seconds is more than enough for initial session check
+    }, 10000); // 10 seconds is safer for initial session check, matching/exceeding RPC timeout
 
     // Single listener: let INITIAL_SESSION bootstrap state, then handle subsequent events.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {

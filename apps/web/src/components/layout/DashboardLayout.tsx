@@ -156,9 +156,9 @@ const DashboardLayout: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile Top Bar */}
-      <div className="lg:hidden sticky top-0 z-40 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+    <div className="min-h-[calc(100vh-4rem)] lg:min-h-[calc(100vh-4.5rem)] bg-gray-50 flex flex-col">
+      {/* Mobile Top Bar - Adjusted for Global Header height (h-14 sm:h-16 lg:h-18) */}
+      <div className="lg:hidden sticky top-14 sm:top-16 z-40 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 bg-brand-primary rounded-lg flex items-center justify-center text-white">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M11.7 2.805a.75.75 0 01.6 0A60.65 60.65 0 0122.83 8.72a.75.75 0 01-.231 1.337 49.949 49.949 0 00-9.902 3.912l-.003.002-.34.18a.75.75 0 01-.707 0A50.009 50.009 0 002.1 9.763.75.75 0 011.7 8.72c2.787-1.31 5.952-2.3 9.38-2.922 1.341-2.43 3.65-4.436 6.366-5.466z" fillRule="evenodd" clipRule="evenodd" /></svg>
@@ -201,15 +201,15 @@ const DashboardLayout: React.FC = () => {
       )}
 
       <div className="flex">
-        {/* Desktop Sidebar */}
-        <aside className="hidden lg:block w-64 xl:w-72 bg-gray-50 p-4 fixed h-full overflow-y-auto">
+        {/* Desktop Sidebar - Adjusted to start below Global Header */}
+        <aside className="hidden lg:block w-64 xl:w-72 bg-gray-50 p-4 fixed top-[4.5rem] h-[calc(100vh-4.5rem)] overflow-y-auto">
           <SidebarContent />
         </aside>
 
         {/* Main Content */}
-        <div className="flex-1 lg:ml-64 xl:ml-72 p-3 sm:p-4 lg:p-8 relative z-0 min-w-0">
+        <main className="flex-1 lg:ml-64 xl:ml-72 p-3 sm:p-4 lg:p-8 relative z-0 min-w-0">
           <Outlet />
-        </div>
+        </main>
       </div>
     </div>
   );

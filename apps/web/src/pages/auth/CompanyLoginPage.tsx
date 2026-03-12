@@ -59,6 +59,8 @@ const CompanyLoginPage: React.FC = () => {
                 }
 
                 addToast('Login realizado com sucesso!', 'success');
+                // Persist user_type in metadata for faster future loads (avoids RPC on refresh)
+                await supabase.auth.updateUser({ data: { user_type: 'company', type: 'company' } });
                 // DashboardRedirect handles slug resolution
                 navigate('/dashboard');
             }
