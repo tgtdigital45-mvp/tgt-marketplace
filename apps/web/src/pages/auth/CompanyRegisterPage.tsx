@@ -7,6 +7,7 @@ import { validatePassword } from '@/utils/validators';
 import { supabase } from '@tgt/shared';
 
 const CompanyRegisterPage: React.FC = () => {
+    const isPro = (process.env as any).VITE_APP_TYPE === 'pro';
     const [formData, setFormData] = useState({
         name: '', // Person name initially
         email: '',
@@ -140,14 +141,16 @@ const CompanyRegisterPage: React.FC = () => {
                     </div>
                 </form>
 
-                <div className="mt-4 text-center">
-                    <p className="text-sm text-gray-600">
-                        Você é um cliente?{' '}
-                        <Link to="/cadastro/cliente" className="font-medium text-brand-primary hover:text-brand-primary/80">
-                            Cadastre-se para buscar serviços here
-                        </Link>
-                    </p>
-                </div>
+                {!isPro && (
+                    <div className="mt-4 text-center">
+                        <p className="text-sm text-gray-600">
+                            Você é um cliente?{' '}
+                            <Link to="/cadastro/cliente" className="font-medium text-brand-primary hover:text-brand-primary/80">
+                                Cadastre-se para buscar serviços here
+                            </Link>
+                        </p>
+                    </div>
+                )}
             </div>
         </div>
     );

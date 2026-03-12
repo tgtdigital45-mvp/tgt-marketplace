@@ -163,7 +163,7 @@ const MobileSheet: React.FC<MobileSheetProps> = ({ isOpen, onClose }) => {
                                     Entrar
                                 </Link>
                                 <Link
-                                    to="/empresa/cadastro"
+                                    to="/cadastro/cliente"
                                     onClick={handleLinkClick}
                                     className="flex items-center justify-center w-full px-4 py-2.5 sm:py-3 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-primary/90 transition-all shadow-md text-sm"
                                 >

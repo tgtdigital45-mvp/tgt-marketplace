@@ -5,19 +5,27 @@ import { BookingWithCompany } from '@tgt/shared';
 import ProposalList from '@/components/client/ProposalList';
 import { useNavigate } from 'react-router-dom';
 import { useClientOrders } from '@/hooks/useClientOrders';
+import { useToast } from '@/contexts/ToastContext';
+import OrderDeliveryReviewModal from '@/components/dashboard/OrderDeliveryReviewModal';
+import { CheckCircle, Clock, AlertTriangle, Calendar } from 'lucide-react';
 
 const ClientOrdersPage: React.FC = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
 
     // Data
-    const { data: ordersData, isLoading: loading } = useClientOrders(user?.id);
+    const { data: ordersData, isLoading: loading, refetch: fetchOrders } = useClientOrders(user?.id);
     const jobs = ordersData?.jobs || [];
     const bookings = ordersData?.bookings || [];
+    const { addToast } = useToast();
 
     // State
     const [activeTab, setActiveTab] = useState<'requests' | 'active' | 'history'>('requests');
     const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
+    const [reviewModal, setReviewModal] = useState<{
+        isOpen: boolean;
+        order: any | null;
+    }>({ isOpen: false, order: null });
 
     const handleAcceptProposal = () => {
         // Refresh handled automatically by query invalidation or manual refetch if needed
@@ -26,7 +34,7 @@ const ClientOrdersPage: React.FC = () => {
         window.location.reload(); // Temporary simple refresh until mutation hook added
     };
 
-    const activeBookings = bookings.filter(o => ['pending', 'confirmed', 'in_progress'].includes(o.status));
+    const activeBookings = bookings.filter(o => ['pending', 'confirmed', 'in_progress', 'awaiting_approval', 'disputed'].includes(o.status));
     const historyBookings = bookings.filter(o => ['completed', 'cancelled', 'rejected'].includes(o.status));
 
     return (
@@ -132,7 +140,13 @@ const ClientOrdersPage: React.FC = () => {
                             activeBookings.length === 0 ? (
                                 <div className="text-center py-10 bg-gray-50 rounded-lg text-gray-500">Nenhum serviço agendado no momento.</div>
                             ) : (
-                                activeBookings.map(order => <BookingCard key={order.id} order={order} />)
+                                activeBookings.map(order => (
+                                    <BookingCard 
+                                        key={order.id} 
+                                        order={order} 
+                                        onReview={() => setReviewModal({ isOpen: true, order })}
+                                    />
+                                ))
                             )
                         )}
 
@@ -147,37 +161,62 @@ const ClientOrdersPage: React.FC = () => {
                     </>
                 )}
             </div>
+
+            <OrderDeliveryReviewModal
+                isOpen={reviewModal.isOpen}
+                onClose={() => setReviewModal({ ...reviewModal, isOpen: false })}
+                order={reviewModal.order}
+                onSuccess={() => {
+                    fetchOrders();
+                    addToast('Avaliação enviada com sucesso!', 'success');
+                }}
+            />
         </div>
     );
 };
 
 // Helper Component for Booking Display
-const BookingCard: React.FC<{ order: BookingWithCompany }> = ({ order }) => (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-4">
+const BookingCard: React.FC<{ order: any, onReview?: () => void }> = ({ order, onReview }) => (
+    <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-6 mb-4">
         <div className="flex justify-between items-start mb-4">
             <div>
-                <h3 className="font-bold text-lg text-gray-900">{order.companyName}</h3>
-                <p className="text-gray-600">{order.serviceName}</p>
+                <h3 className="font-bold text-lg text-gray-900 leading-tight">{order.companyName}</h3>
+                <p className="text-gray-500 text-sm mt-0.5">{order.serviceName}</p>
             </div>
             <div className="text-right">
-                <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-gray-100 text-gray-700`}>
-                    {order.status === 'confirmed' ? 'Agendado' : order.status === 'pending' ? 'Pendente' : order.status}
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                    order.status === 'awaiting_approval' 
+                    ? 'bg-amber-50 text-amber-600' 
+                    : 'bg-gray-50 text-gray-500'
+                }`}>
+                    {order.status === 'confirmed' ? 'Agendado' : 
+                     order.status === 'pending' ? 'Pendente' : 
+                     order.status === 'awaiting_approval' ? 'Aguardando sua Aprovação' :
+                     order.status === 'disputed' ? 'Em Disputa' :
+                     order.status}
                 </span>
-                <p className="text-sm font-bold mt-1">R$ {order.price?.toFixed(2)}</p>
+                <p className="text-sm font-black text-primary-600 mt-2">R$ {order.price?.toFixed(2)}</p>
             </div>
         </div>
-        <div className="flex gap-6 text-sm text-gray-500 mb-6">
-            <div className="flex items-center gap-1">
-                📅 {new Date(order.date).toLocaleDateString()}
+        <div className="flex gap-6 text-[10px] font-black uppercase tracking-widest text-gray-400 mb-6">
+            <div className="flex items-center gap-1.5">
+                <Calendar size={14} className="text-gray-300" />
+                {new Date(order.date).toLocaleDateString()}
             </div>
             {order.time && (
-                <div className="flex items-center gap-1">
-                    ⏰ {order.time}
+                <div className="flex items-center gap-1.5">
+                    <Clock size={14} className="text-gray-300" />
+                    {order.time}
                 </div>
             )}
         </div>
         <div className="flex gap-3 justify-end pt-4 border-t border-gray-100">
-            <Button variant="secondary" size="sm">Ajuda</Button>
+            {order.status === 'awaiting_approval' && (
+                <Button variant="primary" size="sm" className="rounded-xl px-4 py-2 flex items-center gap-2" onClick={onReview}>
+                    <CheckCircle size={16} /> Revisar Entrega
+                </Button>
+            )}
+            <Button variant="secondary" size="sm" className="rounded-xl px-6 py-2">Ver Detalhes</Button>
         </div>
     </div>
 );

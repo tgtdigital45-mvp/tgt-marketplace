@@ -33,7 +33,7 @@ const LoginDropdown: React.FC = () => {
                         className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl ring-1 ring-gray-200 py-2 z-50 pointer-events-auto"
                     >
                         <div className="px-4 py-2 border-b border-slate-50">
-                            <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Como você deseja entrar?</p>
+                            <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Acesso exclusivo para clientes</p>
                         </div>
                         <Link
                             to="/login/cliente"
@@ -41,15 +41,7 @@ const LoginDropdown: React.FC = () => {
                             onClick={() => setIsOpen(false)}
                         >
                             <span className="font-semibold block text-brand-primary">Sou Cliente</span>
-                            <span className="text-xs text-slate-500">Busco serviços e produtos</span>
-                        </Link>
-                        <Link
-                            to="/login/empresa"
-                            className="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-t border-slate-50"
-                            onClick={() => setIsOpen(false)}
-                        >
-                            <span className="font-semibold block text-brand-primary">Sou Profissional</span>
-                            <span className="text-xs text-slate-500">Quero oferecer meus serviços</span>
+                            <span className="text-xs text-slate-500">Acesse sua �rea de pedidos e agendamentos</span>
                         </Link>
                     </motion.div>
                 )}

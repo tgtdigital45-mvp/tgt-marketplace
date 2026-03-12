@@ -8,6 +8,7 @@ import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
 import RescheduleModal from '@/components/booking/RescheduleModal';
 import KanbanCard from '@/components/dashboard/KanbanCard';
 import OrderVerificationModal from '@/components/dashboard/OrderVerificationModal';
+import OrderDeliveryModal from '@/components/dashboard/OrderDeliveryModal';
 import { Play, CheckCircle2, Calendar, User, Clock, MoreHorizontal, LayoutGrid, List } from 'lucide-react';
 
 interface Order {
@@ -17,7 +18,7 @@ interface Order {
     price: number;
     scheduled_for: string;
     notes?: string;
-    status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled' | 'pending_client_approval';
+    status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled' | 'canceled' | 'pending_client_approval' | 'awaiting_approval' | 'disputed';
     created_at: string;
     buyer_name?: string;
     buyer_email?: string;
@@ -28,7 +29,7 @@ const DashboardAgendamentosPage: React.FC = () => {
     const { addToast } = useToast();
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'in_progress' | 'completed'>('all');
+    const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'in_progress' | 'completed' | 'awaiting_approval'>('all');
     const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
     
     // Modals State
@@ -38,6 +39,11 @@ const DashboardAgendamentosPage: React.FC = () => {
         order: Order | null;
         targetStatus: 'in_progress' | 'completed';
     }>({ isOpen: false, order: null, targetStatus: 'in_progress' });
+    
+    const [deliveryModal, setDeliveryModal] = useState<{
+        isOpen: boolean;
+        order: Order | null;
+    }>({ isOpen: false, order: null });
 
     const fetchOrders = async () => {
         if (!user) return;
@@ -301,7 +307,7 @@ const DashboardAgendamentosPage: React.FC = () => {
                                                                     size="sm" 
                                                                     variant="primary" 
                                                                     className="rounded-xl font-black bg-blue-600 hover:bg-blue-700" 
-                                                                    onClick={() => setVerificationModal({ isOpen: true, order, targetStatus: 'completed' })}
+                                                                    onClick={() => setDeliveryModal({ isOpen: true, order })}
                                                                 >
                                                                     <CheckCircle2 className="w-4 h-4 mr-2" /> Finalizar Serviço
                                                                 </Button>
@@ -356,12 +362,18 @@ const DashboardAgendamentosPage: React.FC = () => {
                                                     price: order.price || 0,
                                                 }}
                                                 onMove={(id, nextStatus) => {
-                                                    if (nextStatus === 'in_progress' || nextStatus === 'completed') {
+                                                    if (nextStatus === 'in_progress') {
                                                         const order = orders.find(o => o.id === id);
                                                         setVerificationModal({
                                                             isOpen: true,
                                                             order: order || null,
-                                                            targetStatus: nextStatus as 'in_progress' | 'completed'
+                                                            targetStatus: nextStatus as 'in_progress'
+                                                        });
+                                                    } else if (nextStatus === 'completed') {
+                                                        const order = orders.find(o => o.id === id);
+                                                        setDeliveryModal({
+                                                            isOpen: true,
+                                                            order: order || null
                                                         });
                                                     } else {
                                                         handleStatusUpdate(id, nextStatus);
@@ -392,6 +404,16 @@ const DashboardAgendamentosPage: React.FC = () => {
                 order={verificationModal.order}
                 onVerify={handleVerify}
                 targetStatus={verificationModal.targetStatus}
+            />
+
+            <OrderDeliveryModal
+                isOpen={deliveryModal.isOpen}
+                onClose={() => setDeliveryModal({ ...deliveryModal, isOpen: false })}
+                order={deliveryModal.order}
+                onSuccess={() => {
+                    fetchOrders();
+                    addToast('Entrega realizada com sucesso!', 'success');
+                }}
             />
         </div>
     );

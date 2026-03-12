@@ -2,33 +2,36 @@ import React, { lazy } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCompany } from '@/contexts/CompanyContext';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 // Layouts & Global Components
 import PageTransition from '@/components/PageTransition';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import InstitutionalLayout from '@/components/layout/InstitutionalLayout';
-import AdminGuard from '@/components/AdminGuard';
 
-// Pages
+// Pro/Admin pages live in apps/web-pro (port 3002 / contrattoex.com/parceiros)
+// Do NOT add pro or admin routes here — they belong in apps/web-pro/src/routes.tsx
+
+// Marketplace / Public Pages
 const ClientLandingPage = lazy(() => import('@/pages/ClientLandingPage'));
 const CompaniesListPage = lazy(() => import('@/pages/LandingPage'));
 const ServicesMarketplacePage = lazy(() => import('@/pages/ServicesMarketplacePage'));
-
 const CompanyProfilePage = lazy(() => import('@/pages/CompanyProfilePage'));
 const BookingConfirmationPage = lazy(() => import('@/pages/BookingConfirmationPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 
-// Auth Pages
+// Auth Pages — CLIENT ONLY
+// Company auth lives exclusively in apps/web-pro
 const ClientLoginPage = lazy(() => import('@/pages/auth/ClientLoginPage'));
-const CompanyLoginPage = lazy(() => import('@/pages/auth/CompanyLoginPage'));
 const ClientRegisterPage = lazy(() => import('@/pages/auth/ClientRegisterPage'));
+const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
 
-const CompanyRegistrationPage = lazy(() => import('@/pages/CompanyRegistrationPage'));
+// URL of the Pro app — set VITE_PRO_APP_URL in .env for production
+// Dev default: http://localhost:3002
+const PRO_APP_URL = (import.meta as any).env?.VITE_PRO_APP_URL || 'http://localhost:3002';
 
-// Client Pages
+// Client Pages (authenticated)
 const ClientProfilePage = lazy(() => import('@/pages/client/ClientProfilePage'));
 const ClientOrdersPage = lazy(() => import('@/pages/client/ClientOrdersPage'));
 const ClientMessagesPage = lazy(() => import('@/pages/client/ClientMessagesPage'));
@@ -37,122 +40,61 @@ const ClientPostJobPage = lazy(() => import('@/pages/client/ClientPostJobPage'))
 const MyAppointments = lazy(() => import('@/pages/client/MyAppointments'));
 const PaymentHistory = lazy(() => import('@/pages/client/PaymentHistory'));
 
-// Company Dashboard Pages
-const DashboardOverviewPage = lazy(() => import('@/pages/pro/DashboardOverviewPage'));
-const ProFindJobsPage = lazy(() => import('@/pages/pro/ProFindJobsPage'));
-const ProJobDetailsPage = lazy(() => import('@/pages/pro/ProJobDetailsPage'));
-const DashboardPerfilPage = lazy(() => import('@/pages/pro/DashboardPerfilPage'));
-const DashboardAdministradoresPage = lazy(() => import('@/pages/pro/DashboardAdministradoresPage'));
-const DashboardServicosPage = lazy(() => import('@/pages/pro/DashboardServicosPage'));
-const DashboardPortfolioPage = lazy(() => import('@/pages/pro/DashboardPortfolioPage'));
-const DashboardAvaliacoesPage = lazy(() => import('@/pages/pro/DashboardAvaliacoesPage'));
-const DashboardAgendamentosPage = lazy(() => import('@/pages/pro/DashboardAgendamentosPage'));
-const DashboardAgendaPage = lazy(() => import('@/pages/pro/DashboardAgendaPage'));
-const DashboardMensagensPage = lazy(() => import('@/pages/pro/DashboardMensagensPage'));
-const DashboardSubscriptionPage = lazy(() => import('@/pages/pro/DashboardSubscriptionPage'));
-const DashboardConfiguracoesPage = lazy(() => import('@/pages/pro/DashboardConfiguracoesPage'));
-const DashboardSupportPage = lazy(() => import('@/pages/pro/DashboardSupportPage'));
-const DashboardEquipePage = lazy(() => import('@/pages/pro/DashboardEquipePage'));
-const DashboardFaturamentoPage = lazy(() => import('@/pages/pro/DashboardFaturamentoPage'));
-const DashboardOrcamentosPage = lazy(() => import('@/pages/pro/DashboardOrcamentosPage'));
-const DashboardVerificacaoPage = lazy(() => import('@/pages/pro/DashboardVerificacaoPage'));
-
-// Admin Pages
-const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
-const AdminSecurityPage = lazy(() => import('@/pages/admin/AdminSecurityPage'));
-const Verify2FAPage = lazy(() => import('@/pages/admin/Verify2FAPage'));
-const AdminDisputesPage = lazy(() => import('@/pages/admin/AdminDisputesPage'));
-const AdminModerationPage = lazy(() => import('@/pages/admin/AdminModerationPage'));
-
-// Service Details
+// Service / Booking / Checkout
 const ServiceDetailsPage = lazy(() => import('@/pages/service/ServiceDetailsPage'));
 const CheckoutPage = lazy(() => import('@/pages/checkout/CheckoutPage'));
 const BookingPage = lazy(() => import('@/pages/booking/BookingPage'));
-const WalletPage = lazy(() => import('@/pages/dashboard/WalletPage'));
 
 // Info Pages
 const ForCompaniesPage = lazy(() => import('@/pages/info/ForCompaniesPage'));
 const ForClientsPage = lazy(() => import('@/pages/info/ForClientsPage'));
 const HelpPage = lazy(() => import('@/pages/info/HelpPage'));
 const ContactPage = lazy(() => import('@/pages/info/ContactPage'));
-const ReviewModal = lazy(() => import('@/components/ReviewModal')); // If needed
-const AboutPage = lazy(() => import('@/pages/institucional/AboutPage'));
-const NewsPage = lazy(() => import('@/pages/institucional/NewsPage'));
-const BlogPage = lazy(() => import('@/pages/institucional/BlogPage'));
 const CareersPage = lazy(() => import('@/pages/info/CareersPage'));
 const PrivacyPage = lazy(() => import('@/pages/info/PrivacyPage'));
 const TermsPage = lazy(() => import('@/pages/info/TermsPage'));
 const PlansPage = lazy(() => import('@/pages/PlansPage'));
+
+// Institutional Pages
+const AboutPage = lazy(() => import('@/pages/institucional/AboutPage'));
+const NewsPage = lazy(() => import('@/pages/institucional/NewsPage'));
+const BlogPage = lazy(() => import('@/pages/institucional/BlogPage'));
 const NewsDetailPage = lazy(() => import('@/pages/NewsDetailPage'));
 
-// Wrapper for animated routes
+// Animated route wrapper
 const AnimatedElement = ({ children }: { children: React.ReactElement }) => (
     <PageTransition>{children}</PageTransition>
 );
+
+/** Hard-redirects to a URL in another app (e.g., web-pro). Not an SPA navigate. */
+const ExternalRedirect = ({ to }: { to: string }) => {
+    React.useEffect(() => { window.location.replace(to); }, [to]);
+    return <LoadingSpinner />;
+};
 
 interface ProtectedRouteProps {
     userType: 'client' | 'company';
     element: React.ReactElement;
 }
 
+/** Guards client-only routes. Redirects unauthenticated users to their login page. */
 const ProtectedRoute = ({ userType, element }: ProtectedRouteProps): React.ReactElement => {
     const { user, loading } = useAuth();
-    if (loading) {
-        return <LoadingSpinner />;
-    }
+    if (loading) return <LoadingSpinner />;
     if (!user || user.type !== userType) {
-        const redirectPath = userType === 'company' ? "/login/empresa" : "/login/cliente";
+        const redirectPath = userType === 'company' ? '/login/empresa' : '/login/cliente';
         return <Navigate to={redirectPath} replace />;
     }
     return element;
 };
 
-/**
- * Redireciona o usuário para o dashboard correto baseado no tipo.
- * Lógica puramente derivada de estado — sem timers, sem race conditions.
- * Aguarda ambas as queries (auth + company) terminarem antes de decidir.
- */
-const DashboardRedirect = () => {
-    const { user, loading } = useAuth();
-    const { company, isLoading: companyLoading } = useCompany();
-
-    // Aguarda auth E empresa carregarem — determinístico, sem timeouts artificiais
-    if (loading || companyLoading) {
-        return <LoadingSpinner />;
-    }
-
-    if (!user) {
-        return <Navigate to="/login/empresa" replace />;
-    }
-
-    if (user.type !== 'company') {
-        return <Navigate to="/perfil/cliente" replace />;
-    }
-
-    // CompanyContext é a fonte primária (dado mais completo)
-    if (company?.slug) {
-        return <Navigate to={`/dashboard/empresa/${company.slug}`} replace />;
-    }
-
-    // Fallback: slug no AuthContext (populado via RPC na sessão)
-    if (user.companySlug) {
-        return <Navigate to={`/dashboard/empresa/${user.companySlug}`} replace />;
-    }
-
-    // Queries terminaram e nenhuma empresa encontrada → direcionar ao cadastro
-    console.warn('[DashboardRedirect] Usuário empresa sem slug após carregamento completo. ID:', user.id);
-    return <Navigate to="/empresa/cadastro" replace />;
-};
-
+/** Redirects /orders/:orderId to the correct messages page based on user type. */
 const OrderRedirect = () => {
     const { user } = useAuth();
-    // Assuming useLocation and navigation needed
     if (!user) return <Navigate to="/login/cliente" replace />;
-
     if (user.type === 'company' && user.companySlug) {
-        return <Navigate to={`/dashboard/empresa/${user.companySlug}/mensagens`} replace />;
+        return <ExternalRedirect to={`${PRO_APP_URL}/dashboard/empresa/${user.companySlug}/mensagens`} />;
     }
-
     return <Navigate to="/minhas-mensagens" replace />;
 };
 
@@ -164,31 +106,30 @@ const MainRoutes = () => {
             <React.Suspense fallback={<LoadingSpinner />}>
                 <AnimatePresence mode="wait">
                     <Routes location={location}>
+                        {/* Public / Marketplace */}
                         <Route path="/" element={<AnimatedElement><ClientLandingPage /></AnimatedElement>} />
                         <Route path="/empresas" element={<AnimatedElement><CompaniesListPage /></AnimatedElement>} />
-                        {/* Service-First marketplace — direct deep-link to services tab */}
                         <Route path="/servicos" element={<AnimatedElement><ServicesMarketplacePage /></AnimatedElement>} />
-
                         <Route path="/empresa/:slug" element={<AnimatedElement><CompanyProfilePage /></AnimatedElement>} />
                         <Route path="/servico/:id" element={<AnimatedElement><ServiceDetailsPage /></AnimatedElement>} />
                         <Route path="/agendar/:serviceId" element={<AnimatedElement><BookingPage /></AnimatedElement>} />
                         <Route path="/checkout/:serviceId" element={<AnimatedElement><CheckoutPage /></AnimatedElement>} />
                         <Route path="/orders/:orderId" element={<OrderRedirect />} />
-
-                        {/* Auth Routes - Clients */}
-                        <Route path="/login/cliente" element={<AnimatedElement><ClientLoginPage /></AnimatedElement>} />
-                        <Route path="/cadastro/cliente" element={<AnimatedElement><ClientRegisterPage /></AnimatedElement>} />
-
-                        {/* Auth Routes - Companies */}
-                        <Route path="/login/empresa" element={<AnimatedElement><CompanyLoginPage /></AnimatedElement>} />
-                        <Route path="/login/company" element={<Navigate to="/login/empresa" replace />} />
-                        <Route path="/empresa/cadastro" element={<AnimatedElement><CompanyRegistrationPage /></AnimatedElement>} />
-
-                        {/* Redirect old company registration route to canonical path */}
-                        <Route path="/cadastro/empresa" element={<Navigate to="/empresa/cadastro" replace />} />
                         <Route path="/agendamento/confirmacao" element={<AnimatedElement><BookingConfirmationPage /></AnimatedElement>} />
 
-                        {/* Client Routes */}
+                        {/* Auth — Clients only */}
+                        <Route path="/login/cliente" element={<AnimatedElement><ClientLoginPage /></AnimatedElement>} />
+                        <Route path="/cadastro/cliente" element={<AnimatedElement><ClientRegisterPage /></AnimatedElement>} />
+                        <Route path="/esqueci-senha" element={<AnimatedElement><ForgotPasswordPage /></AnimatedElement>} />
+                        <Route path="/redefinir-senha" element={<AnimatedElement><ResetPasswordPage /></AnimatedElement>} />
+
+                        {/* Company auth → redirect to Pro app (parceiros.contrattoex.com) */}
+                        <Route path="/login/empresa" element={<ExternalRedirect to={`${PRO_APP_URL}/login/empresa`} />} />
+                        <Route path="/login/company" element={<ExternalRedirect to={`${PRO_APP_URL}/login/empresa`} />} />
+                        <Route path="/empresa/cadastro" element={<ExternalRedirect to={`${PRO_APP_URL}/empresa/cadastro`} />} />
+                        <Route path="/cadastro/empresa" element={<ExternalRedirect to={`${PRO_APP_URL}/empresa/cadastro`} />} />
+
+                        {/* Client Protected Routes */}
                         <Route path="/perfil/cliente" element={<ProtectedRoute userType="client" element={<AnimatedElement><ClientProfilePage /></AnimatedElement>} />} />
                         <Route path="/perfil/pedidos" element={<ProtectedRoute userType="client" element={<AnimatedElement><ClientOrdersPage /></AnimatedElement>} />} />
                         <Route path="/perfil/agendamentos" element={<ProtectedRoute userType="client" element={<AnimatedElement><MyAppointments /></AnimatedElement>} />} />
@@ -197,48 +138,21 @@ const MainRoutes = () => {
                         <Route path="/favoritos" element={<ProtectedRoute userType="client" element={<AnimatedElement><FavoritesPage /></AnimatedElement>} />} />
                         <Route path="/cliente/novo-pedido" element={<ProtectedRoute userType="client" element={<AnimatedElement><ClientPostJobPage /></AnimatedElement>} />} />
 
-                        {/* Company Dashboard Routes - DashboardLayout handles its own outlet, maybe animate layout entry? */}
-                        <Route path="/dashboard/empresa/:slug" element={<DashboardLayout />}>
-                            <Route index element={<AnimatedElement><DashboardOverviewPage /></AnimatedElement>} />
-                            <Route path="perfil" element={<AnimatedElement><DashboardPerfilPage /></AnimatedElement>} />
-                            <Route path="administradores" element={<AnimatedElement><DashboardAdministradoresPage /></AnimatedElement>} />
-                            <Route path="servicos" element={<AnimatedElement><DashboardServicosPage /></AnimatedElement>} />
-                            <Route path="portfolio" element={<AnimatedElement><DashboardPortfolioPage /></AnimatedElement>} />
-                            <Route path="avaliacoes" element={<AnimatedElement><DashboardAvaliacoesPage /></AnimatedElement>} />
-                            <Route path="agenda" element={<AnimatedElement><DashboardAgendaPage /></AnimatedElement>} />
-                            <Route path="mensagens" element={<AnimatedElement><DashboardMensagensPage /></AnimatedElement>} />
-                            <Route path="assinatura" element={<AnimatedElement><DashboardSubscriptionPage /></AnimatedElement>} />
-                            <Route path="configuracoes" element={<AnimatedElement><DashboardConfiguracoesPage /></AnimatedElement>} />
-                            <Route path="suporte" element={<AnimatedElement><DashboardSupportPage /></AnimatedElement>} />
-                            <Route path="equipe" element={<AnimatedElement><DashboardEquipePage /></AnimatedElement>} />
-                            <Route path="agendamentos" element={<AnimatedElement><DashboardAgendamentosPage /></AnimatedElement>} />
-                            <Route path="orcamentos" element={<AnimatedElement><DashboardOrcamentosPage /></AnimatedElement>} />
-                            <Route path="faturamento" element={<AnimatedElement><DashboardFaturamentoPage /></AnimatedElement>} />
-                            <Route path="verificacao" element={<AnimatedElement><DashboardVerificacaoPage /></AnimatedElement>} />
-                        </Route>
+                        {/* Dashboard routes redirect to Pro app entry point */}
+                        <Route path="/dashboard/*" element={<Navigate to="/login/empresa" replace />} />
 
-                        {/* Smart Dashboard Redirect */}
-                        <Route path="/dashboard" element={<DashboardRedirect />} />
-
-                        {/* Redirect old dashboard route to new slug-based route */}
-                        <Route path="/dashboard/empresa" element={<Navigate to="/dashboard" replace />} />
-
-                        <Route path="/dashboard/wallet" element={<ProtectedRoute userType="company" element={<AnimatedElement><WalletPage /></AnimatedElement>} />} />
-
-                        {/* Info Pages Routes */}
+                        {/* Info Pages */}
                         <Route path="/para-empresas" element={<AnimatedElement><ForCompaniesPage /></AnimatedElement>} />
                         <Route path="/para-clientes" element={<AnimatedElement><ForClientsPage /></AnimatedElement>} />
                         <Route path="/ajuda" element={<AnimatedElement><HelpPage /></AnimatedElement>} />
                         <Route path="/contato" element={<AnimatedElement><ContactPage /></AnimatedElement>} />
 
-                        {/* Institutional Routes */}
+                        {/* Institutional */}
                         <Route path="/institucional" element={<InstitutionalLayout />}>
                             <Route path="sobre" element={<AnimatedElement><AboutPage /></AnimatedElement>} />
                             <Route path="noticias" element={<AnimatedElement><NewsPage /></AnimatedElement>} />
                             <Route path="blog" element={<AnimatedElement><BlogPage /></AnimatedElement>} />
                         </Route>
-
-                        {/* Redirects for old routes */}
                         <Route path="/sobre" element={<Navigate to="/institucional/sobre" replace />} />
                         <Route path="/noticias" element={<Navigate to="/institucional/noticias" replace />} />
                         <Route path="/noticias/:slug" element={<AnimatedElement><NewsDetailPage /></AnimatedElement>} />
@@ -249,30 +163,7 @@ const MainRoutes = () => {
                         <Route path="/termos" element={<AnimatedElement><TermsPage /></AnimatedElement>} />
                         <Route path="/planos" element={<AnimatedElement><PlansPage /></AnimatedElement>} />
 
-                        {/* Admin Route - Protected */}
-                        <Route path="/admin" element={
-                            <AdminGuard>
-                                <AnimatedElement><AdminDashboard /></AnimatedElement>
-                            </AdminGuard>
-                        } />
-                        <Route path="/admin/disputas" element={
-                            <AdminGuard>
-                                <AnimatedElement><AdminDisputesPage /></AnimatedElement>
-                            </AdminGuard>
-                        } />
-                        <Route path="/admin/moderacao" element={
-                            <AdminGuard>
-                                <AnimatedElement><AdminModerationPage /></AnimatedElement>
-                            </AdminGuard>
-                        } />
-                        <Route path="/admin/security" element={
-                            <AdminGuard>
-                                <AnimatedElement><AdminSecurityPage /></AnimatedElement>
-                            </AdminGuard>
-                        } />
-                        <Route path="/admin/verify-2fa" element={<AnimatedElement><Verify2FAPage /></AnimatedElement>} />
-
-                        {/* 404 - Not Found */}
+                        {/* 404 */}
                         <Route path="*" element={<AnimatedElement><NotFoundPage /></AnimatedElement>} />
                     </Routes>
                 </AnimatePresence>
@@ -282,3 +173,4 @@ const MainRoutes = () => {
 };
 
 export default MainRoutes;
+

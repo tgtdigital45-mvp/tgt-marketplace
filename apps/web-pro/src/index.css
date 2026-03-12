@@ -1,0 +1,5 @@
+@import "@/index.css";
+@source "./**/*.{js,ts,jsx,tsx}";
+@source "../../web/src/components/**/*.{js,ts,jsx,tsx}";
+@source "../../web/src/pages/**/*.{js,ts,jsx,tsx}";
+@source "../../web/src/contexts/**/*.{js,ts,jsx,tsx}";

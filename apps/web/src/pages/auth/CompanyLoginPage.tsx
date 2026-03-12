@@ -8,6 +8,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { Store, Briefcase, ShieldCheck } from 'lucide-react';
 
 const CompanyLoginPage: React.FC = () => {
+    const isPro = (process.env as any).VITE_APP_TYPE === 'pro';
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -107,23 +108,25 @@ const CompanyLoginPage: React.FC = () => {
                         </p>
                     </div>
 
-                    {/* Account Type Toggle */}
-                    <div className="bg-gray-100 p-1 rounded-xl flex mb-8">
-                        <Link
-                            to="/login/cliente"
-                            className="flex-1 flex items-center justify-center py-2 px-4 text-sm font-medium rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all"
-                        >
-                            <Store className="w-4 h-4 mr-2" />
-                            Sou Cliente
-                        </Link>
-                        <button
-                            type="button"
-                            className="flex-1 flex items-center justify-center py-2 px-4 text-sm font-medium rounded-lg bg-white text-gray-900 shadow-sm transition-all"
-                        >
-                            <Briefcase className="w-4 h-4 mr-2 text-brand-primary" />
-                            Sou Empresa
-                        </button>
-                    </div>
+                    {/* Account Type Toggle - Hidden in Pro app by user request */}
+                    {!isPro && (
+                        <div className="bg-gray-100 p-1 rounded-xl flex mb-8">
+                            <Link
+                                to="/login/cliente"
+                                className="flex-1 flex items-center justify-center py-2 px-4 text-sm font-medium rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all"
+                            >
+                                <Store className="w-4 h-4 mr-2" />
+                                Sou Cliente
+                            </Link>
+                            <button
+                                type="button"
+                                className="flex-1 flex items-center justify-center py-2 px-4 text-sm font-medium rounded-lg bg-white text-gray-900 shadow-sm transition-all"
+                            >
+                                <Briefcase className="w-4 h-4 mr-2 text-brand-primary" />
+                                Sou Empresa
+                            </button>
+                        </div>
+                    )}
 
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         <div>

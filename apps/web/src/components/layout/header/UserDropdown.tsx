@@ -17,7 +17,6 @@ const UserDropdown: React.FC = () => {
 
     const handleLogout = () => {
         logout();
-        navigate('/');
     };
 
     if (!user) return null;

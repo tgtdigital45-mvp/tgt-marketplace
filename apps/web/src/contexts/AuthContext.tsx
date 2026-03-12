@@ -142,27 +142,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           return;
         }
 
-        // Optimization: Set basic user info from session metadata IMMEDIATELY 
+        // Optimization: Set basic user info from session metadata IMMEDIATELY
         // to update UI (Header) while fetchUserProfile runs in background.
-        if (!user || user.id !== session.user.id) {
+        // Only apply if metadata has a reliable type — never assume 'client' as default,
+        // as this causes company users to be redirected to client routes before RPC completes.
+        const metadataType = (session.user.user_metadata.user_type || session.user.user_metadata.type) as 'client' | 'company' | undefined;
+        if ((!user || user.id !== session.user.id) && metadataType) {
           const initialUserData: User = {
             id: session.user.id,
             name: session.user.user_metadata.full_name || session.user.user_metadata.name || session.user.email?.split('@')[0] || 'User',
             email: session.user.email || '',
-            type: (session.user.user_metadata.user_type as 'client' | 'company') || (session.user.user_metadata.type as 'client' | 'company') || 'client',
+            type: metadataType,
             avatar: session.user.user_metadata.avatar_url || '',
-            role: 'user', // Default
+            role: 'user',
           };
-          console.log(`[AuthContext] Setting immediate user state from ${event} metadata:`, initialUserData.id);
+          console.log(`[AuthContext] Setting immediate user state from ${event} metadata (type=${metadataType}):`, initialUserData.id);
           setUser(initialUserData);
         }
 
         // Deduplicate: skip if this user ID was already processed in the current mount cycle
-        // to avoid redundant fetches between INITIAL_SESSION and SIGNED_IN
+        // to avoid redundant fetches between INITIAL_SESSION and SIGNED_IN.
+        // IMPORTANT: Do NOT call setLoading(false) here — an in-flight fetchUserProfile
+        // may still be running from the first event. Let it control the loading state.
         if (session.user.id === lastProcessedUserIdRef.current) {
           console.log(`[AuthContext] Skipping redundant fetch for ${event} for user: ${session.user.id}`);
-          // If we had a session but were loading, stop loading
-          setLoading(false);
           return;
         }
 
@@ -291,12 +294,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // 3. Clear React Query Cache to avoid stale data
       queryClient.clear();
 
-      // 4. Soft redirect
-      navigate('/login/empresa');
+      // 4. Soft redirect based on app type
+      const isMarketplace = (process.env as any).VITE_APP_TYPE === 'marketplace';
+      const loginPath = isMarketplace ? '/login/cliente' : '/login/empresa';
+      
+      navigate(loginPath);
     } catch (error) {
       console.error("Error during logout:", error);
       // Fallback: Force redirect
-      window.location.href = '/login/empresa';
+      const isMarketplace = (process.env as any).VITE_APP_TYPE === 'marketplace';
+      window.location.href = isMarketplace ? '/login/cliente' : '/login/empresa';
     } finally {
       setLoading(false);
     }

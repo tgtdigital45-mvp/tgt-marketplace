@@ -46,25 +46,6 @@ import {
 } from 'lucide-react';
 import { gemini } from '@/utils/gemini';
 
-// ─── Profile Completion Calculator ──────────────────────────────────────────────
-const calculateCompletion = (company: CompanyData | null, formData: FormState): number => {
-  if (!company) return 0;
-  const checks = [
-    !!formData.companyName,
-    !!company.logo_url,
-    !!company.cover_image_url,
-    !!formData.description && formData.description.length > 20,
-    !!formData.phone,
-    !!formData.email,
-    !!formData.category,
-    !!formData.website,
-    !!formData.address.street && !!formData.address.city,
-    !!(formData.socialLinks.instagram || formData.socialLinks.facebook || formData.socialLinks.linkedin),
-    !!formData.terms_and_policies && formData.terms_and_policies.length > 10,
-  ];
-  return Math.round((checks.filter(Boolean).length / checks.length) * 100);
-};
-
 // ─── Types ──────────────────────────────────────────────────────────────────────
 interface FormState {
   companyName: string;
@@ -94,6 +75,36 @@ interface FormState {
 
 type TabKey = 'dados' | 'endereco' | 'termos';
 
+interface CompletionResult {
+  percentage: number;
+  missingFields: { label: string; tab: TabKey }[];
+}
+
+// ─── Profile Completion Calculator ──────────────────────────────────────────────
+const calculateCompletion = (company: CompanyData | null, formData: FormState): CompletionResult => {
+  if (!company) return { percentage: 0, missingFields: [] };
+  
+  const fields = [
+    { condition: !!formData.companyName, label: 'Nome da Empresa', tab: 'dados' as TabKey },
+    { condition: !!company.logo_url, label: 'Logo da Empresa', tab: 'dados' as TabKey },
+    { condition: !!company.cover_image_url, label: 'Imagem de Capa', tab: 'dados' as TabKey },
+    { condition: !!formData.description && formData.description.length > 20, label: 'Descrição/Bio detalhada', tab: 'dados' as TabKey },
+    { condition: !!formData.phone, label: 'Telefone de Contato', tab: 'dados' as TabKey },
+    { condition: !!formData.email, label: 'E-mail de Contato', tab: 'dados' as TabKey },
+    { condition: !!formData.category, label: 'Categoria do Serviço', tab: 'dados' as TabKey },
+    { condition: !!formData.website, label: 'Website da Empresa', tab: 'dados' as TabKey },
+    { condition: !!formData.address.street && !!formData.address.city, label: 'Endereço e Localização', tab: 'endereco' as TabKey },
+    { condition: !!(formData.socialLinks.instagram || formData.socialLinks.facebook || formData.socialLinks.linkedin), label: 'Redes Sociais', tab: 'dados' as TabKey },
+    { condition: !!formData.terms_and_policies && formData.terms_and_policies.length > 10, label: 'Termos e Políticas', tab: 'termos' as TabKey },
+  ];
+
+  const completedCount = fields.filter(f => f.condition).length;
+  const percentage = Math.round((completedCount / fields.length) * 100);
+  const missingFields = fields.filter(f => !f.condition).map(f => ({ label: f.label, tab: f.tab }));
+
+  return { percentage, missingFields };
+};
+
 const TABS: { key: TabKey; label: string; icon: React.ReactNode; description: string }[] = [
   { key: 'dados', label: 'Dados Basicos', icon: <User size={16} />, description: 'Informacoes principais da empresa' },
   { key: 'endereco', label: 'Endereco & Logistica', icon: <Truck size={16} />, description: 'Localizacao e area de atendimento' },
@@ -116,7 +127,16 @@ const initialFormState: FormState = {
 };
 
 // ─── Completion Progress Bar ────────────────────────────────────────────────────
-const CompletionBar = ({ percentage }: { percentage: number }) => {
+const CompletionBar = ({ 
+  percentage, 
+  missingFields, 
+  onNavigateToTab 
+}: { 
+  percentage: number; 
+  missingFields: { label: string; tab: TabKey }[];
+  onNavigateToTab: (tab: TabKey) => void;
+}) => {
+  const [showDetails, setShowDetails] = useState(false);
   const color = percentage === 100 ? 'bg-emerald-500' : percentage >= 70 ? 'bg-primary-500' : percentage >= 40 ? 'bg-amber-500' : 'bg-red-400';
   const label = percentage === 100
     ? 'Perfil completo! Voce esta pronto para receber clientes.'
@@ -144,10 +164,25 @@ const CompletionBar = ({ percentage }: { percentage: number }) => {
             Perfil {percentage}% completo
           </span>
         </div>
-        <span className="text-[10px] sm:text-xs text-gray-400 font-medium hidden sm:block">
-          {percentage === 100 ? 'Excelente!' : `${Math.round((100 - percentage) / (100 / 11))} campos restantes`}
-        </span>
+        
+        {percentage < 100 && (
+          <button
+            onClick={() => setShowDetails(!showDetails)}
+            className="text-[10px] sm:text-xs text-primary-600 font-bold hover:text-primary-700 transition-colors flex items-center gap-1 bg-primary-50 px-2 py-1 rounded-lg"
+          >
+            {showDetails ? <X size={12} /> : <Plus size={12} />}
+            {showDetails ? 'Fechar lista' : `O que falta? (${missingFields.length})`}
+          </button>
+        )}
+        
+        {percentage === 100 && (
+          <span className="text-[10px] sm:text-xs text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded-lg flex items-center gap-1">
+            <CheckCircle2 size={12} />
+            Excelente!
+          </span>
+        )}
       </div>
+
       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
         <motion.div
           className={`h-full rounded-full ${color}`}
@@ -156,6 +191,35 @@ const CompletionBar = ({ percentage }: { percentage: number }) => {
           transition={{ duration: 0.8, ease: 'easeOut', delay: 0.4 }}
         />
       </div>
+
+      <AnimatePresence>
+        {showDetails && percentage < 100 && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="mt-4 pt-4 border-t border-gray-50 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {missingFields.map((field, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    onNavigateToTab(field.tab);
+                    setShowDetails(false);
+                  }}
+                  className="flex items-center gap-2 p-2 rounded-xl hover:bg-gray-50 transition-all text-left group"
+                >
+                  <div className="w-1.5 h-1.5 rounded-full bg-amber-400 group-hover:scale-125 transition-transform" />
+                  <span className="text-[11px] font-medium text-gray-600 group-hover:text-primary-600">{field.label}</span>
+                  <ChevronRight size={10} className="ml-auto text-gray-300 group-hover:text-primary-400" />
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <p className="text-[10px] sm:text-xs text-gray-400 mt-2 leading-relaxed">{label}</p>
     </motion.div>
   );
@@ -463,7 +527,9 @@ const DashboardPerfilPage: React.FC = () => {
   }, [formData, initialSnapshot]);
 
   // ─── Profile Completion ─────────────────────────────────────────────────────
-  const completion = useMemo(() => calculateCompletion(company, formData), [company, formData]);
+  const completionData = useMemo(() => calculateCompletion(company, formData), [company, formData]);
+  const completion = completionData.percentage;
+  const missingFields = completionData.missingFields;
 
   // ─── Category options ───────────────────────────────────────────────────────
   const categoryOptions = useMemo(() => {
@@ -756,7 +822,11 @@ const DashboardPerfilPage: React.FC = () => {
       </motion.div>
 
       {/* ─── Completion Bar ──────────────────────────────────────────────────── */}
-      <CompletionBar percentage={completion} />
+      <CompletionBar 
+        percentage={completion} 
+        missingFields={missingFields}
+        onNavigateToTab={setActiveTab}
+      />
 
       {/* ─── Stripe Connect Alert ──────────────────────────────────────────────── */}
       {!company.stripe_charges_enabled && (

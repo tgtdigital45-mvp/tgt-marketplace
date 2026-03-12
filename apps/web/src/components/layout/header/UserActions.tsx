@@ -24,7 +24,7 @@ const UserActions: React.FC = () => {
                 <>
                     <LoginDropdown />
 
-                    <Link to="/empresa/cadastro">
+                    <Link to="/cadastro/cliente">
                         <Button
                             variant="primary"
                             className="rounded-[var(--radius-box)]"

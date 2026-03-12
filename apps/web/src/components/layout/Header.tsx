@@ -24,7 +24,7 @@ const Header: React.FC = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    usePrefetchCriticalRoutes(['/empresas', '/login/cliente', '/empresa/cadastro'], 2000);
+    usePrefetchCriticalRoutes(['/empresas', '/login/cliente', '/cadastro/cliente'], 2000);
 
     return (
         <header

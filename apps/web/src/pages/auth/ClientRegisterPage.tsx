@@ -10,6 +10,7 @@ import { supabase } from '@tgt/shared';
 import { Store, Briefcase } from 'lucide-react';
 
 const ClientRegisterPage: React.FC = () => {
+    const isMarketplace = (process.env as any).VITE_APP_TYPE === 'marketplace';
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -103,22 +104,24 @@ const ClientRegisterPage: React.FC = () => {
                 <div className="mx-auto w-full max-w-lg">
                     <div className="bg-white rounded-2xl shadow-xl p-8 sm:p-10 border border-gray-100">
                         <div className="mb-8">
-                            {/* Account Type Toggle */}
-                            <div className="bg-gray-100 p-1 rounded-xl flex mb-6">
-                                <button
-                                    className="flex-1 flex items-center justify-center py-2 px-4 text-sm font-medium rounded-lg bg-white text-gray-900 shadow-sm transition-all"
-                                >
-                                    <Store className="w-4 h-4 mr-2 text-brand-primary" />
-                                    Cliente
-                                </button>
-                                <Link
-                                    to="/empresa/cadastro"
-                                    className="flex-1 flex items-center justify-center py-2 px-4 text-sm font-medium rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all"
-                                >
-                                    <Briefcase className="w-4 h-4 mr-2" />
-                                    Empresa
-                                </Link>
-                            </div>
+                            {/* Account Type Toggle - Hidden in Marketplace portal by user request */}
+                            {!isMarketplace && (
+                                <div className="bg-gray-100 p-1 rounded-xl flex mb-6">
+                                    <button
+                                        className="flex-1 flex items-center justify-center py-2 px-4 text-sm font-medium rounded-lg bg-white text-gray-900 shadow-sm transition-all"
+                                    >
+                                        <Store className="w-4 h-4 mr-2 text-brand-primary" />
+                                        Cliente
+                                    </button>
+                                    <Link
+                                        to="/empresa/cadastro"
+                                        className="flex-1 flex items-center justify-center py-2 px-4 text-sm font-medium rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all"
+                                    >
+                                        <Briefcase className="w-4 h-4 mr-2" />
+                                        Empresa
+                                    </Link>
+                                </div>
+                            )}
 
                             <p className="text-center text-sm text-gray-500 mb-6">Cadastre-se com</p>
 
