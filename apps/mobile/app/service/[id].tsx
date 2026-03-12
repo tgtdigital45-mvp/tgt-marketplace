@@ -7,21 +7,25 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     Dimensions,
+    StyleSheet,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
-    ArrowLeft,
-    Star,
-    MapPin,
-    Clock,
-    Tag,
-    ChevronRight,
-    AlertCircle,
-    Briefcase,
+    ArrowLeft, Star, MapPin, Clock, Tag, ChevronRight, AlertCircle, Briefcase,
 } from 'lucide-react-native';
-import { useServiceDetails } from '@/hooks/useServiceDetails';
+import { useServiceDetails } from '@/src/hooks/useServiceDetails';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+const COLORS = {
+    primary: '#0f172a',
+    secondary: '#475569',
+    accent: '#2563eb',
+    background: '#f8fafc',
+    surface: '#ffffff',
+    border: '#e2e8f0',
+    success: '#10b981',
+};
 
 function formatCurrency(value: number): string {
     return `R$ ${value.toFixed(2).replace('.', ',')}`;
@@ -35,57 +39,47 @@ function ServiceTypeLabel({ type }: { type?: string }) {
         hybrid: { text: 'Híbrido', emoji: '🔄' },
     };
     const label = labels[type ?? ''] ?? { text: 'A combinar', emoji: '📋' };
-
     return (
-        <View className="flex-row items-center bg-brand-accent/10 rounded-full px-3 py-1.5">
-            <Text className="mr-1">{label.emoji}</Text>
-            <Text className="text-brand-accent text-xs font-semibold">{label.text}</Text>
+        <View style={styles.typePill}>
+            <Text style={{ marginRight: 4 }}>{label.emoji}</Text>
+            <Text style={styles.typePillText}>{label.text}</Text>
         </View>
     );
 }
 
-// --- Loading Skeleton ---
 function LoadingSkeleton() {
     return (
-        <View className="flex-1 bg-brand-background">
-            <View className="w-full h-64 bg-slate-200" />
-            <View className="px-6 pt-6">
-                <View className="w-3/4 h-7 bg-slate-200 rounded-lg mb-3" />
-                <View className="w-1/2 h-5 bg-slate-200 rounded-lg mb-6" />
-                <View className="w-full h-20 bg-slate-200 rounded-xl mb-4" />
-                <View className="w-full h-20 bg-slate-200 rounded-xl mb-4" />
-                <View className="w-2/3 h-16 bg-slate-200 rounded-xl" />
+        <View style={styles.container}>
+            <View style={{ width: SCREEN_WIDTH, height: 260, backgroundColor: '#e2e8f0' }} />
+            <View style={{ paddingHorizontal: 24, paddingTop: 24 }}>
+                <View style={[styles.skeletonBlock, { width: '75%', height: 28, marginBottom: 12 }]} />
+                <View style={[styles.skeletonBlock, { width: '50%', height: 20, marginBottom: 24 }]} />
+                <View style={[styles.skeletonBlock, { height: 80, marginBottom: 16 }]} />
+                <View style={[styles.skeletonBlock, { height: 80, marginBottom: 16 }]} />
             </View>
-            <View className="items-center mt-10">
-                <ActivityIndicator size="large" color="#2563eb" />
-                <Text className="text-brand-secondary mt-3">Carregando serviço...</Text>
+            <View style={{ alignItems: 'center', marginTop: 24 }}>
+                <ActivityIndicator size="large" color={COLORS.accent} />
+                <Text style={{ color: COLORS.secondary, marginTop: 12 }}>Carregando serviço...</Text>
             </View>
         </View>
     );
 }
 
-// --- Error State ---
 function ErrorState({ message, onBack }: { message: string; onBack: () => void }) {
     return (
-        <View className="flex-1 bg-brand-background justify-center items-center px-6">
-            <View className="bg-red-50 p-6 rounded-full mb-6">
+        <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 }]}>
+            <View style={styles.errorIcon}>
                 <AlertCircle size={48} color="#ef4444" />
             </View>
-            <Text className="text-brand-primary text-xl font-bold mb-2 text-center">
-                Ops, algo deu errado
-            </Text>
-            <Text className="text-brand-secondary text-center mb-8">{message}</Text>
-            <TouchableOpacity
-                onPress={onBack}
-                className="bg-brand-primary rounded-xl py-3 px-8"
-            >
-                <Text className="text-white font-bold">Voltar</Text>
+            <Text style={styles.errorTitle}>Ops, algo deu errado</Text>
+            <Text style={styles.errorMessage}>{message}</Text>
+            <TouchableOpacity onPress={onBack} style={styles.errorButton}>
+                <Text style={styles.errorButtonText}>Voltar</Text>
             </TouchableOpacity>
         </View>
     );
 }
 
-// --- Main Screen ---
 export default function ServiceDetailsScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
@@ -106,10 +100,10 @@ export default function ServiceDetailsScreen() {
     const hasFaq = service.faq && service.faq.length > 0;
 
     return (
-        <View className="flex-1 bg-brand-background">
-            <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
+        <View style={styles.container}>
+            <ScrollView style={styles.scroll} contentContainerStyle={{ paddingBottom: 100 }}>
                 {/* Hero Image */}
-                <View className="relative">
+                <View>
                     {service.image_url ? (
                         <Image
                             source={{ uri: service.image_url }}
@@ -117,109 +111,84 @@ export default function ServiceDetailsScreen() {
                             resizeMode="cover"
                         />
                     ) : (
-                        <View
-                            style={{ width: SCREEN_WIDTH, height: 260 }}
-                            className="bg-slate-200 items-center justify-center"
-                        >
-                            <Text className="text-6xl">🛠️</Text>
+                        <View style={[{ width: SCREEN_WIDTH, height: 260 }, styles.imagePlaceholder]}>
+                            <Text style={{ fontSize: 60 }}>🛠️</Text>
                         </View>
                     )}
-
-                    {/* Back Button Overlay */}
-                    <TouchableOpacity
-                        onPress={() => router.back()}
-                        className="absolute top-12 left-4 bg-white/90 rounded-full p-2 shadow-md"
-                    >
-                        <ArrowLeft size={22} color="#0f172a" />
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backOverlay}>
+                        <ArrowLeft size={22} color={COLORS.primary} />
                     </TouchableOpacity>
                 </View>
 
                 {/* Content */}
-                <View className="px-6 pt-5">
-                    {/* Category Tag */}
-                    <View className="flex-row items-center mb-3 flex-wrap gap-2">
+                <View style={styles.content}>
+                    {/* Category & Type */}
+                    <View style={styles.tagsRow}>
                         {service.category_tag && (
-                            <View className="bg-slate-100 rounded-full px-3 py-1">
-                                <Text className="text-brand-secondary text-xs font-medium">
-                                    {service.category_tag}
-                                </Text>
+                            <View style={styles.categoryPill}>
+                                <Text style={styles.categoryPillText}>{service.category_tag}</Text>
                             </View>
                         )}
                         <ServiceTypeLabel type={service.service_type} />
                     </View>
 
                     {/* Title */}
-                    <Text className="text-brand-primary text-2xl font-bold mb-2">
-                        {service.title}
-                    </Text>
+                    <Text style={styles.serviceTitle}>{service.title}</Text>
 
                     {/* Price */}
-                    <View className="flex-row items-baseline mb-5">
-                        <Text className="text-brand-secondary text-sm">A partir de </Text>
-                        <Text className="text-brand-accent text-2xl font-bold">
-                            {formatCurrency(displayPrice)}
-                        </Text>
+                    <View style={styles.priceRow}>
+                        <Text style={styles.priceFromText}>A partir de </Text>
+                        <Text style={styles.priceValue}>{formatCurrency(displayPrice)}</Text>
                         {service.pricing_model === 'hourly' && (
-                            <Text className="text-brand-secondary text-sm">/hora</Text>
+                            <Text style={styles.priceFromText}>/hora</Text>
                         )}
                     </View>
 
                     {/* Quick Info Pills */}
-                    <View className="flex-row flex-wrap gap-3 mb-6">
+                    <View style={styles.pillsRow}>
                         {service.duration && (
-                            <View className="flex-row items-center bg-white rounded-xl px-4 py-2.5 border border-slate-100">
+                            <View style={styles.infoPill}>
                                 <Clock size={16} color="#64748b" />
-                                <Text className="text-brand-secondary text-sm ml-2 font-medium">
-                                    {service.duration}
-                                </Text>
+                                <Text style={styles.infoPillText}>{service.duration}</Text>
                             </View>
                         )}
                         {service.requires_quote && (
-                            <View className="flex-row items-center bg-amber-50 rounded-xl px-4 py-2.5 border border-amber-100">
+                            <View style={styles.quotePill}>
                                 <Tag size={16} color="#d97706" />
-                                <Text className="text-amber-700 text-sm ml-2 font-medium">
-                                    Orçamento sob consulta
-                                </Text>
+                                <Text style={styles.quotePillText}>Orçamento sob consulta</Text>
                             </View>
                         )}
                     </View>
 
-                    {/* Divider */}
-                    <View className="h-px bg-slate-100 mb-6" />
+                    <View style={styles.divider} />
 
                     {/* Company Card */}
                     {service.company && (
-                        <TouchableOpacity className="flex-row items-center bg-white rounded-2xl p-4 border border-slate-100 shadow-sm mb-6">
+                        <TouchableOpacity style={styles.companyCard}>
                             {service.company.logo_url ? (
                                 <Image
                                     source={{ uri: service.company.logo_url }}
-                                    className="w-14 h-14 rounded-xl mr-4"
+                                    style={styles.companyLogo}
                                 />
                             ) : (
-                                <View className="w-14 h-14 rounded-xl bg-brand-accent/10 items-center justify-center mr-4">
-                                    <Briefcase size={24} color="#2563eb" />
+                                <View style={styles.companyLogoPlaceholder}>
+                                    <Briefcase size={24} color={COLORS.accent} />
                                 </View>
                             )}
-                            <View className="flex-1">
-                                <Text className="text-brand-primary font-bold text-base">
-                                    {service.company.company_name}
-                                </Text>
-                                <View className="flex-row items-center mt-1">
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.companyName}>{service.company.company_name}</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
                                     {(service.company.rating ?? 0) > 0 && (
-                                        <View className="flex-row items-center mr-3">
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
                                             <Star size={14} color="#f59e0b" fill="#f59e0b" />
-                                            <Text className="text-amber-600 text-sm font-medium ml-1">
-                                                {service.company.rating?.toFixed(1)}
-                                            </Text>
-                                            <Text className="text-brand-secondary text-xs ml-1">
-                                                ({service.company.review_count ?? 0})
-                                            </Text>
+                                            <Text style={styles.ratingText}>{service.company.rating?.toFixed(1)}</Text>
+                                            <Text style={styles.reviewCount}>({service.company.review_count ?? 0})</Text>
                                         </View>
                                     )}
                                     {service.company.city && (
-                                        <View className="flex-row items-center">
+                                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                             <MapPin size={12} color="#94a3b8" />
-                                            <Text className="text-brand-secondary text-xs ml-1">
+                                            <Text style={styles.cityText}>
                                                 {service.company.city}, {service.company.state}
                                             </Text>
                                         </View>
@@ -231,44 +200,32 @@ export default function ServiceDetailsScreen() {
                     )}
 
                     {/* Description */}
-                    <View className="mb-6">
-                        <Text className="text-brand-primary text-lg font-bold mb-3">
-                            Sobre o serviço
-                        </Text>
-                        <Text className="text-brand-secondary text-base leading-6">
-                            {service.description}
-                        </Text>
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Sobre o serviço</Text>
+                        <Text style={styles.descriptionText}>{service.description}</Text>
                     </View>
 
                     {/* Packages */}
                     {service.packages && (
-                        <View className="mb-6">
-                            <Text className="text-brand-primary text-lg font-bold mb-3">
-                                Pacotes disponíveis
-                            </Text>
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Pacotes disponíveis</Text>
                             {(['basic', 'standard', 'premium'] as const).map((tier) => {
                                 const pkg = service.packages?.[tier];
                                 if (!pkg) return null;
                                 return (
                                     <View
                                         key={tier}
-                                        className={`bg-white rounded-2xl p-4 mb-3 border ${tier === 'standard' ? 'border-brand-accent' : 'border-slate-100'}`}
+                                        style={[styles.packageCard, tier === 'standard' ? styles.packageHighlight : styles.packageDefault]}
                                     >
-                                        <View className="flex-row justify-between items-center mb-2">
-                                            <Text className="text-brand-primary font-bold capitalize">
-                                                {pkg.name || tier}
-                                            </Text>
-                                            <Text className="text-brand-accent font-bold text-lg">
-                                                {formatCurrency(pkg.price)}
-                                            </Text>
+                                        <View style={styles.packageHeader}>
+                                            <Text style={styles.packageName}>{pkg.name || tier}</Text>
+                                            <Text style={styles.packagePrice}>{formatCurrency(pkg.price)}</Text>
                                         </View>
-                                        <Text className="text-brand-secondary text-sm mb-2">
-                                            {pkg.description}
-                                        </Text>
+                                        <Text style={styles.packageDesc}>{pkg.description}</Text>
                                         {pkg.features?.map((f: string, i: number) => (
-                                            <View key={i} className="flex-row items-center mt-1">
-                                                <View className="w-1.5 h-1.5 rounded-full bg-brand-success mr-2" />
-                                                <Text className="text-brand-secondary text-xs">{f}</Text>
+                                            <View key={i} style={styles.featureRow}>
+                                                <View style={styles.featureDot} />
+                                                <Text style={styles.featureText}>{f}</Text>
                                             </View>
                                         ))}
                                     </View>
@@ -279,19 +236,12 @@ export default function ServiceDetailsScreen() {
 
                     {/* FAQ */}
                     {hasFaq && (
-                        <View className="mb-6">
-                            <Text className="text-brand-primary text-lg font-bold mb-3">
-                                Perguntas frequentes
-                            </Text>
-                            {service.faq!.map((item, idx) => (
-                                <View
-                                    key={idx}
-                                    className="bg-white rounded-xl p-4 mb-2 border border-slate-100"
-                                >
-                                    <Text className="text-brand-primary font-semibold mb-1">
-                                        {item.question}
-                                    </Text>
-                                    <Text className="text-brand-secondary text-sm">{item.answer}</Text>
+                        <View style={styles.section}>
+                            <Text style={styles.sectionTitle}>Perguntas frequentes</Text>
+                            {service.faq!.map((item: { question: string; answer: string }, idx: number) => (
+                                <View key={idx} style={styles.faqCard}>
+                                    <Text style={styles.faqQuestion}>{item.question}</Text>
+                                    <Text style={styles.faqAnswer}>{item.answer}</Text>
                                 </View>
                             ))}
                         </View>
@@ -300,13 +250,11 @@ export default function ServiceDetailsScreen() {
             </ScrollView>
 
             {/* Fixed Bottom CTA */}
-            <View className="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-6 py-4 pb-8">
-                <View className="flex-row items-center justify-between">
+            <View style={styles.footer}>
+                <View style={styles.footerInner}>
                     <View>
-                        <Text className="text-brand-secondary text-xs">A partir de</Text>
-                        <Text className="text-brand-primary text-xl font-bold">
-                            {formatCurrency(displayPrice)}
-                        </Text>
+                        <Text style={styles.footerFromText}>A partir de</Text>
+                        <Text style={styles.footerPrice}>{formatCurrency(displayPrice)}</Text>
                     </View>
                     <TouchableOpacity
                         onPress={() => {
@@ -332,12 +280,80 @@ export default function ServiceDetailsScreen() {
                                 });
                             }
                         }}
-                        className="bg-brand-accent rounded-xl py-4 px-8 shadow-md"
+                        style={styles.ctaButton}
                     >
-                        <Text className="text-white font-bold text-base">{service.requires_quote ? 'Pedir Orçamento' : 'Escolher Data'}</Text>
+                        <Text style={styles.ctaText}>
+                            {service.requires_quote ? 'Pedir Orçamento' : 'Escolher Data'}
+                        </Text>
                     </TouchableOpacity>
                 </View>
             </View>
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.background },
+    scroll: { flex: 1 },
+    skeletonBlock: { backgroundColor: '#e2e8f0', borderRadius: 10, width: '100%' },
+    // Error
+    errorIcon: { backgroundColor: '#fee2e2', padding: 24, borderRadius: 9999, marginBottom: 24 },
+    errorTitle: { color: COLORS.primary, fontSize: 20, fontWeight: 'bold', marginBottom: 8, textAlign: 'center' },
+    errorMessage: { color: COLORS.secondary, textAlign: 'center', marginBottom: 32 },
+    errorButton: { backgroundColor: COLORS.primary, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 32 },
+    errorButtonText: { color: '#ffffff', fontWeight: 'bold' },
+    // Image
+    imagePlaceholder: { backgroundColor: '#e2e8f0', alignItems: 'center', justifyContent: 'center' },
+    backOverlay: { position: 'absolute', top: 48, left: 16, backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 9999, padding: 8 },
+    // Content
+    content: { paddingHorizontal: 24, paddingTop: 20 },
+    tagsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 },
+    categoryPill: { backgroundColor: '#f1f5f9', borderRadius: 9999, paddingHorizontal: 12, paddingVertical: 4 },
+    categoryPillText: { color: COLORS.secondary, fontSize: 12, fontWeight: '500' },
+    typePill: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#eff6ff', borderRadius: 9999, paddingHorizontal: 12, paddingVertical: 6 },
+    typePillText: { color: COLORS.accent, fontSize: 12, fontWeight: '600' },
+    serviceTitle: { color: COLORS.primary, fontSize: 24, fontWeight: 'bold', marginBottom: 8 },
+    priceRow: { flexDirection: 'row', alignItems: 'baseline', marginBottom: 20 },
+    priceFromText: { color: COLORS.secondary, fontSize: 14 },
+    priceValue: { color: COLORS.accent, fontSize: 24, fontWeight: 'bold' },
+    pillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
+    infoPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: COLORS.border, gap: 8 },
+    infoPillText: { color: COLORS.secondary, fontSize: 14, fontWeight: '500' },
+    quotePill: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fffbeb', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: '#fde68a', gap: 8 },
+    quotePillText: { color: '#b45309', fontSize: 14, fontWeight: '500' },
+    divider: { height: 1, backgroundColor: '#f1f5f9', marginBottom: 24 },
+    // Company
+    companyCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: COLORS.border, marginBottom: 24 },
+    companyLogo: { width: 56, height: 56, borderRadius: 12, marginRight: 16 },
+    companyLogoPlaceholder: { width: 56, height: 56, borderRadius: 12, backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+    companyName: { color: COLORS.primary, fontWeight: 'bold', fontSize: 16 },
+    ratingText: { color: '#d97706', fontSize: 14, fontWeight: '500', marginLeft: 4 },
+    reviewCount: { color: COLORS.secondary, fontSize: 12, marginLeft: 4 },
+    cityText: { color: COLORS.secondary, fontSize: 12, marginLeft: 4 },
+    // Sections
+    section: { marginBottom: 24 },
+    sectionTitle: { color: COLORS.primary, fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
+    descriptionText: { color: COLORS.secondary, fontSize: 16, lineHeight: 24 },
+    // Packages
+    packageCard: { borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1 },
+    packageDefault: { backgroundColor: COLORS.surface, borderColor: COLORS.border },
+    packageHighlight: { backgroundColor: COLORS.surface, borderColor: COLORS.accent },
+    packageHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+    packageName: { color: COLORS.primary, fontWeight: 'bold', textTransform: 'capitalize' },
+    packagePrice: { color: COLORS.accent, fontWeight: 'bold', fontSize: 18 },
+    packageDesc: { color: COLORS.secondary, fontSize: 14, marginBottom: 8 },
+    featureRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+    featureDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.success, marginRight: 8 },
+    featureText: { color: COLORS.secondary, fontSize: 12 },
+    // FAQ
+    faqCard: { backgroundColor: COLORS.surface, borderRadius: 12, padding: 16, marginBottom: 8, borderWidth: 1, borderColor: COLORS.border },
+    faqQuestion: { color: COLORS.primary, fontWeight: '600', marginBottom: 4 },
+    faqAnswer: { color: COLORS.secondary, fontSize: 14 },
+    // Footer CTA
+    footer: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.surface, borderTopWidth: 1, borderColor: COLORS.border, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32 },
+    footerInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    footerFromText: { color: COLORS.secondary, fontSize: 12 },
+    footerPrice: { color: COLORS.primary, fontSize: 20, fontWeight: 'bold' },
+    ctaButton: { backgroundColor: COLORS.accent, borderRadius: 12, paddingVertical: 16, paddingHorizontal: 32 },
+    ctaText: { color: '#ffffff', fontWeight: 'bold', fontSize: 16 },
+});

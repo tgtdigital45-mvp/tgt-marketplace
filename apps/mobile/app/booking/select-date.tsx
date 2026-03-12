@@ -5,13 +5,13 @@ import {
     TouchableOpacity,
     ScrollView,
     Alert,
+    StyleSheet,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Calendar, DateData } from 'react-native-calendars';
 import { ArrowLeft, Clock, CalendarDays, CheckCircle } from 'lucide-react-native';
-import { useBookingState } from '@/hooks/useBookingState';
+import { useBookingState } from '../../hooks/useBookingState';
 
-// Generate time slots from 08:00 to 18:00 in 30-min intervals
 function generateTimeSlots(durationMin: number): string[] {
     const slots: string[] = [];
     const startHour = 8;
@@ -50,8 +50,6 @@ export default function SelectDateScreen() {
     });
 
     const timeSlots = useMemo(() => generateTimeSlots(duration), [duration]);
-
-    // Today as YYYY-MM-DD
     const today = new Date().toISOString().split('T')[0];
 
     const markedDates: Record<string, any> = {};
@@ -80,36 +78,34 @@ export default function SelectDateScreen() {
                 durationMinutes: String(data.durationMinutes),
                 selectedDate: data.selectedDate,
                 selectedTime: data.selectedTime,
-                packageTier: 'basic', // Default for now
+                packageTier: 'basic',
             },
         });
     };
 
     return (
-        <View className="flex-1 bg-brand-background">
+        <View style={styles.container}>
             {/* Header */}
-            <View className="bg-brand-primary px-6 pt-14 pb-5">
-                <View className="flex-row items-center mb-3">
-                    <TouchableOpacity onPress={() => router.back()} className="mr-3">
+            <View style={styles.header}>
+                <View style={styles.headerRow}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                         <ArrowLeft size={22} color="#ffffff" />
                     </TouchableOpacity>
-                    <Text className="text-white text-xl font-bold flex-1" numberOfLines={1}>
-                        Escolher Data
-                    </Text>
+                    <Text style={styles.headerTitle} numberOfLines={1}>Escolher Data</Text>
                 </View>
-                <Text className="text-white/70 text-sm" numberOfLines={1}>
+                <Text style={styles.headerSubtitle} numberOfLines={1}>
                     {params.serviceTitle} • {params.companyName}
                 </Text>
             </View>
 
-            <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 120 }}>
+            <ScrollView style={styles.scroll} contentContainerStyle={{ paddingBottom: 120 }}>
                 {/* Calendar */}
-                <View className="mx-4 mt-4 bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100">
+                <View style={styles.calendarCard}>
                     <Calendar
                         minDate={today}
                         onDayPress={(day: DateData) => {
                             booking.setSelectedDate(day.dateString);
-                            booking.setSelectedTime(''); // Reset time on date change
+                            booking.setSelectedTime('');
                         }}
                         markedDates={markedDates}
                         theme={{
@@ -133,30 +129,21 @@ export default function SelectDateScreen() {
 
                 {/* Time Slots */}
                 {booking.selectedDate !== '' && (
-                    <View className="mx-4 mt-6">
-                        <View className="flex-row items-center mb-4">
+                    <View style={styles.section}>
+                        <View style={styles.sectionHeader}>
                             <Clock size={18} color="#0f172a" />
-                            <Text className="text-brand-primary text-lg font-bold ml-2">
-                                Horários disponíveis
-                            </Text>
+                            <Text style={styles.sectionTitle}>Horários disponíveis</Text>
                         </View>
-
-                        <View className="flex-row flex-wrap gap-3">
+                        <View style={styles.slotsGrid}>
                             {timeSlots.map((slot) => {
                                 const isSelected = booking.selectedTime === slot;
                                 return (
                                     <TouchableOpacity
                                         key={slot}
                                         onPress={() => booking.setSelectedTime(slot)}
-                                        className={`px-5 py-3 rounded-xl border ${isSelected
-                                            ? 'bg-brand-accent border-brand-accent'
-                                            : 'bg-white border-slate-200'
-                                            }`}
+                                        style={[styles.slot, isSelected ? styles.slotSelected : styles.slotDefault]}
                                     >
-                                        <Text
-                                            className={`font-semibold text-sm ${isSelected ? 'text-white' : 'text-brand-primary'
-                                                }`}
-                                        >
+                                        <Text style={[styles.slotText, isSelected ? styles.slotTextSelected : styles.slotTextDefault]}>
                                             {slot}
                                         </Text>
                                     </TouchableOpacity>
@@ -168,11 +155,11 @@ export default function SelectDateScreen() {
 
                 {/* Selection Summary */}
                 {booking.isComplete && (
-                    <View className="mx-4 mt-6 bg-brand-success/10 rounded-2xl p-4 flex-row items-center border border-brand-success/20">
+                    <View style={styles.summaryCard}>
                         <CheckCircle size={20} color="#10b981" />
-                        <View className="ml-3 flex-1">
-                            <Text className="text-brand-primary font-bold">Seleção confirmada</Text>
-                            <Text className="text-brand-secondary text-sm">
+                        <View style={{ marginLeft: 12, flex: 1 }}>
+                            <Text style={styles.summaryTitle}>Seleção confirmada</Text>
+                            <Text style={styles.summarySubtitle}>
                                 {booking.selectedDate} às {booking.selectedTime}
                             </Text>
                         </View>
@@ -181,21 +168,57 @@ export default function SelectDateScreen() {
             </ScrollView>
 
             {/* Fixed Bottom CTA */}
-            <View className="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-6 py-4 pb-8">
+            <View style={styles.footer}>
                 <TouchableOpacity
                     onPress={handleConfirm}
                     disabled={!booking.isComplete}
-                    className={`rounded-xl py-4 items-center shadow-md ${booking.isComplete ? 'bg-brand-accent' : 'bg-slate-300'
-                        }`}
+                    style={[styles.confirmButton, booking.isComplete ? styles.confirmActive : styles.confirmDisabled]}
                 >
-                    <View className="flex-row items-center">
-                        <CalendarDays size={20} color="#ffffff" />
-                        <Text className="text-white font-bold text-base ml-2">
-                            {booking.isComplete ? 'Confirmar Agendamento' : 'Selecione data e horário'}
-                        </Text>
-                    </View>
+                    <CalendarDays size={20} color="#ffffff" />
+                    <Text style={styles.confirmText}>
+                        {booking.isComplete ? 'Confirmar Agendamento' : 'Selecione data e horário'}
+                    </Text>
                 </TouchableOpacity>
             </View>
         </View>
     );
 }
+
+const COLORS = {
+    primary: '#0f172a',
+    secondary: '#475569',
+    accent: '#2563eb',
+    background: '#f8fafc',
+    surface: '#ffffff',
+    border: '#e2e8f0',
+    success: '#10b981',
+};
+
+const styles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.background },
+    header: { backgroundColor: COLORS.primary, paddingHorizontal: 24, paddingTop: 56, paddingBottom: 20 },
+    headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+    backButton: { marginRight: 12 },
+    headerTitle: { color: '#ffffff', fontSize: 20, fontWeight: 'bold', flex: 1 },
+    headerSubtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 14 },
+    scroll: { flex: 1 },
+    calendarCard: { marginHorizontal: 16, marginTop: 16, backgroundColor: COLORS.surface, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border },
+    section: { marginHorizontal: 16, marginTop: 24 },
+    sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+    sectionTitle: { color: COLORS.primary, fontSize: 18, fontWeight: 'bold', marginLeft: 8 },
+    slotsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+    slot: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12, borderWidth: 1 },
+    slotDefault: { backgroundColor: COLORS.surface, borderColor: '#e2e8f0' },
+    slotSelected: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
+    slotText: { fontWeight: '600', fontSize: 14 },
+    slotTextDefault: { color: COLORS.primary },
+    slotTextSelected: { color: '#ffffff' },
+    summaryCard: { marginHorizontal: 16, marginTop: 24, backgroundColor: '#f0fdf4', borderRadius: 16, padding: 16, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#bbf7d0' },
+    summaryTitle: { color: COLORS.primary, fontWeight: 'bold' },
+    summarySubtitle: { color: COLORS.secondary, fontSize: 14 },
+    footer: { backgroundColor: COLORS.surface, borderTopWidth: 1, borderColor: COLORS.border, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32 },
+    confirmButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 12, paddingVertical: 16, gap: 8 },
+    confirmActive: { backgroundColor: COLORS.accent },
+    confirmDisabled: { backgroundColor: '#cbd5e1' },
+    confirmText: { color: '#ffffff', fontWeight: 'bold', fontSize: 16 },
+});

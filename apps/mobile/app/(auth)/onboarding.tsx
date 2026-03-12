@@ -12,20 +12,23 @@ export default function OnboardingScreen() {
     const { user, refreshProfile } = useAuth();
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
-    const [selectedRole, setSelectedRole] = useState<'customer' | 'provider' | null>(null);
+    const [selectedRole, setSelectedRole] = useState<'client' | 'company' | null>(null);
 
-    const handleSelectRole = async (role: 'customer' | 'provider') => {
+    const handleSelectRole = async (selectedType: 'client' | 'company') => {
         if (!user) return;
 
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        setSelectedRole(role);
+        setSelectedRole(selectedType);
         setLoading(true);
         setErrorMsg('');
 
         try {
             const { error } = await supabase
                 .from('profiles')
-                .update({ role })
+                .update({ 
+                    user_type: selectedType,
+                    role: 'user' // Reset role to 'user' in case it was modified
+                })
                 .eq('id', user.id);
 
             if (error) {
@@ -67,7 +70,7 @@ export default function OnboardingScreen() {
                         loading && selectedRole !== 'client' && styles.cardDisabled,
                     ]}
                     activeOpacity={0.7}
-                    onPress={() => handleSelectRole('customer')}
+                    onPress={() => handleSelectRole('client')}
                     disabled={loading}
                 >
                     <View style={styles.cardContent}>
@@ -93,7 +96,7 @@ export default function OnboardingScreen() {
                         loading && selectedRole !== 'company' && styles.cardDisabled,
                     ]}
                     activeOpacity={0.7}
-                    onPress={() => handleSelectRole('provider')}
+                    onPress={() => handleSelectRole('company')}
                     disabled={loading}
                 >
                     <View style={styles.cardContent}>

@@ -7,10 +7,11 @@ import {
     ScrollView,
     Alert,
     ActivityIndicator,
+    StyleSheet,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Send } from 'lucide-react-native';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/src/providers/AuthProvider';
 import { supabase } from '@tgt/shared';
 
 export default function RequestQuoteScreen() {
@@ -67,31 +68,33 @@ export default function RequestQuoteScreen() {
         }
     };
 
+    const isDisabled = loading || !description.trim();
+
     return (
-        <View className="flex-1 bg-brand-background">
+        <View style={styles.container}>
             {/* Header */}
-            <View className="bg-brand-primary px-6 pt-14 pb-5">
-                <View className="flex-row items-center mb-3">
-                    <TouchableOpacity onPress={() => router.back()} className="mr-3">
+            <View style={styles.header}>
+                <View style={styles.headerRow}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                         <ArrowLeft size={22} color="#ffffff" />
                     </TouchableOpacity>
-                    <Text className="text-white text-xl font-bold flex-1" numberOfLines={1}>
+                    <Text style={styles.headerTitle} numberOfLines={1}>
                         Pedir Orçamento
                     </Text>
                 </View>
-                <Text className="text-white/70 text-sm" numberOfLines={1}>
+                <Text style={styles.headerSubtitle} numberOfLines={1}>
                     {params.serviceTitle} • {params.companyName}
                 </Text>
             </View>
 
-            <ScrollView className="flex-1 px-6 pt-6" contentContainerStyle={{ paddingBottom: 120 }}>
-                <View className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                    <Text className="font-bold text-brand-primary text-lg mb-2">Descreva sua necessidade *</Text>
-                    <Text className="text-brand-secondary text-sm mb-4">
+            <ScrollView style={styles.scroll} contentContainerStyle={{ paddingBottom: 120 }}>
+                <View style={styles.card}>
+                    <Text style={styles.cardTitle}>Descreva sua necessidade *</Text>
+                    <Text style={styles.cardSubtitle}>
                         Dê o máximo de detalhes possível para que a empresa possa lhe enviar um orçamento preciso.
                     </Text>
                     <TextInput
-                        className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-brand-primary h-32 text-left"
+                        style={styles.textArea}
                         placeholder="Ex: Preciso de um serviço específico devido à X..."
                         placeholderTextColor="#94a3b8"
                         multiline
@@ -101,15 +104,15 @@ export default function RequestQuoteScreen() {
                     />
                 </View>
 
-                <View className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 mt-4">
-                    <Text className="font-bold text-brand-primary text-lg mb-2">Expectativa de Valor (Opcional)</Text>
-                    <Text className="text-brand-secondary text-sm mb-4">
+                <View style={[styles.card, styles.cardMarginTop]}>
+                    <Text style={styles.cardTitle}>Expectativa de Valor (Opcional)</Text>
+                    <Text style={styles.cardSubtitle}>
                         Se você tiver um orçamento mensal ou total em mente.
                     </Text>
-                    <View className="relative justify-center flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4">
-                        <Text className="text-brand-secondary font-bold mr-2">R$</Text>
+                    <View style={styles.currencyRow}>
+                        <Text style={styles.currencyPrefix}>R$</Text>
                         <TextInput
-                            className="flex-1 py-4 text-brand-primary"
+                            style={styles.currencyInput}
                             placeholder="0,00"
                             placeholderTextColor="#94a3b8"
                             keyboardType="numeric"
@@ -121,18 +124,18 @@ export default function RequestQuoteScreen() {
             </ScrollView>
 
             {/* Fixed Bottom CTA */}
-            <View className="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-6 py-4 pb-8">
+            <View style={styles.footer}>
                 <TouchableOpacity
                     onPress={handleSubmit}
-                    disabled={loading || !description.trim()}
-                    className={`rounded-xl py-4 items-center shadow-md flex-row justify-center ${loading || !description.trim() ? 'bg-slate-300' : 'bg-brand-accent'}`}
+                    disabled={isDisabled}
+                    style={[styles.submitButton, isDisabled ? styles.submitDisabled : styles.submitActive]}
                 >
                     {loading ? (
-                        <ActivityIndicator color="#ffffff" className="mr-2" />
+                        <ActivityIndicator color="#ffffff" style={{ marginRight: 8 }} />
                     ) : (
-                        <Send size={20} color="#ffffff" className="mr-2" />
+                        <Send size={20} color="#ffffff" style={{ marginRight: 8 }} />
                     )}
-                    <Text className="text-white font-bold text-base">
+                    <Text style={styles.submitText}>
                         {loading ? 'Enviando...' : 'Enviar Solicitação'}
                     </Text>
                 </TouchableOpacity>
@@ -140,3 +143,42 @@ export default function RequestQuoteScreen() {
         </View>
     );
 }
+
+const COLORS = {
+    primary: '#0f172a',
+    secondary: '#475569',
+    accent: '#2563eb',
+    background: '#f8fafc',
+    surface: '#ffffff',
+    border: '#e2e8f0',
+};
+
+const styles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.background },
+    header: { backgroundColor: COLORS.primary, paddingHorizontal: 24, paddingTop: 56, paddingBottom: 20 },
+    headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+    backButton: { marginRight: 12 },
+    headerTitle: { color: '#ffffff', fontSize: 20, fontWeight: 'bold', flex: 1 },
+    headerSubtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 14 },
+    scroll: { flex: 1, paddingHorizontal: 24, paddingTop: 24 },
+    card: { backgroundColor: COLORS.surface, padding: 20, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border },
+    cardMarginTop: { marginTop: 16 },
+    cardTitle: { fontWeight: 'bold', color: COLORS.primary, fontSize: 18, marginBottom: 8 },
+    cardSubtitle: { color: COLORS.secondary, fontSize: 14, marginBottom: 16, lineHeight: 20 },
+    textArea: {
+        backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0',
+        borderRadius: 12, padding: 16, color: COLORS.primary, height: 128,
+        textAlignVertical: 'top', fontSize: 15,
+    },
+    currencyRow: {
+        flexDirection: 'row', alignItems: 'center', backgroundColor: '#f8fafc',
+        borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 12, paddingHorizontal: 16,
+    },
+    currencyPrefix: { color: COLORS.secondary, fontWeight: 'bold', marginRight: 8 },
+    currencyInput: { flex: 1, paddingVertical: 16, color: COLORS.primary, fontSize: 16 },
+    footer: { backgroundColor: COLORS.surface, borderTopWidth: 1, borderColor: COLORS.border, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32 },
+    submitButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 12, paddingVertical: 16 },
+    submitActive: { backgroundColor: COLORS.accent },
+    submitDisabled: { backgroundColor: '#cbd5e1' },
+    submitText: { color: '#ffffff', fontWeight: 'bold', fontSize: 16 },
+});

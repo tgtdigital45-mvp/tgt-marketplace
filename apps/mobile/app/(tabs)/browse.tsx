@@ -42,7 +42,7 @@ export default function BrowseScreen() {
     const fetchCities = useCallback(async () => {
         const { data } = await supabase.from('companies').select('address_city').not('address_city', 'is', null);
         if (data) {
-            const uniqueCities = Array.from(new Set(data.map(item => item.address_city))).sort();
+            const uniqueCities = Array.from(new Set(data.map((item: { address_city: string }) => item.address_city))).sort() as string[];
             setAvailableCities(uniqueCities);
         }
     }, []);
@@ -63,11 +63,11 @@ export default function BrowseScreen() {
                 // Sem busca textual, usa query direta
                 let query = supabase.from('companies').select(`
                     id, business_name, bio, logo_url, cover_url, address_city, address_state,
-                    services(category_id)
+                    services(category_tag)
                 `, { count: 'exact' });
 
                 if (categoryId) {
-                    query = query.eq('services.category_id', categoryId);
+                    query = query.eq('services.category_tag', categoryId);
                 }
 
                 if (city) {

@@ -6,7 +6,7 @@ import {
     ScrollView,
     ActivityIndicator,
     Alert,
-    Image,
+    StyleSheet,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useStripe } from '@stripe/stripe-react-native';
@@ -41,11 +41,10 @@ export default function CheckoutScreen() {
         try {
             setInitializing(true);
 
-            // 1. Create order via RPC (SAGA)
             const { data: orderData, error: orderError } = await supabase.rpc('create_order_saga', {
                 p_service_id: params.serviceId,
                 p_package_tier: packageTier,
-                p_seller_id: undefined, // Will be fetched inside RPC or we could pass it
+                p_seller_id: undefined,
                 p_booking_date: params.selectedDate,
                 p_booking_time: params.selectedTime
             });
@@ -53,7 +52,6 @@ export default function CheckoutScreen() {
             if (orderError) throw orderError;
             if (!orderData?.order_id) throw new Error('Falha ao criar pedido.');
 
-            // 2. Call Edge Function to get PaymentIntent
             const { data: paymentSheetData, error: fetchError } = await supabase.functions.invoke('create-payment-intent', {
                 body: { order_id: orderData.order_id }
             });
@@ -62,15 +60,12 @@ export default function CheckoutScreen() {
 
             const { paymentIntent, ephemeralKey, customer } = paymentSheetData;
 
-            // 3. Initialize Payment Sheet
             const { error } = await initPaymentSheet({
                 merchantDisplayName: 'TGT Contratto',
                 customerId: customer,
                 customerEphemeralKeySecret: ephemeralKey,
                 paymentIntentClientSecret: paymentIntent,
-                defaultBillingDetails: {
-                    name: 'Cliente TGT',
-                },
+                defaultBillingDetails: { name: 'Cliente TGT' },
                 allowsDelayedPaymentMethods: false,
                 returnURL: 'tgt-cliente://stripe-redirect',
             });
@@ -104,102 +99,131 @@ export default function CheckoutScreen() {
 
     if (initializing) {
         return (
-            <View className="flex-1 bg-brand-background justify-center items-center">
+            <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#2563eb" />
-                <Text className="text-brand-secondary mt-4">Preparando checkout seguro...</Text>
+                <Text style={styles.loadingText}>Preparando checkout seguro...</Text>
             </View>
         );
     }
 
     return (
-        <View className="flex-1 bg-brand-background">
+        <View style={styles.container}>
             {/* Header */}
-            <View className="bg-brand-primary px-6 pt-14 pb-5 flex-row items-center">
-                <TouchableOpacity onPress={() => router.back()} className="mr-3">
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <ArrowLeft size={22} color="#ffffff" />
                 </TouchableOpacity>
-                <Text className="text-white text-xl font-bold">Checkout</Text>
+                <Text style={styles.headerTitle}>Checkout</Text>
             </View>
 
-            <ScrollView className="flex-1 p-6">
+            <ScrollView style={styles.scroll}>
                 {/* Reservation Summary */}
-                <View className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 mb-6">
-                    <Text className="text-brand-secondary text-xs font-bold uppercase tracking-wider mb-3">
-                        Resumo do Agendamento
-                    </Text>
-                    <Text className="text-brand-primary text-lg font-bold mb-1">
-                        {params.serviceTitle}
-                    </Text>
-                    <Text className="text-brand-secondary text-sm mb-4">
-                        Prestador: {params.companyName}
-                    </Text>
+                <View style={styles.card}>
+                    <Text style={styles.cardLabel}>Resumo do Agendamento</Text>
+                    <Text style={styles.serviceTitle}>{params.serviceTitle}</Text>
+                    <Text style={styles.companyText}>Prestador: {params.companyName}</Text>
 
-                    <View className="flex-row justify-between mb-2">
-                        <Text className="text-brand-secondary text-sm">Data</Text>
-                        <Text className="text-brand-primary font-semibold">{params.selectedDate}</Text>
+                    <View style={styles.detailRow}>
+                        <Text style={styles.detailLabel}>Data</Text>
+                        <Text style={styles.detailValue}>{params.selectedDate}</Text>
                     </View>
-                    <View className="flex-row justify-between mb-2">
-                        <Text className="text-brand-secondary text-sm">Horário</Text>
-                        <Text className="text-brand-primary font-semibold">{params.selectedTime}</Text>
+                    <View style={styles.detailRow}>
+                        <Text style={styles.detailLabel}>Horário</Text>
+                        <Text style={styles.detailValue}>{params.selectedTime}</Text>
                     </View>
-                    <View className="flex-row justify-between">
-                        <Text className="text-brand-secondary text-sm">Duração</Text>
-                        <Text className="text-brand-primary font-semibold">{params.durationMinutes} min</Text>
+                    <View style={styles.detailRow}>
+                        <Text style={styles.detailLabel}>Duração</Text>
+                        <Text style={styles.detailValue}>{params.durationMinutes} min</Text>
                     </View>
                 </View>
 
                 {/* Pricing */}
-                <View className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 mb-6">
-                    <View className="flex-row justify-between mb-3">
-                        <Text className="text-brand-secondary text-base">Subtotal</Text>
-                        <Text className="text-brand-primary font-bold text-base">
-                            R$ {price.toFixed(2).replace('.', ',')}
-                        </Text>
+                <View style={[styles.card, styles.cardMargin]}>
+                    <View style={styles.detailRow}>
+                        <Text style={styles.priceLabel}>Subtotal</Text>
+                        <Text style={styles.priceValue}>R$ {price.toFixed(2).replace('.', ',')}</Text>
                     </View>
-                    <View className="flex-row justify-between pt-3 border-t border-slate-100">
-                        <Text className="text-brand-primary font-bold text-lg">Total a pagar</Text>
-                        <Text className="text-brand-accent font-bold text-xl">
-                            R$ {price.toFixed(2).replace('.', ',')}
-                        </Text>
+                    <View style={[styles.detailRow, styles.totalRow]}>
+                        <Text style={styles.totalLabel}>Total a pagar</Text>
+                        <Text style={styles.totalValue}>R$ {price.toFixed(2).replace('.', ',')}</Text>
                     </View>
                 </View>
 
-                {/* Security Info */}
-                <View className="flex-row items-start bg-slate-50 rounded-xl p-4 mb-10">
+                {/* Security */}
+                <View style={styles.securityCard}>
                     <ShieldCheck size={20} color="#10b981" />
-                    <View className="ml-3 flex-1">
-                        <Text className="text-brand-primary font-semibold text-sm">Pagamento Seguro</Text>
-                        <Text className="text-brand-secondary text-xs">
+                    <View style={{ marginLeft: 12, flex: 1 }}>
+                        <Text style={styles.securityTitle}>Pagamento Seguro</Text>
+                        <Text style={styles.securityText}>
                             Seus dados de pagamento são processados de forma criptografada pelo Stripe.
                         </Text>
                     </View>
                 </View>
             </ScrollView>
 
-            {/* Footer Button */}
-            <View className="p-6 pb-10 bg-white border-t border-slate-100">
+            {/* Footer */}
+            <View style={styles.footer}>
                 <TouchableOpacity
                     onPress={handlePay}
                     disabled={loading}
-                    className={`flex-row items-center justify-center rounded-2xl py-4 shadow-md ${loading ? 'bg-slate-300' : 'bg-brand-accent'
-                        }`}
+                    style={[styles.payButton, loading ? styles.payDisabled : styles.payActive]}
                 >
                     {loading ? (
                         <ActivityIndicator color="#ffffff" />
                     ) : (
                         <>
                             <CreditCard size={20} color="#ffffff" />
-                            <Text className="text-white font-bold text-lg ml-2">Pagar com Cartão</Text>
+                            <Text style={styles.payText}>Pagar com Cartão</Text>
                         </>
                     )}
                 </TouchableOpacity>
-                <View className="flex-row items-center justify-center mt-4">
+                <View style={styles.poweredRow}>
                     <Info size={14} color="#94a3b8" />
-                    <Text className="text-slate-400 text-xs ml-1 italic">
-                        Powered by Stripe
-                    </Text>
+                    <Text style={styles.poweredText}>Powered by Stripe</Text>
                 </View>
             </View>
         </View>
     );
 }
+
+const COLORS = {
+    primary: '#0f172a',
+    secondary: '#475569',
+    accent: '#2563eb',
+    background: '#f8fafc',
+    surface: '#ffffff',
+    border: '#e2e8f0',
+};
+
+const styles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.background },
+    loadingContainer: { flex: 1, backgroundColor: COLORS.background, justifyContent: 'center', alignItems: 'center' },
+    loadingText: { color: COLORS.secondary, marginTop: 16 },
+    header: { backgroundColor: COLORS.primary, paddingHorizontal: 24, paddingTop: 56, paddingBottom: 20, flexDirection: 'row', alignItems: 'center' },
+    backButton: { marginRight: 12 },
+    headerTitle: { color: '#ffffff', fontSize: 20, fontWeight: 'bold' },
+    scroll: { flex: 1, padding: 24 },
+    card: { backgroundColor: COLORS.surface, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: COLORS.border },
+    cardMargin: { marginTop: 24 },
+    cardLabel: { color: COLORS.secondary, fontSize: 11, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
+    serviceTitle: { color: COLORS.primary, fontSize: 18, fontWeight: 'bold', marginBottom: 4 },
+    companyText: { color: COLORS.secondary, fontSize: 14, marginBottom: 16 },
+    detailRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+    detailLabel: { color: COLORS.secondary, fontSize: 14 },
+    detailValue: { color: COLORS.primary, fontWeight: '600', fontSize: 14 },
+    priceLabel: { color: COLORS.secondary, fontSize: 16 },
+    priceValue: { color: COLORS.primary, fontWeight: 'bold', fontSize: 16 },
+    totalRow: { borderTopWidth: 1, borderColor: COLORS.border, paddingTop: 12, marginTop: 4 },
+    totalLabel: { color: COLORS.primary, fontWeight: 'bold', fontSize: 18 },
+    totalValue: { color: COLORS.accent, fontWeight: 'bold', fontSize: 20 },
+    securityCard: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: '#f8fafc', borderRadius: 12, padding: 16, marginTop: 24, marginBottom: 40 },
+    securityTitle: { color: COLORS.primary, fontWeight: '600', fontSize: 14 },
+    securityText: { color: COLORS.secondary, fontSize: 12, marginTop: 2 },
+    footer: { backgroundColor: COLORS.surface, borderTopWidth: 1, borderColor: COLORS.border, padding: 24, paddingBottom: 40 },
+    payButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 16, paddingVertical: 18, gap: 8 },
+    payActive: { backgroundColor: COLORS.accent },
+    payDisabled: { backgroundColor: '#cbd5e1' },
+    payText: { color: '#ffffff', fontWeight: 'bold', fontSize: 18 },
+    poweredRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 16, gap: 4 },
+    poweredText: { color: '#94a3b8', fontSize: 12, fontStyle: 'italic' },
+});

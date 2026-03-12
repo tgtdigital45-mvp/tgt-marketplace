@@ -29,12 +29,24 @@ export default function StorefrontScreen() {
     const [isPublic, setIsPublic] = useState(true);
     const [portfolio, setPortfolio] = useState<any[]>([]);
 
+    // Novos campos para paridade com Web
+    const [cep, setCep] = useState('');
+    const [street, setStreet] = useState('');
+    const [number, setNumber] = useState('');
+    const [district, setDistrict] = useState('');
+    const [city, setCity] = useState('');
+    const [state, setState] = useState('');
+    const [coverageRadiusKm, setCoverageRadiusKm] = useState('30');
+    const [coverageNeighborhoods, setCoverageNeighborhoods] = useState<string[]>([]);
+    const [termsAndPolicies, setTermsAndPolicies] = useState('');
+    const [neighborhoodInput, setNeighborhoodInput] = useState('');
+
     const fetchCompany = useCallback(async () => {
         if (!user) return;
         setLoading(true);
         setError(false);
         try {
-            const { data, error: fetchError } = await supabase.from('companies').select('id, company_name, logo_url, cover_url, is_public, portfolio, description').eq('owner_id', user.id).maybeSingle();
+            const { data, error: fetchError } = await supabase.from('companies').select('id, company_name, logo_url, cover_url, is_public, portfolio, description, address, coverage_radius_km, coverage_neighborhoods, terms_and_policies').eq('owner_id', user.id).maybeSingle();
             if (fetchError) throw fetchError;
             if (data) {
                 setCompany(data);
@@ -44,6 +56,18 @@ export default function StorefrontScreen() {
                 setCoverUrl(data.cover_url);
                 setIsPublic(data.is_public !== false);
                 setPortfolio(data.portfolio || []);
+
+                if (data.address) {
+                    setCep(data.address.cep || '');
+                    setStreet(data.address.street || '');
+                    setNumber(data.address.number || '');
+                    setDistrict(data.address.district || '');
+                    setCity(data.address.city || '');
+                    setState(data.address.state || '');
+                }
+                setCoverageRadiusKm(String(data.coverage_radius_km || 30));
+                setCoverageNeighborhoods(data.coverage_neighborhoods || []);
+                setTermsAndPolicies(data.terms_and_policies || '');
             }
         } catch (e) {
             logger.error('Fetch Storefront Error:', e);
@@ -131,10 +155,43 @@ export default function StorefrontScreen() {
         setSaving(true);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         try {
+            // Geocoding logic
+            let lat = company.address?.latitude;
+            let lng = company.address?.longitude;
+
+            try {
+                const query = `${street}, ${number} - ${district}, ${city} - ${state}, Brasil`;
+                const encodedQuery = encodeURIComponent(query);
+                const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodedQuery}&limit=1`;
+                const geoRes = await fetch(geoUrl, { headers: { 'User-Agent': 'CONTRATTO_MOBILE/1.0' } });
+                if (geoRes.ok) {
+                    const geoData = await geoRes.json();
+                    if (geoData && geoData.length > 0) {
+                        lat = parseFloat(geoData[0].lat);
+                        lng = parseFloat(geoData[0].lon);
+                    }
+                }
+            } catch (err) {
+                logger.error('Geocoding error:', err);
+            }
+
             await supabase.from('companies').update({
                 company_name: businessName,
                 description: description,
-                is_public: isPublic
+                is_public: isPublic,
+                address: {
+                    cep,
+                    street,
+                    number,
+                    district,
+                    city,
+                    state,
+                    latitude: lat,
+                    longitude: lng
+                },
+                coverage_radius_km: parseInt(coverageRadiusKm) || 30,
+                coverage_neighborhoods: coverageNeighborhoods,
+                terms_and_policies: termsAndPolicies
             }).eq('id', company.id);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             Alert.alert('Sucesso', 'Perfil da vitrine atualizado!');
@@ -243,6 +300,137 @@ export default function StorefrontScreen() {
                     </View>
                 </FadeInView>
 
+                <FadeInView delay={400} translateY={20}>
+                    <View style={styles.card}>
+                        <Text style={styles.cardTitle}>Endereço & Logística</Text>
+                        <Text style={styles.cardSubtitle}>Localização base e área de atendimento</Text>
+                        <View style={styles.divider} />
+
+                        <Text style={styles.inputLabel}>CEP</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={cep}
+                            onChangeText={setCep}
+                            placeholder="00000-000"
+                            keyboardType="numeric"
+                        />
+
+                        <View style={styles.row}>
+                            <View style={{ flex: 3 }}>
+                                <Text style={styles.inputLabel}>RUA/AVENIDA</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={street}
+                                    onChangeText={setStreet}
+                                    placeholder="Nome da rua"
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginLeft: 12 }}>
+                                <Text style={styles.inputLabel}>Nº</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={number}
+                                    onChangeText={setNumber}
+                                    placeholder="123"
+                                />
+                            </View>
+                        </View>
+
+                        <Text style={styles.inputLabel}>BAIRRO</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={district}
+                            onChangeText={setDistrict}
+                            placeholder="Seu bairro"
+                        />
+
+                        <View style={styles.row}>
+                            <View style={{ flex: 2 }}>
+                                <Text style={styles.inputLabel}>CIDADE</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={city}
+                                    onChangeText={setCity}
+                                    placeholder="Sua cidade"
+                                />
+                            </View>
+                            <View style={{ flex: 1, marginLeft: 12 }}>
+                                <Text style={styles.inputLabel}>UF</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={state}
+                                    onChangeText={setState}
+                                    placeholder="SP"
+                                    maxLength={2}
+                                    autoCapitalize="characters"
+                                />
+                            </View>
+                        </View>
+
+                        <View style={styles.divider} />
+                        
+                        <Text style={styles.cardTitle}>Atendimento</Text>
+                        <Text style={styles.cardSubtitle}>Defina até onde você atende</Text>
+
+                        <Text style={[styles.inputLabel, { marginTop: 20 }]}>RAIO DE COBERTURA (KM)</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={coverageRadiusKm}
+                            onChangeText={setCoverageRadiusKm}
+                            placeholder="30"
+                            keyboardType="numeric"
+                        />
+
+                        <Text style={styles.inputLabel}>ADICIONAR BAIRROS ESPECÍFICOS</Text>
+                        <View style={styles.row}>
+                            <TextInput
+                                style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                                value={neighborhoodInput}
+                                onChangeText={setNeighborhoodInput}
+                                placeholder="Ex: Centro"
+                            />
+                            <TouchableOpacity 
+                                style={styles.addSmallBtn} 
+                                onPress={() => {
+                                    if (neighborhoodInput.trim() && !coverageNeighborhoods.includes(neighborhoodInput.trim())) {
+                                        setCoverageNeighborhoods([...coverageNeighborhoods, neighborhoodInput.trim()]);
+                                        setNeighborhoodInput('');
+                                    }
+                                }}
+                            >
+                                <Ionicons name="add" size={24} color={Colors.white} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.tagContainer}>
+                            {coverageNeighborhoods.map((nb) => (
+                                <View key={nb} style={styles.tag}>
+                                    <Text style={styles.tagText}>{nb}</Text>
+                                    <TouchableOpacity onPress={() => setCoverageNeighborhoods(coverageNeighborhoods.filter(n => n !== nb))}>
+                                        <Ionicons name="close-circle" size={16} color={Colors.textTertiary} />
+                                    </TouchableOpacity>
+                                </View>
+                            ))}
+                        </View>
+                    </View>
+                </FadeInView>
+
+                <FadeInView delay={500} translateY={20}>
+                    <View style={styles.card}>
+                        <Text style={styles.cardTitle}>Termos e Políticas</Text>
+                        <Text style={styles.cardSubtitle}>Regras, garantias e condições do serviço</Text>
+                        
+                        <TextInput
+                            style={[styles.input, styles.textArea, { marginTop: 20 }]}
+                            value={termsAndPolicies}
+                            onChangeText={setTermsAndPolicies}
+                            multiline
+                            numberOfLines={6}
+                            placeholder="Descreva suas políticas de cancelamento, garantia, etc..."
+                        />
+                    </View>
+                </FadeInView>
+
                 <FadeInView delay={500} translateY={20}>
                     <View style={styles.card}>
                         <View style={styles.sectionHeader}>
@@ -315,6 +503,12 @@ const styles = StyleSheet.create({
     inputLabel: { fontSize: 11, fontWeight: '900', color: Colors.textTertiary, marginBottom: 10, paddingLeft: 4, letterSpacing: 1 },
     input: { backgroundColor: Colors.surface, borderRadius: 20, padding: 18, marginBottom: 24, ...Typography.bodySmall, color: Colors.text, fontWeight: '700', borderWidth: 1, borderColor: Colors.borderLight },
     textArea: { height: 120, textAlignVertical: 'top' },
+    row: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
+    divider: { height: 1, backgroundColor: Colors.divider, marginVertical: 24 },
+    addSmallBtn: { width: 56, height: 56, borderRadius: 20, backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center', marginLeft: 12 },
+    tagContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+    tag: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12, gap: 6, borderWidth: 1, borderColor: Colors.borderLight },
+    tagText: { fontSize: 12, fontWeight: '700', color: Colors.textSecondary },
 
     saveBtn: { backgroundColor: Colors.primary, paddingVertical: 20, borderRadius: 24, alignItems: 'center', ...Shadows.lg },
     saveBtnText: { color: Colors.white, fontWeight: '900', fontSize: 17 },

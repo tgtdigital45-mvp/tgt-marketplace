@@ -112,12 +112,12 @@ async function searchCompaniesSimple(
         .from('companies')
         .select(`
             id, business_name, bio, logo_url, cover_url, address_city, address_state,
-            services(category_id)
+            services(category_tag)
         `)
         .ilike('business_name', `%${term.trim()}%`);
 
     if (categoryId) {
-        query = query.eq('services.category_id', categoryId);
+        query = query.eq('services.category_tag', categoryId);
     }
 
     const { data, error } = await query.limit(limit);
