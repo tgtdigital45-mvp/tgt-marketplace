@@ -18,11 +18,16 @@ type Service = {
     title: string;
     description: string | null;
     price: number;
-    price_type: 'fixed' | 'budget';
+    price_type: 'fixed' | 'budget' | 'packages';
     location_type: string;
     estimated_duration: number | null;
     duration_unit: 'minutes' | 'hours' | 'days';
     service_forms?: { id: string; questions: string[] }[];
+    packages?: {
+        basic: any;
+        standard: any;
+        premium: any;
+    };
 };
 
 const LOCATION_OPTIONS = [
@@ -45,11 +50,19 @@ export default function ManageServicesScreen() {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [price, setPrice] = useState('');
-    const [priceType, setPriceType] = useState<'fixed' | 'budget'>('fixed');
+    const [priceType, setPriceType] = useState<'fixed' | 'budget' | 'packages'>('fixed');
     const [locationType, setLocationType] = useState('in_store');
     const [duration, setDuration] = useState('');
     const [durationUnit, setDurationUnit] = useState<'minutes' | 'hours' | 'days'>('minutes');
     const [questions, setQuestions] = useState<string[]>([]);
+    
+    // Estado para Pacotes
+    const [activePackageTab, setActivePackageTab] = useState<'basic' | 'standard' | 'premium'>('basic');
+    const [packageData, setPackageData] = useState({
+        basic: { name: 'Básico', price: '', delivery_time: '7', description: '' },
+        standard: { name: 'Padrão', price: '', delivery_time: '14', description: '' },
+        premium: { name: 'Premium', price: '', delivery_time: '21', description: '' }
+    });
 
     const fetchServices = useCallback(async () => {
         if (!user) return;
@@ -79,6 +92,12 @@ export default function ManageServicesScreen() {
         setDuration(''); setEditingId(null);
         setDurationUnit('minutes');
         setQuestions([]);
+        setActivePackageTab('basic');
+        setPackageData({
+            basic: { name: 'Básico', price: '', delivery_time: '7', description: '' },
+            standard: { name: 'Padrão', price: '', delivery_time: '14', description: '' },
+            premium: { name: 'Premium', price: '', delivery_time: '21', description: '' }
+        });
     };
 
     const openAddModal = () => {
@@ -98,6 +117,29 @@ export default function ManageServicesScreen() {
         setDurationUnit(svc.duration_unit || 'minutes');
         setLocationType(svc.location_type);
         setQuestions(svc.service_forms && svc.service_forms.length > 0 ? svc.service_forms[0].questions : []);
+        
+        if (svc.packages) {
+            setPackageData({
+                basic: { 
+                    name: svc.packages.basic?.name || 'Básico', 
+                    price: svc.packages.basic?.price ? String(svc.packages.basic.price) : '', 
+                    delivery_time: svc.packages.basic?.delivery_time ? String(svc.packages.basic.delivery_time) : '7', 
+                    description: svc.packages.basic?.description || '' 
+                },
+                standard: { 
+                    name: svc.packages.standard?.name || 'Padrão', 
+                    price: svc.packages.standard?.price ? String(svc.packages.standard.price) : '', 
+                    delivery_time: svc.packages.standard?.delivery_time ? String(svc.packages.standard.delivery_time) : '14', 
+                    description: svc.packages.standard?.description || '' 
+                },
+                premium: { 
+                    name: svc.packages.premium?.name || 'Premium', 
+                    price: svc.packages.premium?.price ? String(svc.packages.premium.price) : '', 
+                    delivery_time: svc.packages.premium?.delivery_time ? String(svc.packages.premium.delivery_time) : '21', 
+                    description: svc.packages.premium?.description || '' 
+                }
+            });
+        }
         setShowModal(true);
     };
 
@@ -144,6 +186,11 @@ export default function ManageServicesScreen() {
                 location_type: locationType,
                 estimated_duration: duration ? Number(duration) : null,
                 duration_unit: durationUnit,
+                packages: priceType === 'packages' ? {
+                    basic: { ...packageData.basic, price: Number(packageData.basic.price), delivery_time: Number(packageData.basic.delivery_time) },
+                    standard: { ...packageData.standard, price: Number(packageData.standard.price), delivery_time: Number(packageData.standard.delivery_time) },
+                    premium: { ...packageData.premium, price: Number(packageData.premium.price), delivery_time: Number(packageData.premium.delivery_time) }
+                } : null
             };
 
             let serviceId = editingId;
@@ -285,7 +332,9 @@ export default function ManageServicesScreen() {
                                     </Text>
                                 </View>
                                 <Text style={styles.priceText}>
-                                    {item.price_type === 'fixed' ? formatCurrency(item.price) : 'Sob Orçamento'}
+                                    {item.price_type === 'fixed' ? formatCurrency(item.price) : 
+                                     item.price_type === 'packages' ? `A partir de ${formatCurrency(Number(item.packages?.basic?.price || 0))}` : 
+                                     'Sob Orçamento'}
                                 </Text>
                             </View>
                         </TouchableOpacity>
@@ -340,6 +389,12 @@ export default function ManageServicesScreen() {
                                         >
                                             <Text style={[styles.typeBtnText, priceType === 'budget' && styles.typeBtnTextActive]}>Orçamento</Text>
                                         </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={[styles.typeBtn, priceType === 'packages' && styles.typeBtnActive]}
+                                            onPress={() => setPriceType('packages')}
+                                        >
+                                            <Text style={[styles.typeBtnText, priceType === 'packages' && styles.typeBtnTextActive]}>Pacotes</Text>
+                                        </TouchableOpacity>
                                     </View>
                                 </View>
                                 {priceType === 'fixed' && (
@@ -355,6 +410,63 @@ export default function ManageServicesScreen() {
                                     </View>
                                 )}
                             </View>
+
+                            {priceType === 'packages' && (
+                                <View style={styles.packagesContainer}>
+                                    <View style={styles.packageTabs}>
+                                        {(['basic', 'standard', 'premium'] as const).map(tab => (
+                                            <TouchableOpacity 
+                                                key={tab}
+                                                style={[styles.packageTab, activePackageTab === tab && styles.packageTabActive]}
+                                                onPress={() => setActivePackageTab(tab)}
+                                            >
+                                                <Text style={[styles.packageTabText, activePackageTab === tab && styles.packageTabTextActive]}>
+                                                    {tab === 'basic' ? 'Básico' : tab === 'standard' ? 'Padrão' : 'Premium'}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+
+                                    <View style={styles.packageForm}>
+                                        <Text style={styles.inputLabel}>NOME DO PACOTE</Text>
+                                        <TextInput
+                                            style={styles.packageInput}
+                                            value={packageData[activePackageTab].name}
+                                            onChangeText={(text) => setPackageData({...packageData, [activePackageTab]: {...packageData[activePackageTab], name: text}})}
+                                        />
+
+                                        <View style={styles.row}>
+                                            <View style={{ flex: 1 }}>
+                                                <Text style={styles.inputLabel}>PREÇO (R$)</Text>
+                                                <TextInput
+                                                    style={styles.packageInput}
+                                                    value={packageData[activePackageTab].price}
+                                                    onChangeText={(text) => setPackageData({...packageData, [activePackageTab]: {...packageData[activePackageTab], price: text}})}
+                                                    keyboardType="numeric"
+                                                />
+                                            </View>
+                                            <View style={{ flex: 1, marginLeft: 12 }}>
+                                                <Text style={styles.inputLabel}>PRAZO (DIAS)</Text>
+                                                <TextInput
+                                                    style={styles.packageInput}
+                                                    value={packageData[activePackageTab].delivery_time}
+                                                    onChangeText={(text) => setPackageData({...packageData, [activePackageTab]: {...packageData[activePackageTab], delivery_time: text}})}
+                                                    keyboardType="numeric"
+                                                />
+                                            </View>
+                                        </View>
+
+                                        <Text style={styles.inputLabel}>O QUE ESTÁ INCLUSO?</Text>
+                                        <TextInput
+                                            style={[styles.packageInput, {height: 80}]}
+                                            value={packageData[activePackageTab].description}
+                                            onChangeText={(text) => setPackageData({...packageData, [activePackageTab]: {...packageData[activePackageTab], description: text}})}
+                                            multiline
+                                            placeholder="Detalhes deste pacote..."
+                                        />
+                                    </View>
+                                </View>
+                            )}
 
                             {priceType === 'budget' && (
                                 <View style={styles.questionsContainer}>
@@ -499,5 +611,14 @@ const styles = StyleSheet.create({
     removeQuestionBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFF5F5', justifyContent: 'center', alignItems: 'center' },
 
     saveBtn: { backgroundColor: Colors.primary, paddingVertical: 20, borderRadius: 24, alignItems: 'center', ...Shadows.lg },
-    saveBtnText: { color: Colors.white, fontWeight: '900', fontSize: 17 }
+    saveBtnText: { color: Colors.white, fontWeight: '900', fontSize: 17 },
+
+    packagesContainer: { marginBottom: 24, backgroundColor: Colors.surface, borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: Colors.borderLight },
+    packageTabs: { flexDirection: 'row', backgroundColor: Colors.borderLight + '40', padding: 4 },
+    packageTab: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 20 },
+    packageTabActive: { backgroundColor: Colors.white, ...Shadows.sm },
+    packageTabText: { fontSize: 12, fontWeight: '800', color: Colors.textTertiary },
+    packageTabTextActive: { color: Colors.primary },
+    packageForm: { padding: 20 },
+    packageInput: { backgroundColor: Colors.white, borderRadius: 16, padding: 14, marginBottom: 16, ...Typography.bodySmall, color: Colors.text, fontWeight: '700', borderWidth: 1, borderColor: Colors.borderLight },
 });
