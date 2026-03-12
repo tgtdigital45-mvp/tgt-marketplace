@@ -55,22 +55,24 @@ const PricingCard = ({ packages, onCheckout, canCheckout, checkoutDisabledReason
 
     return (
         <div className="bg-white border border-gray-200 rounded-2xl shadow-xl sticky top-24 overflow-hidden transition-all duration-300">
-            {/* Tabs */}
-            <div className="flex border-b border-gray-100 bg-gray-50">
-                {tiers.map(tier => (
-                    <button
-                        key={tier.id}
-                        onClick={() => setSelectedTier(tier.id)}
-                        className={`flex-1 py-3 text-sm font-semibold transition-all relative
-                            ${selectedTier === tier.id
-                                ? 'text-gray-900 bg-white shadow-sm'
-                                : 'text-gray-500 hover:text-gray-700'
-                            }`}
-                    >
-                        {tier.label}
-                    </button>
-                ))}
-            </div>
+            {/* Tabs - Hidden for Quotes */}
+            {!requiresQuote && (
+                <div className="flex border-b border-gray-100 bg-gray-50">
+                    {tiers.map(tier => (
+                        <button
+                            key={tier.id}
+                            onClick={() => setSelectedTier(tier.id)}
+                            className={`flex-1 py-3 text-sm font-semibold transition-all relative
+                                ${selectedTier === tier.id
+                                    ? 'text-gray-900 bg-white shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-700'
+                                }`}
+                        >
+                            {tier.label}
+                        </button>
+                    ))}
+                </div>
+            )}
 
             <div className="p-6 space-y-6">
                 <div className="flex items-baseline justify-between mb-1">
@@ -83,7 +85,9 @@ const PricingCard = ({ packages, onCheckout, canCheckout, checkoutDisabledReason
                 </div>
 
                 <p className="text-sm text-gray-600 leading-relaxed min-h-[40px]">
-                    {currentPackage.description}
+                    {requiresQuote 
+                        ? "Este serviço requer um orçamento personalizado. Clique no botão abaixo para preencher o formulário e enviar sua necessidade."
+                        : currentPackage.description}
                 </p>
 
                 <div className="flex items-center justify-between text-sm font-medium text-gray-700 bg-gray-50 p-3 rounded-lg">
@@ -98,7 +102,7 @@ const PricingCard = ({ packages, onCheckout, canCheckout, checkoutDisabledReason
                     </div>
                 </div>
 
-                {currentPackage.features && (
+                {!requiresQuote && currentPackage.features && (
                     <ul className="space-y-2 pt-2">
                         {currentPackage.features.map((feature: string, idx: number) => (
                             <li key={idx} className="flex items-start text-sm text-gray-600">
@@ -124,9 +128,11 @@ const PricingCard = ({ packages, onCheckout, canCheckout, checkoutDisabledReason
                     {requiresQuote ? 'Solicitar Orçamento' : `Continuar (${formatCurrency(currentPackage.price || 0)})`}
                 </Button>
 
-                <div className="text-center">
-                    <button onClick={() => document.getElementById('compare-packages')?.scrollIntoView({ behavior: 'smooth' })} className="text-xs text-gray-500 hover:text-brand-primary underline transition-colors">Comparar pacotes</button>
-                </div>
+                {!requiresQuote && (
+                    <div className="text-center">
+                        <button onClick={() => document.getElementById('compare-packages')?.scrollIntoView({ behavior: 'smooth' })} className="text-xs text-gray-500 hover:text-brand-primary underline transition-colors">Comparar pacotes</button>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -381,19 +387,21 @@ const ServiceDetailsPage = () => {
                         </div>
 
                         {/* 5 & 8. Plans & Comparison */}
-                        <div id="compare-packages" className="space-y-6">
-                            <h2 className="font-display text-2xl font-bold text-gray-900">Compare os Pacotes</h2>
-                            <p className="text-gray-600">Escolha o plano ideal para a sua necessidade.</p>
+                        {!service.requires_quote && (
+                            <div id="compare-packages" className="space-y-6">
+                                <h2 className="font-display text-2xl font-bold text-gray-900">Compare os Pacotes</h2>
+                                <p className="text-gray-600">Escolha o plano ideal para a sua necessidade.</p>
 
-                            {service.packages && (
-                                <ServiceComparisonTable
-                                    packages={service.packages}
-                                    onSelect={(tier) => handleCheckout(tier)}
-                                    requiresQuote={service.requires_quote}
-                                    selectedTier={selectedTier || undefined}
-                                />
-                            )}
-                        </div>
+                                {service.packages && (
+                                    <ServiceComparisonTable
+                                        packages={service.packages}
+                                        onSelect={(tier) => handleCheckout(tier)}
+                                        requiresQuote={service.requires_quote}
+                                        selectedTier={selectedTier || undefined}
+                                    />
+                                )}
+                            </div>
+                        )}
 
                         {/* 6. Booking Calendar Section (If direct booking & availability enabled) */}
                         {!service.requires_quote && service.use_company_availability && company && (

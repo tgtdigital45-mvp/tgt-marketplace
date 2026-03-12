@@ -7,113 +7,105 @@ import Badge from '@/components/ui/Badge';
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
 import RescheduleModal from '@/components/booking/RescheduleModal';
 import KanbanCard from '@/components/dashboard/KanbanCard';
-interface Booking {
+import OrderVerificationModal from '@/components/dashboard/OrderVerificationModal';
+import { Play, CheckCircle2, Calendar, User, Clock, MoreHorizontal, LayoutGrid, List } from 'lucide-react';
+
+interface Order {
     id: string;
-    client_id: string;
+    buyer_id: string;
     service_title: string;
-    service_price: number;
-    booking_date: string;
-    booking_time: string;
-    notes: string;
-    status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'pending_client_approval';
+    price: number;
+    scheduled_for: string;
+    notes?: string;
+    status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled' | 'pending_client_approval';
     created_at: string;
-    client_name?: string; // Fetched optionally
-    client_email?: string;
+    buyer_name?: string;
+    buyer_email?: string;
 }
 
 const DashboardAgendamentosPage: React.FC = () => {
     const { user } = useAuth();
     const { addToast } = useToast();
-    const [bookings, setBookings] = useState<Booking[]>([]);
+    const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed'>('all');
+    const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'in_progress' | 'completed'>('all');
     const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
-    const [selectedBookingForReschedule, setSelectedBookingForReschedule] = useState<Booking | null>(null);
+    
+    // Modals State
+    const [selectedOrderForReschedule, setSelectedOrderForReschedule] = useState<Order | null>(null);
+    const [verificationModal, setVerificationModal] = useState<{
+        isOpen: boolean;
+        order: Order | null;
+        targetStatus: 'in_progress' | 'completed';
+    }>({ isOpen: false, order: null, targetStatus: 'in_progress' });
+
+    const fetchOrders = async () => {
+        if (!user) return;
+        setLoading(true);
+        try {
+            const { data: ordersData, error: ordersError } = await supabase
+                .from('orders')
+                .select('*')
+                .eq('seller_id', user.id)
+                .order('created_at', { ascending: false });
+
+            if (ordersError) throw ordersError;
+
+            const buyerIds = [...new Set(ordersData?.map(o => o.buyer_id) || [])];
+            const profilesMap: Record<string, any> = {};
+
+            if (buyerIds.length > 0) {
+                const { data: profiles, error: profilesError } = await supabase
+                    .from('profiles')
+                    .select('id, full_name, email')
+                    .in('id', buyerIds);
+
+                if (!profilesError && profiles) {
+                    profiles.forEach(p => profilesMap[p.id] = p);
+                }
+            }
+
+            const enrichedOrders = ordersData?.map((o) => {
+                const profile = profilesMap[o.buyer_id];
+                return {
+                    ...o,
+                    buyer_name: profile?.full_name || 'Cliente (s/ perfil)',
+                    buyer_email: profile?.email || ''
+                };
+            }) || [];
+
+            setOrders(enrichedOrders);
+        } catch (err) {
+            console.error("Error fetching bookings:", err);
+            addToast("Erro ao carregar agendamentos.", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        if (!user) return;
-
-        const fetchBookings = async () => {
-            setLoading(true);
-            try {
-                // 1. Get Company ID
-                const { data: companyData, error: companyError } = await supabase
-                    .from('companies')
-                    .select('id')
-                    .eq('profile_id', user.id)
-                    .single();
-
-                if (companyError) throw companyError;
-
-                // 2. Fetch Bookings
-                // Ideally we join with profiles to get client name
-                // Supabase join syntax: select('*, client:client_id(full_name, email)')
-                const { data: bookingsData, error: bookingsError } = await supabase
-                    .from('bookings')
-                    .select('*')
-                    .eq('company_id', companyData.id)
-                    .order('created_at', { ascending: false });
-
-                if (bookingsError) throw bookingsError;
-
-                // 3. Fetch Client Profiles
-                const clientIds = [...new Set(bookingsData?.map(b => b.client_id) || [])];
-
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const profilesMap: Record<string, any> = {};
-
-                if (clientIds.length > 0) {
-                    const { data: profiles, error: profilesError } = await supabase
-                        .from('profiles')
-                        .select('id, full_name, email')
-                        .in('id', clientIds);
-
-                    if (!profilesError && profiles) {
-                        profiles.forEach(p => profilesMap[p.id] = p);
-                    }
-                }
-
-                const enrichedBookings = bookingsData?.map((b) => {
-                    const profile = profilesMap[b.client_id];
-                    return {
-                        ...b,
-                        client_name: profile?.full_name || 'Cliente (s/ perfil)',
-                        client_email: profile?.email || ''
-                    };
-                }) || [];
-
-                setBookings(enrichedBookings);
-
-            } catch (err) {
-                console.error("Error fetching bookings:", err);
-                addToast("Erro ao carregar agendamentos.", "error");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchBookings();
-    }, [user, addToast]);
+        fetchOrders();
+    }, [user]);
 
     const handleStatusUpdate = async (id: string, newStatus: string) => {
         try {
             const { error } = await supabase
-                .from('bookings')
+                .from('orders')
                 .update({ status: newStatus })
                 .eq('id', id);
 
             if (error) throw error;
 
-            setBookings(prev => prev.map(b => b.id === id ? { ...b, status: newStatus as Booking['status'] } : b));
+            setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus as Order['status'] } : o));
+            
+            const messages: Record<string, string> = {
+                accepted: 'Agendamento aceito com sucesso!',
+                cancelled: 'Agendamento cancelado.',
+                completed: 'Serviço concluído com sucesso!',
+                in_progress: 'Serviço iniciado!'
+            };
 
-            // Show nicer toast messages based on action
-            if (newStatus === 'confirmed') {
-                addToast('Agendamento aceito com sucesso! Entre em contato com o cliente.', 'success');
-            } else if (newStatus === 'cancelled') {
-                addToast('Agendamento recusado.', 'info');
-            } else if (newStatus === 'completed') {
-                addToast('Serviço marcado como concluído!', 'success');
-            }
+            addToast(messages[newStatus] || 'Status atualizado!', 'success');
         } catch (err) {
             console.error(err);
             addToast("Erro ao atualizar status.", "error");
@@ -121,202 +113,265 @@ const DashboardAgendamentosPage: React.FC = () => {
     };
 
     const handleProposeSchedule = async (date: string, time: string) => {
-        if (!selectedBookingForReschedule) return;
+        if (!selectedOrderForReschedule) return;
         try {
+            const scheduledFor = new Date(`${date}T${time}`).toISOString();
             const proposalExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
             const { error } = await supabase
-                .from('bookings')
+                .from('orders')
                 .update({
                     status: 'pending_client_approval',
-                    proposed_date: date,
-                    proposed_time: time,
+                    scheduled_for: scheduledFor,
                     proposal_expires_at: proposalExpiresAt
                 })
-                .eq('id', selectedBookingForReschedule.id);
+                .eq('id', selectedOrderForReschedule.id);
 
             if (error) throw error;
 
-            setBookings(prev => prev.map(b => b.id === selectedBookingForReschedule.id ? { ...b, status: 'pending_client_approval' } : b));
-            addToast('Proposta enviada ao cliente com sucesso!', 'success');
-            setSelectedBookingForReschedule(null);
+            setOrders(prev => prev.map(o => o.id === selectedOrderForReschedule.id ? { ...o, status: 'pending_client_approval', scheduled_for: scheduledFor } : o));
+            addToast('Proposta enviada ao cliente!', 'success');
+            setSelectedOrderForReschedule(null);
         } catch (err) {
             console.error(err);
             addToast("Erro ao enviar proposta.", "error");
         }
     };
 
-    const filteredBookings = filter === 'all'
-        ? bookings
-        : bookings.filter(b => b.status === filter);
+    const handleVerify = async (orderId: string, status: 'in_progress' | 'completed') => {
+        await handleStatusUpdate(orderId, status);
+    };
 
-    const getStatusColor = (status: string) => {
+    const filteredOrders = filter === 'all'
+        ? orders
+        : orders.filter(o => o.status === filter);
+
+    const getStatusVariant = (status: string) => {
         switch (status) {
             case 'pending': return 'warning';
-            case 'pending_client_approval': return 'warning';
-            case 'confirmed': return 'success';
-            case 'cancelled': return 'danger';
-            case 'completed': return 'info';
+            case 'pending_client_approval': return 'secondary';
+            case 'accepted': return 'info';
+            case 'in_progress': return 'primary';
+            case 'completed': return 'success';
+            case 'cancelled':
+            case 'canceled': return 'danger';
             default: return 'info';
         }
     };
 
     const getStatusLabel = (status: string) => {
-        switch (status) {
-            case 'pending': return 'Pendente';
-            case 'pending_client_approval': return 'Aguardando Cliente';
-            case 'confirmed': return 'Confirmado';
-            case 'cancelled': return 'Cancelado';
-            case 'completed': return 'Concluído';
-            default: return status;
-        }
+        const labels: Record<string, string> = {
+            pending: 'Pendente',
+            pending_client_approval: 'Aguardando Cliente',
+            accepted: 'Aguardando Início',
+            in_progress: 'Em Andamento',
+            completed: 'Concluído',
+            cancelled: 'Cancelado',
+            canceled: 'Cancelado'
+        };
+        return labels[status] || status;
     };
 
     const KANBAN_COLUMNS = [
-        { key: 'pending', label: 'Pendente', color: 'bg-yellow-50 border-yellow-200' },
-        { key: 'confirmed', label: 'Confirmado', color: 'bg-blue-50 border-blue-200' },
-        { key: 'in_progress', label: 'Em Andamento', color: 'bg-purple-50 border-purple-200' },
-        { key: 'completed', label: 'Concluído', color: 'bg-green-50 border-green-200' },
-        { key: 'cancelled', label: 'Cancelado', color: 'bg-red-50 border-red-200' },
+        { key: 'pending', label: 'Pendentes', color: 'bg-amber-50/50 border-amber-100' },
+        { key: 'accepted', label: 'Confirmados', color: 'bg-blue-50/50 border-blue-100' },
+        { key: 'in_progress', label: 'Em Andamento', color: 'bg-primary-50/30 border-primary-100' },
+        { key: 'completed', label: 'Concluídos', color: 'bg-emerald-50/50 border-emerald-100' },
     ];
 
     return (
-        <div className="space-y-6 p-6">
-            <div className="flex justify-between items-center flex-wrap gap-3">
+        <div className="space-y-8 p-8 max-w-[1600px] mx-auto animate-in fade-in duration-700">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Agendamentos</h2>
-                    <p className="text-gray-500">Gerencie as solicitações de agendamento recebidas.</p>
+                    <h2 className="text-4xl font-black text-gray-900 tracking-tight">Meus Agendamentos</h2>
+                    <p className="text-gray-500 mt-1 font-medium italic">Gerencie o fluxo de entrega dos seus serviços.</p>
                 </div>
-                {/* View toggle */}
-                <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+                
+                <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-[24px] border border-gray-100 shadow-sm">
                     <button
                         onClick={() => setViewMode('list')}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'list' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                        className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black uppercase tracking-widest transition-all ${viewMode === 'list' ? 'bg-white shadow-md text-primary-600' : 'text-gray-400 hover:text-gray-600'}`}
                     >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
+                        <List className="w-4 h-4" />
                         Lista
                     </button>
                     <button
                         onClick={() => setViewMode('kanban')}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'kanban' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                        className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black uppercase tracking-widest transition-all ${viewMode === 'kanban' ? 'bg-white shadow-md text-primary-600' : 'text-gray-400 hover:text-gray-600'}`}
                     >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" /></svg>
+                        <LayoutGrid className="w-4 h-4" />
                         Kanban
                     </button>
                 </div>
             </div>
 
+            {/* List View Container */}
             {viewMode === 'list' && (
-                <>
-                    {/* Filters */}
-                    <div className="flex space-x-2 border-b border-gray-200 pb-1">
-                        <button onClick={() => setFilter('all')} className={`px-4 py-2 text-sm font-medium ${filter === 'all' ? 'text-brand-primary border-b-2 border-brand-primary' : 'text-gray-500 hover:text-gray-700'}`}>Todos</button>
-                        <button onClick={() => setFilter('pending')} className={`px-4 py-2 text-sm font-medium ${filter === 'pending' ? 'text-brand-primary border-b-2 border-brand-primary' : 'text-gray-500 hover:text-gray-700'}`}>Pendentes</button>
-                        <button onClick={() => setFilter('confirmed')} className={`px-4 py-2 text-sm font-medium ${filter === 'confirmed' ? 'text-brand-primary border-b-2 border-brand-primary' : 'text-gray-500 hover:text-gray-700'}`}>Confirmados</button>
+                <div className="space-y-6">
+                    {/* Filter Tabs */}
+                    <div className="flex space-x-2 bg-gray-50/50 p-1 rounded-2xl w-fit">
+                        {['all', 'pending', 'accepted', 'in_progress', 'completed'].map((tab) => (
+                            <button
+                                key={tab}
+                                onClick={() => setFilter(tab as any)}
+                                className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                                    filter === tab 
+                                    ? 'bg-white shadow-sm text-primary-600 border border-gray-100' 
+                                    : 'text-gray-400 hover:text-gray-600'
+                                }`}
+                            >
+                                {tab === 'all' ? 'Todos' : tab === 'in_progress' ? 'Em Andamento' : getStatusLabel(tab)}
+                            </button>
+                        ))}
                     </div>
 
-                    {/* List */}
-                    <div className="bg-white shadow overflow-hidden sm:rounded-md">
-                        <ul className="divide-y divide-gray-200">
-                            {loading && (
-                                <li className="px-6 py-4">
-                                    <div className="space-y-4">
-                                        <div className="flex justify-between">
-                                            <LoadingSkeleton className="h-4 w-1/3" />
-                                            <LoadingSkeleton className="h-4 w-20" />
-                                        </div>
-                                        <LoadingSkeleton className="h-4 w-1/2" />
-                                    </div>
-                                </li>
-                            )}
-                            {!loading && filteredBookings.length === 0 && (
-                                <li className="px-6 py-4 text-center text-gray-500">Nenhum agendamento encontrado.</li>
-                            )}
-                            {filteredBookings.map((booking) => (
-                                <li key={booking.id}>
-                                    <div className="px-4 py-4 sm:px-6">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center">
-                                                <p className="text-sm font-medium text-brand-primary truncate">{booking.service_title}</p>
-                                                <div className="ml-2"><Badge variant={getStatusColor(booking.status)}>{getStatusLabel(booking.status)}</Badge></div>
-                                            </div>
-                                            <div className="ml-2 flex-shrink-0 flex">
-                                                <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                    {new Date(booking.booking_date).toLocaleDateString()}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="mt-2 sm:flex sm:justify-between">
-                                            <div className="sm:flex">
-                                                <p className="flex items-center text-sm text-gray-500 mr-6">
-                                                    <svg className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>
-                                                    {booking.client_name}
-                                                </p>
-                                                <p className="flex items-center text-sm text-gray-500">
-                                                    <svg className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" /></svg>
-                                                    {booking.booking_time === 'morning' ? 'Manhã' : booking.booking_time === 'afternoon' ? 'Tarde' : booking.booking_time === 'evening' ? 'Noite' : booking.booking_time}
-                                                </p>
-                                            </div>
-                                            <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 gap-2">
-                                                {booking.status === 'pending' && (
-                                                    <>
-                                                        <Button size="sm" variant="primary" onClick={() => handleStatusUpdate(booking.id, 'confirmed')}>Aceitar</Button>
-                                                        <Button size="sm" variant="secondary" onClick={() => setSelectedBookingForReschedule(booking)}>Re-agendar</Button>
-                                                        <Button size="sm" variant="danger" onClick={() => handleStatusUpdate(booking.id, 'cancelled')}>Recusar</Button>
-                                                    </>
-                                                )}
-                                                {booking.status === 'confirmed' && (
-                                                    <Button size="sm" variant="secondary" onClick={() => handleStatusUpdate(booking.id, 'completed')}>Concluir</Button>
-                                                )}
-                                            </div>
-                                        </div>
-                                        {booking.notes && (
-                                            <div className="mt-2 text-sm text-gray-500 italic bg-gray-50 p-2 rounded">"{booking.notes}"</div>
-                                        )}
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
+                    {/* Orders Table/List */}
+                    <div className="bg-white rounded-[40px] border border-gray-100 shadow-2xl overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead className="bg-gray-50/50 border-b border-gray-100">
+                                    <tr>
+                                        <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Serviço & Cliente</th>
+                                        <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Agendamento</th>
+                                        <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Status</th>
+                                        <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50">
+                                    {loading ? (
+                                        [...Array(3)].map((_, i) => (
+                                            <tr key={i}><td colSpan={4} className="px-8 py-6"><LoadingSkeleton className="h-12 w-full rounded-2xl" /></td></tr>
+                                        ))
+                                    ) : filteredOrders.length === 0 ? (
+                                        <tr><td colSpan={4} className="px-8 py-20 text-center text-gray-400 font-medium font-italic">Nenhum agendamento encontrado nesta categoria.</td></tr>
+                                    ) : (
+                                        filteredOrders.map((order) => {
+                                            const date = order.scheduled_for ? new Date(order.scheduled_for) : null;
+                                            return (
+                                                <tr key={order.id} className="hover:bg-gray-50/50 transition-colors group">
+                                                    <td className="px-8 py-6">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-12 h-12 rounded-2xl bg-primary-50 flex items-center justify-center text-primary-600 font-black text-lg">
+                                                                {order.buyer_name?.charAt(0) || 'C'}
+                                                            </div>
+                                                            <div>
+                                                                <h4 className="font-black text-gray-900 leading-tight group-hover:text-primary-600 transition-colors">{order.service_title}</h4>
+                                                                <p className="text-sm text-gray-400 font-bold mt-0.5">{order.buyer_name}</p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-8 py-6">
+                                                        <div className="flex flex-col">
+                                                            <div className="flex items-center gap-2 text-sm font-black text-gray-700">
+                                                                <Calendar className="w-4 h-4 text-primary-400" />
+                                                                {date ? date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : 'A combinar'}
+                                                            </div>
+                                                            <div className="flex items-center gap-2 text-xs font-bold text-gray-400 mt-1">
+                                                                <Clock className="w-4 h-4" />
+                                                                {date ? date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-8 py-6">
+                                                        <Badge variant={getStatusVariant(order.status)} className="rounded-xl px-4 py-1.5 text-[10px] font-black uppercase tracking-widest">
+                                                            {getStatusLabel(order.status)}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="px-8 py-6 text-right">
+                                                        <div className="flex justify-end gap-2">
+                                                            {order.status === 'pending' && (
+                                                                <>
+                                                                    <Button size="sm" variant="primary" onClick={() => handleStatusUpdate(order.id, 'accepted')} className="rounded-xl font-black">Aceitar</Button>
+                                                                    <Button size="sm" variant="secondary" onClick={() => setSelectedOrderForReschedule(order)} className="rounded-xl">Re-agendar</Button>
+                                                                </>
+                                                            )}
+                                                            {order.status === 'accepted' && (
+                                                                <Button 
+                                                                    size="sm" 
+                                                                    variant="primary" 
+                                                                    className="rounded-xl font-black bg-emerald-600 hover:bg-emerald-700" 
+                                                                    onClick={() => setVerificationModal({ isOpen: true, order, targetStatus: 'in_progress' })}
+                                                                >
+                                                                    <Play className="w-4 h-4 mr-2" /> Iniciar Serviço
+                                                                </Button>
+                                                            )}
+                                                            {order.status === 'in_progress' && (
+                                                                <Button 
+                                                                    size="sm" 
+                                                                    variant="primary" 
+                                                                    className="rounded-xl font-black bg-blue-600 hover:bg-blue-700" 
+                                                                    onClick={() => setVerificationModal({ isOpen: true, order, targetStatus: 'completed' })}
+                                                                >
+                                                                    <CheckCircle2 className="w-4 h-4 mr-2" /> Finalizar Serviço
+                                                                </Button>
+                                                            )}
+                                                            {order.status !== 'completed' && order.status !== 'cancelled' && order.status !== 'canceled' && (
+                                                                <button className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
+                                                                    <MoreHorizontal className="w-5 h-5 text-gray-400" />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </>
+                </div>
             )}
 
+            {/* Kanban View Container */}
             {viewMode === 'kanban' && (
-                <div className="flex gap-4 overflow-x-auto pb-4">
+                <div className="flex gap-6 overflow-x-auto pb-8 snap-x scroll-smooth">
                     {KANBAN_COLUMNS.map(col => {
-                        const colBookings = bookings.filter(b => b.status === col.key);
+                        const colOrders = orders.filter(o => o.status === col.key);
                         return (
-                            <div key={col.key} className={`flex-shrink-0 w-64 border rounded-xl p-3 ${col.color}`}>
-                                <div className="flex items-center justify-between mb-3">
-                                    <h4 className="text-sm font-bold text-gray-700">{col.label}</h4>
-                                    <span className="text-xs font-medium bg-white/70 text-gray-600 px-2 py-0.5 rounded-full">{colBookings.length}</span>
+                            <div key={col.key} className={`flex-shrink-0 w-80 rounded-[40px] border border-gray-100 p-6 ${col.color} snap-start shadow-xl`}>
+                                <div className="flex items-center justify-between mb-6">
+                                    <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest">{col.label}</h4>
+                                    <span className="text-xs font-black bg-white/80 text-primary-600 px-3 py-1 rounded-full shadow-sm">{colOrders.length}</span>
                                 </div>
-                                {loading ? (
-                                    <div className="space-y-3">
-                                        <LoadingSkeleton className="h-28 w-full rounded-xl" />
-                                        <LoadingSkeleton className="h-28 w-full rounded-xl" />
-                                    </div>
-                                ) : colBookings.length === 0 ? (
-                                    <p className="text-xs text-gray-400 text-center py-6">Nenhum agendamento</p>
-                                ) : (
-                                    colBookings.map(booking => (
-                                        <KanbanCard
-                                            key={booking.id}
-                                            appointment={{
-                                                id: booking.id,
-                                                clientName: booking.client_name || 'Cliente',
-                                                clientAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(booking.client_name || 'C')}&background=random`,
-                                                service: booking.service_title,
-                                                date: booking.booking_date,
-                                                time: booking.booking_time === 'morning' ? 'Manhã' : booking.booking_time === 'afternoon' ? 'Tarde' : booking.booking_time === 'evening' ? 'Noite' : booking.booking_time,
-                                                status: booking.status,
-                                                price: booking.service_price || 0,
-                                            }}
-                                            onMove={(id, nextStatus) => handleStatusUpdate(id, nextStatus)}
-                                            onCancel={(id) => handleStatusUpdate(id, 'cancelled')}
-                                        />
-                                    ))
-                                )}
+                                
+                                <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                                    {loading ? (
+                                        <LoadingSkeleton className="h-32 w-full rounded-3xl" />
+                                    ) : colOrders.length === 0 ? (
+                                        <div className="text-center py-12 px-4 italic text-gray-400 text-xs font-medium">Nenhum agendamento</div>
+                                    ) : (
+                                        colOrders.map(order => (
+                                            <KanbanCard
+                                                key={order.id}
+                                                appointment={{
+                                                    id: order.id,
+                                                    clientName: order.buyer_name || 'Cliente',
+                                                    clientAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(order.buyer_name || 'C')}&background=random&color=6366f1&bold=true`,
+                                                    service: order.service_title,
+                                                    date: order.scheduled_for ? new Date(order.scheduled_for).toLocaleDateString() : 'A definir',
+                                                    time: order.scheduled_for ? new Date(order.scheduled_for).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--',
+                                                    status: order.status,
+                                                    price: order.price || 0,
+                                                }}
+                                                onMove={(id, nextStatus) => {
+                                                    if (nextStatus === 'in_progress' || nextStatus === 'completed') {
+                                                        const order = orders.find(o => o.id === id);
+                                                        setVerificationModal({
+                                                            isOpen: true,
+                                                            order: order || null,
+                                                            targetStatus: nextStatus as 'in_progress' | 'completed'
+                                                        });
+                                                    } else {
+                                                        handleStatusUpdate(id, nextStatus);
+                                                    }
+                                                }}
+                                                onCancel={(id) => handleStatusUpdate(id, 'cancelled')}
+                                            />
+                                        ))
+                                    )}
+                                </div>
                             </div>
                         );
                     })}
@@ -324,11 +379,19 @@ const DashboardAgendamentosPage: React.FC = () => {
             )}
 
             <RescheduleModal
-                isOpen={!!selectedBookingForReschedule}
-                onClose={() => setSelectedBookingForReschedule(null)}
-                booking={selectedBookingForReschedule}
+                isOpen={!!selectedOrderForReschedule}
+                onClose={() => setSelectedOrderForReschedule(null)}
+                booking={selectedOrderForReschedule as any}
                 onSubmit={handleProposeSchedule}
                 loading={false}
+            />
+
+            <OrderVerificationModal
+                isOpen={verificationModal.isOpen}
+                onClose={() => setVerificationModal({ ...verificationModal, isOpen: false })}
+                order={verificationModal.order}
+                onVerify={handleVerify}
+                targetStatus={verificationModal.targetStatus}
             />
         </div>
     );

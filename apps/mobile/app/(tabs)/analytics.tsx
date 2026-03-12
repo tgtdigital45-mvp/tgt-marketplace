@@ -37,7 +37,7 @@ export default function AnalyticsScreen() {
             const { data: company } = await supabase
                 .from('companies')
                 .select('id, rating')
-                .eq('owner_id', user.id)
+                .eq('profile_id', user.id)
                 .single();
 
             if (!company) {
@@ -52,23 +52,23 @@ export default function AnalyticsScreen() {
 
             // 2. Fetch Orders for metrics
             const { data: orders, error: ordersError } = await supabase
-                .from('service_orders')
-                .select('total_price, status, created_at, services(title)')
-                .eq('company_id', company.id)
+                .from('orders')
+                .select('price, status, created_at, service_title')
+                .eq('seller_id', user.id)
                 .gte('created_at', thirtyDaysAgo.toISOString());
 
             if (ordersError) throw ordersError;
 
             // 3. Process Metrics
             const totalRevenue = (orders || [])
-                .filter(o => o.status === 'completed')
-                .reduce((sum, o) => sum + (Number(o.total_price) || 0), 0);
+                .filter((o: any) => o.status === 'completed')
+                .reduce((sum: number, o: any) => sum + (Number(o.price) || 0), 0);
 
             const pendingRevenue = (orders || [])
-                .filter(o => ['pending', 'confirmed', 'in_progress'].includes(o.status))
-                .reduce((sum, o) => sum + (Number(o.total_price) || 0), 0);
+                .filter((o: any) => ['pending', 'accepted', 'ongoing', 'in_progress'].includes(o.status))
+                .reduce((sum: number, o: any) => sum + (Number(o.price) || 0), 0);
 
-            const completedOrdersCount = (orders || []).filter(o => o.status === 'completed').length;
+            const completedOrdersCount = (orders || []).filter((o: any) => o.status === 'completed').length;
 
             // 4. Daily Orders Chart Data (Last 7 days)
             const last7Days = [...Array(7)].map((_, i) => {
@@ -78,7 +78,7 @@ export default function AnalyticsScreen() {
             });
 
             const dailyData = last7Days.map(date => {
-                return (orders || []).filter(o => o.created_at.startsWith(date)).length;
+                return (orders || []).filter((o: any) => o.created_at.startsWith(date)).length;
             });
 
             const labels = last7Days.map(date => {
@@ -88,8 +88,8 @@ export default function AnalyticsScreen() {
 
             // 5. Top Services
             const serviceCounts: Record<string, number> = {};
-            (orders || []).forEach(o => {
-                const title = (o.services as any)?.title || 'Serviço';
+            (orders || []).forEach((o: any) => {
+                const title = o.service_title || 'Serviço';
                 serviceCounts[title] = (serviceCounts[title] || 0) + 1;
             });
 

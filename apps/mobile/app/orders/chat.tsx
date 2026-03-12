@@ -11,15 +11,18 @@ import { logger } from '../../utils/logger';
 
 type Order = {
     id: string;
-    client_id: string;
-    company_id: string;
+    buyer_id: string;
+    seller_id: string;
     service_id: string;
     status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'canceled' | 'rejected';
-    total_price: number | null;
+    price: number | null;
     scheduled_for: string | null;
-    services: { title: string; price_type: 'fixed' | 'budget'; } | null;
-    profiles: { first_name: string | null; last_name: string | null; } | null;
-    companies: { business_name: string; owner_id: string; } | null;
+    services: { 
+        title: string; 
+        requires_quote: boolean; 
+        companies: { company_name: string; profile_id: string; } | null;
+    } | null;
+    profiles: { full_name: string | null; } | null;
 };
 
 type Message = {
@@ -32,7 +35,7 @@ type Message = {
     proposal_id: string | null;
     is_system_message: boolean;
     created_at: string;
-    profiles: { first_name: string | null; last_name: string | null; } | null;
+    profiles: { full_name: string | null; } | null;
     order_proposals: { id: string; amount: number; status: string; estimated_duration: string | null; notes: string | null; } | null;
 };
 
@@ -85,23 +88,54 @@ export default function ChatScreen() {
             try {
                 if (orderId) {
                     const { data, error } = await supabase
-                        .from('service_orders')
-                        .select('*, services(title, price_type), profiles!service_orders_client_id_fkey(first_name, last_name), companies!service_orders_company_id_fkey(business_name, owner_id)')
+                        .from('bookings')
+                        .select('*, companies(company_name, profile_id), profiles:client_id(full_name)')
                         .eq('id', orderId)
                         .single();
                     if (error) throw error;
                     currentOrderId = data.id;
-                    setOrder(data as unknown as Order);
+                    
+                    // Map for UI compatibility
+                    const mappedOrder = {
+                        ...data,
+                        buyer_id: data.client_id,
+                        seller_id: data.company_id,
+                        price: data.service_price,
+                        scheduled_for: data.booking_date,
+                        status: data.status === 'cancelled' ? 'canceled' : data.status,
+                        services: {
+                            title: data.service_title,
+                            requires_quote: false, // Defaulting as it's already a booking
+                            companies: data.companies
+                        }
+                    };
+                    setOrder(mappedOrder as unknown as Order);
                 } else if (session?.user.id) {
                     const { data, error } = await supabase
-                        .from('service_orders')
-                        .select('*, services(title, price_type), profiles:client_id(first_name, last_name), companies!service_orders_company_id_fkey(business_name, owner_id)')
+                        .from('bookings')
+                        .select('*, companies(company_name, profile_id), profiles:client_id(full_name)')
                         .eq('client_id', session.user.id)
                         .order('created_at', { ascending: false })
                         .limit(1)
                         .single();
                     if (error && error.code !== 'PGRST116') throw error;
-                    if (data) { currentOrderId = data.id; setOrder(data as unknown as Order); }
+                    if (data) { 
+                        currentOrderId = data.id; 
+                        const mappedOrder = {
+                            ...data,
+                            buyer_id: data.client_id,
+                            seller_id: data.company_id,
+                            price: data.service_price,
+                            scheduled_for: data.booking_date,
+                            status: data.status === 'cancelled' ? 'canceled' : data.status,
+                            services: {
+                                title: data.service_title,
+                                requires_quote: false,
+                                companies: data.companies
+                            }
+                        };
+                        setOrder(mappedOrder as unknown as Order); 
+                    }
                 }
             } catch (e) {
                 logger.error('Error fetching order for chat:', e);
@@ -114,8 +148,8 @@ export default function ChatScreen() {
 
         const orderChannel = supabase
             .channel('realtime_chat_order')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'service_orders' },
-                (payload) => {
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' },
+                (payload: any) => {
                     const rowId = (payload.new as any)?.id || (payload.old as any)?.id;
                     if (currentOrderId && rowId === currentOrderId) fetchOrder();
                 })
@@ -152,7 +186,7 @@ export default function ChatScreen() {
             .on(
                 'postgres_changes',
                 { event: 'INSERT', schema: 'public', table: 'messages', filter: `order_id=eq.${order.id}` },
-                async (payload) => {
+                async (payload: any) => {
                     if (messages.some(m => m.id === (payload.new as any).id)) return;
 
                     const { data } = await supabase
@@ -183,7 +217,7 @@ export default function ChatScreen() {
             }
 
             const { error } = await supabase
-                .from('service_orders')
+                .from('bookings')
                 .update({ status: newStatus })
                 .eq('id', order.id);
 
@@ -235,7 +269,7 @@ export default function ChatScreen() {
                 .from('order_proposals')
                 .insert({
                     order_id: order.id,
-                    company_id: order.company_id,
+                    company_id: order.seller_id, 
                     amount: numericPrice,
                     estimated_duration: budgetDuration.trim() || null,
                     notes: budgetNotes.trim() || null,
@@ -245,12 +279,12 @@ export default function ChatScreen() {
                 .single();
             if (proposalError) throw proposalError;
 
-            // 2. Atualizar order para refletir na UI o price pendente
-            const { error: orderError } = await supabase
-                .from('service_orders')
-                .update({ total_price: numericPrice })
+            // 2. Atualizar booking para refletir na UI o price pendente
+            const { error: bookingError } = await supabase
+                .from('bookings')
+                .update({ service_price: numericPrice })
                 .eq('id', order.id);
-            if (orderError) throw orderError;
+            if (bookingError) throw bookingError;
 
             // 3. Enviar a mensagem vinculando a proposta
             const { error: msgError } = await supabase
@@ -263,7 +297,7 @@ export default function ChatScreen() {
                 });
             if (msgError) throw msgError;
 
-            setOrder({ ...order, total_price: numericPrice });
+            setOrder({ ...order, price: numericPrice });
             setBudgetModalVisible(false);
             Alert.alert('Enviado!', `Formulário de orçamento de R$ ${numericPrice.toFixed(2)} foi enviado ao cliente.`);
         } catch (e: any) {
@@ -276,7 +310,7 @@ export default function ChatScreen() {
 
     const handleBlock = () => {
         const reportedName = partnerName;
-        const reportedId = isProvider ? order?.client_id : order?.company_id;
+        const reportedId = isProvider ? order?.buyer_id : order?.seller_id;
 
         if (!reportedId) return;
 
@@ -388,7 +422,7 @@ export default function ChatScreen() {
 
     const handleReport = () => {
         const reportedName = partnerName;
-        const reportedId = isProvider ? order?.client_id : order?.company_id;
+        const reportedId = isProvider ? order?.buyer_id : order?.seller_id;
         const type = isProvider ? 'user' : 'company';
 
         if (!reportedId) return;
@@ -444,11 +478,11 @@ export default function ChatScreen() {
         );
     }
 
-    const isProvider = profile?.user_type === 'company' && order.companies?.owner_id === session?.user.id;
+    const isProvider = profile?.user_type === 'company' && order.services?.companies?.profile_id === session?.user.id;
 
     const partnerName = isProvider
-        ? [order.profiles?.first_name, order.profiles?.last_name].filter(Boolean).join(' ') || 'Cliente'
-        : order.companies?.business_name || 'Profissional';
+        ? order.profiles?.full_name || 'Cliente'
+        : order.services?.companies?.company_name || 'Profissional';
 
     const formatTime = (iso: string) => {
         const d = new Date(iso);
@@ -456,7 +490,7 @@ export default function ChatScreen() {
     };
 
     const senderName = (msg: Message) =>
-        [msg.profiles?.first_name, msg.profiles?.last_name].filter(Boolean).join(' ') || 'Usuário';
+        msg.profiles?.full_name || 'Usuário';
 
     const isChatDisabled = (order.status === 'pending' && !isProvider) || order.status === 'canceled' || order.status === 'completed' || order.status === 'rejected';
 
@@ -508,13 +542,13 @@ export default function ChatScreen() {
             </View>
 
             {/* Provider Actions Header */}
-            {isProvider && (order.status === 'pending' || (order.status === 'accepted' && order.services?.price_type === 'budget' && !order.total_price)) && (
+            {isProvider && (order.status === 'pending' || (order.status === 'accepted' && order.services?.requires_quote && !order.price)) && (
                 <View style={styles.providerActionsBox}>
                     <Text style={styles.actionPromptText}>
                         {order.status === 'pending' ? 'Novo pedido! O que deseja fazer?' : 'Pedido aceito! Envie sua proposta para o cliente.'}
                     </Text>
 
-                    {order.services?.price_type === 'budget' && !order.total_price ? (
+                    {order.services?.requires_quote && !order.price ? (
                         <TouchableOpacity style={styles.budgetBtn} onPress={handleSendBudget}>
                             <Ionicons name="document-text" size={16} color={Colors.primary} />
                             <Text style={styles.budgetText}>Enviar Proposta de Orçamento</Text>
@@ -535,10 +569,10 @@ export default function ChatScreen() {
             )}
 
             {/* Customer Options (Quando Provider mandou Orçamento) */}
-            {!isProvider && (order.status === 'pending' || order.status === 'accepted') && order.services?.price_type === 'budget' && order.total_price !== null && !order.scheduled_for && !messages.some(m => m.order_proposals?.status === 'accepted') && (
+            {!isProvider && (order.status === 'pending' || order.status === 'accepted') && order.services?.requires_quote && order.price !== null && !order.scheduled_for && !messages.some(m => m.order_proposals?.status === 'accepted') && (
                 <View style={[styles.providerActionsBox, { backgroundColor: '#f0fdf4', borderColor: '#dcfce7' }]}>
                     <Text style={[styles.actionPromptText, { color: '#166534', fontWeight: '700' }]}>
-                        O Profissional enviou um orçamento de R$ {order.total_price}
+                        O Profissional enviou um orçamento de R$ {order.price}
                     </Text>
                     <View style={styles.actionButtonsRow}>
                         <TouchableOpacity style={[styles.actBtn, { backgroundColor: '#16a34a' }]} onPress={() => handleUpdateStatus('accepted')}>
@@ -561,7 +595,7 @@ export default function ChatScreen() {
                     </Text>
                     <TouchableOpacity
                         style={[styles.actBtn, { backgroundColor: '#F59E0B', flex: 0, paddingHorizontal: 20 }]}
-                        onPress={() => router.push(`/orders/review?orderId=${order.id}&companyId=${order.company_id}&companyName=${encodeURIComponent(order.companies?.business_name || 'Empresa')}`)}
+                        onPress={() => router.push(`/orders/review?orderId=${order.id}&companyId=${order.services?.companies?.company_name || 'Empresa'}&companyName=${encodeURIComponent(order.services?.companies?.company_name || 'Empresa')}`)}
                     >
                         <Ionicons name="star" size={16} color={Colors.white} />
                         <Text style={styles.actAcceptText}>Avaliar Serviço</Text>
@@ -578,7 +612,7 @@ export default function ChatScreen() {
                     <View style={styles.systemBubble}>
                         <Text style={styles.systemTitle}>Pedido Solicitado</Text>
                         <Text style={styles.systemText}>
-                            {order.services?.price_type === 'budget'
+                            {order.services?.requires_quote
                                 ? (isProvider ? 'O cliente quer um orçamento.' : 'Você solicitou um orçamento.')
                                 : (isProvider ? 'O cliente quer agendar este serviço.' : 'Aguardando avaliação do profissional.')}
                         </Text>

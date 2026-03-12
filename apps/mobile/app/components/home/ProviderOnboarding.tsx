@@ -71,12 +71,12 @@ export default function ProviderOnboarding({ userId, onComplete }: ProviderOnboa
 
         try {
             const { error } = await supabase.from('companies').insert({
-                owner_id: userId,
-                business_name: businessName.trim(),
+                profile_id: userId,
+                company_name: businessName.trim(),
                 document_id: cleanedDoc,
                 description: description.trim() || null,
-                address_city: city.trim(),
-                address_state: state.trim().toUpperCase(),
+                city: city.trim(),
+                state: state.trim().toUpperCase(),
                 is_public: true
             });
 

@@ -76,7 +76,9 @@ function RootLayoutNav() {
         const isBrowse = segments.includes('browse');
         const isCompanyDetails = segments[0] === 'company';
 
-        logger.log(`RootNav: Session: ${!!session}, Profile: ${!!profile}, Role: ${profile?.user_type}, Segments: ${segments.join('/')}`);
+        if (profile) {
+            logger.log(`RootNav: Session: ${!!session}, Profile: ${!!profile}, UserType: ${profile?.user_type}, Role: ${profile?.role}, Segments: ${segments.join('/')}`);
+        }
 
         // 1. Se não viu a introdução, sempre redireciona para lá
         if (!hasSeenIntro && !inIntro) {

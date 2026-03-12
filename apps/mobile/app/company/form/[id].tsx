@@ -43,7 +43,7 @@ export default function ServiceFormScreen() {
                 const [svcRes, formRes] = await Promise.all([
                     supabase
                         .from('services')
-                        .select('id, company_id, price, title')
+                        .select('id, price, title, companies(profile_id)')
                         .eq('id', id)
                         .single(),
                     supabase
@@ -98,13 +98,13 @@ export default function ServiceFormScreen() {
         try {
             // 1. Create the order
             const { data: orderData, error: orderError } = await supabase
-                .from('service_orders')
+                .from('orders')
                 .insert({
-                    client_id: session.user.id,
-                    company_id: service.company_id,
+                    buyer_id: session.user.id,
+                    seller_id: service.companies?.profile_id,
                     service_id: id,
                     status: 'pending',
-                    total_price: null
+                    price: null
                 })
                 .select()
                 .single();

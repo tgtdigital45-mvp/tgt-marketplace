@@ -11,25 +11,25 @@ export type ServiceSearchResult = {
     title: string;
     description: string | null;
     price: number;
-    price_type: 'fixed' | 'budget';
+    requires_quote: boolean;
     company: {
         id: string;
-        business_name: string;
+        company_name: string;
         logo_url: string | null;
-        cover_url: string | null;
-        address_city: string | null;
+        cover_image_url: string | null;
+        city: string | null;
         rating?: number;
     };
 };
 
 export type SearchResult = {
     id: string;
-    business_name: string;
-    bio: string | null;
+    company_name: string;
+    description: string | null;
     logo_url: string | null;
-    cover_url: string | null;
-    address_city: string | null;
-    address_state: string | null;
+    cover_image_url: string | null;
+    city: string | null;
+    state: string | null;
     rating?: number;
     rank?: number;
 };
@@ -49,9 +49,9 @@ export async function searchServices(
         let query = supabase
             .from('services')
             .select(`
-                id, title, description, price, price_type,
+                id, title, description, price, requires_quote,
                 company:companies (
-                    id, business_name, logo_url, cover_url, address_city
+                    id, company_name, logo_url, cover_image_url, city
                 )
             `);
 
@@ -111,10 +111,10 @@ async function searchCompaniesSimple(
     let query = supabase
         .from('companies')
         .select(`
-            id, business_name, bio, logo_url, cover_url, address_city, address_state,
+            id, company_name, description, logo_url, cover_image_url, city, state,
             services(category_tag)
         `)
-        .ilike('business_name', `%${term.trim()}%`);
+        .ilike('company_name', `%${term.trim()}%`);
 
     if (categoryId) {
         query = query.eq('services.category_tag', categoryId);

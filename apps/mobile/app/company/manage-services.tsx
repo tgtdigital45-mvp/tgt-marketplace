@@ -18,7 +18,9 @@ type Service = {
     title: string;
     description: string | null;
     price: number;
-    price_type: 'fixed' | 'budget' | 'packages';
+    requires_quote: boolean;
+    is_single_package: boolean;
+    service_type: string;
     location_type: string;
     estimated_duration: number | null;
     duration_unit: 'minutes' | 'hours' | 'days';
@@ -69,13 +71,19 @@ export default function ManageServicesScreen() {
         setLoading(true);
         setError(false);
         try {
-            const { data: company, error: compError } = await supabase.from('companies').select('id').eq('owner_id', user.id).maybeSingle();
+            const { data: company, error: compError } = await supabase.from('companies').select('id').eq('profile_id', user.id).maybeSingle();
             if (compError) throw compError;
             if (!company) return;
             setCompanyId(company.id);
             const { data, error: servError } = await supabase.from('services').select('*, service_forms(id, questions)').eq('company_id', company.id).order('created_at', { ascending: false });
             if (servError) throw servError;
-            if (data) setServices(data as Service[]);
+            if (data) {
+                const mappedData = data.map((s: any) => ({
+                    ...s,
+                    price_type: s.requires_quote ? 'budget' : (s.is_single_package ? 'fixed' : 'packages')
+                }));
+                setServices(mappedData as any);
+            }
         } catch (e) {
             logger.error('Fetch Services Error:', e);
             setError(true);
@@ -112,7 +120,7 @@ export default function ManageServicesScreen() {
         setTitle(svc.title);
         setDescription(svc.description || '');
         setPrice(String(svc.price));
-        setPriceType(svc.price_type);
+        setPriceType(svc.requires_quote ? 'budget' : (svc.is_single_package ? 'fixed' : 'packages'));
         setDuration(svc.estimated_duration ? String(svc.estimated_duration) : '');
         setDurationUnit(svc.duration_unit || 'minutes');
         setLocationType(svc.location_type);
@@ -182,7 +190,9 @@ export default function ManageServicesScreen() {
                 title: title.trim(),
                 description: description.trim() || null,
                 price: priceType === 'fixed' ? Number(parsedPrice) : 0,
-                price_type: priceType,
+                requires_quote: priceType === 'budget',
+                is_single_package: priceType !== 'packages',
+                service_type: priceType === 'budget' ? 'requires_quote' : (priceType === 'packages' ? 'single' : 'local_provider_fixed'),
                 location_type: locationType,
                 estimated_duration: duration ? Number(duration) : null,
                 duration_unit: durationUnit,
@@ -332,9 +342,9 @@ export default function ManageServicesScreen() {
                                     </Text>
                                 </View>
                                 <Text style={styles.priceText}>
-                                    {item.price_type === 'fixed' ? formatCurrency(item.price) : 
-                                     item.price_type === 'packages' ? `A partir de ${formatCurrency(Number(item.packages?.basic?.price || 0))}` : 
-                                     'Sob Orçamento'}
+                                    {item.requires_quote ? 'Sob Orçamento' : 
+                                     (!item.is_single_package ? `A partir de ${formatCurrency(Number(item.packages?.basic?.price || 0))}` : 
+                                     formatCurrency(item.price))}
                                 </Text>
                             </View>
                         </TouchableOpacity>

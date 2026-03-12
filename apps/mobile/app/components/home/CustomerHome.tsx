@@ -54,7 +54,7 @@ export default function CustomerHome({ profile }: CustomerHomeProps) {
             .from('favorite_companies')
             .select('company_id')
             .eq('client_id', user.id);
-        if (data) setFavoriteIds(new Set(data.map(f => f.company_id)));
+        if (data) setFavoriteIds(new Set(data.map((f: any) => f.company_id)));
     }, [user]);
 
     useEffect(() => {
@@ -116,7 +116,7 @@ export default function CustomerHome({ profile }: CustomerHomeProps) {
 
                 <View style={styles.header}>
                     <View>
-                        <Text style={styles.greeting}>Olá, {profile?.first_name || 'Explorador'}</Text>
+                        <Text style={styles.greeting}>Olá, {profile?.full_name?.split(' ')[0] || 'Explorador'}</Text>
                         <Text style={styles.headerTitle}>O que você precisa hoje?</Text>
                     </View>
                     <TouchableOpacity onPress={navigateToProfile} style={styles.profileBtn}>
@@ -124,7 +124,7 @@ export default function CustomerHome({ profile }: CustomerHomeProps) {
                             <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
                         ) : (
                             <View style={styles.avatarPlaceholder}>
-                                <Text style={styles.avatarInitial}>{(profile?.first_name || 'C')[0]}</Text>
+                                <Text style={styles.avatarInitial}>{(profile?.full_name || 'C')[0]}</Text>
                             </View>
                         )}
                     </TouchableOpacity>
@@ -183,7 +183,7 @@ export default function CustomerHome({ profile }: CustomerHomeProps) {
                                     onPress={() => router.push(`/company/${service.company.id}`)}
                                 >
                                     <Image
-                                        source={{ uri: service.company.cover_url || 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=400' }}
+                                        source={{ uri: service.company.cover_image_url || 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=400' }}
                                         style={styles.featuredCover}
                                     />
                                     <View style={styles.featuredLogoBox}>
@@ -191,7 +191,7 @@ export default function CustomerHome({ profile }: CustomerHomeProps) {
                                             <Image source={{ uri: service.company.logo_url }} style={styles.featuredLogo} />
                                         ) : (
                                             <View style={[styles.featuredLogo, { backgroundColor: Colors.primary }]}>
-                                                <Text style={{ color: Colors.white, fontWeight: '900' }}>{service.company.business_name[0]}</Text>
+                                                <Text style={{ color: Colors.white, fontWeight: '900' }}>{service.company.company_name[0]}</Text>
                                             </View>
                                         )}
                                     </View>
@@ -207,10 +207,10 @@ export default function CustomerHome({ profile }: CustomerHomeProps) {
                                     </TouchableOpacity>
                                     <View style={styles.featuredInfo}>
                                         <Text style={styles.featuredName} numberOfLines={1}>{service.title}</Text>
-                                        <Text style={styles.featuredCompany} numberOfLines={1}>{service.company.business_name}</Text>
+                                        <Text style={styles.featuredCompany} numberOfLines={1}>{service.company.company_name}</Text>
                                         <View style={styles.featuredMeta}>
                                             <Text style={styles.featuredPrice}>
-                                                {service.price_type === 'fixed' ? `R$ ${service.price}` : 'Sob orçamento'}
+                                                {!service.requires_quote ? `R$ ${service.price}` : 'Sob orçamento'}
                                             </Text>
                                             <View style={styles.dot} />
                                         </View>
@@ -232,11 +232,11 @@ export default function CustomerHome({ profile }: CustomerHomeProps) {
                                 <Image source={{ uri: service.company.logo_url || 'https://images.unsplash.com/photo-1628157588553-5eeea00af15c?auto=format&fit=crop&w=100' }} style={styles.providerLogo} />
                                 <View style={styles.providerInfo}>
                                     <Text style={styles.providerName}>{service.title}</Text>
-                                    <Text style={styles.providerBio} numberOfLines={1}>{service.company.business_name}</Text>
+                                    <Text style={styles.providerBio} numberOfLines={1}>{service.company.company_name}</Text>
                                     <View style={styles.providerMeta}>
-                                        <Text style={styles.providerTag}>{service.company.address_city}</Text>
+                                        <Text style={styles.providerTag}>{service.company.city}</Text>
                                         <Text style={[styles.providerTag, { color: Colors.primary, fontWeight: '800' }]}>
-                                            • {service.price_type === 'fixed' ? `R$ ${service.price}` : 'Orçamento'}
+                                            • {!service.requires_quote ? `R$ ${service.price}` : 'Orçamento'}
                                         </Text>
                                     </View>
                                 </View>

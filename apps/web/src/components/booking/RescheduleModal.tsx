@@ -48,7 +48,7 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({ isOpen, onClose, book
 
                         <form onSubmit={handleSubmit} className="p-6 space-y-4">
                             <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-700 mb-4 border border-gray-100">
-                                <p><strong>Horário Original:</strong> {new Date(booking.booking_date).toLocaleDateString()} às {booking.booking_time}</p>
+                                <p><strong>Horário Original:</strong> {booking.scheduled_for ? new Date(booking.scheduled_for).toLocaleString() : 'Não definido'}</p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">

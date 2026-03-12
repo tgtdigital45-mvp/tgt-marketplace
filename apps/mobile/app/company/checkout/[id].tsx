@@ -16,9 +16,10 @@ type Service = {
     company_id: string;
     title: string;
     price: number;
-    price_type: 'fixed' | 'budget';
+    requires_quote: boolean;
     companies: {
-        business_name: string;
+        company_name: string;
+        profile_id: string;
     };
     service_forms?: { id: string; questions: string[] }[];
 };
@@ -42,7 +43,7 @@ export default function CheckoutScreen() {
             try {
                 const { data: svcData, error: svcError } = await supabase
                     .from('services')
-                    .select('*, companies(business_name), service_forms(id, questions)')
+                    .select('*, companies(company_name, profile_id), service_forms(id, questions)')
                     .eq('id', id)
                     .single();
 
@@ -68,7 +69,7 @@ export default function CheckoutScreen() {
         // Guardas de segurança
         if (!session?.user.id || !service || isSubmitting || submissionRef.current) return;
         
-        const isBudgetFlow = service.price_type === 'budget';
+        const isBudgetFlow = service.requires_quote;
         
         if (isBudgetFlow && service.service_forms && service.service_forms.length > 0) {
             if (formAnswers.some(a => !a.trim())) {
@@ -83,13 +84,13 @@ export default function CheckoutScreen() {
 
         try {
             const { data: newOrder, error } = await supabase
-                .from('service_orders')
+                .from('orders')
                 .insert({
-                    client_id: session.user.id,
-                    company_id: service.company_id,
+                    buyer_id: session.user.id,
+                    seller_id: service.companies.profile_id,
                     service_id: service.id,
                     status: 'pending',
-                    total_price: isBudgetFlow ? null : service.price,
+                    price: isBudgetFlow ? null : service.price,
                     scheduled_for: scheduledFor ? decodeURIComponent(scheduledFor) : null,
                     address_reference: addressRef ? decodeURIComponent(addressRef) : null,
                 })
@@ -166,7 +167,7 @@ export default function CheckoutScreen() {
         );
     }
 
-    const isBudget = service.price_type === 'budget';
+    const isBudget = service.requires_quote;
 
     return (
         <SafeAreaView style={styles.container} edges={['top', 'bottom']} aria-label="Checkout">
@@ -190,7 +191,7 @@ export default function CheckoutScreen() {
                             </View>
                             <View style={styles.summaryRow}>
                                 <Text style={styles.summaryLabel}>Profissional</Text>
-                                <Text style={styles.summaryValue}>{service.companies?.business_name}</Text>
+                                <Text style={styles.summaryValue}>{service.companies?.company_name}</Text>
                             </View>
                             {addressRef && (
                                 <View style={styles.summaryRow}>

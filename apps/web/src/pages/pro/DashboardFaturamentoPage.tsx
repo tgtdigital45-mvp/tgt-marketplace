@@ -109,13 +109,13 @@ const DashboardFaturamentoPage: React.FC = () => {
                 const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
                 const { data: dbOrders } = await supabase
-                    .from('service_orders') // Assuming same schema as mobile
-                    .select('total_price')
-                    .eq('company_id', company.id)
+                    .from('orders')
+                    .select('price')
+                    .eq('seller_id', user.id)
                     .eq('status', 'completed')
                     .gte('created_at', startOfMonth);
 
-                const monthlyTotal = (dbOrders || []).reduce((sum, o) => sum + (Number(o.total_price) || 0), 0);
+                const monthlyTotal = (dbOrders || []).reduce((sum, o) => sum + (Number(o.price) || 0), 0);
                 setMonthlyMetrics({ total: monthlyTotal, count: dbOrders?.length || 0 });
 
             } catch (error) {
@@ -184,9 +184,9 @@ const DashboardFaturamentoPage: React.FC = () => {
                 </div>
 
                 {sellerStats && (
-                    <div className={`px-3 py-1.5 rounded-full border flex items-center gap-1.5 shadow-sm ${getLevelBadgeColor(sellerStats.current_level)}`}>
+                    <div className={`px-3 py-1.5 rounded-full border flex items-center gap-1.5 shadow-sm ${getLevelBadgeColor(sellerStats.level)}`}>
                         <Zap size={14} />
-                        <span className="text-xs font-bold">{sellerStats.current_level}</span>
+                        <span className="text-xs font-bold">{sellerStats.level}</span>
                     </div>
                 )}
             </motion.div>
@@ -274,12 +274,12 @@ const DashboardFaturamentoPage: React.FC = () => {
                                 {sellerStats.next_level && (
                                     <div className="space-y-2">
                                         <p className="text-xs text-gray-400">
-                                            Faltam {sellerStats.orders_to_next_level} pedidos completos
+                                            Progresso para o próximo nível
                                         </p>
                                         <div className="w-full bg-gray-700/50 rounded-full h-1.5 mt-2">
                                             <div
                                                 className="bg-secondary-500 h-1.5 rounded-full transition-all duration-500"
-                                                style={{ width: `${Math.min(100, Math.max(0, ((20 - sellerStats.orders_to_next_level) / 20) * 100))}%` }}
+                                                style={{ width: `${sellerStats.level_progress}%` }}
                                             ></div>
                                         </div>
                                     </div>

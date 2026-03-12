@@ -19,7 +19,7 @@ type ScheduleItem = {
     id: string;
     scheduled_for: string;
     status: string;
-    total_price: number | null;
+    price: number | null;
     services: { title: string } | null;
     profiles: { first_name: string; last_name: string | null } | null;
 };
@@ -46,44 +46,44 @@ export default function ProviderDashboard({ profile, company }: ProviderDashboar
     }, [profile?.id]);
 
     const fetchPendingOrders = useCallback(async () => {
-        if (!company?.id) return;
+        if (!profile?.id) return;
         const { data, error } = await supabase
-            .from('service_orders')
-            .select('*, profiles!service_orders_client_id_fkey(first_name, last_name), services(title, price_type)')
-            .eq('company_id', company.id)
+            .from('orders')
+            .select('*, profiles:buyer_id(first_name, last_name), services(title, requires_quote)')
+            .eq('seller_id', profile.id)
             .eq('status', 'pending')
             .order('created_at', { ascending: false });
         if (!error && data) setPendingOrders(data);
-    }, [company?.id]);
+    }, [profile?.id]);
 
     const fetchTodaySchedule = useCallback(async () => {
-        if (!company?.id) return;
+        if (!profile?.id) return;
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
 
         const { data, error } = await supabase
-            .from('service_orders')
-            .select('id, scheduled_for, status, total_price, services(title), profiles!service_orders_client_id_fkey(first_name, last_name)')
-            .eq('company_id', company.id)
+            .from('orders')
+            .select('id, scheduled_for, status, price, services(title), profiles:buyer_id(first_name, last_name)')
+            .eq('seller_id', profile.id)
             .in('status', ['accepted', 'in_progress'])
             .gte('scheduled_for', today.toISOString())
             .lt('scheduled_for', tomorrow.toISOString())
             .order('scheduled_for', { ascending: true });
         if (!error && data) setTodaySchedule(data as unknown as ScheduleItem[]);
-    }, [company?.id]);
+    }, [profile?.id]);
 
     const fetchMetrics = useCallback(async () => {
-        if (!company?.id) return;
+        if (!profile?.id) return;
         const [{ data: completedOrders }, { count: activeCount }] = await Promise.all([
-            supabase.from('service_orders').select('total_price').eq('company_id', company.id).eq('status', 'completed'),
-            supabase.from('service_orders').select('*', { count: 'exact', head: true }).eq('company_id', company.id).in('status', ['accepted', 'in_progress'])
+            supabase.from('orders').select('price').eq('seller_id', profile.id).eq('status', 'completed'),
+            supabase.from('orders').select('*', { count: 'exact', head: true }).eq('seller_id', profile.id).in('status', ['accepted', 'in_progress'])
         ]);
 
-        const totalEarnings = (completedOrders || []).reduce((sum, o) => sum + (Number(o.total_price) || 0), 0);
+        const totalEarnings = (completedOrders || []).reduce((sum: number, o: any) => sum + (Number(o.price) || 0), 0);
         setMetrics({ totalEarnings, totalServices: completedOrders?.length || 0, activeOrders: activeCount || 0 });
-    }, [company?.id]);
+    }, [profile?.id]);
 
     const loadAll = useCallback(async (silent = false) => {
         if (!silent) setIsLoading(true);
@@ -134,7 +134,7 @@ export default function ProviderDashboard({ profile, company }: ProviderDashboar
             <View style={styles.header}>
                 <View>
                     <Text style={styles.greeting}>Bem-vindo de volta,</Text>
-                    <Text style={styles.businessName} numberOfLines={1}>{company?.business_name || profile.first_name}</Text>
+                    <Text style={styles.businessName} numberOfLines={1}>{company?.company_name || profile.full_name}</Text>
                 </View>
                 <View style={styles.headerActions}>
                     <TouchableOpacity style={styles.iconBtn} onPress={() => navigateTo('/notifications')}>
@@ -145,7 +145,7 @@ export default function ProviderDashboard({ profile, company }: ProviderDashboar
                         {profile.avatar_url ? (
                             <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
                         ) : (
-                            <Text style={styles.avatarInitial}>{(profile.first_name || 'P')[0]}</Text>
+                            <Text style={styles.avatarInitial}>{(profile.full_name || 'P')[0]}</Text>
                         )}
                     </TouchableOpacity>
                 </View>

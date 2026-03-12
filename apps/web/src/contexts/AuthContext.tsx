@@ -63,10 +63,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       console.log(`[AuthContext] (ID: ${currentFetchId}) Buscando contexto via RPC unificada...`);
 
-      // Uma única chamada RPC substitui as 2 queries anteriores (profiles + companies)
-      // Elimina a latência dupla e a necessidade do timeout de segurança de 15s
-      const { data: sessionCtx, error: rpcError } = await supabase
-        .rpc('get_user_session_context', { p_user_id: session.user.id });
+      // Timeout de segurança para a RPC
+      const rpcPromise = supabase.rpc('get_user_session_context', { p_user_id: session.user.id });
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('RPC Timeout')), 8000)
+      );
+
+      const { data: sessionCtx, error: rpcError } = (await Promise.race([
+        rpcPromise,
+        timeoutPromise
+      ])) as any;
 
       console.log(`[AuthContext] (ID: ${currentFetchId}) RPC concluída. Erro:`, rpcError);
 

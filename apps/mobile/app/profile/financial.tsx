@@ -10,11 +10,13 @@ import { logger } from '../../utils/logger';
 
 type OrderFinance = {
     id: string;
-    total_price: number;
+    price: number | null;
     created_at: string;
-    services: { title: string };
-    companies?: { business_name: string };
-    profiles?: { first_name: string; last_name: string };
+    services: { 
+        title: string;
+        companies: { company_name: string; profile_id: string } | null;
+    } | null;
+    profiles: { full_name: string } | null;
 };
 
 export default function FinancialScreen() {
@@ -33,30 +35,23 @@ export default function FinancialScreen() {
 
             try {
                 let query = supabase
-                    .from('service_orders')
+                    .from('orders')
                     .select(`
-                        id, total_price, created_at,
-                        services (title),
-                        companies!service_orders_company_id_fkey (business_name, owner_id),
-                        profiles!service_orders_client_id_fkey(first_name, last_name)
+                        id, price, created_at,
+                        services (
+                            title,
+                            companies (company_name, profile_id)
+                        ),
+                        profiles:buyer_id (full_name)
                     `)
                     .eq('status', 'completed')
-                    .not('total_price', 'is', null)
+                    .not('price', 'is', null)
                     .order('created_at', { ascending: false });
 
                 if (isProvider) {
-                    // Get company ID first, then filter server-side
-                    const { data: company } = await supabase
-                        .from('companies')
-                        .select('id')
-                        .eq('owner_id', session.user.id)
-                        .single();
-
-                    if (company) {
-                        query = query.eq('company_id', company.id);
-                    }
+                    query = query.eq('seller_id', session.user.id);
                 } else {
-                    query = query.eq('client_id', session.user.id);
+                    query = query.eq('buyer_id', session.user.id);
                 }
 
                 const { data, error } = await query;
@@ -65,7 +60,7 @@ export default function FinancialScreen() {
                 const filteredData = (data as any[]) || [];
                 setHistory(filteredData);
 
-                const sum = filteredData.reduce((acc, curr) => acc + (curr.total_price || 0), 0);
+                const sum = filteredData.reduce((acc, curr) => acc + (Number(curr.price) || 0), 0);
                 setTotalValue(sum);
 
             } catch (error) {
@@ -117,10 +112,10 @@ export default function FinancialScreen() {
                 ) : (
                     history.map((item) => {
                         const dateStr = new Date(item.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
-                        const srvTitle = Array.isArray(item.services) ? item.services[0]?.title : item.services?.title;
+                        const srvTitle = item.services?.title || 'Serviço';
                         const partnerName = isProvider
-                            ? `${Array.isArray(item.profiles) ? item.profiles[0]?.first_name : item.profiles?.first_name} ${Array.isArray(item.profiles) ? item.profiles[0]?.last_name : item.profiles?.last_name}`
-                            : (Array.isArray(item.companies) ? item.companies[0]?.business_name : item.companies?.business_name);
+                            ? item.profiles?.full_name
+                            : item.services?.companies?.company_name;
 
                         return (
                             <View key={item.id} style={styles.historyCard}>
@@ -128,12 +123,12 @@ export default function FinancialScreen() {
                                     <Ionicons name={isProvider ? 'arrow-down' : 'arrow-up'} size={20} color={isProvider ? Colors.success : Colors.error} />
                                 </View>
                                 <View style={styles.historyInfo}>
-                                    <Text style={styles.historyTitle}>{srvTitle || 'Serviço'}</Text>
+                                    <Text style={styles.historyTitle}>{srvTitle}</Text>
                                     <Text style={styles.historyPartner}>{isProvider ? 'Cliente:' : 'Empresa:'} {partnerName}</Text>
                                     <Text style={styles.historyDate}>{dateStr}</Text>
                                 </View>
                                 <Text style={[styles.historyValue, { color: isProvider ? Colors.success : Colors.text }]}>
-                                    {isProvider ? '+' : ''}R$ {item.total_price?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    {isProvider ? '+' : ''}R$ {item.price?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                 </Text>
                             </View>
                         );

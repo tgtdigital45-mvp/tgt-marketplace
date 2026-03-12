@@ -24,7 +24,7 @@ export default function StripeOnboardingScreen() {
             const { data } = await supabase
                 .from('companies')
                 .select('id, stripe_account_id, stripe_onboarding_complete, company_name')
-                .eq('owner_id', user.id)
+                .eq('profile_id', user.id)
                 .single();
             setCompany(data);
             setLoading(false);

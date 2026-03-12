@@ -28,13 +28,13 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({ isEmbedded = false }) =
     const queryClient = useQueryClient();
 
     const bookings = data?.bookings || [];
-    const activeBookings = bookings.filter(b => ['pending', 'confirmed', 'pending_client_approval', 'on_the_way', 'in_progress', 'pending_quote', 'answered_quote'].includes(b.status));
-    const pastBookings = bookings.filter(b => ['completed', 'cancelled', 'rejected', 'rejected_quote', 'accepted_quote'].includes(b.status));
+    const activeBookings = bookings.filter(b => ['pending', 'accepted', 'pending_client_approval', 'on_the_way', 'in_progress', 'pending_quote', 'answered_quote'].includes(b.status));
+    const pastBookings = bookings.filter(b => ['completed', 'canceled', 'rejected', 'rejected_quote', 'accepted_quote'].includes(b.status));
 
     const getStatusStep = (status: string) => {
         switch (status) {
             case 'pending': return 1;
-            case 'confirmed': return 2;
+            case 'accepted': return 2;
             case 'on_the_way': return 3;
             case 'in_progress': return 4;
             case 'completed': return 5;
@@ -44,10 +44,9 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({ isEmbedded = false }) =
 
     const handleAcceptProposal = async (booking: any) => {
         try {
-            const { error } = await supabase.from('bookings').update({
-                status: 'confirmed',
-                booking_date: booking.proposed_date,
-                booking_time: booking.proposed_time,
+            const { error } = await supabase.from('orders').update({
+                status: 'accepted',
+                scheduled_for: booking.proposed_date ? `${booking.proposed_date}T${booking.proposed_time || '00:00:00'}` : booking.scheduled_for,
                 proposed_date: null,
                 proposed_time: null,
                 proposal_expires_at: null
@@ -64,8 +63,8 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({ isEmbedded = false }) =
     const handleDeclineProposal = async (bookingId: string) => {
         if (!confirm('Tem certeza que deseja recusar? A reserva será cancelada.')) return;
         try {
-            const { error } = await supabase.from('bookings').update({
-                status: 'cancelled',
+            const { error } = await supabase.from('orders').update({
+                status: 'canceled',
             }).eq('id', bookingId);
             if (error) throw error;
             addToast('Proposta recusada e reserva cancelada.', 'info');
@@ -79,8 +78,8 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({ isEmbedded = false }) =
     const handleCancel = async (bookingId: string) => {
         if (!confirm('Deseja realmente cancelar este agendamento? Esta ação não pode ser desfeita.')) return;
         try {
-            const { error } = await supabase.from('bookings').update({
-                status: 'cancelled'
+            const { error } = await supabase.from('orders').update({
+                status: 'canceled'
             }).eq('id', bookingId);
 
             if (error) throw error;
@@ -154,10 +153,10 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({ isEmbedded = false }) =
                                             </div>
                                             <div className="flex flex-col items-end gap-2">
                                                 <Badge variant={
-                                                    booking.status === 'confirmed' || booking.status === 'accepted_quote' ? 'success' :
+                                                    booking.status === 'accepted' || booking.status === 'accepted_quote' ? 'success' :
                                                         booking.status === 'pending_client_approval' || booking.status === 'answered_quote' ? 'warning' : 'info'
                                                 }>
-                                                    {booking.status === 'confirmed' ? 'Confirmado' :
+                                                    {booking.status === 'accepted' ? 'Confirmado' :
                                                         booking.status === 'pending_client_approval' ? 'Aguardando sua Resposta' :
                                                             booking.status === 'pending' ? 'Aguardando Empresa' :
                                                                 booking.status === 'pending_quote' ? 'Orçamento Pendente' :
@@ -212,7 +211,7 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({ isEmbedded = false }) =
                                                 <ClockIcon className="w-5 h-5 text-blue-500" />
                                                 <div className="flex flex-col">
                                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Horário</span>
-                                                    <span className="text-slate-800 font-bold leading-tight">{booking.time}</span>
+                                                    <span className="text-slate-800 font-bold leading-tight">{booking.time || '--:--'}</span>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-3">

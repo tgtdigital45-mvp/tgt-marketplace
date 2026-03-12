@@ -43,7 +43,7 @@ export default function PlansScreen() {
         try {
             const [{ data: plansData }, { data: company }] = await Promise.all([
                 supabase.from('subscription_plans').select('*').eq('is_active', true).order('price_brl'),
-                supabase.from('companies').select('id, kyc_status').eq('owner_id', user.id).single(),
+                supabase.from('companies').select('id, kyc_status').eq('profile_id', user.id).single(),
             ]);
 
             if (plansData) setPlans(plansData as Plan[]);

@@ -50,7 +50,7 @@ Deno.serve(async (req: Request) => {
         const userId = user.id;
 
         // Cancelar pedidos pendentes do usuário antes de excluir
-        await fetch(`${supabaseUrl}/rest/v1/service_orders?client_id=eq.${userId}&status=in.(pending,accepted)`, {
+        await fetch(`${supabaseUrl}/rest/v1/orders?buyer_id=eq.${userId}&status=in.(pending,accepted)`, {
             method: "PATCH",
             headers: {
                 apikey: supabaseServiceKey,

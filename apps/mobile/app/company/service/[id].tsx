@@ -16,7 +16,7 @@ type Service = {
     title: string;
     description: string;
     price: number;
-    price_type: 'fixed' | 'budget';
+    requires_quote: boolean;
     location_type: 'in_store' | 'at_home' | 'remote';
     estimated_duration?: number;
     image_url?: string;
@@ -90,7 +90,7 @@ export default function ServiceDetailScreen() {
 
     const handleBookPress = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        if (service.price_type === 'budget') {
+        if (service.requires_quote) {
             router.push(`/company/form/${service.id}`);
         } else {
             router.push(`/company/book/${service.id}`);
@@ -120,7 +120,7 @@ export default function ServiceDetailScreen() {
                                 Haptics.selectionAsync();
                                 try {
                                     await Share.share({
-                                        message: `Confira "${service.title}" no CONTRATTO! Preço: ${service.price_type === 'fixed' ? `R$ ${service.price.toFixed(2)}` : 'Sob orçamento'}`,
+                                        message: `Confira "${service.title}" no CONTRATTO! Preço: ${service.requires_quote ? 'Sob orçamento' : `R$ ${service.price.toFixed(2)}`}`,
                                     });
                                 } catch (e) {
                                     logger.error('Share error:', e);
@@ -138,10 +138,10 @@ export default function ServiceDetailScreen() {
                         <View style={styles.titleRow}>
                             <Text style={styles.title}>{service.title}</Text>
                             <View style={styles.priceTag}>
-                                {service.price_type === 'fixed' ? (
-                                    <Text style={styles.priceTagText}>R$ {service.price}</Text>
-                                ) : (
+                                {service.requires_quote ? (
                                     <Text style={styles.priceTagText}>Orçamento</Text>
+                                ) : (
+                                    <Text style={styles.priceTagText}>R$ {service.price}</Text>
                                 )}
                             </View>
                         </View>
@@ -217,12 +217,12 @@ export default function ServiceDetailScreen() {
                 <View style={styles.bottomPriceInfo}>
                     <Text style={styles.bottomPriceLabel}>Total Estimado</Text>
                     <Text style={styles.bottomPriceValue}>
-                        {service.price_type === 'fixed' ? `R$ ${service.price}` : 'Sob Consulta'}
+                        {service.requires_quote ? 'Sob Consulta' : `R$ ${service.price}`}
                     </Text>
                 </View>
                 <TouchableOpacity style={styles.bookButton} activeOpacity={0.8} onPress={handleBookPress}>
                     <Text style={styles.bookButtonText}>
-                        {service.price_type === 'budget' ? 'Solicitar Orçamento' : 'Agendar Agora'}
+                        {service.requires_quote ? 'Solicitar Orçamento' : 'Agendar Agora'}
                     </Text>
                     <Ionicons name="arrow-forward" size={18} color={Colors.white} />
                 </TouchableOpacity>

@@ -15,7 +15,7 @@ export const useClientOrders = (userId: string | undefined) => {
 
             // Parallel Fetching using Promise.all
             try {
-                const [jobsResponse, bookingsResponse, quotesResponse] = await Promise.all([
+                const [jobsResponse, bookingsResponse] = await Promise.all([
                     supabase
                         .from('jobs')
                         .select(`
@@ -31,32 +31,32 @@ export const useClientOrders = (userId: string | undefined) => {
                         .eq('user_id', userId)
                         .order('created_at', { ascending: false }),
 
-                    // 2. Fetch Bookings with Company details
+                     // 2. Fetch Orders (Both standard and budget)
                     supabase
-                        .from('bookings')
+                        .from('orders')
                         .select(`
-            *,
-            companies(company_name, logo_url)
-          `)
-                        .eq('client_id', userId)
-                        .order('created_at', { ascending: false }),
-
-                    // 3. Fetch Quotes with Company details (via Service)
-                    supabase
-                        .from('quotes')
-                        .select(`
-            *,
-            services (
-                title,
-                duration_minutes,
-                companies (
-                    id,
-                    company_name,
-                    logo_url
-                )
-            )
-          `)
-                        .eq('user_id', userId)
+                            *,
+                            service:services (
+                                requires_quote,
+                                title,
+                                duration_minutes,
+                                company:companies (
+                                    id,
+                                    company_name,
+                                    logo_url
+                                )
+                            ),
+                            seller:profiles!orders_seller_id_fkey (
+                                id,
+                                full_name,
+                                avatar_url,
+                                companies!profile_id (
+                                    company_name,
+                                    logo_url
+                                )
+                            )
+                        `)
+                        .eq('buyer_id', userId)
                         .order('created_at', { ascending: false })
                 ]);
 
@@ -113,60 +113,49 @@ export const useClientOrders = (userId: string | undefined) => {
                     }))
                 }));
 
-                // Transform Bookings Data
-                const rawBookings = (bookingsResponse.data || []) as unknown as DbBooking[];
-                const mappedBookings: BookingWithCompany[] = rawBookings.map((b) => ({
-                    id: b.id,
-                    client_id: b.client_id,
-                    company_id: b.company_id,
-                    service_title: b.service_title,
-                    service_price: b.service_price,
-                    booking_date: b.booking_date,
-                    booking_time: b.booking_time,
-                    status: b.status,
-                    // UI Extensions
-                    companyName: b.companies?.company_name || 'Empresa Desconhecida',
-                    serviceName: b.service_title,
-                    price: b.service_price || 0,
-                    date: b.booking_date,
-                    time: b.booking_time,
-                    // Proposal
-                    proposed_date: b.proposed_date,
-                    proposed_time: (b as any).proposed_time,
-                    proposal_expires_at: b.proposal_expires_at,
-                    // Linking
-                    order_id: (b as any).order_id
-                }));
+                // Transform Bookings/Orders Data (Detecting Quotes)
+                const rawBookings = (bookingsResponse.data || []) as any[];
+                const bookings: BookingWithCompany[] = rawBookings.map((b) => {
+                    const isQuote = b.service?.requires_quote || b.price === 0 || ['pending', 'viewed', 'in_review'].includes(b.status);
+                    
+                    let mappedStatus = b.status;
+                    if (isQuote) {
+                        if (b.status === 'pending') mappedStatus = 'pending_quote';
+                        if (b.status === 'in_review') mappedStatus = 'answered_quote';
+                    }
 
-                // Transform Quotes Data to blend perfectly with Bookings 
-                const rawQuotes = (quotesResponse.data || []) as any[];
-                const mappedQuotes: BookingWithCompany[] = rawQuotes.map((q) => {
-                    let mappedStatus = q.status; // pending, answered, rejected, accepted
-                    if (q.status === 'pending') mappedStatus = 'pending_quote';
-                    if (q.status === 'answered') mappedStatus = 'answered_quote';
+                    const sellerCompany = b.seller?.companies?.[0] || b.service?.company;
 
-                    const companyData = q.services?.companies;
                     return {
-                        id: q.id,
-                        is_quote: true,
-                        client_id: q.user_id,
-                        company_id: companyData?.id || '',
-                        service_title: q.services?.title || 'Serviço Personalizado',
-                        service_price: q.budget_expectation || 0,
-                        booking_date: q.created_at, // use created at to sort and display cleanly
-                        booking_time: 'A Combinar',
-                        status: mappedStatus as any, // 'pending_quote' | 'answered_quote' | etc
-                        companyName: companyData?.company_name || 'Empresa',
-                        serviceName: q.services?.title || 'Orçamento',
-                        price: q.budget_expectation || 0,
-                        date: q.created_at,
-                        time: 'A Combinar',
-                        order_id: q.order_id
+                        id: b.id,
+                        is_quote: isQuote,
+                        client_id: b.buyer_id,
+                        company_id: b.seller_id,
+                        service_title: b.service_title || b.service?.title,
+                        service_price: b.price || b.budget_expectation || 0,
+                        booking_date: b.scheduled_for || b.created_at,
+                        booking_time: b.scheduled_for 
+                            ? new Date(b.scheduled_for).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+                            : 'A Combinar',
+                        status: mappedStatus as any,
+                        // UI Extensions
+                        companyName: sellerCompany?.company_name || b.seller?.full_name || 'Empresa',
+                        serviceName: b.service_title || b.service?.title || 'Serviço',
+                        price: b.price || b.budget_expectation || 0,
+                        date: b.scheduled_for || b.created_at,
+                        time: b.scheduled_for 
+                            ? new Date(b.scheduled_for).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+                            : 'A Combinar',
+                        // Proposal
+                        proposed_date: b.proposed_date,
+                        proposed_time: (b as any).proposed_time,
+                        proposal_expires_at: b.proposal_expires_at,
+                        // Linking
+                        order_id: b.id,
+                        created_at: b.created_at
                     };
-                });
-
-                const bookings = [...mappedBookings, ...mappedQuotes].sort((a, b) => {
-                    return new Date((b as any).created_at || b.date).getTime() - new Date((a as any).created_at || a.date).getTime();
+                }).sort((a, b) => {
+                    return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
                 });
 
                 return { jobs, bookings };

@@ -40,9 +40,9 @@ export default function BrowseScreen() {
     }, []);
 
     const fetchCities = useCallback(async () => {
-        const { data } = await supabase.from('companies').select('address_city').not('address_city', 'is', null);
+        const { data } = await supabase.from('companies').select('city').not('city', 'is', null);
         if (data) {
-            const uniqueCities = Array.from(new Set(data.map((item: { address_city: string }) => item.address_city))).sort() as string[];
+            const uniqueCities = Array.from(new Set(data.map((item: { city: string }) => item.city))).sort() as string[];
             setAvailableCities(uniqueCities);
         }
     }, []);
@@ -62,7 +62,7 @@ export default function BrowseScreen() {
             } else {
                 // Sem busca textual, usa query direta
                 let query = supabase.from('companies').select(`
-                    id, business_name, bio, logo_url, cover_url, address_city, address_state,
+                    id, company_name, description, logo_url, cover_image_url, city, state,
                     services(category_tag)
                 `, { count: 'exact' });
 
@@ -71,7 +71,7 @@ export default function BrowseScreen() {
                 }
 
                 if (city) {
-                    query = query.eq('address_city', city);
+                    query = query.eq('city', city);
                 }
 
                 const { data, error } = await query.limit(30);
@@ -245,7 +245,7 @@ export default function BrowseScreen() {
                                 onPress={() => router.push(`/company/${item.id}`)}
                             >
                                 <Image
-                                    source={{ uri: item.cover_url || 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=800' }}
+                                    source={{ uri: item.cover_image_url || 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=800' }}
                                     style={styles.cardCover}
                                 />
                                 <View style={styles.cardOverlay} />
@@ -254,11 +254,11 @@ export default function BrowseScreen() {
                                         <Image source={{ uri: item.logo_url || 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=400' }} style={styles.logoImg} />
                                     </View>
                                     <View style={styles.info}>
-                                        <Text style={styles.companyName}>{item.business_name}</Text>
+                                        <Text style={styles.companyName}>{item.company_name}</Text>
                                         <View style={styles.row}>
                                             <Ionicons name="star" size={12} color={Colors.warning} />
                                             <Text style={styles.ratingText}>{item.rating?.toFixed(1) || 'New'}</Text>
-                                            <Text style={styles.locationText}>• {item.address_city}</Text>
+                                            <Text style={styles.locationText}>• {item.city}</Text>
                                         </View>
                                     </View>
                                     <View style={styles.arrowCircle}>

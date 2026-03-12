@@ -124,10 +124,10 @@ serve(async (req) => {
 
         return new Response(
             JSON.stringify({
-                paymentIntent: paymentIntent.client_secret,
+                client_secret: paymentIntent.client_secret,
                 ephemeralKey: ephemeralKey.secret,
                 customer: stripeCustomerId,
-                publishableKey: Deno.env.get('STRIPE_PUBLISHABLE_KEY') // Optional, but helps front
+                publishableKey: Deno.env.get('STRIPE_PUBLISHABLE_KEY') // Optional, mas ajuda o front
             }),
             {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },

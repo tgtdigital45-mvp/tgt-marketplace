@@ -43,7 +43,7 @@ export default function ComplianceScreen() {
                 const { data } = await supabase
                     .from('companies')
                     .select('id, kyc_status, kyc_documents')
-                    .eq('owner_id', user.id)
+                    .eq('profile_id', user.id)
                     .single();
 
                 if (data) {

@@ -33,25 +33,30 @@ const DashboardAvaliacoesPage: React.FC = () => {
 
                 if (!companyData) return;
 
-                // 2. Fetch Reviews
+                // 2. Fetch Reviews with Reviewer (Profiles) details
                 const { data, error } = await supabase
                     .from('reviews')
-                    .select('*')
+                    .select(`
+                        *,
+                        reviewer:profiles!reviews_client_id_fkey (
+                            full_name,
+                            avatar_url
+                        )
+                    `)
                     .eq('company_id', companyData.id)
                     .order('created_at', { ascending: false });
 
                 if (error) throw error;
 
-                // Transform to UI format (mocking author name/avatar for now)
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                // Transform to UI format
                 const formattedReviews: ReviewWithReply[] = data.map((r: any) => ({
                     id: r.id,
-                    author: r.client_name || 'Cliente', // Ideally fetch from profiles
-                    avatar: `https://ui-avatars.com/api/?name=${r.client_id}&background=random`,
+                    author: r.reviewer?.full_name || 'Cliente',
+                    avatar: r.reviewer?.avatar_url || `https://ui-avatars.com/api/?name=${r.client_id}&background=random`,
                     rating: r.rating,
                     comment: r.comment,
                     date: new Date(r.created_at).toLocaleDateString(),
-                    reply: r.reply,
+                    reply: (r as any).reply,
                     clientId: r.client_id
                 }));
 

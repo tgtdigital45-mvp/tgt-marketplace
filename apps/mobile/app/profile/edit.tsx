@@ -50,15 +50,18 @@ export default function EditProfileScreen() {
             try {
                 const { data, error } = await supabase
                     .from('profiles')
-                    .select('first_name, last_name, phone, cpf, address_street, address_number, address_neighborhood, address_city, address_state, address_zip')
+                    .select('full_name, phone, cpf, address_street, address_number, address_neighborhood, address_city, address_state, address_zip')
                     .eq('id', session.user.id)
                     .single();
 
                 if (error) throw error;
                 if (data) {
+                    const fullName = data.full_name || '';
+                    const [firstName, ...lastNameParts] = fullName.split(' ');
+                    
                     setForm({
-                        first_name: data.first_name || '',
-                        last_name: data.last_name || '',
+                        first_name: firstName || '',
+                        last_name: lastNameParts.join(' ') || '',
                         phone: data.phone || '',
                         cpf: data.cpf || '',
                         address_street: data.address_street || '',
@@ -99,11 +102,12 @@ export default function EditProfileScreen() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
         try {
+            const fullName = `${form.first_name.trim()} ${form.last_name.trim()}`.trim();
+
             const { error } = await supabase
                 .from('profiles')
                 .update({
-                    first_name: form.first_name.trim(),
-                    last_name: form.last_name.trim(),
+                    full_name: fullName,
                     phone: form.phone.trim(),
                     cpf: form.cpf.replace(/\D/g, ''),
                     address_street: form.address_street.trim(),

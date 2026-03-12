@@ -59,13 +59,13 @@ Deno.serve(async (req: Request) => {
         // Fetch order with company data using Service Role to check ownership
         const adminClient = createClient(supabaseUrl, supabaseServiceKey);
         const { data: order, error: orderError } = await adminClient
-            .from("service_orders")
+            .from("orders")
             .select(`
                 id, 
-                total_price, 
-                company_id, 
-                client_id, 
-                companies (
+                price, 
+                seller_id, 
+                buyer_id, 
+                companies:seller_id (
                     stripe_account_id
                 )
             `)
@@ -81,8 +81,8 @@ Deno.serve(async (req: Request) => {
         }
 
         // VALIDATION: Only the client who created the order can pay for it
-        if (order.client_id !== user.id) {
-            console.warn(`Tentativa de pagamento não autorizada: Usuário ${user.id} tentou pagar pedido ${order_id} pertencente ao cliente ${order.client_id}`);
+        if (order.buyer_id !== user.id) {
+            console.warn(`Tentativa de pagamento não autorizada: Usuário ${user.id} tentou pagar pedido ${order_id} pertencente ao cliente ${order.buyer_id}`);
             return new Response(JSON.stringify({ error: "Acesso negado: Você só pode iniciar pagamentos para seus próprios pedidos." }), {
                 status: 403,
                 headers: { "Content-Type": "application/json", ...CORS_HEADERS },
@@ -102,7 +102,7 @@ Deno.serve(async (req: Request) => {
             });
         }
 
-        const amount = Math.round((order.total_price || 0) * 100); // Convert BRL to centavos
+        const amount = Math.round((order.price || 0) * 100); // Convert BRL to centavos
         if (amount <= 0) {
             return new Response(JSON.stringify({ error: "Invalid order amount" }), {
                 status: 400,
@@ -112,7 +112,7 @@ Deno.serve(async (req: Request) => {
 
         // Get take rate for this company
         const { data: takeRate, error: takeRateError } = await adminClient
-            .rpc("get_company_take_rate", { p_company_id: order.company_id });
+            .rpc("get_company_take_rate", { p_company_id: order.seller_id });
 
         const feePercent = typeof takeRate === "number" ? takeRate : 20;
         const applicationFee = Math.round(amount * (feePercent / 100));
@@ -121,7 +121,7 @@ Deno.serve(async (req: Request) => {
         const { data: clientProfile } = await adminClient
             .from("profiles")
             .select("id, stripe_customer_id, first_name, last_name")
-            .eq("id", order.client_id)
+            .eq("id", order.buyer_id)
             .single();
 
         let stripeCustomerId = clientProfile?.stripe_customer_id;
@@ -129,7 +129,7 @@ Deno.serve(async (req: Request) => {
         if (!stripeCustomerId) {
             const customer = await stripe.customers.create({
                 name: `${clientProfile?.first_name || ""} ${clientProfile?.last_name || ""}`.trim() || "Cliente",
-                metadata: { supabase_id: order.client_id },
+                metadata: { supabase_id: order.buyer_id },
             });
             stripeCustomerId = customer.id;
 
@@ -137,7 +137,7 @@ Deno.serve(async (req: Request) => {
             await adminClient
                 .from("profiles")
                 .update({ stripe_customer_id: stripeCustomerId })
-                .eq("id", order.client_id);
+                .eq("id", order.buyer_id);
         }
 
         // Build PaymentIntent params
@@ -147,8 +147,8 @@ Deno.serve(async (req: Request) => {
             customer: stripeCustomerId,
             metadata: {
                 order_id,
-                company_id: order.company_id,
-                client_id: order.client_id,
+                seller_id: order.seller_id,
+                buyer_id: order.buyer_id,
                 triggered_by: user.id
             },
         };

@@ -22,8 +22,8 @@ interface KanbanCardProps {
 const KanbanCard: React.FC<KanbanCardProps> = ({ appointment, onMove, onCancel }) => {
     const getNextStatus = (current: string) => {
         switch (current) {
-            case 'pending': return 'confirmed';
-            case 'confirmed': return 'in_progress';
+            case 'pending': return 'accepted';
+            case 'accepted': return 'in_progress';
             case 'in_progress': return 'completed';
             default: return null;
         }
@@ -32,7 +32,7 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ appointment, onMove, onCancel }
     const getActionLabel = (current: string) => {
         switch (current) {
             case 'pending': return 'Aceitar';
-            case 'confirmed': return 'Iniciar';
+            case 'accepted': return 'Iniciar';
             case 'in_progress': return 'Finalizar';
             default: return null;
         }

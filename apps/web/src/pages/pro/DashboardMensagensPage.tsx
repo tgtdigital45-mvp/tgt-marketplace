@@ -415,7 +415,7 @@ const OrderSummaryWidget: React.FC<{ orderId: string; threadId: string; partnerI
                 .from('order_proposals')
                 .insert({
                     order_id: order.id,
-                    company_id: order.company_id,
+                    company_id: order.seller_id,
                     amount: numericPrice,
                     estimated_duration: budgetDuration.trim() || null,
                     notes: budgetNotes.trim() || null,

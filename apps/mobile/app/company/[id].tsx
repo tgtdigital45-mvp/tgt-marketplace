@@ -20,12 +20,12 @@ type PortfolioItem = {
 
 type Company = {
     id: string;
-    business_name: string;
-    bio: string;
-    address_city: string;
-    address_state: string;
+    company_name: string;
+    description: string;
+    city: string;
+    state: string;
     rating?: number;
-    cover_url?: string;
+    cover_image_url?: string;
     logo_url?: string;
     portfolio?: PortfolioItem[];
     address_street?: string;
@@ -42,7 +42,7 @@ type Service = {
     title: string;
     description: string;
     price: number;
-    price_type: 'fixed' | 'budget';
+    requires_quote: boolean;
     location_type: 'at_home' | 'at_provider' | 'remote';
     estimated_duration?: number;
     duration_unit?: 'minutes' | 'hours' | 'days';
@@ -74,7 +74,7 @@ export default function CompanyProfileScreen() {
         setLoading(true);
         try {
             const [{ data: compData, error: compErr }, { data: srvData }, { data: revData }] = await Promise.all([
-                supabase.from('companies').select('id, business_name, bio, address_city, address_state, cover_url, logo_url, address_street, address_number, address_neighborhood, address_zip, instagram_url, linkedin_url, facebook_url').eq('id', id).single(),
+                supabase.from('companies').select('id, company_name, description, city, state, cover_image_url, logo_url, address_street, address_number, address_neighborhood, address_zip, instagram_url, linkedin_url, facebook_url').eq('id', id).single(),
                 supabase.from('services').select('*').eq('company_id', id).eq('is_active', true),
                 supabase.from('reviews').select('id, rating, comment, created_at, profiles:reviewer_id(first_name, last_name)').eq('company_id', id).order('created_at', { ascending: false }).limit(5)
             ]);
@@ -198,7 +198,7 @@ export default function CompanyProfileScreen() {
 
                 <View style={styles.headerContainer}>
                     <Image
-                        source={{ uri: company.cover_url || 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1200' }}
+                        source={{ uri: company.cover_image_url || 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1200' }}
                         style={styles.coverImage}
                     />
                     <View style={styles.coverOverlay} />
@@ -226,13 +226,13 @@ export default function CompanyProfileScreen() {
                             <Image source={{ uri: company.logo_url }} style={styles.logoImg} />
                         ) : (
                             <View style={[styles.logoImg, styles.logoPlaceholder]}>
-                                <Text style={styles.logoPlaceholderText}>{company.business_name?.[0]}</Text>
+                                <Text style={styles.logoPlaceholderText}>{company.company_name?.[0]}</Text>
                             </View>
                         )}
                     </View>
 
                     <View style={styles.headerInfo}>
-                        <Text style={styles.businessName}>{company.business_name}</Text>
+                        <Text style={styles.businessName}>{company.company_name}</Text>
                         <View style={styles.statsRow}>
                             <View style={styles.ratingBadge}>
                                 <Ionicons name="star" size={12} color={Colors.white} />
@@ -242,11 +242,11 @@ export default function CompanyProfileScreen() {
                                 {reviews.length} {reviews.length === 1 ? 'avaliação' : 'avaliações'}
                             </Text>
                             <View style={styles.dot} />
-                            <Text style={styles.locationText}>{company.address_city}, {company.address_state}</Text>
+                            <Text style={styles.locationText}>{company.city}, {company.state}</Text>
                         </View>
                     </View>
 
-                    <Text style={styles.bioText}>{company.bio || 'Bem-vindo ao nosso perfil profissional.'}</Text>
+                    <Text style={styles.bioText}>{company.description || 'Bem-vindo ao nosso perfil profissional.'}</Text>
 
                     {(company.instagram_url || company.linkedin_url || company.facebook_url) && (
                         <View style={styles.socialRow}>
@@ -298,8 +298,7 @@ export default function CompanyProfileScreen() {
                                     <Text style={styles.serviceName}>{service.title}</Text>
                                     <Text style={styles.serviceDesc} numberOfLines={2}>{service.description}</Text>
                                     <View style={styles.priceRow}>
-                                        <Text style={styles.priceLabel}>A partir de</Text>
-                                        <Text style={styles.priceValue}>R$ {service.price}</Text>
+                                        <Text style={styles.priceValue}>{service.requires_quote ? 'Sob Orçamento' : `R$ ${service.price}`}</Text>
                                     </View>
                                 </View>
                                 <View style={styles.serviceBtn}>

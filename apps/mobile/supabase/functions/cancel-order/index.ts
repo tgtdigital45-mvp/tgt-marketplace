@@ -61,7 +61,7 @@ Deno.serve(async (req: Request) => {
         // Buscar detalhes do pedido
         // Precisamos verificar se o usuário é o cliente (client_id) ou o dono da empresa (company_id -> owner_id)
         const orderQueryRes = await fetch(
-            `${supabaseUrl}/rest/v1/service_orders?id=eq.${order_id}&select=id,status,client_id,company_id,stripe_payment_intent_id,companies(owner_id)`,
+            `${supabaseUrl}/rest/v1/orders?id=eq.${order_id}&select=id,status,buyer_id,seller_id,stripe_payment_intent_id`,
             {
                 headers: {
                     apikey: supabaseKey,
@@ -81,8 +81,8 @@ Deno.serve(async (req: Request) => {
         }
 
         // Checar Permissão
-        const isClient = userId === order.client_id;
-        const isCompanyOwner = userId === order.companies?.owner_id;
+        const isClient = userId === order.buyer_id;
+        const isCompanyOwner = userId === order.seller_id;
 
         if (!isClient && !isCompanyOwner) {
             return new Response(JSON.stringify({ error: "Acesso negado. Apenas o cliente ou o profissional podem cancelar o pedido." }), {
@@ -124,7 +124,7 @@ Deno.serve(async (req: Request) => {
         }
 
         // Atualizar status do pedido no banco de dados para "canceled"
-        const updateRes = await fetch(`${supabaseUrl}/rest/v1/service_orders?id=eq.${order_id}`, {
+        const updateRes = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${order_id}`, {
             method: "PATCH",
             headers: {
                 apikey: supabaseKey,

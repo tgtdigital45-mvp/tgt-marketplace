@@ -3,92 +3,66 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@tgt/shared';
 import Button from '@/components/ui/Button';
 import { useToast } from '@/contexts/ToastContext';
-import { BookingWithCompany } from '@tgt/shared';
-import { Calendar as CalendarIcon, List, Check, X, ChevronLeft, ChevronRight as ChevronRightIcon, MessageCircle, Sparkles, Loader2, Mail } from 'lucide-react';
+import { Calendar as CalendarIcon, List, Check, X, ChevronLeft, ChevronRight as ChevronRightIcon, MessageCircle, Sparkles, Loader2, Settings2, Filter, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { gemini } from '@/utils/gemini';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
-import { DAYS, DAY_LABELS, DaySchedule, CompanyAvailability } from '@/utils/availability';
+import { DAYS, DAY_LABELS, DaySchedule } from '@/utils/availability';
+import AvailabilityModal from '@/components/modals/AvailabilityModal';
 
-// UI Order for display: Monday to Sunday
-const UI_DAYS_ORDER: (keyof typeof DAY_LABELS)[] = [
-    'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'
-];
+interface Order {
+    id: string;
+    buyer_id: string;
+    service_title: string;
+    price: number;
+    scheduled_for: string;
+    status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'canceled' | 'pending_client_approval';
+    created_at: string;
+}
 
 const DashboardAgendaPage = () => {
-    const { company, updateCompany, refreshCompany } = useCompany();
+    const { company, refreshCompany } = useCompany();
     const { addToast } = useToast();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
-    const [bookings, setBookings] = useState<BookingWithCompany[]>([]);
-    const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+    const [bookings, setBookings] = useState<Order[]>([]);
+    
+    // UI State
+    const [isAvailabilityModalOpen, setIsAvailabilityModalOpen] = useState(false);
+    const [viewFilter, setViewFilter] = useState<'day' | 'week' | 'month'>('month');
+    const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
     // Calendar State
     const [currentMonth, setCurrentMonth] = useState(new Date());
 
-    // Availability State
-    const [availability, setAvailability] = useState<Record<string, DaySchedule>>({});
-    const [worksOnHolidays, setWorksOnHolidays] = useState(false);
     const [generatingEmailId, setGeneratingEmailId] = useState<string | null>(null);
 
     useEffect(() => {
-        if (company?.availability) {
-            // Parse existing or set default
-            const initial: any = {};
-            DAYS.forEach(day => {
-                const dayData = (company.availability as any)?.[day] || {};
-                initial[day] = {
-                    start: dayData.start || '09:00',
-                    end: dayData.end || '18:00',
-                    active: dayData.active ?? (day === 'saturday' || day === 'sunday' ? false : true),
-                    hasBreak: dayData.hasBreak || false,
-                    breakStart: dayData.breakStart || '12:00',
-                    breakEnd: dayData.breakEnd || '13:00'
-                };
-            });
-            setAvailability(initial);
-            setWorksOnHolidays((company.availability as any).worksOnHolidays ?? false);
-        } else {
-            const initial: any = {};
-            DAYS.forEach(day => {
-                initial[day] = {
-                    start: '09:00',
-                    end: '18:00',
-                    active: !['saturday', 'sunday'].includes(day),
-                    hasBreak: false,
-                    breakStart: '12:00',
-                    breakEnd: '13:00'
-                };
-            });
-            setAvailability(initial);
-            setWorksOnHolidays(false);
-        }
-
         fetchBookings();
     }, [company]);
 
     const fetchBookings = async () => {
         if (!company) return;
         const { data, error } = await supabase
-            .from('bookings')
-            .select('*, companies:company_id(company_name)')
-            .eq('company_id', company.id)
-            .order('booking_date', { ascending: true });
+            .from('orders')
+            .select('*')
+            .eq('seller_id', company.profile_id)
+            .order('scheduled_for', { ascending: true });
 
         if (data) setBookings(data as any);
     };
 
-    const handleUpdateBookingStatus = async (bookingId: string, newStatus: 'confirmed' | 'cancelled' | 'rejected') => {
+    const handleUpdateBookingStatus = async (bookingId: string, newStatus: string) => {
         try {
             const { error } = await supabase
-                .from('bookings')
+                .from('orders')
                 .update({ status: newStatus })
                 .eq('id', bookingId);
 
             if (error) throw error;
 
-            addToast(`Agendamento ${newStatus === 'confirmed' ? 'confirmado' : 'rejeitado'}!`, 'success');
+            addToast(`Agendamento ${newStatus === 'accepted' ? 'confirmado' : 'rejeitado'}!`, 'success');
             fetchBookings();
         } catch (err) {
             console.error(err);
@@ -96,36 +70,10 @@ const DashboardAgendaPage = () => {
         }
     };
 
-    const handleGenerateRescheduleEmail = async (booking: any) => {
-        try {
-            setGeneratingEmailId(booking.id);
-            const email = await gemini.generateRescheduleEmail({
-                service_title: booking.service_title,
-                booking_date: new Date(booking.booking_date).toLocaleDateString(),
-                booking_time: booking.booking_time
-            });
-
-            await navigator.clipboard.writeText(email);
-            addToast('E-mail de reagendamento copiado para o clipboard!', 'success');
-        } catch (err: any) {
-            console.error(err);
-            addToast('Erro ao gerar e-mail sugerido.', 'error');
-        } finally {
-            setGeneratingEmailId(null);
-        }
-    };
-
-    const handleSaveAvailability = async () => {
+    const handleSaveAvailability = async (payload: any) => {
         if (!company) return;
         setLoading(true);
         try {
-            // Save worksOnHolidays inside the JSON for now, or use a separate column if strictly typed.
-            // Using JSONB allows flexibility.
-            const payload = {
-                ...availability,
-                worksOnHolidays
-            };
-
             const { error } = await supabase
                 .from('companies')
                 .update({ availability: payload })
@@ -133,7 +81,7 @@ const DashboardAgendaPage = () => {
 
             if (error) throw error;
 
-            await refreshCompany(); // Refresh context
+            await refreshCompany();
             addToast('Disponibilidade atualizada!', 'success');
         } catch (error) {
             console.error(error);
@@ -141,27 +89,6 @@ const DashboardAgendaPage = () => {
         } finally {
             setLoading(false);
         }
-    };
-
-    const toggleDay = (day: string) => {
-        setAvailability(prev => ({
-            ...prev,
-            [day]: { ...prev[day], active: !prev[day].active }
-        }));
-    };
-
-    const toggleBreak = (day: string) => {
-        setAvailability(prev => ({
-            ...prev,
-            [day]: { ...prev[day], hasBreak: !prev[day].hasBreak }
-        }));
-    };
-
-    const handleTimeChange = (day: string, field: keyof DaySchedule, value: string) => {
-        setAvailability(prev => ({
-            ...prev,
-            [day]: { ...prev[day], [field]: value }
-        }));
     };
 
     // Calendar logic
@@ -172,331 +99,292 @@ const DashboardAgendaPage = () => {
         const lastDay = new Date(year, month + 1, 0);
 
         const days = [];
-
-        // Padding days for previous month (Monday based)
-        let firstDayOfWeek = firstDay.getDay(); // 0 is Sunday
-        firstDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1; // 0 is Monday
-
+        let firstDayOfWeek = firstDay.getDay(); 
         for (let i = 0; i < firstDayOfWeek; i++) {
             days.push(null);
         }
-
         for (let i = 1; i <= lastDay.getDate(); i++) {
             days.push(new Date(year, month, i));
         }
-
         return days;
     }, [currentMonth]);
 
     const bookingsByDay = useMemo(() => {
-        const map: Record<string, BookingWithCompany[]> = {};
+        const map: Record<string, Order[]> = {};
         bookings.forEach(b => {
-            if (!map[b.booking_date]) map[b.booking_date] = [];
-            map[b.booking_date].push(b);
+            const dateStr = b.scheduled_for ? b.scheduled_for.split('T')[0] : null;
+            if (dateStr) {
+                if (!map[dateStr]) map[dateStr] = [];
+                map[dateStr].push(b);
+            }
         });
         return map;
     }, [bookings]);
+
+    const filteredBookings = useMemo(() => {
+        if (viewFilter === 'day') {
+            return bookingsByDay[selectedDate] || [];
+        }
+        if (viewFilter === 'week') {
+            // Simple week filter: 7 days starting from selectedDate or current week
+            const start = new Date(selectedDate);
+            const end = new Date(start);
+            end.setDate(start.getDate() + 7);
+            return bookings.filter(b => {
+                const date = new Date(b.scheduled_for);
+                return date >= start && date < end;
+            });
+        }
+        return bookings; // Month/All
+    }, [bookings, selectedDate, viewFilter, bookingsByDay]);
 
     const nextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
     const previousMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
 
     return (
-        <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6">
+        <div className="max-w-7xl mx-auto space-y-6">
             {/* ─── Page Header ─────────────────────────────────────────────── */}
             <motion.div
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-                className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3"
+                className="flex flex-col md:flex-row md:items-center justify-between gap-4"
             >
                 <div>
                     <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
                         <span>Dashboard</span><ChevronRightIcon size={12} />
                         <span className="text-gray-600 font-medium">Agenda</span>
                     </div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Agenda & Disponibilidade</h1>
-                    <p className="text-xs sm:text-sm text-gray-400 mt-0.5">
-                        Gerencie seus horarios e agendamentos
-                    </p>
+                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Agenda & Disponibilidade</h1>
+                    <p className="text-sm text-gray-400 mt-0.5">Gerencie seus horários e próximos compromissos</p>
                 </div>
 
-                <div className="flex bg-gray-100 p-1 rounded-xl">
+                <div className="flex items-center gap-2">
                     <button
-                        onClick={() => setViewMode('list')}
-                        className={`px-3 py-2 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-all ${viewMode === 'list' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'}`}
+                        onClick={() => setIsAvailabilityModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
                     >
-                        <List size={14} className={viewMode === 'list' ? 'text-primary-500' : ''} />
-                        Lista
+                        <Settings2 size={16} className="text-primary-500" />
+                        Configurar Horários
                     </button>
-                    <button
-                        onClick={() => setViewMode('calendar')}
-                        className={`px-3 py-2 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-all ${viewMode === 'calendar' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'}`}
-                    >
-                        <CalendarIcon size={14} className={viewMode === 'calendar' ? 'text-primary-500' : ''} />
-                        Calendario
-                    </button>
+                    <div className="h-8 w-px bg-gray-200 mx-2" />
+                    <div className="flex bg-gray-100 p-1 rounded-2xl">
+                        {(['day', 'week', 'month'] as const).map((f) => (
+                            <button
+                                key={f}
+                                onClick={() => setViewFilter(f)}
+                                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${viewFilter === f ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                {f === 'day' ? 'Dia' : f === 'week' ? 'Semana' : 'Mês'}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </motion.div>
-            {/* 1. Availability Settings */}
-            <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-sm font-bold text-gray-800">Horarios de Atendimento</h2>
 
-                    <div className="flex items-center gap-2">
-                        <label htmlFor="holidays" className="text-sm font-medium text-gray-700">
-                            Trabalha em Feriados?
-                        </label>
-                        <button
-                            id="holidays"
-                            onClick={() => setWorksOnHolidays(!worksOnHolidays)}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${worksOnHolidays ? 'bg-primary-500' : 'bg-gray-200'
-                                }`}
-                        >
-                            <span
-                                className={`${worksOnHolidays ? 'translate-x-6' : 'translate-x-1'
-                                    } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
-                            />
-                        </button>
-                    </div>
-                </div>
-
-                <p className="text-sm text-gray-500 mb-4 bg-blue-50 p-3 rounded-lg border border-blue-100">
-                    <strong>Onde está o calendário?</strong> A lista de "Próximos Agendamentos" ao lado serve como seu calendário de compromissos confirmados.
-                </p>
-
-                <div className="space-y-4">
-                    {UI_DAYS_ORDER.map(day => (
-                        <div key={day} className="p-4 bg-gray-50 rounded-lg border border-gray-100">
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-3">
-                                    <input
-                                        type="checkbox"
-                                        checked={availability[day]?.active ?? false}
-                                        onChange={() => toggleDay(day)}
-                                        className="w-5 h-5 rounded text-primary-500 focus:ring-primary-500"
-                                    />
-                                    <span className="font-medium text-gray-700 w-28">{DAY_LABELS[day]}</span>
-                                </div>
-
-                                {availability[day]?.active && (
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            id={`break-${day}`}
-                                            checked={availability[day]?.hasBreak ?? false}
-                                            onChange={() => toggleBreak(day)}
-                                            className="w-4 h-4 rounded text-primary-500 focus:ring-primary-500"
-                                        />
-                                        <label htmlFor={`break-${day}`} className="text-xs text-gray-500 cursor-pointer select-none">
-                                            Com Intervalo?
-                                        </label>
-                                    </div>
-                                )}
+            {/* ─── Main Content (Split View) ────────────────────────────────── */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                {/* Lateral Esquerda: Calendário (7 colunas) */}
+                <motion.div 
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="lg:col-span-8 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm"
+                >
+                    <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center gap-4">
+                            <h2 className="text-lg font-bold text-gray-900 capitalize">
+                                {currentMonth.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}
+                            </h2>
+                            <div className="flex bg-gray-50 p-1 rounded-xl">
+                                <button onClick={previousMonth} className="p-1.5 hover:bg-white hover:shadow-sm rounded-lg transition-all text-gray-500">
+                                    <ChevronLeft size={18} />
+                                </button>
+                                <button onClick={nextMonth} className="p-1.5 hover:bg-white hover:shadow-sm rounded-lg transition-all text-gray-500">
+                                    <ChevronRightIcon size={18} />
+                                </button>
                             </div>
-
-                            {availability[day]?.active ? (
-                                <div className="pl-8">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-500 w-8">Início</span>
-                                            <input
-                                                type="time"
-                                                value={availability[day]?.start}
-                                                onChange={(e) => handleTimeChange(day, 'start', e.target.value)}
-                                                className="px-2 py-1 border rounded text-sm w-24"
-                                            />
-                                        </div>
-
-                                        {availability[day]?.hasBreak && (
-                                            <>
-                                                <span className="text-gray-400">-</span>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-xs text-gray-500">Pausa</span>
-                                                    <input
-                                                        type="time"
-                                                        value={availability[day]?.breakStart}
-                                                        onChange={(e) => handleTimeChange(day, 'breakStart', e.target.value)}
-                                                        className="px-2 py-1 border rounded text-sm w-24"
-                                                    />
-                                                </div>
-                                                <span className="text-gray-400">até</span>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-xs text-gray-500">Volta</span>
-                                                    <input
-                                                        type="time"
-                                                        value={availability[day]?.breakEnd}
-                                                        onChange={(e) => handleTimeChange(day, 'breakEnd', e.target.value)}
-                                                        className="px-2 py-1 border rounded text-sm w-24"
-                                                    />
-                                                </div>
-                                            </>
-                                        )}
-
-                                        <span className="text-gray-400">-</span>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-500 w-8">Fim</span>
-                                            <input
-                                                type="time"
-                                                value={availability[day]?.end}
-                                                onChange={(e) => handleTimeChange(day, 'end', e.target.value)}
-                                                className="px-2 py-1 border rounded text-sm w-24"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="pl-8 text-sm text-gray-400 italic">Fechado</div>
-                            )}
                         </div>
-                    ))}
-                </div>
-                <div className="mt-6">
-                    <Button onClick={handleSaveAvailability} isLoading={loading}>Salvar Horários</Button>
-                </div>
-            </div>
-
-            {/* 2. Bookings View */}
-            <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-sm font-bold text-gray-800">
-                        {viewMode === 'list' ? 'Próximos Agendamentos' : currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                    </h2>
-
-                    {viewMode === 'calendar' && (
-                        <div className="flex items-center gap-2">
-                            <button onClick={previousMonth} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                                <ChevronLeft size={20} className="text-gray-600" />
-                            </button>
-                            <button onClick={nextMonth} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                                <ChevronRightIcon size={20} className="text-gray-600" />
-                            </button>
-                        </div>
-                    )}
-                </div>
-
-                {viewMode === 'list' ? (
-                    <div className="space-y-3">
-                        {bookings.length === 0 ? (
-                            <p className="text-gray-500 text-center py-8">Nenhum agendamento encontrado.</p>
-                        ) : (
-                            bookings.map(booking => (
-                                <div key={booking.id} className="p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <h3 className="font-bold text-gray-900">{booking.service_title}</h3>
-                                            <p className="text-sm text-gray-600">Cliente ID: {booking.client_id.slice(0, 8)}...</p>
-                                        </div>
-                                        <div className="flex flex-col items-end gap-2">
-                                            <span className={`px-2 py-1 rounded text-xs font-bold uppercase
-                                                    ${booking.status === 'confirmed' ? 'bg-green-100 text-green-700' :
-                                                    booking.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'}`}>
-                                                {booking.status}
-                                            </span>
-
-                                            {booking.status === 'pending' && (
-                                                <div className="flex gap-2">
-                                                    <button
-                                                        onClick={() => handleUpdateBookingStatus(booking.id, 'confirmed')}
-                                                        className="p-1.5 bg-green-50 text-green-600 rounded-md hover:bg-green-100 transition-colors"
-                                                        title="Confirmar"
-                                                    >
-                                                        <Check size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleUpdateBookingStatus(booking.id, 'rejected')}
-                                                        className="p-1.5 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors"
-                                                        title="Recusar"
-                                                    >
-                                                        <X size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => navigate('/pro/dashboard/mensagens')}
-                                                        className="p-1.5 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors"
-                                                        title="Mensagens"
-                                                    >
-                                                        <MessageCircle size={16} />
-                                                    </button>
-                                                </div>
-                                            )}
-
-                                            {(booking.status as string) === 'rejected' && (
-                                                <button
-                                                    onClick={() => handleGenerateRescheduleEmail(booking)}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary-500/5 text-primary-500 rounded-lg text-xs font-bold hover:bg-primary-500/10 transition-colors disabled:opacity-50"
-                                                    title="Gerar Sugestão de Reagendamento"
-                                                    disabled={!!generatingEmailId}
-                                                >
-                                                    {generatingEmailId === booking.id ? (
-                                                        <Loader2 size={14} className="animate-spin" />
-                                                    ) : (
-                                                        <Sparkles size={14} />
-                                                    )}
-                                                    Reagendar
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="mt-2 flex items-center gap-4 text-sm text-gray-500">
-                                        <div className="flex items-center gap-1">
-                                            <CalendarIcon className="w-4 h-4" />
-                                            {new Date(booking.booking_date).toLocaleDateString()}
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            <CalendarIcon className="w-4 h-4" />
-                                            {booking.booking_time}
-                                        </div>
-                                    </div>
-                                </div>
-                            ))
-                        )}
+                        <Button 
+                            variant="outline" 
+                            className="text-xs font-bold h-9 rounded-xl"
+                            onClick={() => {
+                                setCurrentMonth(new Date());
+                                setSelectedDate(new Date().toISOString().split('T')[0]);
+                            }}
+                        >
+                            Hoje
+                        </Button>
                     </div>
-                ) : (
-                    <div className="grid grid-cols-7 gap-px bg-gray-200 border border-gray-200 rounded-lg overflow-hidden">
+
+                    <div className="grid grid-cols-7 gap-px bg-gray-100 border border-gray-100 rounded-2xl overflow-hidden shadow-inner">
                         {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
-                            <div key={day} className="bg-gray-50 py-2 text-center text-xs font-bold text-gray-500 uppercase">
+                            <div key={day} className="bg-gray-50 py-3 text-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                                 {day}
                             </div>
                         ))}
                         {calendarDays.map((date, i) => {
-                            if (!date) return <div key={`empty-${i}-${currentMonth.getTime()}`} className="bg-white min-h-[100px]" />;
+                            if (!date) return <div key={`empty-${i}`} className="bg-white min-h-[100px]" />;
 
                             const dateStr = date.toISOString().split('T')[0];
                             const dayBookings = bookingsByDay[dateStr] || [];
                             const isToday = new Date().toISOString().split('T')[0] === dateStr;
+                            const isSelected = selectedDate === dateStr;
 
                             return (
-                                <div key={dateStr} className={`bg-white min-h-[100px] p-2 hover:bg-gray-50 transition-colors group relative ${isToday ? 'ring-2 ring-primary-500 ring-inset' : ''}`}>
-                                    <span className={`text-sm font-medium ${isToday ? 'text-primary-500' : 'text-gray-700'}`}>
+                                <div 
+                                    key={dateStr} 
+                                    onClick={() => {
+                                        setSelectedDate(dateStr);
+                                        if (viewFilter === 'month') setViewFilter('day');
+                                    }}
+                                    className={`bg-white min-h-[110px] p-2 hover:bg-primary-50/30 transition-all cursor-pointer group relative border-t border-l border-gray-50
+                                        ${isSelected ? 'bg-primary-50/50' : ''}`}
+                                >
+                                    <span className={`inline-flex items-center justify-center w-7 h-7 text-sm font-bold rounded-full transition-colors
+                                        ${isToday ? 'bg-primary-500 text-white shadow-md shadow-primary-200' : isSelected ? 'bg-primary-100 text-primary-700' : 'text-gray-600'}`}>
                                         {date.getDate()}
                                     </span>
 
-                                    <div className="mt-1 space-y-1">
-                                        {dayBookings.slice(0, 3).map(b => (
+                                    <div className="mt-2 space-y-1">
+                                        {dayBookings.slice(0, 2).map(b => (
                                             <div
                                                 key={b.id}
-                                                className={`text-[10px] truncate px-1 py-0.5 rounded ${b.status === 'confirmed' ? 'bg-green-100 text-green-700' :
-                                                    b.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'
-                                                    }`}
+                                                className={`text-[9px] truncate px-1.5 py-0.5 rounded-md font-medium border
+                                                    ${b.status === 'accepted' ? 'bg-green-50 text-green-700 border-green-100' :
+                                                      b.status === 'pending' ? 'bg-amber-50 text-amber-700 border-amber-100' : 
+                                                      'bg-gray-50 text-gray-600 border-gray-100'}`}
                                             >
-                                                {b.booking_time} {b.service_title}
+                                                {new Date(b.scheduled_for).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </div>
                                         ))}
-                                        {dayBookings.length > 3 && (
-                                            <div className="text-[10px] text-gray-400 font-medium pl-1">
-                                                + {dayBookings.length - 3} mais
+                                        {dayBookings.length > 2 && (
+                                            <div className="text-[9px] text-gray-400 font-bold pl-1">
+                                                + {dayBookings.length - 2} mais
                                             </div>
                                         )}
                                     </div>
-
-                                    {dayBookings.length > 0 && (
-                                        <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    
+                                    {dayBookings.length > 0 && !isToday && !isSelected && (
+                                        <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-primary-400 shadow-sm" />
                                     )}
                                 </div>
                             );
                         })}
                     </div>
-                )}
+                </motion.div>
+
+                {/* Lateral Direita: Lista de Agendamentos (4 colunas) */}
+                <motion.div 
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="lg:col-span-4 space-y-4"
+                >
+                    <div className="flex items-center justify-between px-2">
+                        <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                            <Filter size={14} className="text-primary-500" />
+                            {viewFilter === 'day' ? `Agendamentos de ${new Date(selectedDate).toLocaleDateString('pt-BR')}` : 
+                             viewFilter === 'week' ? 'Próximos 7 dias' : 'Todos Agendamentos'}
+                        </h3>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase bg-gray-100 px-2 py-0.5 rounded-full">
+                            {filteredBookings.length}
+                        </span>
+                    </div>
+
+                    <div className="space-y-3 max-h-[700px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-gray-200">
+                        {filteredBookings.length === 0 ? (
+                            <div className="bg-white border border-dashed border-gray-200 rounded-3xl p-12 text-center">
+                                <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-gray-300">
+                                    <CalendarIcon size={24} />
+                                </div>
+                                <p className="text-sm text-gray-500 font-medium">Nenhum compromisso para este período.</p>
+                            </div>
+                        ) : (
+                            <AnimatePresence mode="popLayout">
+                                {filteredBookings.map((booking, idx) => (
+                                    <motion.div
+                                        key={booking.id}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: idx * 0.05 }}
+                                        className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group"
+                                    >
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="font-bold text-gray-900 truncate pr-2">{booking.service_title}</h3>
+                                                <p className="text-[10px] text-gray-400 font-medium uppercase mt-0.5 tracking-wider">
+                                                    ID: {booking.id.slice(0, 8)}
+                                                </p>
+                                            </div>
+                                            <span className={`shrink-0 px-2 py-1 rounded-xl text-[10px] font-bold uppercase tracking-tight
+                                                ${booking.status === 'accepted' ? 'bg-green-100 text-green-700' :
+                                                booking.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'}`}>
+                                                {booking.status === 'accepted' ? 'Confirmado' : booking.status === 'pending' ? 'Pendente' : booking.status}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex items-center gap-4 py-3 border-t border-b border-gray-50 mb-3">
+                                            <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                                                <CalendarIcon size={14} className="text-primary-500" />
+                                                <span className="font-medium">{new Date(booking.scheduled_for).toLocaleDateString('pt-BR')}</span>
+                                            </div>
+                                            <div className="w-px h-3 bg-gray-200" />
+                                            <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                                                <Clock size={14} className="text-primary-500" />
+                                                <span className="font-medium">{new Date(booking.scheduled_for).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-between gap-2">
+                                            <div className="flex -space-x-2">
+                                                <div className="w-7 h-7 rounded-full bg-primary-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-primary-600">
+                                                    {booking.buyer_id.charAt(0).toUpperCase()}
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="flex items-center gap-1.5">
+                                                {booking.status === 'pending' && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => handleUpdateBookingStatus(booking.id, 'accepted')}
+                                                            className="p-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-100 transition-colors shadow-sm"
+                                                            title="Confirmar"
+                                                        >
+                                                            <Check size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleUpdateBookingStatus(booking.id, 'canceled')}
+                                                            className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors shadow-sm"
+                                                            title="Recusar"
+                                                        >
+                                                            <X size={16} />
+                                                        </button>
+                                                    </>
+                                                )}
+                                                <button
+                                                    onClick={() => navigate('/pro/dashboard/mensagens')}
+                                                    className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors shadow-sm"
+                                                    title="Conversar"
+                                                >
+                                                    <MessageCircle size={16} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                        )}
+                    </div>
+                </motion.div>
             </div>
+
+            {/* Availability Modal */}
+            <AvailabilityModal 
+                isOpen={isAvailabilityModalOpen}
+                onClose={() => setIsAvailabilityModalOpen(false)}
+                currentAvailability={company?.availability || {}}
+                onSave={handleSaveAvailability}
+                isLoading={loading}
+            />
         </div>
     );
 };

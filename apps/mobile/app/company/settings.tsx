@@ -30,7 +30,7 @@ export default function CompanySettingsScreen() {
             const { data, error } = await supabase
                 .from('companies')
                 .select('id, address_lat, address_lng, coverage_radius_km')
-                .eq('owner_id', user.id)
+                .eq('profile_id', user.id)
                 .single();
 
             if (data) {

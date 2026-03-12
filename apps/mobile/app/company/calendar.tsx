@@ -16,7 +16,7 @@ type CalendarOrder = {
     id: string;
     scheduled_for: string;
     status: string;
-    total_price: number;
+    price: number | null;
     profiles: { full_name: string } | null;
     services: { title: string; estimated_duration: number; duration_unit: string } | null;
 };
@@ -40,18 +40,10 @@ export default function CalendarScreen() {
         endOfDay.setHours(23, 59, 59, 999);
 
         try {
-            const { data: company } = await supabase
-                .from('companies')
-                .select('id')
-                .eq('owner_id', user.id)
-                .single();
-
-            if (!company) return;
-
             const { data, error: fetchError } = await supabase
-                .from('service_orders')
-                .select('id, scheduled_for, status, total_price, profiles(full_name), services(title, estimated_duration, duration_unit)')
-                .eq('company_id', company.id)
+                .from('orders')
+                .select('id, scheduled_for, status, price, profiles(full_name), services(title, estimated_duration, duration_unit)')
+                .eq('seller_id', user.id)
                 .eq('status', 'accepted')
                 .gte('scheduled_for', startOfDay.toISOString())
                 .lte('scheduled_for', endOfDay.toISOString())
@@ -203,7 +195,7 @@ export default function CalendarScreen() {
                                             </Text>
                                         </View>
                                         <Text style={styles.priceText}>
-                                            {item.total_price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                            {item.price?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) || 'A definir'}
                                         </Text>
                                     </View>
                                 </TouchableOpacity>

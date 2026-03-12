@@ -13,9 +13,9 @@ type FavoriteCompany = {
     id: string;
     company_id: string;
     companies: {
-        business_name: string;
-        address_city: string;
-        address_state: string;
+        company_name: string;
+        city: string;
+        state: string;
         logo_url: string | null;
     };
 };
@@ -34,7 +34,7 @@ export default function FavoritesScreen() {
                 .from('favorite_companies')
                 .select(`
                     id, company_id,
-                    companies (business_name, address_city, address_state, logo_url)
+                    companies (company_name, city, state, logo_url)
                 `)
                 .eq('client_id', session.user.id)
                 .order('created_at', { ascending: false });
@@ -104,8 +104,8 @@ export default function FavoritesScreen() {
                                     />
                                 </View>
                                 <View style={styles.cardInfo}>
-                                    <Text style={styles.companyName} numberOfLines={1}>{c?.business_name || 'Empresa'}</Text>
-                                    <Text style={styles.companyLocation}>{c?.address_city}, {c?.address_state}</Text>
+                                    <Text style={styles.companyName} numberOfLines={1}>{c?.company_name || 'Empresa'}</Text>
+                                    <Text style={styles.companyLocation}>{c?.city}, {c?.state}</Text>
                                 </View>
                                 <TouchableOpacity onPress={() => handleRemoveFavorite(item.id)} style={styles.removeBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                                     <Ionicons name="heart" size={22} color={Colors.error} />

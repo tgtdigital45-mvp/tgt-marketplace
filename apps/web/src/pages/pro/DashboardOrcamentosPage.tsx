@@ -17,13 +17,14 @@ import {
 
 interface Quote {
   id: string;
-  client_id: string;
-  company_id: string;
+  buyer_id: string;
   service_id?: string;
-  title: string;
-  description: string;
+  service_title: string;
+  notes: string;
+  hiring_responses?: Record<string, string>;
+  budget_expectation?: number;
   photos: string[];
-  status: 'pending' | 'viewed' | 'proposal_sent' | 'approved' | 'rejected';
+  status: 'pending' | 'viewed' | 'in_review' | 'accepted' | 'rejected' | 'completed' | 'cancelled';
   proposal_value?: number;
   proposal_scope?: string;
   proposal_validity_days?: number;
@@ -39,9 +40,11 @@ interface Quote {
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   pending: { label: 'Novo', color: 'bg-yellow-100 text-yellow-800' },
   viewed: { label: 'Visualizado', color: 'bg-blue-100 text-blue-800' },
-  proposal_sent: { label: 'Proposta Enviada', color: 'bg-purple-100 text-purple-800' },
-  approved: { label: 'Aprovado', color: 'bg-green-100 text-green-800' },
+  in_review: { label: 'Proposta Enviada', color: 'bg-purple-100 text-purple-800' },
+  accepted: { label: 'Aprovado', color: 'bg-green-100 text-green-800' },
   rejected: { label: 'Recusado', color: 'bg-red-100 text-red-800' },
+  completed: { label: 'Concluído', color: 'bg-emerald-100 text-emerald-800' },
+  cancelled: { label: 'Cancelado', color: 'bg-gray-100 text-gray-800' },
 };
 
 const DashboardOrcamentosPage: React.FC = () => {
@@ -82,11 +85,17 @@ const DashboardOrcamentosPage: React.FC = () => {
   const fetchQuotes = async (cId: string) => {
     setLoading(true);
     const { data, error } = await supabase
-      .from('quotes')
-      .select('*, client:profiles!client_id(full_name, avatar_url)')
-      .eq('company_id', cId)
+      .from('orders')
+      .select('*, client:profiles!buyer_id(full_name, avatar_url), service:services!inner(title, company_id)')
+      .eq('service.company_id', cId)
+      .eq('status', 'pending')
       .order('created_at', { ascending: false });
-    if (!error) setQuotes((data as Quote[]) || []);
+    
+    if (!error) {
+      setQuotes((data as any[]) || []);
+    } else {
+      console.error('Error fetching quotes:', error);
+    }
     setLoading(false);
   };
 
@@ -96,7 +105,7 @@ const DashboardOrcamentosPage: React.FC = () => {
     setProposalForm({ value: '', scope: '', validity_days: '7', deadline: '' });
     if (quote.status === 'pending') {
       await supabase
-        .from('quotes')
+        .from('orders')
         .update({ status: 'viewed', proposal_viewed_at: new Date().toISOString() })
         .eq('id', quote.id);
       setQuotes(prev => prev.map(q => q.id === quote.id ? { ...q, status: 'viewed' } : q));
@@ -107,9 +116,9 @@ const DashboardOrcamentosPage: React.FC = () => {
     if (!selectedQuote || !proposalForm.value || !proposalForm.scope) return;
     setSubmitting(true);
     const { error } = await supabase
-      .from('quotes')
+      .from('orders')
       .update({
-        status: 'proposal_sent',
+        status: 'in_review',
         proposal_value: parseFloat(proposalForm.value),
         proposal_scope: proposalForm.scope,
         proposal_validity_days: parseInt(proposalForm.validity_days) || 7,
@@ -130,12 +139,12 @@ const DashboardOrcamentosPage: React.FC = () => {
 
   const filteredQuotes = quotes.filter(q => {
     if (activeTab === 'pending') return ['pending', 'viewed'].includes(q.status);
-    if (activeTab === 'sent') return q.status === 'proposal_sent';
-    return ['approved', 'rejected'].includes(q.status);
+    if (activeTab === 'sent') return q.status === 'in_review';
+    return ['accepted', 'rejected'].includes(q.status);
   });
 
   const pendingCount = quotes.filter(q => ['pending', 'viewed'].includes(q.status)).length;
-  const sentCount = quotes.filter(q => q.status === 'proposal_sent').length;
+  const sentCount = quotes.filter(q => q.status === 'in_review').length;
 
   return (
     <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6">
@@ -237,8 +246,8 @@ const DashboardOrcamentosPage: React.FC = () => {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-xs text-gray-500 font-medium">{quote.client?.full_name || 'Cliente'}</p>
-                      <p className="font-semibold text-gray-900 truncate">{quote.title}</p>
-                      <p className="text-sm text-gray-500 line-clamp-1 mt-0.5">{quote.description}</p>
+                      <p className="font-semibold text-gray-900 truncate">{quote.service_title}</p>
+                      <p className="text-sm text-gray-500 line-clamp-1 mt-0.5">{quote.notes}</p>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2 flex-shrink-0">
@@ -247,11 +256,17 @@ const DashboardOrcamentosPage: React.FC = () => {
                   </div>
                 </div>
 
-                {quote.photos.length > 0 && (
-                  <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
-                    <Paperclip size={12} />
-                    {quote.photos.length} foto{quote.photos.length > 1 ? 's' : ''} anexada{quote.photos.length > 1 ? 's' : ''}
-                  </p>
+                {quote.hiring_responses && Object.keys(quote.hiring_responses).length > 0 && (
+                  <div className="mt-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Respostas do Questionário</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {Object.entries(quote.hiring_responses).map(([q, a], i) => (
+                        <div key={i} className="text-xs">
+                          <span className="font-bold text-gray-700">{q}:</span> <span className="text-gray-600">{a}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
 
                 {quote.proposal_value && (
@@ -286,7 +301,7 @@ const DashboardOrcamentosPage: React.FC = () => {
               {/* Header */}
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">{selectedQuote.title}</h3>
+                  <h3 className="text-lg font-bold text-gray-900">{selectedQuote.service_title}</h3>
                   <p className="text-sm text-gray-500">Solicitado por <strong>{selectedQuote.client?.full_name}</strong></p>
                 </div>
                 <button
@@ -300,7 +315,7 @@ const DashboardOrcamentosPage: React.FC = () => {
               {/* Description */}
               <div className="bg-gray-50 rounded-xl p-4 mb-4">
                 <p className="text-xs font-bold text-gray-400 uppercase mb-2">Descrição da necessidade</p>
-                <p className="text-sm text-gray-700 whitespace-pre-line">{selectedQuote.description}</p>
+                <p className="text-sm text-gray-700 whitespace-pre-line">{selectedQuote.notes}</p>
               </div>
 
               {/* Photos */}

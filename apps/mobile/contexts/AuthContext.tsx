@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Session, User } from '@supabase/supabase-js';
+import { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
 import { supabase } from '../utils/supabase';
 import { registerForPushNotificationsAsync, setupNotificationListeners, unregisterPushToken } from '../utils/pushNotifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { Profile } from '@tgt/shared';
+import type { DbProfile as Profile } from '@tgt/shared';
 import { logger } from '../utils/logger';
 
 export type { Profile };
@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             for (let i = 0; i < retries; i++) {
                 const { data, error } = await supabase
                     .from('profiles')
-                    .select('id, first_name, last_name, phone, avatar_url, role')
+                    .select('id, full_name, avatar_url, user_type, role')
                     .eq('id', userId)
                     .single();
 
@@ -138,7 +138,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         // 3. Ouvir mudanças de estado (login/logout/refresh)
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (event, currentSession) => {
+            async (event: AuthChangeEvent, currentSession: Session | null) => {
                 if (!mounted) return;
 
                 logger.log(`AuthContext: Evento Supabase - ${event}`);

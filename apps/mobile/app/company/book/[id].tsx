@@ -17,10 +17,10 @@ type Service = {
     title: string;
     description: string;
     price: number;
-    price_type: 'fixed' | 'budget';
+    requires_quote: boolean;
     location_type: 'in_store' | 'at_home' | 'remote';
     companies: {
-        business_name: string;
+        company_name: string;
     };
 };
 
@@ -42,7 +42,7 @@ export default function BookServiceScreen() {
             try {
                 const { data, error } = await supabase
                     .from('services')
-                    .select('*, companies(business_name)')
+                    .select('*, companies(company_name)')
                     .eq('id', id)
                     .single();
 
@@ -70,7 +70,7 @@ export default function BookServiceScreen() {
 
                 if (data && data.length > 0) {
                     setAddresses(data);
-                    setSelectedAddress(data.find(d => d.is_default) || data[0]);
+                    setSelectedAddress(data.find((d: any) => d.is_default) || data[0]);
                 }
             } catch (err) {
                 logger.error('Error fetching addresses:', err);
@@ -111,7 +111,7 @@ export default function BookServiceScreen() {
         );
     }
 
-    const isBudget = service.price_type === 'budget';
+    const isBudget = service.requires_quote;
 
     const getSelectedDateISO = () => {
         if (selectedDate === null) return null;
@@ -152,7 +152,7 @@ export default function BookServiceScreen() {
                 <FadeInView translateY={20} delay={100}>
                     <View style={styles.summaryCard}>
                         <Text style={styles.serviceTitle}>{service.title}</Text>
-                        <Text style={styles.companyName}>com {service.companies?.business_name}</Text>
+                        <Text style={styles.companyName}>com {service.companies?.company_name}</Text>
                     </View>
                 </FadeInView>
 

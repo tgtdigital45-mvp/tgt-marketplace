@@ -64,7 +64,7 @@ export function useServicesMarketplace({
             .from('services')
             .select(`
                 *,
-                public_company_profiles!inner (
+                companies!inner (
                     company_name,
                     logo_url,
                     rating,
@@ -73,6 +73,7 @@ export function useServicesMarketplace({
                 )
             `, { count: 'exact' })
             .eq('is_active', true)
+            .eq('companies.status', 'approved')
             .is('deleted_at', null); // Soft Delete Filter
 
         // Service type filter
@@ -83,13 +84,6 @@ export function useServicesMarketplace({
             // Apply H3 location filter if available
             if (h3Indexes && h3Indexes.length > 0) {
                 query = query.in('h3_index', h3Indexes);
-            }
-        } else {
-            // all
-            if (h3Indexes && h3Indexes.length > 0) {
-                // If they want 'all' services, we should still prioritize nearby ones if they have location
-                // But for pure exact match, we might want to fetch everything or just remote + nearby presential
-                // For simplicity, we just fetch all without location restriction, relying on the sorting later
             }
         }
 
@@ -114,10 +108,10 @@ export function useServicesMarketplace({
 
         return (data || []).map((s: any) => ({
             ...s,
-            company_name: s.public_company_profiles?.company_name,
-            company_logo: s.public_company_profiles?.logo_url,
-            company_rating: s.public_company_profiles?.rating,
-            company_slug: s.public_company_profiles?.slug,
+            company_name: s.companies?.company_name,
+            company_logo: s.companies?.logo_url,
+            company_rating: s.companies?.rating,
+            company_slug: s.companies?.slug,
         }));
     }, [category, searchQuery, serviceFilter, limit]);
 
@@ -135,33 +129,56 @@ export function useServicesMarketplace({
             const shouldFetchPresential =
                 (serviceFilter === 'all' || serviceFilter === 'presential') && h3Indexes !== null;
 
-            // Try RPCs first
             try {
                 if (shouldFetchRemote) {
-                    const { data, error: rpcError } = await supabase.rpc('get_remote_services', {
+                    const rpcPromise = supabase.rpc('get_remote_services', {
                         p_category: category || null,
                         p_search: searchQuery || null,
                         p_limit: limit,
                         p_offset: 0,
                     });
+                    
+                    const timeoutPromise = new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('RPC Timeout')), 8000)
+                    );
+
+                    const { data, error: rpcError } = (await Promise.race([
+                        rpcPromise,
+                        timeoutPromise
+                    ])) as any;
 
                     if (!rpcError && data && data.length > 0) {
+                        console.log(`[useServicesMarketplace] get_remote_services retornou ${data.length} resultados.`);
                         results.push(...(data as DbService[]));
                         rpcWorked = true;
+                    } else if (rpcError) {
+                        console.error('[useServicesMarketplace] Erro em get_remote_services:', rpcError);
                     }
                 }
 
                 if (shouldFetchPresential && h3Indexes) {
-                    const { data, error: rpcError } = await supabase.rpc('get_nearby_services', {
+                    const rpcPromise = supabase.rpc('get_nearby_services', {
                         p_h3_indexes: h3Indexes,
                         p_category: category || null,
                         p_limit: limit,
                         p_offset: 0,
                     });
+                    
+                    const timeoutPromise = new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('RPC Timeout')), 8000)
+                    );
+
+                    const { data, error: rpcError } = (await Promise.race([
+                        rpcPromise,
+                        timeoutPromise
+                    ])) as any;
 
                     if (!rpcError && data && data.length > 0) {
+                        console.log(`[useServicesMarketplace] get_nearby_services retornou ${data.length} resultados.`);
                         results.push(...(data as DbService[]));
                         rpcWorked = true;
+                    } else if (rpcError) {
+                        console.error('[useServicesMarketplace] Erro em get_nearby_services:', rpcError);
                     }
                 }
             } catch {
@@ -191,13 +208,13 @@ export function useServicesMarketplace({
                 return a.title.localeCompare(b.title);
             });
 
-            if (totalCount === 0) {
+            if (totalCount === 0 || unique.length > totalCount) {
                 setTotalCount(unique.length);
             }
 
             setServices(unique);
         } catch (err: any) {
-            console.error('[useServicesMarketplace] Error:', err);
+            console.error('[useServicesMarketplace] Erro Crítico em fetchServices:', err);
             setError(err.message || 'Erro ao carregar serviços');
         } finally {
             setLoading(false);

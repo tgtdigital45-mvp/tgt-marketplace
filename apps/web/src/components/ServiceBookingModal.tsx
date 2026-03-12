@@ -128,46 +128,43 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
 
         try {
             if (isQuote) {
-                    return;
-                }
+                // For quotes, we insert into 'orders' with status 'pending'
+                // and we set price to 0 or null (if allowed) for now, until it's negotiated
                 
-                // Mix responses into description for quotes as they lack hiring_responses column
-                let detailedDescription = formData.notes;
-                if (Object.keys(responses).length > 0) {
-                    detailedDescription += "\n\n--- Perguntas Adicionais ---\n";
-                    Object.entries(responses).forEach(([q, a]) => {
-                        detailedDescription += `${q}: ${a}\n`;
-                    });
-                }
-
-                const { error } = await supabase.from('quotes').insert({
-                    client_id: user.id, // Fixed field name match from client_id in migration (client_id references profiles)
-                    company_id: service.companyId,
+                const { data: newOrder, error } = await supabase.from('orders').insert({
+                    buyer_id: user.id,
+                    seller_id: service.companyId,
                     service_id: service.id,
-                    title: service.title,
-                    description: detailedDescription,
+                    service_title: service.title,
+                    price: 0, // Quote starts at 0 or empty
+                    hiring_responses: responses,
+                    status: 'pending',
+                    package_tier: 'basic',
+                    notes: formData.notes,
                     budget_expectation: formData.budgetExpectation ? parseFloat(formData.budgetExpectation) : null,
-                    status: 'pending'
-                });
+                }).select().single();
 
                 if (error) throw error;
 
-                // Close modal and redirect to quotes or orders (depending on platform strategy)
-                addToast("Orçamento solicitado com sucesso!", "success");
+                addToast("Solicitação de orçamento enviada com sucesso!", "success");
                 onClose();
-                navigate('/perfil/pedidos'); // Replace with quotes page if we build one
+                navigate('/perfil/pedidos');
             } else {
-                const { error } = await supabase.from('bookings').insert({
-                    client_id: user.id,
-                    company_id: service.companyId,
+                // Combine date and time for scheduled_for
+                const scheduledFor = formData.date && formData.time 
+                    ? `${formData.date}T${formData.time}:00` 
+                    : null;
+
+                const { error } = await supabase.from('orders').insert({
+                    buyer_id: user.id, // Updated: client_id -> buyer_id
+                    seller_id: service.companyId, // Updated: company_id -> seller_id
+                    service_id: service.id,
                     service_title: service.title,
-                    service_price: finalPrice,
-                    booking_date: formData.date,
-                    booking_time: isDaily ? '00:00:00' : formData.time,
-                    service_duration_minutes: isDaily ? totalDays * 1440 : service.duration_minutes,
-                    notes: formData.notes,
+                    price: finalPrice, // Updated: service_price -> price
+                    scheduled_for: scheduledFor, // Updated: booking_date/time -> scheduled_for
                     hiring_responses: responses,
-                    status: 'pending'
+                    status: 'pending',
+                    package_tier: 'basic' // Default tier for direct bookings
                 });
 
                 if (error) throw error;
@@ -348,24 +345,29 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
                                     />
                                 </div>
 
-                                {/* Dynamic Questions */}
+                                {/* Dynamic Questions - Improved UI */}
                                 {serviceForm && serviceForm.questions.length > 0 && (
-                                    <div className="space-y-4 pt-4 border-t border-gray-100">
-                                        <p className="text-sm font-semibold text-gray-900">Perguntas Complementares</p>
-                                        <p className="text-xs text-gray-500 -mt-2">Responda para ajudar o profissional a entender seu caso.</p>
-                                        {serviceForm.questions.map((q, idx) => (
-                                            <div key={idx}>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">{q}</label>
-                                                <input
-                                                    type="text"
-                                                    required
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-all"
-                                                    value={responses[q] || ''}
-                                                    onChange={(e) => setResponses({ ...responses, [q]: e.target.value })}
-                                                    placeholder="Sua resposta..."
-                                                />
-                                            </div>
-                                        ))}
+                                    <div className="space-y-6 pt-6 border-t border-gray-100 bg-brand-primary/5 -mx-6 px-6 py-6 pb-8">
+                                        <div>
+                                            <p className="text-sm font-black text-brand-primary uppercase tracking-widest">Questionário de Briefing</p>
+                                            <p className="text-xs text-gray-500 mt-1 leading-relaxed">Responda estas perguntas para que o profissional possa preparar seu orçamento com precisão.</p>
+                                        </div>
+                                        
+                                        <div className="space-y-4">
+                                            {serviceForm.questions.map((q, idx) => (
+                                                <div key={idx} className="bg-white p-4 rounded-xl border border-brand-primary/10 shadow-sm">
+                                                    <label className="block text-sm font-bold text-gray-800 mb-2">{q}</label>
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-all text-sm"
+                                                        value={responses[q] || ''}
+                                                        onChange={(e) => setResponses({ ...responses, [q]: e.target.value })}
+                                                        placeholder="Sua resposta..."
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
 

@@ -46,14 +46,14 @@ export default function StorefrontScreen() {
         setLoading(true);
         setError(false);
         try {
-            const { data, error: fetchError } = await supabase.from('companies').select('id, company_name, logo_url, cover_url, is_public, portfolio, description, address, coverage_radius_km, coverage_neighborhoods, terms_and_policies').eq('owner_id', user.id).maybeSingle();
+            const { data, error: fetchError } = await supabase.from('companies').select('id, company_name, logo_url, cover_image_url, is_public, portfolio, description, address, coverage_radius_km, coverage_neighborhoods, terms_and_policies').eq('profile_id', user.id).maybeSingle();
             if (fetchError) throw fetchError;
             if (data) {
                 setCompany(data);
                 setBusinessName(data.company_name || '');
                 setDescription(data.description || '');
                 setLogoUrl(data.logo_url);
-                setCoverUrl(data.cover_url);
+                setCoverUrl(data.cover_image_url);
                 setIsPublic(data.is_public !== false);
                 setPortfolio(data.portfolio || []);
 
@@ -118,7 +118,7 @@ export default function StorefrontScreen() {
                     await supabase.from('companies').update({ logo_url: finalUrl }).eq('id', company.id);
                 } else if (type === 'cover') {
                     setCoverUrl(finalUrl);
-                    await supabase.from('companies').update({ cover_url: finalUrl }).eq('id', company.id);
+                    await supabase.from('companies').update({ cover_image_url: finalUrl }).eq('id', company.id);
                 } else {
                     const newItem = { id: Date.now().toString(), url: finalUrl, type: 'image' };
                     const newPortfolio = [...portfolio, newItem];

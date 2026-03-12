@@ -15,21 +15,21 @@ import { logger } from '../../../utils/logger';
 
 type Order = {
     id: string;
-    total_price: number | null;
+    price: number | null;
     services: {
         title: string;
         location_type: string;
         estimated_duration: number | null;
         duration_unit: string | null;
-        price_type: 'fixed' | 'budget';
-    } | null;
-    companies: {
-        business_name: string;
-        opening_hours: any;
-        has_lunch_break: boolean;
-        lunch_start: string;
-        lunch_end: string;
-        works_on_holidays: boolean;
+        requires_quote: boolean;
+        companies: {
+            company_name: string;
+            opening_hours: any;
+            has_lunch_break: boolean;
+            lunch_start: string;
+            lunch_end: string;
+            works_on_holidays: boolean;
+        } | null;
     } | null;
 };
 
@@ -64,23 +64,29 @@ export default function ScheduleScreen() {
     useEffect(() => {
         if (!id) return;
         supabase
-            .from('service_orders')
+            .from('orders')
             .select(`
                 id,
-                total_price,
-                services(title, location_type, estimated_duration, duration_unit, price_type),
-                companies!service_orders_company_id_fkey(
-                    business_name,
-                    opening_hours,
-                    has_lunch_break,
-                    lunch_start,
-                    lunch_end,
-                    works_on_holidays
+                price,
+                services(
+                    title, 
+                    location_type, 
+                    estimated_duration, 
+                    duration_unit, 
+                    requires_quote,
+                    companies(
+                        company_name,
+                        opening_hours,
+                        has_lunch_break,
+                        lunch_start,
+                        lunch_end,
+                        works_on_holidays
+                    )
                 )
             `)
             .eq('id', id)
             .single()
-            .then(({ data, error }) => {
+            .then(({ data, error }: { data: any; error: any }) => {
                 if (error) logger.error('Schedule fetch error:', error);
                 else setOrder(data as unknown as Order);
                 setLoading(false);
@@ -123,7 +129,7 @@ export default function ScheduleScreen() {
             scheduledFor.setHours(hours, minutes, 0, 0);
 
             const { error: updateError } = await supabase
-                .from('service_orders')
+                .from('orders')
                 .update({
                     status: 'accepted',
                     scheduled_for: scheduledFor.toISOString(),
@@ -133,7 +139,7 @@ export default function ScheduleScreen() {
             if (updateError) throw updateError;
             
             // Se for do tipo 'budget', buscar a proposta relacionada e atualizar status
-            if (order.services?.price_type === 'budget') {
+            if (order.services?.requires_quote) {
                 await supabase
                     .from('order_proposals')
                     .update({ status: 'accepted' })
@@ -156,12 +162,12 @@ export default function ScheduleScreen() {
     };
 
     const dynamicTimeSlots = useMemo(() => {
-        if (!order || selectedDay === null || !order.companies?.opening_hours) return [];
+        if (!order || selectedDay === null || !order.services?.companies?.opening_hours) return [];
 
         const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
         const chosenDay = days[selectedDay];
         const dayKey = dayMap[chosenDay.date.getDay()];
-        const config = order.companies.opening_hours[dayKey];
+        const config = order.services.companies.opening_hours[dayKey];
 
         if (!config || !config.active) return [];
 
@@ -185,9 +191,9 @@ export default function ScheduleScreen() {
             const timeStr = current.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
             let isLunch = false;
-            if (order.companies.has_lunch_break) {
-                const [lStartH, lStartM] = order.companies.lunch_start.split(':').map(Number);
-                const [lEndH, lEndM] = order.companies.lunch_end.split(':').map(Number);
+            if (order.services.companies.has_lunch_break) {
+                const [lStartH, lStartM] = order.services.companies.lunch_start.split(':').map(Number);
+                const [lEndH, lEndM] = order.services.companies.lunch_end.split(':').map(Number);
                 const lunchS = new Date(chosenDay.date).setHours(lStartH, lStartM, 0, 0);
                 const lunchE = new Date(chosenDay.date).setHours(lEndH, lEndM, 0, 0);
                 if (current.getTime() >= lunchS && current.getTime() < lunchE) isLunch = true;
@@ -210,8 +216,8 @@ export default function ScheduleScreen() {
         );
     }
 
-    const priceDisplay = order.total_price != null
-        ? `R$ ${Number(order.total_price).toFixed(2)}`
+    const priceDisplay = order.price != null
+        ? `R$ ${Number(order.price).toFixed(2)}`
         : 'A definir';
 
     return (
@@ -234,7 +240,7 @@ export default function ScheduleScreen() {
                             {order.services?.title ?? 'Serviço'}
                         </Text>
                         <Text style={styles.companyName}>
-                            com {order.companies?.business_name ?? 'Profissional'}
+                            com {order.services?.companies?.company_name ?? 'Profissional'}
                         </Text>
                     </View>
                 </View>

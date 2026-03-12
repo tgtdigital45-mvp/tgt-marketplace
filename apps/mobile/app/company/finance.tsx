@@ -47,8 +47,8 @@ export default function FinanceScreen() {
         try {
             const { data: comp } = await supabase
                 .from('companies')
-                .select('id, stripe_account_id, business_name')
-                .eq('owner_id', user.id)
+                .select('id, stripe_account_id, company_name')
+                .eq('profile_id', user.id)
                 .single();
 
             if (!comp) {
@@ -78,15 +78,15 @@ export default function FinanceScreen() {
             const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
             const { data: dbOrders, error: ordersError } = await supabase
-                .from('service_orders')
-                .select('total_price')
-                .eq('company_id', comp.id)
+                .from('orders')
+                .select('price')
+                .eq('seller_id', user.id)
                 .eq('status', 'completed')
                 .gte('created_at', startOfMonth);
 
             if (ordersError) throw ordersError;
 
-            const monthlyTotal = (dbOrders || []).reduce((sum, o) => sum + (Number(o.total_price) || 0), 0);
+            const monthlyTotal = (dbOrders || []).reduce((sum: number, o: any) => sum + (Number(o.price) || 0), 0);
             setMonthlyMetrics({ total: monthlyTotal, count: dbOrders?.length || 0 });
 
         } catch (e) {

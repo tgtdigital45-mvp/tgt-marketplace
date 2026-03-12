@@ -18,10 +18,12 @@ type ServiceOrder = {
     id: string;
     status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'canceled';
     scheduled_for: string | null;
-    total_price: number | null;
+    price: number | null;
     created_at: string;
-    services: { title: string } | null;
-    companies: { business_name: string } | null;
+    services: { 
+        title: string;
+        companies: { company_name: string } | null;
+    } | null;
 };
 
 const STATUS_MAP: Record<ServiceOrder['status'], { label: string; color: string }> = {
@@ -69,22 +71,16 @@ export default function OrdersScreen() {
             const to = from + PAGE_SIZE - 1;
 
             let query = supabase
-                .from('service_orders')
-                .select('id, status, scheduled_for, total_price, created_at, services(title), companies(business_name)')
+                .from('orders')
+                .select('id, status, scheduled_for, price, created_at, services(title, companies(company_name))')
                 .order('created_at', { ascending: false })
                 .range(from, to);
 
             if (profile?.user_type === 'client') {
-                query = query.eq('client_id', user.id);
+                query = query.eq('buyer_id', user.id);
             } else {
-                const { data: company } = await supabase
-                    .from('companies')
-                    .select('id')
-                    .eq('owner_id', user.id)
-                    .single();
-                if (company) {
-                    query = query.eq('company_id', company.id);
-                }
+                // Para prestadores, filtramos pelo seller_id (que é o user id do perfil pro)
+                query = query.eq('seller_id', user.id);
             }
 
             const { data, error } = await query;
@@ -124,7 +120,7 @@ export default function OrdersScreen() {
         if (!user) return;
         const channel = supabase
             .channel('orders_list_realtime')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'service_orders' },
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' },
                 () => fetchOrders(true))
             .subscribe();
         return () => { supabase.removeChannel(channel); };
@@ -156,6 +152,18 @@ export default function OrdersScreen() {
             </SafeAreaView>
         );
     }
+    const getStatusLabel = (status: string) => {
+        const normalized = status === 'cancelled' ? 'canceled' : status;
+        const map: Record<string, string> = {
+            pending: 'Pendente',
+            accepted: 'Agendado',
+            in_progress: 'Em execução',
+            completed: 'Concluído',
+            canceled: 'Cancelado',
+            rejected: 'Recusado',
+        };
+        return map[normalized] || normalized;
+    };
 
     return (
         <SafeAreaView style={styles.container} edges={['top']} aria-label="Pedidos">
@@ -225,7 +233,7 @@ export default function OrdersScreen() {
                                     <View style={styles.companyInfo}>
                                         <Ionicons name="business-outline" size={12} color={Colors.textTertiary} style={{ marginRight: 4 }} />
                                         <Text style={styles.companyName} numberOfLines={1}>
-                                            {item.companies?.business_name ?? 'Empresa'}
+                                            {item.services?.companies?.company_name ?? 'Empresa'}
                                         </Text>
                                     </View>
                                     <View style={[styles.statusBadge, { backgroundColor: color + '15' }]}>
@@ -246,9 +254,9 @@ export default function OrdersScreen() {
                                         </View>
                                     </View>
                                     <View style={styles.row}>
-                                        {item.total_price != null && (
+                                        {item.price != null && (
                                             <Text style={styles.priceText}>
-                                                {item.total_price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                                {item.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                                             </Text>
                                         )}
                                         <View style={styles.arrowIcon}>

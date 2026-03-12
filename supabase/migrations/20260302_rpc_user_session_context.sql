@@ -1,10 +1,5 @@
 -- ============================================================
--- Migration: RPC get_user_session_context
--- Descrição: Consolida queries separadas de profiles + companies
---            em uma única chamada de backend, eliminando latência
---            dupla e a necessidade de timeout de segurança no cliente.
--- ============================================================
-
+DROP FUNCTION IF EXISTS public.get_user_session_context(UUID) CASCADE;
 CREATE OR REPLACE FUNCTION public.get_user_session_context(p_user_id UUID)
 RETURNS JSON
 LANGUAGE plpgsql

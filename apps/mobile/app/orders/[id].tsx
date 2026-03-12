@@ -16,7 +16,7 @@ type OrderDetail = {
     id: string;
     status: 'pending' | 'accepted' | 'rejected' | 'in_progress' | 'completed' | 'canceled' | 'disputed';
     scheduled_for: string;
-    total_price: number;
+    price: number;
     created_at: string;
     address_reference?: string;
     // description: string; // Coluna não existe no DB
@@ -24,15 +24,14 @@ type OrderDetail = {
         title: string;
         description: string;
         price: number;
-        price_type: 'fixed' | 'budget';
-    };
-    companies: {
-        business_name: string;
-        logo_url: string;
+        requires_quote: boolean;
+        companies: {
+            company_name: string;
+            logo_url: string;
+        };
     };
     profiles: {
-        first_name: string;
-        last_name: string;
+        full_name: string;
     };
 };
 
@@ -90,18 +89,32 @@ export default function OrderDetailScreen() {
     const fetchOrderDetails = async () => {
         try {
             const { data, error } = await supabase
-                .from('service_orders')
+                .from('bookings')
                 .select(`
-                    id, status, scheduled_for, total_price, created_at, address_reference,
-                    services(title, description, price, price_type),
-                    companies(business_name, logo_url),
-                    profiles:client_id(first_name, last_name)
+                    id, status, scheduled_for:booking_date, price:service_price, created_at, address_reference,
+                    service_title, 
+                    companies(company_name, logo_url),
+                    profiles:client_id(full_name)
                 `)
                 .eq('id', id)
                 .single();
 
             if (error) throw error;
-            setOrder(data as any);
+            
+            // Map the data to match the UI's expected OrderDetail structure
+            const mappedData = {
+                ...data,
+                // Harmonize status (cancelled in DB vs canceled in app)
+                status: data.status === 'cancelled' ? 'canceled' : data.status,
+                services: {
+                    title: data.service_title,
+                    description: '', // bookings don't have description, usually it's in the service
+                    price: data.price,
+                    companies: data.companies
+                }
+            };
+            
+            setOrder(mappedData as any);
         } catch (error) {
             logger.error('Error fetching order details:', error);
             Alert.alert('Erro', 'Não foi possível carregar os detalhes do pedido.');
@@ -179,7 +192,7 @@ export default function OrderDetailScreen() {
                         setIsUpdatingStatus(true);
                         try {
                             const { error } = await supabase
-                                .from('service_orders')
+                                .from('bookings')
                                 .update({ status: newStatus })
                                 .eq('id', order.id);
 
@@ -260,8 +273,8 @@ export default function OrderDetailScreen() {
                         <View style={styles.priceRow}>
                             <Text style={styles.priceLabel}>Valor Total</Text>
                             <Text style={styles.priceValue}>
-                                {order.total_price != null 
-                                    ? order.total_price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+                                {order.price != null 
+                                    ? order.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
                                     : 'A combinar'}
                             </Text>
                         </View>
@@ -275,8 +288,8 @@ export default function OrderDetailScreen() {
                             <Ionicons name="person-outline" size={20} color={Colors.textSecondary} />
                             <Text style={styles.infoText}>
                                 {isProvider
-                                    ? `${order.profiles.first_name} ${order.profiles.last_name}`
-                                    : order.companies.business_name}
+                                    ? order.profiles.full_name
+                                    : order.services.companies.company_name}
                             </Text>
                         </View>
                         <TouchableOpacity
@@ -328,11 +341,11 @@ export default function OrderDetailScreen() {
                     <TouchableOpacity
                         style={[
                             styles.primaryBtn, 
-                            order.services?.price_type === 'budget' && { backgroundColor: '#F59E0B' },
+                            order.services?.requires_quote && { backgroundColor: '#F59E0B' },
                             isUpdatingStatus && { opacity: 0.6 }
                         ]}
                         onPress={() => {
-                            if (order.services?.price_type === 'budget') {
+                            if (order.services?.requires_quote) {
                                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                 router.push(`/orders/chat?orderId=${order.id}`);
                             } else {
@@ -345,7 +358,7 @@ export default function OrderDetailScreen() {
                             <ActivityIndicator color={Colors.white} size="small" />
                         ) : (
                             <Text style={styles.primaryBtnText}>
-                                {order.services?.price_type === 'budget' ? 'Enviar Orçamento' : 'Aceitar Pedido'}
+                                {order.services?.requires_quote ? 'Enviar Orçamento' : 'Aceitar Pedido'}
                             </Text>
                         )}
                     </TouchableOpacity>

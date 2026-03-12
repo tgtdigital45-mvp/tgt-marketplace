@@ -1,12 +1,14 @@
 import { useState, useCallback, useRef } from 'react';
 import { supabase } from '../utils/supabase';
-import type { OrderStatus, UserRole } from '@tgt/shared';
+import type { OrderStatus } from '@tgt/shared';
+
+type UserRole = 'client' | 'company';
 
 export type OrderListItem = {
     id: string;
-    status: OrderStatus;
+    status: string;
     scheduled_for: string | null;
-    total_price: number | null;
+    price: number | null;
     created_at: string;
     services: { title: string } | null;
     companies: { business_name: string } | null;
@@ -44,28 +46,36 @@ export function useOrders(userId: string | undefined, role: UserRole | null | un
 
         try {
             let query = supabase
-                .from('service_orders')
-                .select('id, status, scheduled_for, total_price, created_at, services(title), companies(business_name)')
+                .from('orders')
+                .select(`
+                    id, status, scheduled_for, price, created_at,
+                    services (
+                        title,
+                        companies (company_name)
+                    )
+                `)
                 .order('created_at', { ascending: false })
                 .range(0, PAGE_SIZE - 1);
 
             if (role === 'client') {
-                query = query.eq('client_id', userId);
+                query = query.eq('buyer_id', userId);
             } else {
-                const { data: company } = await supabase
-                    .from('companies')
-                    .select('id')
-                    .eq('owner_id', userId)
-                    .single();
-                if (company) {
-                    query = query.eq('company_id', company.id);
-                }
+                query = query.eq('seller_id', userId);
             }
 
             const { data, error: fetchError } = await query;
             if (fetchError) throw fetchError;
 
-            const fetched = (data as unknown as OrderListItem[]) ?? [];
+            const fetched = (data as any[] ?? []).map(row => ({
+                id: row.id,
+                status: row.status,
+                scheduled_for: row.scheduled_for,
+                price: row.price,
+                created_at: row.created_at,
+                services: { title: row.services?.title },
+                companies: { business_name: row.services?.companies?.company_name }
+            }));
+
             setOrders(fetched);
             setHasMore(fetched.length === PAGE_SIZE);
             pageRef.current = 1;
@@ -87,28 +97,36 @@ export function useOrders(userId: string | undefined, role: UserRole | null | un
             const to = from + PAGE_SIZE - 1;
 
             let query = supabase
-                .from('service_orders')
-                .select('id, status, scheduled_for, total_price, created_at, services(title), companies(business_name)')
+                .from('orders')
+                .select(`
+                    id, status, scheduled_for, price, created_at,
+                    services (
+                        title,
+                        companies (company_name)
+                    )
+                `)
                 .order('created_at', { ascending: false })
                 .range(from, to);
 
             if (role === 'client') {
-                query = query.eq('client_id', userId);
+                query = query.eq('buyer_id', userId);
             } else {
-                const { data: company } = await supabase
-                    .from('companies')
-                    .select('id')
-                    .eq('owner_id', userId)
-                    .single();
-                if (company) {
-                    query = query.eq('company_id', company.id);
-                }
+                query = query.eq('seller_id', userId);
             }
 
             const { data, error: fetchError } = await query;
             if (fetchError) throw fetchError;
 
-            const fetched = (data as unknown as OrderListItem[]) ?? [];
+            const fetched = (data as any[] ?? []).map(row => ({
+                id: row.id,
+                status: row.status,
+                scheduled_for: row.scheduled_for,
+                price: row.price,
+                created_at: row.created_at,
+                services: { title: row.services?.title },
+                companies: { business_name: row.services?.companies?.company_name }
+            }));
+
             setOrders(prev => {
                 const existingIds = new Set(prev.map(o => o.id));
                 return [...prev, ...fetched.filter(o => !existingIds.has(o.id))];

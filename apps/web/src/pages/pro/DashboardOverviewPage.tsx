@@ -114,7 +114,7 @@ const ActivityTable: React.FC<{ data: any[] }> = ({ data }) => {
                   <td className="py-3 border-b border-gray-50">
                     <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${item.status === 'in_progress' ? 'bg-blue-50 text-blue-600' :
                       item.status === 'completed' ? 'bg-emerald-50 text-emerald-600' :
-                        item.status === 'cancelled' ? 'bg-red-50 text-red-600' :
+                        (item.status === 'canceled' || item.status === 'cancelled') ? 'bg-red-50 text-red-600' :
                           'bg-gray-50 text-gray-500'
                       }`}>
                       {item.status === 'in_progress' ? 'Em Progresso' :
@@ -206,12 +206,12 @@ const DashboardOverviewPage: React.FC = () => {
         if (company?.id) {
           const today = new Date().toISOString().split('T')[0];
           const [todayRes, unreadRes, quotesRes] = await Promise.all([
-            supabase.from('bookings').select('id', { count: 'exact', head: true })
-              .eq('company_id', company.id).eq('booking_date', today).in('status', ['pending', 'confirmed']),
+            supabase.from('orders').select('id', { count: 'exact', head: true })
+              .eq('seller_id', user.id).gte('scheduled_for', `${today}T00:00:00`).lte('scheduled_for', `${today}T23:59:59`).in('status', ['pending', 'accepted']),
             supabase.from('messages').select('id', { count: 'exact', head: true })
               .eq('receiver_id', user.id).filter('read_at', 'is', null),
-            supabase.from('quotes').select('id', { count: 'exact', head: true })
-              .eq('company_id', company.id).in('status', ['pending', 'viewed']),
+            supabase.from('orders').select('id', { count: 'exact', head: true })
+              .eq('seller_id', user.id).eq('status', 'pending'),
           ]);
           setAlerts({
             todayBookings: todayRes.count || 0,
@@ -491,9 +491,10 @@ const DashboardOverviewPage: React.FC = () => {
           <p className="text-[10px] sm:text-xs text-gray-400 mb-4">
             {chartPeriod === '7d' ? 'Ultimos 7 dias' : 'Ultimos 30 dias'}
           </p>
-          <div className="w-full h-[250px] sm:h-[300px]" style={{ minHeight: '250px' }}>
-            <ResponsiveContainer width="100%" height="100%" minHeight={250}>
-              <AreaChart data={filteredChart}>
+          <div className="w-full h-[300px] min-h-[300px] relative">
+            {filteredChart.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                <AreaChart data={filteredChart} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="var(--color-brand-secondary)" stopOpacity={0.8} />
@@ -510,6 +511,11 @@ const DashboardOverviewPage: React.FC = () => {
                 <Area type="monotone" dataKey="sales" stroke="var(--color-brand-secondary)" strokeWidth={2.5} fillOpacity={1} fill="url(#colorSales)" />
               </AreaChart>
             </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm italic">
+                Aguardando dados de vendas...
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -522,16 +528,22 @@ const DashboardOverviewPage: React.FC = () => {
           <div className="relative z-10 w-full h-full flex flex-col">
             <h3 className="text-sm sm:text-base font-bold mb-1">Pedidos Realizados</h3>
             <p className="text-white/60 text-[10px] sm:text-xs mb-4">Volume mensal</p>
-            <div className="flex-1 w-full min-h-[200px] sm:min-h-[220px]" style={{ minHeight: '200px' }}>
-              <ResponsiveContainer width="100%" height="100%" minHeight={200}>
-                <BarChart data={chartData}>
-                  <Bar dataKey="orders_count" fill="rgba(255,255,255,0.8)" radius={[4, 4, 0, 0]} barSize={8} />
-                  <Tooltip
-                    cursor={{ fill: 'rgba(255,255,255,0.1)' }}
-                    contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '10px', color: '#fff', fontSize: '12px' }}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="flex-1 w-full h-[220px] min-h-[220px] relative">
+              {chartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                  <BarChart data={chartData} margin={{ top: 10, right: 5, left: -30, bottom: 0 }}>
+                    <Bar dataKey="orders_count" fill="rgba(255,255,255,0.8)" radius={[4, 4, 0, 0]} barSize={8} />
+                    <Tooltip
+                      cursor={{ fill: 'rgba(255,255,255,0.1)' }}
+                      contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '10px', color: '#fff', fontSize: '12px' }}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-white/40 text-xs italic">
+                  Sem dados para o período
+                </div>
+              )}
             </div>
           </div>
           <div className="absolute -right-6 -top-6 w-28 h-28 bg-white/10 rounded-full" />

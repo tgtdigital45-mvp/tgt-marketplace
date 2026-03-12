@@ -256,7 +256,9 @@ export interface UserProfile extends User {
 export type BookingStatus =
   | 'pending'
   | 'confirmed'
+  | 'accepted' // New schema status
   | 'cancelled'
+  | 'canceled' // New schema status (single l)
   | 'completed'
   | 'pending_client_approval'
   | 'on_the_way'
