@@ -20,8 +20,10 @@ const SEO: React.FC<SEOProps> = ({
     type = 'website',
     schema,
 }) => {
-    const siteUrl = 'https://contratto.app';
-    const fullUrl = url ? (url.startsWith('http') ? url : `${siteUrl}${url}`) : siteUrl;
+    const siteUrl = 'https://www.contrattoex.com';
+    // Remove query parameters from canonical URL to avoid duplicate indexing errors
+    const cleanUrl = url ? (url.includes('?') ? url.split('?')[0] : url) : '';
+    const fullUrl = cleanUrl.startsWith('http') ? cleanUrl : `${siteUrl}${cleanUrl}`;
 
     // Default keywords plus any specific ones
     const defaultKeywords = 'Contratto, serviços, marketplace, profissionais, agendamento, orçamentos, segurança';

@@ -91,8 +91,15 @@ const CompaniesListPage: React.FC = () => {
 
   const getDynamicDescription = () => {
     return searchTerm
-      ? `Encontre ${searchTerm} no CONTRATTO. Profissionais qualificados e avaliados na sua regiao.`
-      : 'Explore as melhores empresas e prestadores de servicos em nossa rede corporativa verificada.';
+      ? `Encontre ${searchTerm} no CONTRATTO. Profissionais qualificados e avaliados na sua região como advogados, contadores e engenheiros.`
+      : 'Explore as melhores empresas e prestadores de serviços em nossa rede corporativa verificada. Encontre contabilidade, advocacia e engenharia em Cascavel e região.';
+  };
+
+  const getDynamicKeywords = () => {
+    const baseKeywords = 'Contratto, contrato com t, contrato ex, serviços profissionais, marketplace, Cascavel, Paraná';
+    if (searchTerm) return `${searchTerm}, ${baseKeywords}`;
+    if (selectedCategory !== 'all') return `${selectedCategory}, ${baseKeywords}`;
+    return baseKeywords;
   };
 
   const totalPages = Math.ceil(totalCount / itemsPerPage);
@@ -199,6 +206,7 @@ const CompaniesListPage: React.FC = () => {
       <SEO
         title={getDynamicTitle()}
         description={getDynamicDescription()}
+        keywords={getDynamicKeywords()}
         url={location.pathname}
       />
 

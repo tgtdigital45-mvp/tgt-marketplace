@@ -60,7 +60,7 @@ async function generateSitemap() {
         console.log(`Found ${services?.length || 0} services`);
 
         // Base URLs - Prefer environment variable, fallback to production domain
-        const baseUrl = process.env.VITE_SITE_URL || 'https://contrattoex.com';
+        const baseUrl = process.env.VITE_SITE_URL || 'https://www.contrattoex.com';
         const urls: SitemapUrl[] = [
             {
                 loc: `${baseUrl}/`,
