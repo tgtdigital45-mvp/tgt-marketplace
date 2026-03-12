@@ -8,21 +8,23 @@ interface SEOProps {
     image?: string;
     url?: string;
     type?: string;
+    schema?: Record<string, any>;
 }
 
 const SEO: React.FC<SEOProps> = ({
-    title = 'CONTRATTO | Guia de Negócios e Serviços',
-    description = 'Encontre os melhores negócios e serviços locais na sua região. Conecte-se com profissionais verificados no CONTRATTO e expanda sua rede em Cascavel e região.',
+    title = 'Contratto | O marketplace de serviços de excelência',
+    description = 'Procurando pelos melhores profissionais? O Contratto conecta você aos melhores serviços, autônomos e agências da região. Solicite orçamentos e agende agora.',
     keywords,
-    image = 'https://tgt-guia-de-negocios.vercel.app/og-image.jpg',
+    image = 'https://contratto.app/og-image.jpg',
     url,
     type = 'website',
+    schema,
 }) => {
-    const siteUrl = 'https://tgt-guia-de-negocios.vercel.app';
+    const siteUrl = 'https://contratto.app';
     const fullUrl = url ? (url.startsWith('http') ? url : `${siteUrl}${url}`) : siteUrl;
 
     // Default keywords plus any specific ones
-    const defaultKeywords = 'CONTRATTO, Contabilidade, serviços locais, guia de negócios, Cascavel';
+    const defaultKeywords = 'Contratto, serviços, marketplace, profissionais, agendamento, orçamentos, segurança';
     const fullKeywords = keywords ? `${keywords}, ${defaultKeywords}` : defaultKeywords;
 
     return (
@@ -32,6 +34,12 @@ const SEO: React.FC<SEOProps> = ({
             <meta name="description" content={description} />
             <meta name="keywords" content={fullKeywords} />
             <link rel="canonical" href={fullUrl} />
+
+            {schema && (
+                <script type="application/ld+json">
+                    {JSON.stringify(schema)}
+                </script>
+            )}
 
             {/* Open Graph / Facebook */}
             <meta property="og:type" content={type} />

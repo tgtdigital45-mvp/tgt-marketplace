@@ -12,7 +12,7 @@ import {
     ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@tgt/shared';
 import { User, Mail, Lock, Phone, ArrowLeft, CheckCircle2 } from 'lucide-react-native';
 import { StatusBar } from 'expo-status-bar';
 

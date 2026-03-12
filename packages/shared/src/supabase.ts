@@ -39,6 +39,54 @@ const supabaseAnonKey = getEnvVar(
 // Determine if running in a browser/web environment (has window object)
 const isWeb = typeof window !== 'undefined';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CUSTOM NAVIGATOR LOCK — Previne NavigatorLockAcquireTimeoutError
+//
+// Causa raiz: O Supabase Auth usa o Web Locks API com timeout de 10s para
+// serializar operações de sessão. Em desenvolvimento (HMR), uma nova instância
+// do cliente tenta adquirir o lock enquanto a instância anterior ainda o segura,
+// causando timeout e bloqueio de TODAS as queries Supabase.
+//
+// Solução: Usar `ifAvailable: true` (não-bloqueante). Se o lock estiver ocupado,
+// executar a função diretamente sem lock ao invés de esperar 10s e travar.
+// Em produção isso raramente acontece; em dev/HMR resolve o problema.
+// ─────────────────────────────────────────────────────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildLockFn(): ((name: string, timeout: number, fn: () => Promise<unknown>) => Promise<unknown>) | undefined {
+    if (!isWeb || typeof navigator === 'undefined' || !navigator.locks) {
+        // Web Locks API não disponível (React Native, Safari <15.4, etc.)
+        return undefined;
+    }
+
+    return async (name: string, _timeout: number, fn: () => Promise<unknown>) => {
+        let acquired = false;
+
+        try {
+            const result = await navigator.locks.request(
+                name,
+                { ifAvailable: true },
+                async (lock) => {
+                    if (lock === null) {
+                        // Lock ocupado (ex: HMR — instância anterior ainda ativa)
+                        return null;
+                    }
+                    acquired = true;
+                    return fn();
+                }
+            );
+
+            if (acquired) return result;
+        } catch (e) {
+            // Erro inesperado no lock — não deve bloquear operação
+            console.warn('[Supabase] Navigator lock error, running without lock:', e);
+        }
+
+        // Lock ocupado ou falhou → executa diretamente (sem serialização)
+        // Trade-off consciente: possível uso concorrente, mas preferível ao bloquear
+        return fn();
+    };
+}
+
 // Singleton guard — ensures only ONE supabase client across HMR reloads in development.
 // Uses globalThis so the reference survives module re-evaluation during HMR.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -50,26 +98,22 @@ if (!g._supabaseShared) {
         persistSession: true,
         detectSessionInUrl: isWeb, // only parse URL hash in web
         storageKey: 'contratto-auth-session',
+        lock: buildLockFn(),
     };
-
-    /* 
-    // Add custom lock for web only — prevents NavigatorLockAcquireTimeoutError
-    // caused by auth state change callbacks re-entering Supabase while holding the lock.
-    if (isWeb && typeof navigator !== 'undefined' && navigator.locks) {
-        authOptions.lock = async (name: string, _timeout: number, fn: () => Promise<unknown>) => {
-            let acquired = false;
-            const result = await navigator.locks.request(name, { ifAvailable: true }, async () => {
-                acquired = true;
-                return fn();
-            });
-            if (acquired) return result;
-            // Lock busy — run directly to avoid deadlock
-            return fn();
-        };
-    }
-    */
 
     g._supabaseShared = createClient(supabaseUrl, supabaseAnonKey, { auth: authOptions });
 }
 
 export const supabase = g._supabaseShared;
+
+// Vite HMR: when this module is hot-replaced, destroy the old client instance
+// so the new one starts with a clean lock state (prevents NavigatorLockAcquireTimeoutError).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+if ((import.meta as any).hot) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (import.meta as any).hot.dispose(() => {
+        // Force the next module evaluation to create a fresh client
+        delete g._supabaseShared;
+    });
+}
+

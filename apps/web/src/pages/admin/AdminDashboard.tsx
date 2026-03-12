@@ -224,6 +224,9 @@ const AdminDashboard: React.FC = () => {
                             <Link to="/admin/disputas" className="block w-full bg-white/20 hover:bg-white/30 transition-colors rounded-lg px-4 py-2 text-left text-sm font-medium text-white">
                                 ⚖️ Mediação de Disputas
                             </Link>
+                            <Link to="/admin/moderacao" className="block w-full bg-white/20 hover:bg-white/30 transition-colors rounded-lg px-4 py-2 text-left text-sm font-medium text-white">
+                                🛡️ Moderação de Denúncias
+                            </Link>
                         </div>
                     </div>
                 </div>

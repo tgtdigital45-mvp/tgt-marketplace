@@ -42,6 +42,8 @@ export interface CompanyData {
     bank_agency?: string;
     bank_account?: string;
     bank_account_type?: string;
+    kyc_status?: 'pending' | 'in_review' | 'approved' | 'rejected';
+    kyc_documents?: any[];
 }
 
 interface CompanyContextType {

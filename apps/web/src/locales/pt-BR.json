@@ -1,0 +1,16 @@
+{
+  "common": {
+    "loading": "Carregando...",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "error": "Ocorreu um erro inesperado."
+  },
+  "navigation": {
+    "home": "Início",
+    "services": "Serviços",
+    "companies": "Empresas",
+    "login": "Entrar",
+    "register": "Cadastrar"
+  }
+}

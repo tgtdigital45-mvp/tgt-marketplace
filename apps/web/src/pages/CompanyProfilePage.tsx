@@ -135,9 +135,32 @@ const CompanyProfilePage: React.FC = () => {
   const isClient = user?.type === 'client';
   const { owner } = company;
 
+  const organizationSchema = company ? {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": company.companyName,
+    "image": company.coverImage || (company as any).logo_url || 'https://contratto.app/og-image.jpg',
+    "@id": `https://contratto.app/empresa/${company.slug}`,
+    "url": `https://contratto.app/empresa/${company.slug}`,
+    "telephone": company.phone || "",
+    "address": company.address ? {
+      "@type": "PostalAddress",
+      "streetAddress": `${company.address.street || ''}, ${company.address.number || ''}`.trim(),
+      "addressLocality": company.address.city || "",
+      "addressRegion": company.address.state || "",
+      "postalCode": company.address.cep || "",
+      "addressCountry": "BR"
+    } : undefined,
+    "aggregateRating": (company.reviewCount && company.reviewCount > 0) ? {
+      "@type": "AggregateRating",
+      "ratingValue": company.rating,
+      "reviewCount": company.reviewCount
+    } : undefined
+  } : undefined;
+
   return (
     <main className="bg-gray-50 min-h-screen pb-12">
-      <SEO title={`${company.companyName} | CONTRATTO`} description={`Confira os serviços de ${company.companyName}.`} url={`/empresa/${company.slug}`} image={company.coverImage} />
+      <SEO title={`${company.companyName} | CONTRATTO`} description={`Confira os serviços de ${company.companyName}.`} url={`/empresa/${company.slug}`} image={company.coverImage} schema={organizationSchema} />
 
       {/* FULL WIDTH HERO BANNER */}
       <div className="w-full h-64 md:h-80 relative bg-gray-900 group">
@@ -147,6 +170,7 @@ const CompanyProfilePage: React.FC = () => {
           className="w-full h-full object-cover opacity-90 transition-opacity duration-700"
           fallbackSrc="https://placehold.co/1920x400/111827/374151?text=Cover"
           optimizedWidth={1440}
+          priority={true}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
       </div>

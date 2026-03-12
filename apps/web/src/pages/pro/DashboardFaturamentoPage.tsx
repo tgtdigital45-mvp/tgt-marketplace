@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@tgt/shared';
-import { DbWallet, DbTransaction, SellerStats } from '@tgt/shared';
+import { SellerStats } from '@tgt/shared';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -10,33 +10,24 @@ import { gemini } from '@/utils/gemini';
 import { useToast } from '@/contexts/ToastContext';
 import { motion } from 'framer-motion';
 
-
 const DashboardFaturamentoPage: React.FC = () => {
     const { user } = useAuth();
     const { company } = useCompany();
-    const [wallet, setWallet] = useState<DbWallet | null>(null);
-    const [transactions, setTransactions] = useState<DbTransaction[]>([]);
     const [sellerStats, setSellerStats] = useState<SellerStats | null>(null);
     const [loading, setLoading] = useState(true);
     const { addToast } = useToast();
     const [aiTips, setAiTips] = useState<string[]>([]);
     const [loadingTips, setLoadingTips] = useState(false);
-
-    // Filter state
-    const [filterType, setFilterType] = useState<'all' | 'credit' | 'debit'>('all');
-    const [filterDateStart, setFilterDateStart] = useState('');
-    const [filterDateEnd, setFilterDateEnd] = useState('');
-
-    // Bank data state
-    const [bankData, setBankData] = useState({
-        pix_key: '',
-        bank_name: '',
-        bank_agency: '',
-        bank_account: '',
-        bank_account_type: 'checking',
-    });
-    const [savingBank, setSavingBank] = useState(false);
     const [connectingStripe, setConnectingStripe] = useState(false);
+
+    // Stripe data state
+    const [stripeBalance, setStripeBalance] = useState<{
+        available: { amount: number; currency: string }[];
+        pending: { amount: number; currency: string }[];
+    } | null>(null);
+    const [stripeTransactions, setStripeTransactions] = useState<any[]>([]);
+    const [payoutsEnabled, setPayoutsEnabled] = useState(false);
+    const [monthlyMetrics, setMonthlyMetrics] = useState({ total: 0, count: 0 });
 
     const handleConnectStripe = async () => {
         if (!company?.id) return;
@@ -64,45 +55,15 @@ const DashboardFaturamentoPage: React.FC = () => {
         }
     };
 
-    const handlePayout = async () => {
-        if (!wallet || wallet.balance <= 0) {
-            alert("Saldo insuficiente para saque.");
-            return;
-        }
-
-        const amountStr = window.prompt(`Quanto deseja sacar? (Máx: R$ ${wallet.balance.toFixed(2)})`, wallet.balance.toString());
-        if (!amountStr) return;
-
-        const amount = parseFloat(amountStr.replace(',', '.'));
-        if (isNaN(amount) || amount <= 0 || amount > wallet.balance) {
-            alert("Valor inválido.");
-            return;
-        }
-
-        try {
-            setLoading(true);
-            const { data, error } = await supabase.functions.invoke('request-payout', {
-                body: { amount, user_id: user?.id }
-            });
-
-            if (error) throw error;
-
-            alert("Solicitação de saque realizada com sucesso!");
-            window.location.reload(); // Simple refresh to update balance
-
-        } catch (err: any) {
-            console.error('Payout error:', err);
-            alert(`Erro ao solicitar saque: ${err.message || 'Erro desconhecido'}`);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const handleGetAITips = async () => {
-        if (!wallet) return;
+        if (!stripeBalance) return;
         try {
             setLoadingTips(true);
-            const tips = await gemini.generateBillingTips(wallet, transactions);
+            const tips = await gemini.generateBillingTips(
+                (stripeBalance.available[0]?.amount || 0) / 100, 
+                (stripeBalance.pending[0]?.amount || 0) / 100, 
+                stripeTransactions
+            );
             setAiTips(tips);
             addToast('Insights gerados com sucesso!', 'success');
         } catch (err) {
@@ -113,111 +74,73 @@ const DashboardFaturamentoPage: React.FC = () => {
         }
     };
 
-    // Load bank data from company record
     useEffect(() => {
-        if (company) {
-            setBankData({
-                pix_key: (company as any).pix_key || '',
-                bank_name: (company as any).bank_name || '',
-                bank_agency: (company as any).bank_agency || '',
-                bank_account: (company as any).bank_account || '',
-                bank_account_type: (company as any).bank_account_type || 'checking',
-            });
-        }
-    }, [company]);
-
-    const handleSaveBankData = async () => {
-        if (!company?.id) return;
-        try {
-            setSavingBank(true);
-            const { error } = await supabase.from('companies').update({
-                pix_key: bankData.pix_key,
-                bank_name: bankData.bank_name,
-                bank_agency: bankData.bank_agency,
-                bank_account: bankData.bank_account,
-                bank_account_type: bankData.bank_account_type,
-            }).eq('id', company.id);
-            if (error) throw error;
-            alert('Dados bancários salvos com sucesso!');
-        } catch (err: any) {
-            alert(`Erro ao salvar: ${err.message}`);
-        } finally {
-            setSavingBank(false);
-        }
-    };
-
-    useEffect(() => {
-        const fetchWallet = async () => {
-            if (!user) return;
+        const fetchFinanceData = async () => {
+            if (!user || !company) return;
             try {
-                // 1. Get Wallet
-                let { data: walletData, error: walletError } = await supabase
-                    .from('wallets')
-                    .select('*')
-                    .eq('user_id', user.id)
-                    .single();
-
-                if (walletError && walletError.code === 'PGRST116') {
-                    // Auto-create wallet if not exists
-                    const { data: newWallet, error: createError } = await supabase
-                        .from('wallets')
-                        .insert({ user_id: user.id })
-                        .select()
-                        .single();
-
-                    if (createError) throw createError;
-                    walletData = newWallet;
-                } else if (walletError) {
-                    throw walletError;
-                }
-
-                if (walletData) {
-                    setWallet(walletData);
-
-                    // 2. Get Transactions
-                    const { data: trxData, error: trxError } = await supabase
-                        .from('transactions')
-                        .select('*')
-                        .eq('wallet_id', walletData.id)
-                        .order('created_at', { ascending: false });
-
-                    if (trxError) throw trxError;
-                    setTransactions(trxData || []);
-                }
-
-                // 3. Get Seller Stats (Level)
+                // 1. Get Seller Stats (Level)
                 const { data: statsData, error: statsError } = await supabase
                     .from('seller_stats')
                     .select('*')
                     .eq('seller_id', user.id)
                     .single();
 
-                if (statsError && statsError.code !== 'PGRST116') {
-                    console.error("Error fetching stats:", statsError);
-                } else {
+                if (!statsError) {
                     setSellerStats(statsData);
                 }
 
+                // 2. Fetch Stripe Data if connected
+                if (company.stripe_account_id) {
+                    const { data, error: invokeError } = await supabase.functions.invoke('get-stripe-balance', {
+                        body: { stripe_account_id: company.stripe_account_id }
+                    });
+
+                    if (invokeError) throw invokeError;
+
+                    if (data) {
+                        setStripeBalance(data.balance);
+                        setStripeTransactions(data.transactions || []);
+                        setPayoutsEnabled(data.payouts_enabled);
+                    }
+                }
+
+                // 3. Fetch Monthly metrics from orders
+                const now = new Date();
+                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+                const { data: dbOrders } = await supabase
+                    .from('service_orders') // Assuming same schema as mobile
+                    .select('total_price')
+                    .eq('company_id', company.id)
+                    .eq('status', 'completed')
+                    .gte('created_at', startOfMonth);
+
+                const monthlyTotal = (dbOrders || []).reduce((sum, o) => sum + (Number(o.total_price) || 0), 0);
+                setMonthlyMetrics({ total: monthlyTotal, count: dbOrders?.length || 0 });
+
             } catch (error) {
-                console.error("Error loading wallet", error);
+                console.error("Error loading financial data", error);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchWallet();
-    }, [user]);
+        fetchFinanceData();
+    }, [user, company]);
 
-    // Filtered transactions
-    const filteredTransactions = transactions.filter(t => {
-        if (filterType !== 'all' && t.type !== filterType) return false;
-        if (filterDateStart && t.created_at < filterDateStart) return false;
-        if (filterDateEnd && t.created_at > filterDateEnd + 'T23:59:59') return false;
-        return true;
-    });
+    const formatCurrency = (amount: number, currency: string) => {
+        return (amount / 100).toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: currency.toUpperCase(),
+        });
+    };
 
+    const availableAmount = stripeBalance?.available[0]?.amount || 0;
+    const pendingAmount = stripeBalance?.pending[0]?.amount || 0;
+    const currency = stripeBalance?.available[0]?.currency || 'brl';
+
+    const grossAmount = monthlyMetrics.total;
     const effectiveCommissionRate = company?.commission_rate ?? 0.20;
-    const grossAmount = transactions.filter(t => t.type === 'credit').reduce((acc, t) => acc + t.amount, 0);
     const platformFee = grossAmount * effectiveCommissionRate;
     const netAmount = grossAmount - platformFee;
 
@@ -311,38 +234,32 @@ const DashboardFaturamentoPage: React.FC = () => {
                 <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
                     <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Saldo Disponivel</h3>
                     <div className="text-3xl font-bold text-gray-900">
-                        R$ {wallet?.balance.toFixed(2) || '0.00'}
+                        {formatCurrency(availableAmount, currency)}
                     </div>
-                    <Button
-                        size="sm"
-                        className="mt-4 w-full"
-                        variant="outline"
-                        onClick={handlePayout}
-                        disabled={!wallet || wallet.balance <= 0}
-                    >
-                        Solicitar Saque
-                    </Button>
+                    <div className="mt-4 flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${payoutsEnabled ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                        <span className={`text-xs font-semibold ${payoutsEnabled ? 'text-emerald-700' : 'text-amber-700'}`}>
+                            {payoutsEnabled ? 'Apto para saque automático' : 'Verificação ou Documentos Pendentes'}
+                        </span>
+                    </div>
                 </div>
 
                 {/* Pending Balance */}
                 <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Em Analise</h3>
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Em Processamento</h3>
                     <div className="text-3xl font-bold text-gray-900">
-                        R$ {wallet?.pending_balance.toFixed(2) || '0.00'}
+                        {formatCurrency(pendingAmount, currency)}
                     </div>
-                    <p className="text-xs text-gray-500 mt-2">Valores de pedidos em andamento.</p>
+                    <p className="text-xs text-gray-500 mt-2">Ganhos futuros aguardando liberação.</p>
                 </div>
 
                 {/* Total Earnings */}
                 <div className="bg-primary-50 p-5 rounded-2xl shadow-sm border border-primary-100">
-                    <h3 className="text-xs font-bold text-primary-500 uppercase tracking-wider mb-2">Total Ganho</h3>
+                    <h3 className="text-xs font-bold text-primary-500 uppercase tracking-wider mb-2">Faturamento Mensal</h3>
                     <div className="text-3xl font-bold text-primary-600">
-                        R$ {transactions
-                            .filter(t => t.type === 'credit')
-                            .reduce((acc, curr) => acc + curr.amount, 0)
-                            .toFixed(2)}
+                        R$ {grossAmount.toFixed(2)}
                     </div>
-                    <p className="text-xs text-primary-400 mt-2">Sua receita total na plataforma.</p>
+                    <p className="text-xs text-primary-400 mt-2">{monthlyMetrics.count} pedidos completos neste mês.</p>
                 </div>
 
                 {/* Gamification / Level Progress */}
@@ -445,74 +362,40 @@ const DashboardFaturamentoPage: React.FC = () => {
 
             {/* Transactions Table */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-                    <h3 className="font-bold text-gray-900">Histórico de Transações</h3>
-                    <Button variant="outline" size="sm" onClick={() => { }}>Exportar CSV</Button>
+                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                    <h3 className="font-bold text-gray-900">Histórico de Transações no Stripe</h3>
                 </div>
 
-                {/* Filters */}
-                <div className="px-6 py-3 border-b border-gray-100 flex flex-wrap gap-3 items-center">
-                    <select
-                        value={filterType}
-                        onChange={e => setFilterType(e.target.value as any)}
-                        className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-                    >
-                        <option value="all">Todos os tipos</option>
-                        <option value="credit">Entradas</option>
-                        <option value="debit">Saídas</option>
-                    </select>
-                    <input
-                        type="date"
-                        value={filterDateStart}
-                        onChange={e => setFilterDateStart(e.target.value)}
-                        className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-                    />
-                    <input
-                        type="date"
-                        value={filterDateEnd}
-                        onChange={e => setFilterDateEnd(e.target.value)}
-                        className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-                    />
-                    {(filterType !== 'all' || filterDateStart || filterDateEnd) && (
-                        <button
-                            onClick={() => { setFilterType('all'); setFilterDateStart(''); setFilterDateEnd(''); }}
-                            className="text-xs text-gray-500 hover:text-red-500 underline"
-                        >
-                            Limpar filtros
-                        </button>
-                    )}
-                </div>
-
-                {filteredTransactions.length === 0 ? (
+                {stripeTransactions.length === 0 ? (
                     <div className="p-12 text-center flex flex-col items-center">
                         <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
                             <DollarSign size={20} className="text-gray-300" />
                         </div>
-                        <p className="text-sm font-medium text-gray-600">Nenhuma transacao encontrada.</p>
-                        <p className="text-xs text-gray-400 mt-1">Suas entradas e saidas aparecerao aqui.</p>
+                        <p className="text-sm font-medium text-gray-600">Nenhuma transação financeira encontrada.</p>
+                        <p className="text-xs text-gray-400 mt-1">Seus ganhos e pagamentos aparecerão aqui.</p>
                     </div>
                 ) : (
                     <div className="p-0">
                         {/* Mobile View (Cards) */}
                         <div className="block sm:hidden divide-y divide-gray-100">
-                            {filteredTransactions.map((t) => (
+                            {stripeTransactions.map((t) => (
                                 <div key={t.id} className="p-4 flex flex-col gap-2 bg-white hover:bg-gray-50 transition-colors">
                                     <div className="flex justify-between items-start">
-                                        <div className="font-medium text-gray-900">{t.description}</div>
-                                        <div className={`font-bold ${t.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
-                                            {t.type === 'credit' ? '+' : '-'} R$ {t.amount.toFixed(2)}
+                                        <div className="font-medium text-gray-900">{t.description || t.type}</div>
+                                        <div className={`font-bold ${t.amount > 0 ? 'text-green-600' : 'text-gray-600'}`}>
+                                            {t.amount > 0 ? '+' : ''} {formatCurrency(t.amount, t.currency)}
                                         </div>
                                     </div>
                                     <div className="flex justify-between items-center text-xs mt-1">
                                         <div className="text-gray-500 flex flex-col">
-                                            <span>{new Date(t.created_at).toLocaleDateString()}</span>
-                                            <span>{new Date(t.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                            <span>{new Date(t.created * 1000).toLocaleDateString()}</span>
+                                            <span>{new Date(t.created * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                         </div>
                                         <div className="flex gap-2 items-center">
-                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-medium ${t.type === 'credit' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                {t.type === 'credit' ? 'Entrada' : 'Saída'}
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-medium ${t.amount > 0 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                                                {t.type}
                                             </span>
-                                            <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-medium">Concluído</span>
+                                            <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-medium">{t.status}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -532,28 +415,28 @@ const DashboardFaturamentoPage: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
-                                    {filteredTransactions.map((t) => (
+                                    {stripeTransactions.map((t) => (
                                         <tr key={t.id} className="hover:bg-gray-50 transition-colors">
                                             <td className="px-6 py-4 text-gray-600 whitespace-nowrap">
-                                                {new Date(t.created_at).toLocaleDateString()} <span className="text-xs text-gray-400 ml-1">{new Date(t.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                {new Date(t.created * 1000).toLocaleDateString()} <span className="text-xs text-gray-400 ml-1">{new Date(t.created * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                             </td>
                                             <td className="px-6 py-4 font-medium text-gray-900">
-                                                {t.description}
+                                                {t.description || t.type}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${t.type === 'credit'
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${t.amount > 0
                                                     ? 'bg-green-100 text-green-800'
-                                                    : 'bg-red-100 text-red-800'
+                                                    : 'bg-gray-100 text-gray-800'
                                                     }`}>
-                                                    {t.type === 'credit' ? 'Entrada' : 'Saída'}
+                                                    {t.type}
                                                 </span>
                                             </td>
-                                            <td className={`px-6 py-4 text-right font-bold whitespace-nowrap ${t.type === 'credit' ? 'text-green-600' : 'text-red-600'
+                                            <td className={`px-6 py-4 text-right font-bold whitespace-nowrap ${t.amount > 0 ? 'text-green-600' : 'text-gray-600'
                                                 }`}>
-                                                {t.type === 'credit' ? '+' : '-'} R$ {t.amount.toFixed(2)}
+                                                {t.amount > 0 ? '+' : ''} {formatCurrency(t.amount, t.currency)}
                                             </td>
                                             <td className="px-6 py-4 text-center whitespace-nowrap">
-                                                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">Concluído</span>
+                                                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">{t.status}</span>
                                             </td>
                                         </tr>
                                     ))}
@@ -563,70 +446,16 @@ const DashboardFaturamentoPage: React.FC = () => {
                     </div>
                 )}
             </div>
-            {/* Bank Data Section */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
-                <div className="flex items-center gap-2 mb-1">
-                    <Landmark size={16} className="text-gray-400" />
-                    <h3 className="text-sm font-bold text-gray-800">Dados para Recebimento</h3>
-                </div>
-                <p className="text-xs text-gray-400 mb-5">Informe seus dados bancarios para receber saques da plataforma.</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Chave PIX</label>
-                        <input
-                            type="text"
-                            value={bankData.pix_key}
-                            onChange={e => setBankData(prev => ({ ...prev, pix_key: e.target.value }))}
-                            placeholder="CPF, CNPJ, e-mail ou telefone"
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Banco</label>
-                        <input
-                            type="text"
-                            value={bankData.bank_name}
-                            onChange={e => setBankData(prev => ({ ...prev, bank_name: e.target.value }))}
-                            placeholder="Ex: Nubank, Itaú, Bradesco"
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Agência</label>
-                        <input
-                            type="text"
-                            value={bankData.bank_agency}
-                            onChange={e => setBankData(prev => ({ ...prev, bank_agency: e.target.value }))}
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Conta</label>
-                        <input
-                            type="text"
-                            value={bankData.bank_account}
-                            onChange={e => setBankData(prev => ({ ...prev, bank_account: e.target.value }))}
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Tipo de Conta</label>
-                        <select
-                            value={bankData.bank_account_type}
-                            onChange={e => setBankData(prev => ({ ...prev, bank_account_type: e.target.value }))}
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
-                        >
-                            <option value="checking">Conta Corrente</option>
-                            <option value="savings">Conta Poupança</option>
-                        </select>
-                    </div>
-                </div>
-                <div className="mt-4 flex justify-end">
-                    <Button onClick={handleSaveBankData} isLoading={savingBank} size="sm">
-                        Salvar Dados Bancários
+            {/* Note: Dados bancarios removed in favor of direct Stripe Dashboard payouts */}
+            {!company?.stripe_charges_enabled && (
+                <div className="bg-yellow-50 rounded-2xl p-5 border border-yellow-100 text-center">
+                    <p className="text-yellow-800 text-sm font-bold">Saques e Gestão Bancária</p>
+                    <p className="text-yellow-700 text-xs mt-1 mb-3">Conecte sua conta do Stripe para gerenciar seus dados bancários e receber saques automaticamente.</p>
+                    <Button onClick={handleConnectStripe} size="sm" variant="outline">
+                        Conectar Stripe
                     </Button>
                 </div>
-            </div>
+            )}
         </div>
     );
 };

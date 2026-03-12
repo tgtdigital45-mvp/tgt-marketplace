@@ -410,9 +410,56 @@ const DashboardOverviewPage: React.FC = () => {
               Responda rapido, mantenha o portfolio atualizado e receba ate 3x mais contatos.
             </p>
           </div>
-          <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-white/5 rounded-full" />
+          <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-white/10 rounded-full" />
         </motion.div>
       </div>
+
+      {/* ─── Top Services Ranking ─────────────────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.45 }}
+        className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-sm sm:text-base font-bold text-gray-900">Melhores Serviços</h3>
+            <p className="text-[10px] sm:text-xs text-gray-400">Baseado no volume de pedidos concluídos</p>
+          </div>
+          <TrendingUp size={18} className="text-emerald-500" />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {recentActivity.reduce((acc: any[], curr: any) => {
+            const existing = acc.find(a => a.name === curr.service_title);
+            if (existing) {
+              existing.count += 1;
+            } else if (curr.service_title) {
+              acc.push({ name: curr.service_title, count: 1 });
+            }
+            return acc;
+          }, [])
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 3)
+          .map((service, idx) => (
+            <div key={idx} className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50/50 border border-gray-100 group hover:bg-white hover:shadow-sm transition-all">
+              <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-sm font-black text-gray-400 group-hover:text-primary-600 transition-colors">
+                {idx + 1}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-gray-800 truncate">{service.name}</p>
+                <p className="text-xs text-gray-400 font-medium">{service.count} pedidos realizados</p>
+              </div>
+              <ArrowUpRight size={14} className="text-gray-300 group-hover:text-emerald-500 transition-colors" />
+            </div>
+          ))}
+          {recentActivity.length === 0 && (
+            <div className="col-span-3 py-8 text-center text-gray-400 text-sm italic">
+              Aguardando seus primeiros pedidos para gerar o ranking.
+            </div>
+          )}
+        </div>
+      </motion.div>
 
       {/* ─── Charts ──────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

@@ -68,6 +68,10 @@ export default defineConfig(({ mode }) => {
       },
       dedupe: ['react', 'react-dom', 'react-router-dom', '@supabase/supabase-js'],
     },
+    optimizeDeps: {
+      exclude: ['@tgt/shared'],
+      force: true // Força limpar cache na próxima inicialização
+    },
     esbuild: {
       drop: mode === 'production' ? ['console', 'debugger'] : [],
     },

@@ -1,237 +1,62 @@
-import React, { useState, useCallback } from 'react';
-import {
-    View,
-    Text,
-    TextInput,
-    ScrollView,
-    TouchableOpacity,
-    ActivityIndicator,
-    Image,
-    RefreshControl,
-} from 'react-native';
-import { Search, MapPin, Bell, Star, Map } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
-import { useServices, ServiceListItem } from '@/hooks/useServices';
-import { useNotifications } from '@/providers/NotificationProvider';
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import { useAuth } from '../../contexts/AuthContext';
+import { Colors } from '../../utils/theme';
+import { Skeleton } from '../../components/ui/SkeletonLoader';
+import { useCompany } from '../../hooks/useCompany';
 
-const CATEGORIES = [
-    { name: 'Limpeza', emoji: '🧹' },
-    { name: 'Reformas', emoji: '🔨' },
-    { name: 'Elétrica', emoji: '⚡' },
-    { name: 'Design', emoji: '🎨' },
-    { name: 'Tech', emoji: '💻' },
-    { name: 'Consultoria', emoji: '📊' },
-];
-
-function ServiceCard({ service }: { service: ServiceListItem }) {
-    const router = useRouter();
-    const displayPrice = service.starting_price ?? service.price;
-
-    return (
-        <TouchableOpacity
-            className="bg-white rounded-2xl mb-4 border border-slate-100 shadow-sm overflow-hidden"
-            onPress={() => router.push(`/service/${service.id}`)}
-        >
-            {service.image_url ? (
-                <Image
-                    source={{ uri: service.image_url }}
-                    className="w-full h-36"
-                    resizeMode="cover"
-                />
-            ) : (
-                <View className="w-full h-36 bg-slate-100 items-center justify-center">
-                    <Text className="text-slate-400 text-4xl">🛠️</Text>
-                </View>
-            )}
-
-            <View className="p-4">
-                {/* Company Info */}
-                <View className="flex-row items-center mb-2">
-                    {service.company_logo ? (
-                        <Image
-                            source={{ uri: service.company_logo }}
-                            className="w-6 h-6 rounded-full mr-2"
-                        />
-                    ) : (
-                        <View className="w-6 h-6 rounded-full bg-brand-accent/10 items-center justify-center mr-2">
-                            <Text className="text-xs">👤</Text>
-                        </View>
-                    )}
-                    <Text className="text-brand-secondary text-xs font-medium" numberOfLines={1}>
-                        {service.company_name}
-                    </Text>
-                    {(service.rating ?? 0) > 0 && (
-                        <View className="flex-row items-center ml-auto">
-                            <Star size={12} color="#f59e0b" fill="#f59e0b" />
-                            <Text className="text-xs text-amber-600 ml-1 font-medium">
-                                {service.rating?.toFixed(1)}
-                            </Text>
-                        </View>
-                    )}
-                </View>
-
-                {/* Title */}
-                <Text className="text-brand-primary font-bold text-base mb-1" numberOfLines={2}>
-                    {service.title}
-                </Text>
-
-                {/* Category Tag */}
-                {service.category_tag && (
-                    <View className="self-start bg-brand-accent/10 rounded-full px-3 py-1 mb-2">
-                        <Text className="text-brand-accent text-xs font-medium">
-                            {service.category_tag}
-                        </Text>
-                    </View>
-                )}
-
-                {/* Price */}
-                <View className="flex-row items-baseline">
-                    <Text className="text-brand-secondary text-xs">A partir de </Text>
-                    <Text className="text-brand-primary text-lg font-bold">
-                        R$ {displayPrice.toFixed(2).replace('.', ',')}
-                    </Text>
-                </View>
-            </View>
-        </TouchableOpacity>
-    );
-}
+import CustomerHome from '../components/home/CustomerHome';
+import ProviderDashboard from '../components/home/ProviderDashboard';
+import ProviderOnboarding from '../components/home/ProviderOnboarding';
 
 export default function HomeScreen() {
-    const router = useRouter();
-    const [searchText, setSearchText] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
-    const { data: services, isLoading, isError, refetch } = useServices(debouncedSearch);
-    const { unreadCount } = useNotifications();
-    const [refreshing, setRefreshing] = useState(false);
-
-    // Simple debounce on search submit
-    const handleSearchSubmit = useCallback(() => {
-        setDebouncedSearch(searchText);
-    }, [searchText]);
-
-    const onRefresh = useCallback(async () => {
-        setRefreshing(true);
-        await refetch();
-        setRefreshing(false);
-    }, [refetch]);
-
-    return (
-        <ScrollView
-            className="flex-1 bg-brand-background"
-            refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-        >
-            {/* Header */}
-            <View className="px-6 pt-12 pb-6 bg-brand-primary rounded-b-3xl">
-                <View className="flex-row justify-between items-center mb-6">
-                    <View className="flex-row items-center">
-                        <MapPin size={20} color="#ffffff" />
-                        <Text className="text-white ml-2 font-medium">São Paulo, SP</Text>
-                    </View>
-                    <TouchableOpacity className="relative p-1">
-                        <Bell size={24} color="#ffffff" />
-                        {unreadCount > 0 && (
-                            <View className="absolute top-0 right-0 bg-red-500 rounded-full w-4 h-4 items-center justify-center border border-white">
-                                <Text className="text-white text-[10px] font-bold">{unreadCount > 9 ? '9+' : unreadCount}</Text>
-                            </View>
-                        )}
-                    </TouchableOpacity>
-                </View>
-
-                <Text className="text-white text-2xl font-bold mb-4">
-                    O que você precisa hoje?
-                </Text>
-
-                <View className="flex-row items-center bg-white rounded-xl px-4 py-2">
-                    <Search size={20} color="#94a3b8" />
-                    <TextInput
-                        placeholder="Buscar serviços..."
-                        className="flex-1 ml-2 text-brand-primary"
-                        placeholderTextColor="#94a3b8"
-                        value={searchText}
-                        onChangeText={setSearchText}
-                        onSubmitEditing={handleSearchSubmit}
-                        returnKeyType="search"
-                    />
-                </View>
-            </View>
-
-            {/* Map Preview */}
-            <View className="px-6 mt-6">
-                <TouchableOpacity
-                    onPress={() => router.push('/map')}
-                    className="h-40 rounded-3xl overflow-hidden border border-slate-200 shadow-sm bg-brand-primary/5 items-center justify-center"
-                    activeOpacity={0.85}
-                >
-                    <View className="items-center gap-2">
-                        <Map size={36} color="#2563eb" />
-                        <Text className="text-brand-primary font-bold text-base">Ver no Mapa</Text>
-                        <Text className="text-brand-secondary text-xs text-center px-8">
-                            Encontre profissionais próximos a você
-                        </Text>
-                    </View>
-                </TouchableOpacity>
-            </View>
-
-            {/* Categories */}
-            <View className="px-6 mt-8">
-                <Text className="text-brand-primary text-xl font-bold mb-4">Categorias</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    {CATEGORIES.map((cat) => (
-                        <TouchableOpacity
-                            key={cat.name}
-                            onPress={() => {
-                                setSearchText(cat.name);
-                                setDebouncedSearch(cat.name);
-                            }}
-                            className="bg-white px-5 py-3 rounded-xl mr-3 items-center shadow-sm border border-slate-100"
-                        >
-                            <Text className="text-2xl mb-1">{cat.emoji}</Text>
-                            <Text className="text-brand-secondary text-xs font-medium">{cat.name}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
-            </View>
-
-            {/* Services List */}
-            <View className="px-6 mt-6 pb-20">
-                <Text className="text-brand-primary text-xl font-bold mb-4">
-                    {debouncedSearch ? `Resultados para "${debouncedSearch}"` : 'Serviços em Destaque'}
-                </Text>
-
-                {isLoading && (
-                    <View className="items-center py-12">
-                        <ActivityIndicator size="large" color="#2563eb" />
-                        <Text className="text-brand-secondary mt-4">Buscando serviços...</Text>
-                    </View>
-                )}
-
-                {isError && (
-                    <View className="items-center py-12 bg-red-50 rounded-2xl">
-                        <Text className="text-red-500 text-lg font-bold mb-2">Ops!</Text>
-                        <Text className="text-red-400 text-center px-4">
-                            Não foi possível carregar os serviços. Puxe para baixo para tentar novamente.
-                        </Text>
-                    </View>
-                )}
-
-                {!isLoading && !isError && services?.length === 0 && (
-                    <View className="items-center py-12">
-                        <Text className="text-4xl mb-4">🔍</Text>
-                        <Text className="text-brand-primary text-lg font-bold mb-2">
-                            Nenhum serviço encontrado
-                        </Text>
-                        <Text className="text-brand-secondary text-center">
-                            Tente outra busca ou explore as categorias acima.
-                        </Text>
-                    </View>
-                )}
-
-                {services?.map((service) => (
-                    <ServiceCard key={service.id} service={service} />
-                ))}
-            </View>
-        </ScrollView>
+    const { user, profile } = useAuth();
+    const { company, isLoading: isLoadingCompany, refresh: refreshCompany } = useCompany(
+        profile?.user_type === 'company' ? user?.id : undefined
     );
+
+    if (!profile || isLoadingCompany) {
+        return (
+            <View style={styles.loadingContainer}>
+                <View style={{ padding: 24, gap: 16, width: '100%' }}>
+                    <Skeleton width="60%" height={32} />
+                    <Skeleton width="100%" height={60} borderRadius={32} />
+                    <View style={{ marginTop: 16 }}>
+                        <Skeleton width="40%" height={22} />
+                        <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+                            <Skeleton width={160} height={180} borderRadius={20} />
+                            <Skeleton width={160} height={180} borderRadius={20} />
+                        </View>
+                    </View>
+                    <View style={{ marginTop: 16 }}>
+                        <Skeleton width="50%" height={22} />
+                        <View style={{ flexDirection: 'row', gap: 16, marginTop: 12 }}>
+                            <Skeleton width={80} height={80} borderRadius={20} />
+                            <Skeleton width={80} height={80} borderRadius={20} />
+                            <Skeleton width={80} height={80} borderRadius={20} />
+                        </View>
+                    </View>
+                </View>
+            </View>
+        );
+    }
+
+    if (profile.user_type === 'company' && !company) {
+        return <ProviderOnboarding userId={user!.id} onComplete={refreshCompany} />;
+    }
+
+    if (profile.user_type === 'company' && company) {
+        return <ProviderDashboard profile={profile} company={company} />;
+    }
+
+    return <CustomerHome profile={profile} />;
 }
+
+const styles = StyleSheet.create({
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'flex-start',
+        paddingTop: 80,
+        backgroundColor: Colors.white,
+    },
+});

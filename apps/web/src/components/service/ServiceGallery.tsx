@@ -24,6 +24,7 @@ const ServiceGallery: React.FC<ServiceGalleryProps> = ({ images, title }) => {
                     alt={`${title} - Imagem ${activeIndex + 1}`}
                     className="w-full h-full object-contain bg-gray-50"
                     optimizedWidth={1200}
+                    priority={activeIndex === 0}
                 />
 
                 {displayImages.length > 1 && (

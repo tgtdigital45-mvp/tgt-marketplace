@@ -1,10 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
-import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
+import { View, StyleSheet, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Navigation, Star } from 'lucide-react-native';
+import { ArrowLeft, Star } from 'lucide-react-native';
 import { useServices, ServiceListItem } from '@/hooks/useServices';
+
+// react-native-maps types are incompatible with React 19 class component signature.
+// Dynamic import with @ts-ignore is used to avoid TypeScript errors.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const MapView = require('react-native-maps').default as React.ComponentType<any>;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { Marker, Callout, PROVIDER_GOOGLE } = require('react-native-maps') as {
+    Marker: React.ComponentType<any>;
+    Callout: React.ComponentType<any>;
+    PROVIDER_GOOGLE: string;
+};
 
 export default function MapScreen() {
     const router = useRouter();
@@ -35,9 +45,9 @@ export default function MapScreen() {
 
     if (!userLocation && !errorMsg) {
         return (
-            <View className="flex-1 bg-brand-background justify-center items-center">
+            <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#2563eb" />
-                <Text className="text-brand-secondary mt-3">Localizando você...</Text>
+                <Text style={styles.loadingText}>Localizando você...</Text>
             </View>
         );
     }
@@ -51,7 +61,7 @@ export default function MapScreen() {
                 showsUserLocation
                 showsMyLocationButton
             >
-                {services?.filter(s => s.latitude && s.longitude).map((service) => (
+                {services?.filter((s: ServiceListItem) => s.latitude && s.longitude).map((service: ServiceListItem) => (
                     <Marker
                         key={service.id}
                         coordinate={{
@@ -59,18 +69,18 @@ export default function MapScreen() {
                             longitude: service.longitude!,
                         }}
                     >
-                        <View className="bg-brand-accent p-2 rounded-full border-2 border-white shadow-md">
-                            <Text className="text-white text-[10px] font-bold">R${service.price}</Text>
+                        <View style={styles.markerContainer}>
+                            <Text style={styles.markerText}>R${service.price}</Text>
                         </View>
                         <Callout tooltip onPress={() => router.push(`/service/${service.id}`)}>
-                            <View className="bg-white rounded-2xl p-3 border border-slate-100 shadow-lg w-52">
-                                <Text className="text-brand-primary font-bold text-sm mb-1">{service.title}</Text>
-                                <View className="flex-row items-center mb-1">
-                                    <Star size={10} color="#f59e0b" fill="#f59e0b" />
-                                    <Text className="text-amber-600 text-[10px] ml-1 font-medium">{service.rating?.toFixed(1) || 'N/A'}</Text>
-                                    <Text className="text-brand-secondary text-[10px] ml-1 border-l border-slate-200 pl-1">{service.company_name}</Text>
+                            <View style={styles.calloutContainer}>
+                                <Text style={styles.calloutTitle}>{service.title}</Text>
+                                <View style={styles.calloutRow}>
+                                    <Star width={10} height={10} color="#f59e0b" fill="#f59e0b" />
+                                    <Text style={styles.calloutRating}>{service.rating?.toFixed(1) || 'N/A'}</Text>
+                                    <Text style={styles.calloutCompany}>{service.company_name}</Text>
                                 </View>
-                                <Text className="text-brand-accent font-bold text-xs mt-1">Ver Detalhes</Text>
+                                <Text style={styles.calloutCta}>Ver Detalhes</Text>
                             </View>
                         </Callout>
                     </Marker>
@@ -80,16 +90,16 @@ export default function MapScreen() {
             {/* Back Button Overlay */}
             <TouchableOpacity
                 onPress={() => router.back()}
-                className="absolute top-12 left-4 bg-white rounded-full p-3 shadow-lg border border-slate-100"
+                style={styles.backButton}
             >
                 <ArrowLeft size={20} color="#0f172a" />
             </TouchableOpacity>
 
-            {/* Locate Me Info */}
+            {/* Error Message */}
             {errorMsg && (
-                <View className="absolute bottom-10 left-6 right-6 bg-red-50 p-4 rounded-xl border border-red-100">
-                    <Text className="text-red-500 text-sm text-center font-medium">{errorMsg}</Text>
-                    <Text className="text-red-400 text-xs text-center mt-1">Exibindo localização padrão</Text>
+                <View style={styles.errorContainer}>
+                    <Text style={styles.errorText}>{errorMsg}</Text>
+                    <Text style={styles.errorSubText}>Exibindo localização padrão</Text>
                 </View>
             )}
         </View>
@@ -103,5 +113,104 @@ const styles = StyleSheet.create({
     map: {
         width: '100%',
         height: '100%',
+    },
+    loadingContainer: {
+        flex: 1,
+        backgroundColor: '#f8fafc',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        color: '#64748b',
+        marginTop: 12,
+    },
+    markerContainer: {
+        backgroundColor: '#2563eb',
+        padding: 8,
+        borderRadius: 999,
+        borderWidth: 2,
+        borderColor: '#ffffff',
+    },
+    markerText: {
+        color: '#ffffff',
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
+    calloutContainer: {
+        backgroundColor: '#ffffff',
+        borderRadius: 16,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: '#f1f5f9',
+        width: 208,
+    },
+    calloutTitle: {
+        color: '#0f172a',
+        fontWeight: 'bold',
+        fontSize: 14,
+        marginBottom: 4,
+    },
+    calloutRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    calloutRating: {
+        color: '#d97706',
+        fontSize: 10,
+        marginLeft: 4,
+        fontWeight: '500',
+    },
+    calloutCompany: {
+        color: '#64748b',
+        fontSize: 10,
+        marginLeft: 4,
+        paddingLeft: 4,
+        borderLeftWidth: 1,
+        borderLeftColor: '#e2e8f0',
+    },
+    calloutCta: {
+        color: '#2563eb',
+        fontWeight: 'bold',
+        fontSize: 12,
+        marginTop: 4,
+    },
+    backButton: {
+        position: 'absolute',
+        top: 48,
+        left: 16,
+        backgroundColor: '#ffffff',
+        borderRadius: 999,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: '#f1f5f9',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    errorContainer: {
+        position: 'absolute',
+        bottom: 40,
+        left: 24,
+        right: 24,
+        backgroundColor: '#fef2f2',
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#fee2e2',
+    },
+    errorText: {
+        color: '#ef4444',
+        fontSize: 14,
+        textAlign: 'center',
+        fontWeight: '500',
+    },
+    errorSubText: {
+        color: '#f87171',
+        fontSize: 12,
+        textAlign: 'center',
+        marginTop: 4,
     },
 });

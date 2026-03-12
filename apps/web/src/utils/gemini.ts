@@ -71,17 +71,17 @@ export const gemini = {
     },
 
     /**
-     * Gera insights de faturamento baseados em dados de carteira e transações.
+     * Gera insights de faturamento baseados em dados do Stripe e transações.
      */
-    async generateBillingTips(wallet: { balance: number; pending_balance: number }, transactions: any[]): Promise<string[]> {
+    async generateBillingTips(availableBalance: number, pendingBalance: number, transactions: any[]): Promise<string[]> {
         return runWithRetry(async () => {
             // Resumo simplificado das transações para contexto
-            const recentTrxSummary = transactions.slice(0, 5).map(t => `${t.description}: R$${t.amount} (${t.type})`).join("; ");
+            const recentTrxSummary = transactions.slice(0, 5).map(t => `${t.description || t.type}: R$${(t.amount / 100).toFixed(2)} (${t.type})`).join("; ");
 
             const prompt = `Você é um consultor financeiro para pequenos empreendedores e prestadores de serviços.
       Dados Atuais:
-      - Saldo Disponível: R$ ${wallet.balance}
-      - Saldo Pendente: R$ ${wallet.pending_balance}
+      - Saldo Disponível (Stripe): R$ ${availableBalance.toFixed(2)}
+      - Saldo Pendente (Stripe): R$ ${pendingBalance.toFixed(2)}
       - Transações Recentes: ${recentTrxSummary}
 
       Com base nesses dados (ou na ausência de movimentação significativa), gere 2 dicas práticas e curtas (máximo 2 frases cada) para este profissional aumentar seu faturamento ou gerir melhor suas finanças na plataforma CONTRATTO.

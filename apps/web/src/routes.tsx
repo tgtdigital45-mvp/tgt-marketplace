@@ -55,12 +55,14 @@ const DashboardSupportPage = lazy(() => import('@/pages/pro/DashboardSupportPage
 const DashboardEquipePage = lazy(() => import('@/pages/pro/DashboardEquipePage'));
 const DashboardFaturamentoPage = lazy(() => import('@/pages/pro/DashboardFaturamentoPage'));
 const DashboardOrcamentosPage = lazy(() => import('@/pages/pro/DashboardOrcamentosPage'));
+const DashboardVerificacaoPage = lazy(() => import('@/pages/pro/DashboardVerificacaoPage'));
 
 // Admin Pages
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
 const AdminSecurityPage = lazy(() => import('@/pages/admin/AdminSecurityPage'));
 const Verify2FAPage = lazy(() => import('@/pages/admin/Verify2FAPage'));
 const AdminDisputesPage = lazy(() => import('@/pages/admin/AdminDisputesPage'));
+const AdminModerationPage = lazy(() => import('@/pages/admin/AdminModerationPage'));
 
 // Service Details
 const ServiceDetailsPage = lazy(() => import('@/pages/service/ServiceDetailsPage'));
@@ -105,81 +107,41 @@ const ProtectedRoute = ({ userType, element }: ProtectedRouteProps): React.React
     return element;
 };
 
+/**
+ * Redireciona o usuário para o dashboard correto baseado no tipo.
+ * Lógica puramente derivada de estado — sem timers, sem race conditions.
+ * Aguarda ambas as queries (auth + company) terminarem antes de decidir.
+ */
 const DashboardRedirect = () => {
     const { user, loading } = useAuth();
-    const { company, loading: companyLoading } = useCompany();
-    const [isPatienceOver, setIsPatienceOver] = React.useState(false);
+    const { company, isLoading: companyLoading } = useCompany();
 
-    // ALL hooks must be called unconditionally before any early returns
-    React.useEffect(() => {
-        console.log("[DashboardRedirect] Data Ready - Evaluating Path", {
-            userId: user?.id,
-            userType: user?.type,
-            companySlug: company?.slug,
-            authSlug: user?.companySlug
-        });
-    }, [user, company]);
-
-    React.useEffect(() => {
-        let timer: NodeJS.Timeout;
-        // Only start the patience timer AFTER company data has finished loading (companyLoading=false)
-        // This prevents a race condition where the timer expires before the query returns data
-        if (user?.type === 'company' && !companyLoading && !company && !user.companySlug) {
-            console.log("[DashboardRedirect] Company query done but no slug found, starting 2s patience timer...");
-            timer = setTimeout(() => {
-                console.log("[DashboardRedirect] Patience timer expired.");
-                setIsPatienceOver(true);
-            }, 2000);
-        } else if (company || user?.companySlug) {
-            setIsPatienceOver(false);
-        }
-        return () => clearTimeout(timer);
-    }, [user, company, companyLoading]);
-
-    // --- All conditional returns AFTER all hooks ---
-
-    if (loading || (companyLoading && !isPatienceOver)) {
-        console.log("[DashboardRedirect] Waiting for data...", {
-            authLoading: loading,
-            companyLoading,
-            isPatienceOver,
-            hasUser: !!user,
-            hasCompany: !!company,
-            hasAuthSlug: !!user?.companySlug
-        });
+    // Aguarda auth E empresa carregarem — determinístico, sem timeouts artificiais
+    if (loading || companyLoading) {
         return <LoadingSpinner />;
     }
 
     if (!user) {
-        console.log("[DashboardRedirect] No user session found, redirecting to login");
         return <Navigate to="/login/empresa" replace />;
     }
 
     if (user.type !== 'company') {
-        console.log("[DashboardRedirect] Not a company user, redirecting to client profile");
         return <Navigate to="/perfil/cliente" replace />;
     }
 
-    // Prioritize CompanyContext slug
+    // CompanyContext é a fonte primária (dado mais completo)
     if (company?.slug) {
-        console.log("[DashboardRedirect] Navigating to company dashboard via CompanyContext:", company.slug);
         return <Navigate to={`/dashboard/empresa/${company.slug}`} replace />;
     }
 
-    // Fallback to AuthContext slug (might be faster)
+    // Fallback: slug no AuthContext (populado via RPC na sessão)
     if (user.companySlug) {
-        console.log("[DashboardRedirect] Navigating to company dashboard via AuthContext:", user.companySlug);
         return <Navigate to={`/dashboard/empresa/${user.companySlug}`} replace />;
     }
 
-    // Only if we waited and still nothing
-    if (isPatienceOver) {
-        console.warn("DashboardRedirect: Company user detected but no company slug found after wait. User ID:", user.id);
-        return <Navigate to="/empresa/cadastro" replace />;
-    }
-
-    console.log("[DashboardRedirect] Final fallback (waiting for timer)");
-    return <LoadingSpinner />;
+    // Queries terminaram e nenhuma empresa encontrada → direcionar ao cadastro
+    console.warn('[DashboardRedirect] Usuário empresa sem slug após carregamento completo. ID:', user.id);
+    return <Navigate to="/empresa/cadastro" replace />;
 };
 
 const OrderRedirect = () => {
@@ -252,6 +214,7 @@ const MainRoutes = () => {
                             <Route path="agendamentos" element={<AnimatedElement><DashboardAgendamentosPage /></AnimatedElement>} />
                             <Route path="orcamentos" element={<AnimatedElement><DashboardOrcamentosPage /></AnimatedElement>} />
                             <Route path="faturamento" element={<AnimatedElement><DashboardFaturamentoPage /></AnimatedElement>} />
+                            <Route path="verificacao" element={<AnimatedElement><DashboardVerificacaoPage /></AnimatedElement>} />
                         </Route>
 
                         {/* Smart Dashboard Redirect */}
@@ -295,6 +258,11 @@ const MainRoutes = () => {
                         <Route path="/admin/disputas" element={
                             <AdminGuard>
                                 <AnimatedElement><AdminDisputesPage /></AnimatedElement>
+                            </AdminGuard>
+                        } />
+                        <Route path="/admin/moderacao" element={
+                            <AdminGuard>
+                                <AnimatedElement><AdminModerationPage /></AnimatedElement>
                             </AdminGuard>
                         } />
                         <Route path="/admin/security" element={

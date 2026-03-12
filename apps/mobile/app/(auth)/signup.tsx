@@ -1,163 +1,248 @@
 import React, { useState } from 'react';
 import {
+    StyleSheet,
     View,
     Text,
     TextInput,
     TouchableOpacity,
+    ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
-    ScrollView,
+    TouchableWithoutFeedback,
+    Keyboard,
     Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { supabase } from '@/lib/supabase';
-import { Lock, Mail, UserPlus } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { supabase } from '../../utils/supabase';
+import { Colors, BorderRadius, Spacing, Shadows } from '../../utils/theme';
+import { isValidEmail, isStrongPassword } from '../../utils/validators';
+import PasswordInput from '../../components/ui/PasswordInput';
 
-export default function SignUpScreen() {
-    const [fullName, setFullName] = useState('');
+export default function SignupScreen() {
+    const router = useRouter();
+    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const router = useRouter();
+    const [errorMsg, setErrorMsg] = useState('');
 
-    const handleSignUp = async () => {
-        if (!fullName || !email || !password || !confirmPassword) {
-            Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+    async function signUpWithEmail() {
+        if (!name || !email || !password) {
+            setErrorMsg('Por favor, preencha todos os campos.');
             return;
         }
 
-        if (password !== confirmPassword) {
-            Alert.alert('Erro', 'As senhas não coincidem.');
+        if (!isValidEmail(email)) {
+            setErrorMsg('Digite um e-mail válido.');
             return;
         }
 
-        if (password.length < 6) {
-            Alert.alert('Erro', 'A senha deve ter no mínimo 6 caracteres.');
+        const pwCheck = isStrongPassword(password);
+        if (!pwCheck.valid) {
+            setErrorMsg(pwCheck.message);
             return;
         }
 
         setLoading(true);
-        try {
-            const { error } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: {
-                        full_name: fullName,
-                        user_type: 'client',
-                    },
+        setErrorMsg('');
+
+        const {
+            data: { session },
+            error,
+        } = await supabase.auth.signUp({
+            email: email.trim(),
+            password,
+            options: {
+                data: {
+                    full_name: name.trim(),
                 },
-            });
+            },
+        });
 
-            if (error) throw error;
-
-            Alert.alert(
-                'Conta criada!',
-                'Verifique seu e-mail para confirmar o cadastro.',
-                [{ text: 'OK', onPress: () => router.replace('/(auth)/login') }]
-            );
-        } catch (error: any) {
-            Alert.alert(
-                'Erro no cadastro',
-                error.message || 'Ocorreu um erro ao criar a conta.'
-            );
-        } finally {
+        if (error) {
+            if (error.message.includes('User already registered')) {
+                setErrorMsg('Este e-mail já está cadastrado.');
+            } else {
+                setErrorMsg(error.message);
+            }
             setLoading(false);
+            return;
         }
-    };
+
+        if (!session) {
+            Alert.alert(
+                'Conta Criada!',
+                'Por favor verifique seu e-mail para confirmar o cadastro.',
+                [{ text: 'OK', onPress: () => router.back() }]
+            );
+        } else {
+            router.replace('/(tabs)');
+        }
+
+        setLoading(false);
+    }
 
     return (
         <KeyboardAvoidingView
+            style={styles.container}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className="flex-1 bg-brand-background"
         >
-            <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-6">
-                <View className="flex-1 justify-center py-12">
-                    {/* Header */}
-                    <View className="items-center mb-10">
-                        <View className="w-20 h-20 bg-brand-accent rounded-2xl items-center justify-center mb-4 shadow-lg">
-                            <UserPlus size={36} color="#ffffff" />
-                        </View>
-                        <Text className="text-brand-primary text-3xl font-bold">
-                            Criar Conta
-                        </Text>
-                        <Text className="text-brand-secondary text-base mt-2">
-                            Encontre os melhores profissionais
-                        </Text>
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <SafeAreaView style={styles.inner}>
+                    <View style={styles.headerContainer}>
+                        <TouchableOpacity
+                            style={styles.backButton}
+                            onPress={() => router.back()}
+                            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                        >
+                            <Ionicons name="arrow-back" size={24} color={Colors.primary} />
+                        </TouchableOpacity>
+                        <Text style={styles.title}>Criar Conta</Text>
+                        <Text style={styles.subtitle}>Junte-se ao CONTRATTO</Text>
                     </View>
 
-                    {/* Form */}
-                    <View className="space-y-4">
-                        <View className="bg-white rounded-xl border border-slate-200 px-4 py-3 flex-row items-center">
-                            <UserPlus size={20} color="#94a3b8" />
+                    <View style={styles.formContainer}>
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Nome Completo</Text>
                             <TextInput
-                                className="flex-1 ml-3 text-brand-primary h-6"
-                                placeholder="Nome completo"
-                                value={fullName}
-                                onChangeText={setFullName}
+                                style={styles.input}
+                                onChangeText={(text) => {
+                                    setName(text);
+                                    if (errorMsg) setErrorMsg('');
+                                }}
+                                value={name}
+                                placeholder="João da Silva"
                                 autoCapitalize="words"
-                                placeholderTextColor="#94a3b8"
+                                placeholderTextColor={Colors.textTertiary}
                             />
                         </View>
 
-                        <View className="bg-white rounded-xl border border-slate-200 px-4 py-3 flex-row items-center mt-4">
-                            <Mail size={20} color="#94a3b8" />
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>E-mail</Text>
                             <TextInput
-                                className="flex-1 ml-3 text-brand-primary h-6"
-                                placeholder="E-mail"
+                                style={styles.input}
+                                onChangeText={(text) => {
+                                    setEmail(text);
+                                    if (errorMsg) setErrorMsg('');
+                                }}
                                 value={email}
-                                onChangeText={setEmail}
+                                placeholder="seu@email.com"
                                 autoCapitalize="none"
                                 keyboardType="email-address"
-                                placeholderTextColor="#94a3b8"
+                                placeholderTextColor={Colors.textTertiary}
                             />
                         </View>
 
-                        <View className="bg-white rounded-xl border border-slate-200 px-4 py-3 flex-row items-center mt-4">
-                            <Lock size={20} color="#94a3b8" />
-                            <TextInput
-                                className="flex-1 ml-3 text-brand-primary h-6"
-                                placeholder="Senha"
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Senha</Text>
+                            <PasswordInput
+                                onChangeText={(text) => {
+                                    setPassword(text);
+                                    if (errorMsg) setErrorMsg('');
+                                }}
                                 value={password}
-                                onChangeText={setPassword}
-                                secureTextEntry
-                                placeholderTextColor="#94a3b8"
+                                placeholder="Mín. 8 chars, maiúscula, número e especial"
+                                autoCapitalize="none"
+                                placeholderTextColor={Colors.textTertiary}
                             />
                         </View>
 
-                        <View className="bg-white rounded-xl border border-slate-200 px-4 py-3 flex-row items-center mt-4">
-                            <Lock size={20} color="#94a3b8" />
-                            <TextInput
-                                className="flex-1 ml-3 text-brand-primary h-6"
-                                placeholder="Confirmar senha"
-                                value={confirmPassword}
-                                onChangeText={setConfirmPassword}
-                                secureTextEntry
-                                placeholderTextColor="#94a3b8"
-                            />
-                        </View>
+                        {errorMsg ? (
+                            <Text style={styles.errorText}>{errorMsg}</Text>
+                        ) : null}
 
                         <TouchableOpacity
-                            onPress={handleSignUp}
-                            disabled={loading}
-                            className={`bg-brand-accent rounded-xl py-4 items-center mt-8 shadow-md ${loading ? 'opacity-70' : ''}`}
+                            style={[styles.button, loading && styles.buttonDisabled]}
+                            disabled={loading || !name || !email || !password}
+                            onPress={signUpWithEmail}
                         >
-                            <Text className="text-white font-bold text-lg">
-                                {loading ? 'Criando conta...' : 'Cadastrar'}
-                            </Text>
+                            {loading ? (
+                                <ActivityIndicator size="small" color={Colors.white} />
+                            ) : (
+                                <Text style={styles.buttonText}>Cadastrar</Text>
+                            )}
                         </TouchableOpacity>
                     </View>
-
-                    {/* Footer */}
-                    <View className="flex-row justify-center mt-12">
-                        <Text className="text-brand-secondary">Já tem conta?</Text>
-                        <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
-                            <Text className="text-brand-accent font-bold ml-1">Entrar</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </ScrollView>
+                </SafeAreaView>
+            </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: Colors.white,
+    },
+    inner: {
+        padding: Spacing.lg,
+        flex: 1,
+    },
+    headerContainer: {
+        marginBottom: 30,
+    },
+    backButton: {
+        marginBottom: 20,
+        alignSelf: 'flex-start',
+    },
+    title: {
+        fontSize: 32,
+        fontWeight: '900',
+        color: Colors.text,
+        marginBottom: Spacing.sm,
+        letterSpacing: -1,
+    },
+    subtitle: {
+        fontSize: 16,
+        color: Colors.textSecondary,
+        fontWeight: '500',
+    },
+    formContainer: {
+        width: '100%',
+    },
+    inputGroup: {
+        marginBottom: 20,
+    },
+    label: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: Colors.text,
+        marginBottom: Spacing.sm,
+    },
+    input: {
+        height: 56,
+        borderColor: Colors.border,
+        borderWidth: 1,
+        borderRadius: BorderRadius.md,
+        paddingHorizontal: Spacing.md,
+        fontSize: 16,
+        backgroundColor: Colors.surface,
+        color: Colors.text,
+    },
+    button: {
+        backgroundColor: Colors.primary,
+        height: 56,
+        borderRadius: BorderRadius.md,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: Spacing.sm,
+        ...Shadows.md,
+    },
+    buttonDisabled: {
+        opacity: 0.7,
+    },
+    buttonText: {
+        color: Colors.white,
+        fontSize: 16,
+        fontWeight: '800',
+    },
+    errorText: {
+        color: Colors.error,
+        fontSize: 14,
+        marginBottom: Spacing.md,
+        marginTop: -Spacing.sm,
+        fontWeight: '600',
+    },
+});

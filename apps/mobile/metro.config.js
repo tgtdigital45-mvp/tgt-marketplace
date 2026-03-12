@@ -1,23 +1,25 @@
-const { getDefaultConfig } = require("expo/metro-config");
-const { withNativeWind } = require("nativewind/metro");
-const path = require("path");
+const { getDefaultConfig } = require('expo/metro-config');
+const path = require('path');
 
-// Find the project and workspace root
-const projectRoot = __dirname;
-const workspaceRoot = path.resolve(projectRoot, "../..");
+/** @type {import('expo/metro-config').MetroConfig} */
+const config = getDefaultConfig(__dirname);
 
-const config = getDefaultConfig(projectRoot);
+// Resolver personalizado para lidar com módulos nativos no ambiente web
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+    if (platform === 'web' && (
+        moduleName.includes('codegenNativeCommands') ||
+        moduleName.includes('codegenNativeComponent') ||
+        moduleName.includes('react-native/Libraries/Utilities/codegen') ||
+        moduleName.includes('react-native/Libraries/ReactNative/RendererProxy') ||
+        moduleName.includes('react-native/Libraries/ReactPrivate/ReactNativePrivateInitializeCore')
+    )) {
+        // console.log(`[MOCKING INTERCEPTION] INTERCEPTED: ${moduleName}`);
+        return {
+            type: 'sourceFile',
+            filePath: path.join(__dirname, 'empty-mock.js'),
+        };
+    }
+    return context.resolveRequest(context, moduleName, platform);
+};
 
-// 1. Watch all files within the monorepo
-config.watchFolders = [workspaceRoot];
-
-// 2. Let Metro resolve modules from both node_modules folders
-config.resolver.nodeModulesPaths = [
-    path.resolve(projectRoot, "node_modules"),
-    path.resolve(workspaceRoot, "node_modules"),
-];
-
-// 3. Force Metro to resolve (and compile) from the workspace root
-config.resolver.disableHierarchicalLookup = true;
-
-module.exports = withNativeWind(config, { input: "./global.css" });
+module.exports = config;

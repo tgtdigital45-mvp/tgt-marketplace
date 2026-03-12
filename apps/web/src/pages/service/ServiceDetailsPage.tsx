@@ -256,9 +256,32 @@ const ServiceDetailsPage = () => {
     const sellerReviews = company?.review_count || 0;
     const isVerified = company?.verified;
 
+    const productSchema = service && company ? {
+        "@context": "https://schema.org/",
+        "@type": "Product",
+        "name": service.title,
+        "image": service.gallery?.[0] || 'https://contratto.app/og-image.jpg',
+        "description": service.description,
+        "brand": {
+            "@type": "Brand",
+            "name": company.company_name
+        },
+        "offers": {
+            "@type": "Offer",
+            "url": `https://contratto.app/servico/${service.id}`,
+            "priceCurrency": "BRL",
+            "price": service.starting_price || service.price || 0,
+            "availability": "https://schema.org/InStock",
+            "seller": {
+                "@type": "Organization",
+                "name": company.company_name
+            }
+        }
+    } : undefined;
+
     return (
         <main className="min-h-screen bg-white pb-20">
-            <SEO title={`${service.title} | CONTRATTO`} description={service.description} image={service.gallery?.[0]} />
+            <SEO title={`${service.title} | CONTRATTO`} description={service.description} image={service.gallery?.[0]} schema={productSchema} />
 
             <div className="container mx-auto px-4 py-8 max-w-7xl">
 

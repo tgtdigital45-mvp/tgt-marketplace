@@ -21,16 +21,29 @@ const QUICK_REPLIES = [
     'Podemos reagendar para amanhã?',
 ];
 
+interface OrderProposal {
+    id: string;
+    amount: number;
+    status: 'pending' | 'accepted' | 'rejected';
+    estimated_duration: string | null;
+    notes: string | null;
+}
+
 interface Message {
     id: string;
     sender_id: string;
     receiver_id: string;
     content: string;
-    type?: 'text' | 'image' | 'file';
+    file_url?: string | null;
+    file_type?: string | null;
+    proposal_id?: string | null;
+    is_system_message?: boolean;
     created_at: string;
-    read_at: string | null;
+    read_at?: string | null;
     job_id?: string;
     order_id?: string;
+    // Relationships for UI render
+    order_proposals?: OrderProposal | null;
 }
 
 interface Thread {
@@ -103,7 +116,16 @@ const DashboardMensagensPage: React.FC = () => {
         const filterColumn = isJob ? 'job_id' : 'order_id';
         const { data } = await supabase
             .from('messages')
-            .select('*')
+            .select(`
+                *,
+                order_proposals (
+                    id,
+                    amount,
+                    status,
+                    estimated_duration,
+                    notes
+                )
+            `)
             .eq(filterColumn, threadId)
             .order('created_at', { ascending: true });
         if (data) setMessages(data);
@@ -185,8 +207,9 @@ const DashboardMensagensPage: React.FC = () => {
             const insertPayload: any = {
                 sender_id: user.id,
                 receiver_id: activeThread.partnerId,
-                content: publicUrl,
-                type: msgType,
+                content: msgType === 'image' ? '🖼️ Imagem anexada' : '📄 Arquivo anexado',
+                file_url: publicUrl,
+                file_type: msgType,
                 job_id: activeThread.jobId,
                 order_id: activeThread.orderId
             };
@@ -265,12 +288,47 @@ const DashboardMensagensPage: React.FC = () => {
                                 <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-4 space-y-4 custom-scrollbar">
                                     {messages.map((msg) => {
                                         const isMe = msg.sender_id === user?.id;
+                                        
+                                        if (msg.is_system_message) {
+                                            return (
+                                                <div key={msg.id} className="flex justify-center my-2">
+                                                    <div className="bg-gray-100 text-gray-500 text-xs px-3 py-1 rounded-full text-center">
+                                                        {msg.content}
+                                                    </div>
+                                                </div>
+                                            )
+                                        }
+
                                         return (
                                             <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                                <div className={`max-w-[75%] px-4 py-3 rounded-2xl shadow-sm text-sm break-words ${isMe ? 'bg-primary-500 text-white rounded-br-none' : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'}`}>
-                                                    {msg.type === 'image' ? <img src={msg.content} className="max-w-xs rounded-lg cursor-pointer" onClick={() => window.open(msg.content, '_blank')} /> :
-                                                        msg.type === 'file' ? <a href={msg.content} target="_blank" className={`flex items-center gap-2 underline ${isMe ? 'text-blue-100' : 'text-primary-500'}`}>Arquivos</a> :
-                                                            msg.content}
+                                                <div className={`max-w-[85%] px-4 py-3 rounded-2xl shadow-sm text-sm break-words ${isMe ? 'bg-primary-500 text-white rounded-br-none' : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'}`}>
+                                                    {msg.file_url ? (
+                                                        msg.file_type === 'image' ? (
+                                                           <img src={msg.file_url} className="max-w-xs rounded-lg cursor-pointer max-h-48 object-cover mb-2" onClick={() => window.open(msg.file_url || '', '_blank')} /> 
+                                                        ) : (
+                                                            <a href={msg.file_url} target="_blank" className={`flex items-center gap-2 underline mb-2 ${isMe ? 'text-blue-100' : 'text-primary-500'}`}>Ver Anexo</a>
+                                                        )
+                                                    ) : null}
+                                                    
+                                                    {msg.order_proposals ? (
+                                                        <div className={`p-3 rounded-lg mb-2 border ${isMe ? 'bg-primary-600 border-primary-400' : 'bg-green-50 border-green-200'}`}>
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className="font-bold text-lg">R$ {msg.order_proposals.amount?.toFixed(2)}</span>
+                                                                <Badge className={
+                                                                    msg.order_proposals.status === 'accepted' ? 'bg-green-500 text-white border-0' :
+                                                                    msg.order_proposals.status === 'rejected' ? 'bg-red-500 text-white border-0' :
+                                                                    'bg-gray-100/20 px-1 border-0'
+                                                                }>
+                                                                    {msg.order_proposals.status === 'accepted' ? 'Aceita' :
+                                                                     msg.order_proposals.status === 'rejected' ? 'Recusada' : 'Aguardando'}
+                                                                </Badge>
+                                                            </div>
+                                                            {msg.order_proposals.estimated_duration && <p className="text-xs opacity-90"><Clock size={10} className="inline mr-1"/>{msg.order_proposals.estimated_duration}</p>}
+                                                            {msg.order_proposals.notes && <p className="text-xs opacity-90 italic mt-1">"{msg.order_proposals.notes}"</p>}
+                                                        </div>
+                                                    ) : null}
+
+                                                    <span>{msg.content}</span>
                                                     <div className={`text-[10px] mt-1 text-right ${isMe ? 'text-blue-100' : 'text-gray-400'}`}>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                                                 </div>
                                             </div>
@@ -303,7 +361,11 @@ const DashboardMensagensPage: React.FC = () => {
                     {/* Order Widget */}
                     {activeThread?.orderId && (
                         <div className="hidden lg:flex w-72 flex-col bg-white shrink-0">
-                            <OrderSummaryWidget orderId={activeThread.orderId} />
+                            <OrderSummaryWidget 
+                                orderId={activeThread.orderId} 
+                                threadId={activeThread.threadId}
+                                partnerId={activeThread.partnerId}
+                            />
                         </div>
                     )}
                 </div>
@@ -312,14 +374,23 @@ const DashboardMensagensPage: React.FC = () => {
     );
 };
 
-const OrderSummaryWidget: React.FC<{ orderId: string }> = ({ orderId }) => {
+const OrderSummaryWidget: React.FC<{ orderId: string; threadId: string; partnerId: string }> = ({ orderId, threadId, partnerId }) => {
+    const { user } = useAuth();
     const [order, setOrder] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
+    
+    // Budget State
+    const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+    const [budgetAmount, setBudgetAmount] = useState('');
+    const [budgetDuration, setBudgetDuration] = useState('');
+    const [budgetNotes, setBudgetNotes] = useState('');
+    const [sendingBudget, setSendingBudget] = useState(false);
+    
     const { addToast } = useToast();
 
     const fetchOrder = useCallback(async () => {
-        const { data } = await supabase.from('orders').select('*').eq('id', orderId).single();
+        const { data } = await supabase.from('orders').select('*, services:service_id(price_type, title)').eq('id', orderId).single();
         if (data) setOrder(data);
         setLoading(false);
     }, [orderId]);
@@ -330,8 +401,67 @@ const OrderSummaryWidget: React.FC<{ orderId: string }> = ({ orderId }) => {
         return () => { ch.unsubscribe(); };
     }, [orderId, fetchOrder]);
 
+    const handleSendBudget = async () => {
+        if (!order || !user) return;
+        const numericPrice = parseFloat(budgetAmount.replace(',', '.'));
+        if (isNaN(numericPrice) || numericPrice <= 0) {
+            addToast('Digite um valor válido.', 'error');
+            return;
+        }
+        setSendingBudget(true);
+        try {
+            // 1. Create formal proposal
+            const { data: proposalData, error: proposalError } = await supabase
+                .from('order_proposals')
+                .insert({
+                    order_id: order.id,
+                    company_id: order.company_id,
+                    amount: numericPrice,
+                    estimated_duration: budgetDuration.trim() || null,
+                    notes: budgetNotes.trim() || null,
+                    status: 'pending'
+                })
+                .select('id')
+                .single();
+            if (proposalError) throw proposalError;
+
+            // 2. Update order total price
+            const { error: orderError } = await supabase
+                .from('orders')
+                .update({ price: numericPrice })
+                .eq('id', order.id);
+            if (orderError) throw orderError;
+
+            // 3. Send message linking to proposal
+            const { error: msgError } = await supabase
+                .from('messages')
+                .insert({
+                    order_id: order.id,
+                    sender_id: user.id,
+                    receiver_id: partnerId,
+                    content: `Orçamento de R$ ${numericPrice.toFixed(2)} enviado.`,
+                    proposal_id: proposalData.id
+                });
+            if (msgError) throw msgError;
+
+            addToast(`Orçamento de R$ ${numericPrice.toFixed(2)} foi enviado.`, 'success');
+            setIsBudgetModalOpen(false);
+            setBudgetAmount('');
+            setBudgetDuration('');
+            setBudgetNotes('');
+            fetchOrder();
+        } catch (e: any) {
+            console.error('Erro ao enviar orçamento:', e);
+            addToast(`Falha ao enviar orçamento.`, 'error');
+        } finally {
+            setSendingBudget(false);
+        }
+    };
+
     if (loading) return <div className="p-6 space-y-4"><LoadingSkeleton className="h-20 w-full" /></div>;
     if (!order) return null;
+
+    const isBudgetOrder = order.services?.price_type === 'budget';
 
     return (
         <div className="p-6 space-y-6">
@@ -340,7 +470,12 @@ const OrderSummaryWidget: React.FC<{ orderId: string }> = ({ orderId }) => {
                 <h4 className="font-bold text-sm text-gray-900 leading-tight">{order.service_title}</h4>
                 <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="bg-transparent border border-gray-200 text-gray-600 text-[9px] h-4 py-0">{order.package_tier}</Badge>
-                    <span className="text-sm font-bold text-primary-600">R$ {order.price}</span>
+                    {(order.price || !isBudgetOrder) && (
+                        <span className="text-sm font-bold text-primary-600">R$ {order.price}</span>
+                    )}
+                    {(isBudgetOrder && !order.price) && (
+                        <span className="text-sm font-bold text-amber-500">A Orçar</span>
+                    )}
                 </div>
                 <div className="flex gap-1.5 pt-1">
                     {order.status === 'active' && <Badge className="bg-blue-600 text-white text-[9px]">Ativo</Badge>}
@@ -350,12 +485,21 @@ const OrderSummaryWidget: React.FC<{ orderId: string }> = ({ orderId }) => {
             </div>
 
             <div className="space-y-2 pt-4 border-t">
-                {order.saga_status === 'WAITING_ACCEPTANCE' && (
+                 {/* Budget Handling for Professional */}
+                 {isBudgetOrder && !order.price && order.saga_status === 'WAITING_ACCEPTANCE' && (
+                    <Button size="sm" className="w-full text-xs" onClick={() => setIsBudgetModalOpen(true)}>
+                        Enviar Proposta de Orçamento
+                    </Button>
+                 )}
+
+                {/* Normal Service Handling for Professional */}
+                {!isBudgetOrder && order.saga_status === 'WAITING_ACCEPTANCE' && (
                     <Button size="sm" className="w-full text-xs" onClick={async () => {
                         await supabase.rpc('transition_saga_status', { p_order_id: orderId, p_new_status: 'ORDER_ACTIVE' });
                         addToast("Pedido aceito!", "success");
                     }}>Aceitar Pedido</Button>
                 )}
+
                 {(order.status === 'active' || order.status === 'in_progress') && order.saga_status === 'ORDER_ACTIVE' && (
                     <>
                         <Button size="sm" className="w-full text-xs bg-emerald-600 hover:bg-emerald-700" onClick={() => setIsDeliveryModalOpen(true)}>
@@ -407,6 +551,61 @@ const OrderSummaryWidget: React.FC<{ orderId: string }> = ({ orderId }) => {
                         onSuccess={fetchOrder}
                     />
                 </Suspense>
+            )}
+
+            {/* Budget Modal */}
+            {isBudgetModalOpen && (
+               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                   <div className="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="p-6">
+                            <h2 className="text-xl font-bold text-gray-900 mb-4">Enviar Orçamento</h2>
+                            <p className="text-sm text-gray-500 mb-6">Preencha os dados da proposta que será enviada para o cliente. Se aceito, o pedido será confirmado.</p>
+                            
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Valor Final (R$)</label>
+                                    <input 
+                                        type="number" 
+                                        placeholder="Ex: 500.00" 
+                                        className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500"
+                                        value={budgetAmount}
+                                        onChange={(e) => setBudgetAmount(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Duração Estimada</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Ex: 3 dias úteis" 
+                                        className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500"
+                                        value={budgetDuration}
+                                        onChange={(e) => setBudgetDuration(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Observações da Proposta (Opcional)</label>
+                                    <textarea 
+                                        placeholder="Detalhes sobre o que está incluído..." 
+                                        className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 min-h-[100px]"
+                                        value={budgetNotes}
+                                        onChange={(e) => setBudgetNotes(e.target.value)}
+                                    ></textarea>
+                                </div>
+                            </div>
+
+                            <div className="mt-6 flex gap-3">
+                                <Button variant="secondary" className="flex-1" onClick={() => setIsBudgetModalOpen(false)}>Cancelar</Button>
+                                <Button 
+                                    className="flex-1" 
+                                    isLoading={sendingBudget} 
+                                    onClick={handleSendBudget}
+                                >
+                                    Enviar Proposta
+                                </Button>
+                            </div>
+                        </div>
+                   </div>
+               </div> 
             )}
         </div>
     );

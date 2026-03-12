@@ -142,10 +142,44 @@ async function processEvent(event: Stripe.Event) {
             });
 
             // COMMISSION SPLIT & WALLET
-            const commissionRate = metadata.commission_rate ? parseFloat(metadata.commission_rate) : 0.20
+            // Hierarquia de resolução da taxa de comissão:
+            // 1. metadata do Stripe (definido no checkout — mais preciso)
+            // 2. companies.commission_rate do vendedor (taxa contratual atual)
+            // 3. Fallback de segurança: 0.20
+            let commissionRate: number | null = metadata.commission_rate
+                ? parseFloat(metadata.commission_rate)
+                : null;
+
+            if (commissionRate === null || isNaN(commissionRate)) {
+                // Fallback: buscar taxa diretamente da empresa vendedora
+                const { data: companyData } = await supabaseClient
+                    .from('companies')
+                    .select('commission_rate')
+                    .eq('profile_id', seller_id)
+                    .maybeSingle();
+
+                commissionRate = companyData?.commission_rate ?? null;
+
+                if (commissionRate !== null) {
+                    logStructured('info', 'commission_rate lido da tabela companies', {
+                        order_id,
+                        seller_id,
+                        commission_rate: commissionRate
+                    });
+                }
+            }
+
+            // Segurança final: nunca processar sem taxa definida
+            if (commissionRate === null || isNaN(commissionRate)) {
+                commissionRate = 0.20;
+                logStructured('warn', 'commission_rate não encontrado, usando fallback 0.20', {
+                    order_id,
+                    seller_id
+                });
+            }
+
             const totalOrderValue = order.agreed_price || order.price || 0
             const sellerNetIncome = totalOrderValue * (1 - commissionRate)
-            const seller_id = order.seller_id
 
             // Get/Create Wallet
             let { data: wallet } = await supabaseClient.from('wallets').select('*').eq('user_id', seller_id).single()
@@ -154,7 +188,7 @@ async function processEvent(event: Stripe.Event) {
                 wallet = newWallet
             }
 
-            // Create Transaction
+            // Create Transaction (com idempotência)
             const { data: existingTx } = await supabaseClient
                 .from('transactions')
                 .select('id')
@@ -172,13 +206,18 @@ async function processEvent(event: Stripe.Event) {
                     description: `Venda #${order.id.slice(0, 8)}`
                 })
 
-                // Update Balance
+                // Atualizar saldo via RPC segura (verifica ownership da carteira)
                 const { error: balanceError } = await supabaseClient.rpc('increment_pending_balance', {
-                    row_id: wallet.id,
-                    amount_to_add: sellerNetIncome
+                    p_wallet_id: wallet.id,
+                    p_amount: sellerNetIncome,
+                    p_order_id: order.id
                 })
 
                 if (balanceError) {
+                    logStructured('error', 'increment_pending_balance falhou, usando fallback direto', {
+                        error: balanceError.message,
+                        wallet_id: wallet.id
+                    });
                     await supabaseClient
                         .from('wallets')
                         .update({ pending_balance: (wallet.pending_balance || 0) + sellerNetIncome })

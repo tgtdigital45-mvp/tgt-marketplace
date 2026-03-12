@@ -11,6 +11,8 @@ interface OptimizedImageProps extends ImgHTMLAttributes<HTMLImageElement> {
     quality?: number;
     /** Aspect ratio para prevenir CLS (ex: '16/9', '1/1', '4/3') */
     aspectRatio?: string;
+    /** Se true, carrega a imagem preemptivamente (prioridade para LCP) */
+    priority?: boolean;
 }
 
 const OptimizedImage: React.FC<OptimizedImageProps> = ({
@@ -21,6 +23,7 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
     optimizedWidth = 800,
     quality = 75,
     aspectRatio,
+    priority = false,
     ...props
 }) => {
     // Aplicar transformação de imagem se for do Supabase
@@ -75,7 +78,8 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
                 className={`w-full h-full object-cover transition-opacity duration-300 ${isLoaded && !hasError ? 'opacity-100' : 'opacity-0'}`}
                 onLoad={() => setIsLoaded(true)}
                 onError={handleError}
-                loading={props.loading || "lazy"}
+                loading={priority ? "eager" : (props.loading || "lazy")}
+                fetchPriority={priority ? "high" : "auto"}
                 {...props}
             />
         </div>

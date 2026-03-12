@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@tgt/shared": ["./packages/shared/src/index.ts"]
+    },
+    "types": ["node"]
+  },
+  "exclude": ["node_modules", "dist"]
+}

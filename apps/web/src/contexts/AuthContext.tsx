@@ -25,10 +25,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const queryClient = useQueryClient();
 
   // Initialize loading based on whether we expect a session
+  // We use a more cautious approach: only true if there's a strong indication of a session
   const [loading, setLoading] = useState(() => {
-    const hasSession = !!localStorage.getItem('contratto-auth-session');
-    if (hasSession) console.log('[AuthContext] Initializing with loading=true (found session in storage)');
-    return hasSession;
+    try {
+      const hasSession = !!localStorage.getItem('contratto-auth-session');
+      if (hasSession) console.log('[AuthContext] Initializing with loading=true (found session in storage)');
+      return hasSession;
+    } catch (e) {
+      return false;
+    }
   });
 
   // Extract profile fetching logic for reuse
@@ -44,7 +49,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
 
-    // Ensure we are in loading state while fetching profile
     setLoading(true);
 
     try {
@@ -53,59 +57,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         name: session.user.user_metadata.name || session.user.email?.split('@')[0] || 'User',
         email: session.user.email || '',
         type: (session.user.user_metadata.type as 'client' | 'company') || 'client',
-        role: 'user', // Default role
+        role: 'user',
         avatar: session.user.user_metadata.avatar_url || '',
       };
 
-      console.log(`[AuthContext] (ID: ${currentFetchId}) Starting parallel profile/company fetch...`);
+      console.log(`[AuthContext] (ID: ${currentFetchId}) Buscando contexto via RPC unificada...`);
 
-      console.log(`[AuthContext] (ID: ${currentFetchId}) Fetching Profile...`);
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('role, full_name, avatar_url, user_type')
-        .eq('id', session.user.id)
-        .maybeSingle();
+      // Uma única chamada RPC substitui as 2 queries anteriores (profiles + companies)
+      // Elimina a latência dupla e a necessidade do timeout de segurança de 15s
+      const { data: sessionCtx, error: rpcError } = await supabase
+        .rpc('get_user_session_context', { p_user_id: session.user.id });
 
-      console.log(`[AuthContext] (ID: ${currentFetchId}) Profile fetch done. Error:`, profileError);
-
-      console.log(`[AuthContext] (ID: ${currentFetchId}) Fetching Company...`);
-      const { data: companyData, error: companyError } = await supabase
-        .from('companies')
-        .select('id, slug, profile_id')
-        .eq('profile_id', session.user.id)
-        .maybeSingle();
-
-      console.log(`[AuthContext] (ID: ${currentFetchId}) Company fetch done. Error:`, companyError);
+      console.log(`[AuthContext] (ID: ${currentFetchId}) RPC concluída. Erro:`, rpcError);
 
       if (currentFetchId !== fetchIdRef.current) return;
 
-      let databaseUserType: 'client' | 'company' | null = null;
-      let databaseCompanySlug: string | null = null;
-
-      // 1. Process Profile
-      if (profileData) {
-        if (profileData.role) userData.role = profileData.role as any;
-        if (profileData.full_name) userData.name = profileData.full_name;
-        if (profileData.avatar_url) userData.avatar = profileData.avatar_url;
-        databaseUserType = profileData.user_type as any;
+      if (rpcError) {
+        console.error(`[AuthContext] (ID: ${currentFetchId}) Erro na RPC get_user_session_context:`, rpcError);
+      } else if (sessionCtx) {
+        if (sessionCtx.role) userData.role = sessionCtx.role as any;
+        if (sessionCtx.full_name) userData.name = sessionCtx.full_name;
+        if (sessionCtx.avatar_url) userData.avatar = sessionCtx.avatar_url;
+        if (sessionCtx.user_type) userData.type = sessionCtx.user_type as any;
+        if (sessionCtx.company_slug) userData.companySlug = sessionCtx.company_slug;
       }
-
-      // 2. Process Company (Company table is source of truth for 'company' type)
-      if (companyData) {
-        databaseUserType = 'company';
-        databaseCompanySlug = companyData.slug;
-      }
-
-      // Final Application
-      if (databaseUserType) userData.type = databaseUserType;
-      if (databaseCompanySlug) userData.companySlug = databaseCompanySlug;
 
       if (mountedRef.current && currentFetchId === fetchIdRef.current) {
-        console.log(`[AuthContext] (ID: ${currentFetchId}) Committing user state:`, userData.id);
+        console.log(`[AuthContext] (ID: ${currentFetchId}) Commitando estado do usuário:`, userData.id);
         setUser(userData);
       }
     } catch (err: any) {
-      console.error(`[AuthContext] (ID: ${currentFetchId}) CRITICAL fetch error:`, err);
+      console.error(`[AuthContext] (ID: ${currentFetchId}) Erro crítico no fetch:`, err);
     } finally {
       if (mountedRef.current && currentFetchId === fetchIdRef.current) {
         setLoading(false);
@@ -113,29 +95,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  // 1.5 Safety timeout for initial loading
-  useEffect(() => {
-    if (loading) {
-      console.log('[AuthContext] Starting 15s safety timeout check (VER_2026_03_02_1645)...');
-      const timer = setTimeout(() => {
-        if (loading && mountedRef.current) {
-          console.warn('[AuthContext] (VER_2026_03_02_1645) Loading stuck for 15s. Forcing loading=false.');
-          setLoading(false);
-        }
-      }, 15000);
-      return () => clearTimeout(timer);
-    }
-  }, [loading]);
+
 
   useEffect(() => {
     mountedRef.current = true;
     console.log('[AuthContext] (VER_2026_03_02_1645) Mounting AuthProvider...');
 
+    // Safety timeout: ensure loading is reset even if Supabase events fail to fire
+    const safetyTimeout = setTimeout(() => {
+      if (mountedRef.current && loading) {
+        console.warn('[AuthContext] Safety timeout reached! Forcing loading=false');
+        setLoading(false);
+      }
+    }, 6000); // 6 seconds is more than enough for initial session check
+
     // Single listener: let INITIAL_SESSION bootstrap state, then handle subsequent events.
-    // This avoids concurrent getSession() + onAuthStateChange lock contention.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mountedRef.current) return;
       console.log(`[AuthContext] Auth State Change Event: ${event}`);
+      
+      // Clear safety timeout as soon as we get ANY event
+      clearTimeout(safetyTimeout);
 
       if (event === 'SIGNED_OUT') {
         lastProcessedUserIdRef.current = null;

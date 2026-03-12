@@ -132,7 +132,7 @@ export const useClientOrders = (userId: string | undefined) => {
                     time: b.booking_time,
                     // Proposal
                     proposed_date: b.proposed_date,
-                    proposed_time: b.proposed_time,
+                    proposed_time: (b as any).proposed_time,
                     proposal_expires_at: b.proposal_expires_at,
                     // Linking
                     order_id: (b as any).order_id
@@ -166,7 +166,7 @@ export const useClientOrders = (userId: string | undefined) => {
                 });
 
                 const bookings = [...mappedBookings, ...mappedQuotes].sort((a, b) => {
-                    return new Date(b.created_at || b.date).getTime() - new Date(a.created_at || a.date).getTime();
+                    return new Date((b as any).created_at || b.date).getTime() - new Date((a as any).created_at || a.date).getTime();
                 });
 
                 return { jobs, bookings };

@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useStripe } from '@stripe/stripe-react-native';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@tgt/shared';
 import { ArrowLeft, CreditCard, ShieldCheck, Info } from 'lucide-react-native';
 
 export default function CheckoutScreen() {

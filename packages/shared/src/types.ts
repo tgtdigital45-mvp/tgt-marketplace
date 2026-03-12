@@ -59,6 +59,8 @@ export interface Company {
     instagram?: string;
     linkedin?: string;
   };
+  kyc_status?: 'pending' | 'in_review' | 'approved' | 'rejected';
+  kyc_documents?: any[];
   address?: Address;
   owner?: {
     fullName: string;
@@ -142,6 +144,8 @@ export interface DbCompany {
     instagram?: string;
     linkedin?: string;
   };
+  kyc_status?: 'pending' | 'in_review' | 'approved' | 'rejected';
+  kyc_documents?: any[];
   level?: string;
   clients_count?: number;
   recurring_clients_percent?: number;

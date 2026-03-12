@@ -1,134 +1,257 @@
 import React, { useState } from 'react';
 import {
+    StyleSheet,
     View,
     Text,
     TextInput,
     TouchableOpacity,
-    StyleSheet,
     ActivityIndicator,
-    Alert,
     KeyboardAvoidingView,
+    Keyboard,
+    Alert,
     Platform,
-    ScrollView,
+    TouchableWithoutFeedback,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { supabase } from '@/lib/supabase';
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react-native';
-import { StatusBar } from 'expo-status-bar';
+import { supabase } from '../../utils/supabase';
+import { Colors, BorderRadius, Spacing, Shadows } from '../../utils/theme';
+import { Ionicons } from '@expo/vector-icons';
+import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import PasswordInput from '../../components/ui/PasswordInput';
+import { LEGAL_URLS } from '../../utils/version';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
     const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
+    const [errorMsg, setErrorMsg] = useState('');
 
-    const handleLogin = async () => {
+    async function signInWithEmail() {
         if (!email || !password) {
-            Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+            setErrorMsg('Por favor, preencha e-mail e senha.');
             return;
         }
 
         setLoading(true);
+        setErrorMsg('');
+
         try {
             const { error } = await supabase.auth.signInWithPassword({
-                email,
+                email: email.trim(),
                 password,
             });
 
-            if (error) throw error;
-            router.replace('/(tabs)');
-        } catch (error: any) {
-            Alert.alert('Erro de Login', error.message || 'Ocorreu um erro ao entrar.');
+            if (error) {
+                if (error.message.includes('Invalid login credentials')) {
+                    setErrorMsg('E-mail ou senha incorretos.');
+                } else {
+                    setErrorMsg(error.message);
+                }
+            }
+        } catch (e: any) {
+            setErrorMsg(e.message);
         } finally {
-            setLoading(true); // Keep loading until redirect
+            setLoading(false);
         }
-    };
+    }
+
+    async function handleForgotPassword() {
+        if (!email.trim()) {
+            Alert.alert('Aviso', 'Digite seu e-mail primeiro para receber o link de recuperação.');
+            return;
+        }
+
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+                redirectTo: Linking.createURL('/(auth)/login'),
+            });
+            if (error) throw error;
+            Alert.alert(
+                'Link enviado!',
+                'Verifique sua caixa de entrada para redefinir sua senha.'
+            );
+        } catch (e: any) {
+            Alert.alert('Erro', e.message || 'Não foi possível enviar o link de recuperação.');
+        }
+    }
+
+    async function signInWithGoogle() {
+        setLoading(true);
+        try {
+            const redirectTo = Linking.createURL('/(tabs)');
+            
+            const { data, error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo,
+                    skipBrowserRedirect: true,
+                },
+            });
+
+            if (error) throw error;
+
+            const res = await WebBrowser.openAuthSessionAsync(
+                data.url,
+                redirectTo
+            );
+
+            if (res.type === 'success') {
+                const { url } = res;
+                const params = url.split('#')[1] || url.split('?')[1];
+                if (!params) throw new Error('Dados de autenticação não encontrados na URL.');
+
+                const parts = params.split('&');
+                const accessToken = parts.find(p => p.startsWith('access_token='))?.split('=')[1];
+                const refreshToken = parts.find(p => p.startsWith('refresh_token='))?.split('=')[1];
+
+                if (accessToken && refreshToken) {
+                    const { error: sessionError } = await supabase.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: refreshToken,
+                    });
+                    if (sessionError) throw sessionError;
+                }
+            }
+        } catch (e: any) {
+            console.error('Erro Google Auth:', e);
+            Alert.alert('Erro', e.message || 'Não foi possível entrar com o Google.');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function signInWithApple() {
+        setLoading(true);
+        try {
+            const credential = await AppleAuthentication.signInAsync({
+                requestedScopes: [
+                    AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+                    AppleAuthentication.AppleAuthenticationScope.EMAIL,
+                ],
+            });
+
+            if (!credential.identityToken) throw new Error('Token Apple inválido.');
+
+            const { error } = await supabase.auth.signInWithIdToken({
+                provider: 'apple',
+                token: credential.identityToken,
+            });
+
+            if (error) throw error;
+        } catch (e: any) {
+            if (e.code !== 'ERR_REQUEST_CANCELED') {
+                Alert.alert('Erro', 'Não foi possível entrar com o Apple ID.');
+            }
+        } finally {
+            setLoading(false);
+        }
+    }
 
     return (
         <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.container}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-            <StatusBar style="light" />
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-                <View style={styles.header}>
-                    <Text style={styles.title}>Bem-vindo ao</Text>
-                    <Text style={styles.brand}>CONTRATO</Text>
-                    <Text style={styles.subtitle}>Conectando você aos melhores profissionais.</Text>
-                </View>
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <SafeAreaView style={styles.inner}>
+                    <View style={styles.headerContainer}>
+                        <Text style={styles.title}>Bem-vindo ao{'\n'}CONTRATTO.</Text>
+                    </View>
 
-                <View style={styles.form}>
-                    {/* Email Field */}
-                    <View style={styles.inputContainer}>
-                        <Text style={styles.label}>E-mail</Text>
-                        <View style={styles.inputWrapper}>
-                            <Mail size={20} color="#94a3b8" />
+                    <View style={styles.formContainer}>
+                        <View style={styles.inputGroup}>
                             <TextInput
                                 style={styles.input}
-                                placeholder="seu@email.com"
-                                placeholderTextColor="#94a3b8"
+                                onChangeText={(text: string) => {
+                                    setEmail(text);
+                                    if (errorMsg) setErrorMsg('');
+                                }}
                                 value={email}
-                                onChangeText={setEmail}
+                                placeholder="Digite seu e-mail"
                                 autoCapitalize="none"
                                 keyboardType="email-address"
+                                placeholderTextColor={Colors.textTertiary}
                             />
                         </View>
-                    </View>
 
-                    {/* Password Field */}
-                    <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Senha</Text>
-                        <View style={styles.inputWrapper}>
-                            <Lock size={20} color="#94a3b8" />
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Sua senha"
-                                placeholderTextColor="#94a3b8"
+                        <View style={styles.inputGroup}>
+                            <PasswordInput
+                                onChangeText={(text: string) => {
+                                    setPassword(text);
+                                    if (errorMsg) setErrorMsg('');
+                                }}
                                 value={password}
-                                onChangeText={setPassword}
-                                secureTextEntry={!showPassword}
+                                placeholder="Digite sua senha"
+                                autoCapitalize="none"
+                                placeholderTextColor={Colors.textTertiary}
                             />
-                            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                                {showPassword ? (
-                                    <EyeOff size={20} color="#94a3b8" />
-                                ) : (
-                                    <Eye size={20} color="#94a3b8" />
-                                )}
+                        </View>
+
+                        <TouchableOpacity style={styles.forgotBtn} onPress={handleForgotPassword}>
+                            <Text style={styles.forgotText}>Esqueceu a senha?</Text>
+                        </TouchableOpacity>
+
+                        {errorMsg ? (
+                            <Text style={styles.errorText}>{errorMsg}</Text>
+                        ) : null}
+
+                        <TouchableOpacity
+                            style={[styles.button, loading && styles.buttonDisabled]}
+                            disabled={loading}
+                            onPress={signInWithEmail}
+                        >
+                            {loading ? (
+                                <ActivityIndicator size="small" color={Colors.white} />
+                            ) : (
+                                <Text style={styles.buttonText}>Entrar</Text>
+                            )}
+                        </TouchableOpacity>
+
+                        <View style={styles.dividerContainer}>
+                            <View style={styles.divider} />
+                            <Text style={styles.dividerText}>Ou entre com</Text>
+                            <View style={styles.divider} />
+                        </View>
+
+                        <View style={styles.socialRow}>
+                            <TouchableOpacity style={styles.socialBtn} onPress={signInWithGoogle}>
+                                <Ionicons name="logo-google" size={24} color="#EA4335" />
                             </TouchableOpacity>
+                            {Platform.OS === 'ios' && (
+                                <AppleAuthentication.AppleAuthenticationButton
+                                    buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                                    buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                                    cornerRadius={30}
+                                    style={styles.appleBtn}
+                                    onPress={signInWithApple}
+                                />
+                            )}
                         </View>
                     </View>
 
-                    <TouchableOpacity
-                        style={styles.forgotPassword}
-                        onPress={() => router.push('/(auth)/forgot-password')}
-                    >
-                        <Text style={styles.forgotPasswordText}>Esqueceu a senha?</Text>
-                    </TouchableOpacity>
+                    <View style={styles.registerContainer}>
+                        <Text style={styles.registerText}>Não tem uma conta? </Text>
+                        <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
+                            <Text style={styles.registerLink}>Cadastre-se</Text>
+                        </TouchableOpacity>
+                    </View>
 
-                    <TouchableOpacity
-                        style={styles.loginButton}
-                        onPress={handleLogin}
-                        disabled={loading}
-                    >
-                        {loading ? (
-                            <ActivityIndicator color="#fff" />
-                        ) : (
-                            <>
-                                <Text style={styles.loginButtonText}>Entrar</Text>
-                                <ArrowRight size={20} color="#fff" />
-                            </>
-                        )}
-                    </TouchableOpacity>
-                </View>
-
-                <View style={styles.footer}>
-                    <Text style={styles.footerText}>Não tem uma conta?</Text>
-                    <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
-                        <Text style={styles.registerText}>Cadastre-se</Text>
-                    </TouchableOpacity>
-                </View>
-            </ScrollView>
+                    <View style={styles.legalNotice}>
+                        <Text style={styles.legalNoticeText}>
+                            Ao entrar, você concorda com nossos{' '}
+                            <Text style={styles.legalLink} onPress={() => WebBrowser.openBrowserAsync(LEGAL_URLS.TERMS_OF_USE)}>Termos</Text>
+                            {' '}e{' '}
+                            <Text style={styles.legalLink} onPress={() => WebBrowser.openBrowserAsync(LEGAL_URLS.PRIVACY_POLICY)}>Privacidade</Text>.
+                        </Text>
+                    </View>
+                </SafeAreaView>
+            </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
     );
 }
@@ -136,97 +259,139 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#0f172a',
+        backgroundColor: Colors.white,
     },
-    scrollContent: {
-        flexGrow: 1,
-        paddingHorizontal: 24,
-        paddingTop: 80,
-        paddingBottom: 40,
+    inner: {
+        flex: 1,
+        paddingHorizontal: Spacing.lg,
+        paddingTop: Spacing.xxl,
     },
-    header: {
+    headerContainer: {
+        marginTop: Spacing.xxl,
         marginBottom: 48,
     },
     title: {
-        fontSize: 24,
-        color: '#f8fafc',
-        fontWeight: '400',
-    },
-    brand: {
-        fontSize: 48,
-        color: '#2563eb',
+        fontSize: 32,
         fontWeight: '900',
+        color: Colors.brand,
+        lineHeight: 40,
         letterSpacing: -1,
     },
-    subtitle: {
-        fontSize: 16,
-        color: '#94a3b8',
-        marginTop: 8,
+    formContainer: {
+        width: '100%',
     },
-    form: {
-        flex: 1,
-    },
-    inputContainer: {
-        marginBottom: 24,
-    },
-    label: {
-        fontSize: 14,
-        color: '#f8fafc',
-        marginBottom: 8,
-        fontWeight: '600',
-    },
-    inputWrapper: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#1e293b',
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        borderWidth: 1,
-        borderColor: '#334155',
+    inputGroup: {
+        marginBottom: Spacing.md,
     },
     input: {
-        flex: 1,
-        height: 56,
-        color: '#f8fafc',
-        marginLeft: 12,
+        height: 60,
+        backgroundColor: Colors.surface,
+        borderRadius: BorderRadius.md,
+        paddingHorizontal: 20,
         fontSize: 16,
+        color: Colors.text,
+        borderWidth: 1,
+        borderColor: Colors.borderLight,
     },
-    forgotPassword: {
+    forgotBtn: {
         alignSelf: 'flex-end',
-        marginBottom: 32,
+        marginBottom: Spacing.xl,
     },
-    forgotPasswordText: {
-        color: '#2563eb',
+    forgotText: {
+        color: Colors.textSecondary,
         fontSize: 14,
         fontWeight: '600',
     },
-    loginButton: {
-        backgroundColor: '#2563eb',
-        height: 56,
-        borderRadius: 12,
+    button: {
+        backgroundColor: Colors.brand,
+        height: 60,
+        borderRadius: BorderRadius.md,
+        justifyContent: 'center',
+        alignItems: 'center',
+        ...Shadows.md,
+    },
+    buttonDisabled: {
+        opacity: 0.7,
+    },
+    buttonText: {
+        color: Colors.white,
+        fontSize: 18,
+        fontWeight: '800',
+    },
+    errorText: {
+        color: Colors.error,
+        fontSize: 14,
+        marginBottom: Spacing.md,
+        textAlign: 'center',
+        fontWeight: '600',
+    },
+    dividerContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
+        marginVertical: Spacing.xl,
     },
-    loginButtonText: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: '700',
+    divider: {
+        flex: 1,
+        height: 1,
+        backgroundColor: Colors.border,
     },
-    footer: {
+    dividerText: {
+        marginHorizontal: Spacing.md,
+        color: Colors.textTertiary,
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    socialRow: {
         flexDirection: 'row',
         justifyContent: 'center',
-        gap: 8,
-        marginTop: 40,
+        gap: 20,
     },
-    footerText: {
-        color: '#94a3b8',
-        fontSize: 15,
+    socialBtn: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        borderWidth: 1,
+        borderColor: Colors.borderLight,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: Colors.white,
+    },
+    appleBtn: {
+        width: 60,
+        height: 60,
+    },
+    registerContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        position: 'absolute',
+        bottom: 40,
+        left: 0,
+        right: 0,
     },
     registerText: {
-        color: '#2563eb',
+        color: Colors.textSecondary,
         fontSize: 15,
+        fontWeight: '500',
+    },
+    registerLink: {
+        color: Colors.brand,
+        fontSize: 15,
+        fontWeight: '800',
+    },
+    legalNotice: {
+        position: 'absolute',
+        bottom: 15,
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+    },
+    legalNoticeText: {
+        fontSize: 11,
+        color: Colors.textTertiary,
+        textAlign: 'center',
+    },
+    legalLink: {
         fontWeight: '700',
+        textDecorationLine: 'underline',
     },
 });
