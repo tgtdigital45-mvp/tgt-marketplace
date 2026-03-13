@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, Lock } from 'lucide-react';
 
+const PORTAL_URL = import.meta.env.VITE_PORTAL_URL || 'https://portal.ex.com';
+
 const FOOTER_LINKS = [
   {
     title: 'Plataforma',
@@ -16,7 +18,7 @@ const FOOTER_LINKS = [
     title: 'Recursos',
     links: [
       { label: 'Como funciona', href: '/como-funciona' },
-      { label: 'Planos e Preços', href: '/assinatura' },
+      { label: 'Planos e Preços', href: '/planos' },
       { label: 'Verificação', href: '/ajuda' },
     ],
   },
@@ -74,12 +76,12 @@ const ProFooter: React.FC = () => {
           {/* CTA */}
           <div className="lg:text-right">
             <p className="text-sm text-slate-400 mb-3">Ainda não tem uma conta?</p>
-            <Link
-              to="/empresa/cadastro"
+            <a
+              href={`${PORTAL_URL}/cadastro`}
               className="inline-flex items-center px-5 py-2.5 rounded-xl bg-brand-primary text-white text-sm font-semibold hover:bg-brand-primary/90 transition-colors"
             >
-              Cadastrar empresa gratuitamente
-            </Link>
+              Cadastrar empresa
+            </a>
           </div>
         </div>
 

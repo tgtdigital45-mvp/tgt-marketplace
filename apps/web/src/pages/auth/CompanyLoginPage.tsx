@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@tgt/shared';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
@@ -16,6 +16,8 @@ const CompanyLoginPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [portalError, setPortalError] = useState<string | null>(null);
     const navigate = useNavigate();
+    const location = useLocation();
+    const locationState = location.state as { error?: string; from?: string } | null;
 
     const { addToast } = useToast();
     const [isMounted, setIsMounted] = useState(true);
@@ -129,6 +131,12 @@ const CompanyLoginPage: React.FC = () => {
                                 <Briefcase className="w-4 h-4 mr-2 text-brand-primary" />
                                 Sou Empresa
                             </button>
+                        </div>
+                    )}
+
+                    {locationState?.error && (
+                        <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-100 text-red-700 text-sm font-medium">
+                            {locationState.error}
                         </div>
                     )}
 

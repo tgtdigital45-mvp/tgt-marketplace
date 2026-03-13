@@ -14,6 +14,9 @@ const CompanyRegistrationPage = lazy(() => import('@/pages/CompanyRegistrationPa
 const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
 
+// Landing Page
+const PortalLandingPage = lazy(() => import('@/pages/PortalLandingPage'));
+
 // Dashboard Pages
 const DashboardOverviewPage = lazy(() => import('@/pages/pro/DashboardOverviewPage'));
 const ProFindJobsPage = lazy(() => import('@/pages/pro/ProFindJobsPage'));
@@ -33,6 +36,7 @@ const DashboardEquipePage = lazy(() => import('@/pages/pro/DashboardEquipePage')
 const DashboardFaturamentoPage = lazy(() => import('@/pages/pro/DashboardFaturamentoPage'));
 const DashboardOrcamentosPage = lazy(() => import('@/pages/pro/DashboardOrcamentosPage'));
 const DashboardVerificacaoPage = lazy(() => import('@/pages/pro/DashboardVerificacaoPage'));
+const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 
 const AnimatedElement = ({ children }: { children: React.ReactNode }) => (
   <PageTransition>{children}</PageTransition>
@@ -43,8 +47,8 @@ const DashboardRedirect = () => {
   const { company, isLoading: companyLoading } = useCompany();
 
   if (loading || companyLoading) return <LoadingSpinner />;
-  if (!user) return <Navigate to="/login" replace />;
-  if (user.type !== 'company') return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/login" replace state={{ error: 'Acesso restrito a empresas parceiras.' }} />;
+  if (user.type !== 'company') return <Navigate to="/login" replace state={{ error: 'Esta área é exclusiva para empresas parceiras CONTRATTO.' }} />;
 
   if (company?.slug) return <Navigate to={`/dashboard/empresa/${company.slug}`} replace />;
   if (user.companySlug) return <Navigate to={`/dashboard/empresa/${user.companySlug}`} replace />;
@@ -60,6 +64,9 @@ const PortalRoutes = () => {
       <React.Suspense fallback={<LoadingSpinner />}>
         <AnimatePresence mode="wait">
           <Routes location={location}>
+            {/* Public Landing — handles auth redirect internally */}
+            <Route path="/" element={<AnimatedElement><PortalLandingPage /></AnimatedElement>} />
+
             {/* Public Auth Routes */}
             <Route path="/login" element={<AnimatedElement><CompanyLoginPage /></AnimatedElement>} />
             <Route path="/cadastro" element={<AnimatedElement><CompanyRegistrationPage /></AnimatedElement>} />
@@ -68,7 +75,6 @@ const PortalRoutes = () => {
 
             {/* Protected Routes */}
             <Route element={<AuthGuard />}>
-              <Route path="/" element={<DashboardRedirect />} />
               <Route path="/dashboard" element={<DashboardRedirect />} />
               
               <Route path="/dashboard/empresa/:slug" element={<DashboardLayout />}>
@@ -94,7 +100,7 @@ const PortalRoutes = () => {
             </Route>
 
             {/* 404 */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<AnimatedElement><NotFoundPage /></AnimatedElement>} />
           </Routes>
         </AnimatePresence>
       </React.Suspense>

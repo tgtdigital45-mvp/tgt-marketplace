@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { motion } from 'framer-motion';
+const PORTAL_URL = import.meta.env.VITE_PORTAL_URL || 'https://portal.ex.com';
 
 const ProLandingPage: React.FC = () => {
   return (
@@ -36,11 +37,11 @@ const ProLandingPage: React.FC = () => {
               Muito mais que leads. Uma plataforma completa para gestão, faturamento e reputação da sua empresa no mercado paranaense.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link to="/empresa/cadastro">
+              <a href={`${PORTAL_URL}/cadastro`}>
                 <Button size="lg" className="px-8 shadow-soft hover:scale-105 transition-all glow-primary">
-                  Começar agora — Grátis
+                  Começar agora
                 </Button>
-              </Link>
+              </a>
               <Link to="/planos">
                 <Button size="lg" variant="outline" className="px-8 bg-white/50 backdrop-blur-sm">
                   Ver Planos e Preços
@@ -55,12 +56,24 @@ const ProLandingPage: React.FC = () => {
       <section className="py-12 border-y border-slate-100 bg-slate-50/30">
         <div className="container mx-auto px-6">
           <p className="text-center text-slate-400 text-sm font-semibold uppercase tracking-widest mb-8">Empresas que já escalam com o CONTRATTO</p>
-          <div className="flex flex-wrap justify-center gap-12 opacity-40 grayscale hover:grayscale-0 transition-all duration-500">
-             {/* Use placeholders for logos if actual ones are not available */}
-             <div className="h-8 w-32 bg-slate-400 rounded-md" />
-             <div className="h-8 w-24 bg-slate-400 rounded-md" />
-             <div className="h-8 w-28 bg-slate-400 rounded-md" />
-             <div className="h-8 w-36 bg-slate-400 rounded-md" />
+          <div className="flex flex-wrap justify-center items-center gap-12 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
+            {[
+              { name: 'ContaBem Assessoria', initials: 'CB' },
+              { name: 'Advocacia Paraná Sul', initials: 'AP' },
+              { name: 'ArquiVerde', initials: 'AV' },
+              { name: 'FotoArte CWB', initials: 'FA' },
+              { name: 'Clínica Bem Estar', initials: 'BE' },
+              { name: 'Studio MR Design', initials: 'MR' },
+            ].map((company, i) => (
+              <div key={i} className="flex items-center gap-2 group cursor-default">
+                <div className="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-xs border border-slate-300">
+                  {company.initials}
+                </div>
+                <span className="text-slate-400 font-bold text-sm tracking-tighter group-hover:text-slate-600 transition-colors">
+                  {company.name.toUpperCase()}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -100,7 +113,31 @@ const ProLandingPage: React.FC = () => {
                 <div className="absolute inset-0 bg-primary-600/5 rounded-3xl blur-3xl -rotate-6" />
                 <div className="bg-white rounded-3xl shadow-elevated border border-slate-100 p-2 overflow-hidden relative z-10">
                     <div className="aspect-video bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100 overflow-hidden">
-                        <img src="https://picsum.photos/seed/dashboard/800/450" alt="Painel do Parceiro" className="w-full h-full object-cover" />
+                        <div className="w-full h-full bg-slate-50 rounded-2xl p-4 flex flex-col gap-3">
+                          {/* Simulated dashboard header */}
+                          <div className="flex items-center justify-between">
+                            <div className="h-3 w-24 bg-slate-200 rounded-full" />
+                            <div className="flex gap-2">
+                              <div className="h-6 w-16 bg-primary-100 rounded-lg" />
+                              <div className="h-6 w-16 bg-slate-200 rounded-lg" />
+                            </div>
+                          </div>
+                          {/* Stats row */}
+                          <div className="grid grid-cols-3 gap-2">
+                            {[...Array(3)].map((_, i) => (
+                              <div key={i} className="bg-white rounded-xl p-3 border border-slate-100 shadow-sm">
+                                <div className="h-2 w-12 bg-slate-200 rounded-full mb-2" />
+                                <div className="h-5 w-16 bg-primary-100 rounded-full" />
+                              </div>
+                            ))}
+                          </div>
+                          {/* Chart placeholder */}
+                          <div className="flex-1 bg-white rounded-xl border border-slate-100 p-3 flex items-end gap-1">
+                            {[40, 65, 45, 80, 55, 90, 70].map((h, i) => (
+                              <div key={i} className="flex-1 bg-primary-100 rounded-t" style={{ height: `${h}%` }} />
+                            ))}
+                          </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -143,7 +180,7 @@ const ProLandingPage: React.FC = () => {
                 className="bg-white/5 backdrop-blur-md p-10 rounded-3xl border border-white/10 hover:bg-white/10 transition-all card-hover"
               >
                 <div className="w-16 h-16 bg-primary-600 rounded-2xl flex items-center justify-center mb-8 text-white shadow-lg shadow-primary-600/20">
-                  {React.cloneElement(feat.icon as React.ReactElement, { size: 32 })}
+                  {React.cloneElement(feat.icon as React.ReactElement<any>, { size: 32 })}
                 </div>
                 <h3 className="text-2xl font-bold mb-4">{feat.title}</h3>
                 <p className="text-slate-400 leading-relaxed">{feat.desc}</p>
@@ -163,11 +200,11 @@ const ProLandingPage: React.FC = () => {
                     Junte-se a centenas de empresas que já transformaram sua operação digital com a CONTRATTO.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                    <Link to="/empresa/cadastro">
+                    <a href={`${PORTAL_URL}/cadastro`}>
                         <Button size="lg" className="px-12 py-6 text-lg font-bold shadow-soft">
-                            Criar Conta Grátis
+                            Criar Conta
                         </Button>
-                    </Link>
+                    </a>
                     <Link to="/contato" className="text-slate-500 font-semibold hover:text-slate-900 transition-colors">
                         Falar com Consultor
                     </Link>

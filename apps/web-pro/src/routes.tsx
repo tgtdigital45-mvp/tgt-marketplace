@@ -22,6 +22,20 @@ const DashboardVerificacaoPage = lazy(() => import('./pages/dashboard/DashboardV
 const DashboardSubscriptionPage = lazy(() => import('./pages/dashboard/DashboardSubscriptionPage'));
 const DashboardSupportPage = lazy(() => import('./pages/dashboard/DashboardSupportPage'));
 
+// Authentication Pages (Shared from @/pages/auth)
+const CompanyLoginPage = lazy(() => import('@/pages/auth/CompanyLoginPage'));
+const CompanyRegisterPage = lazy(() => import('@/pages/auth/CompanyRegisterPage'));
+
+const PORTAL_URL = import.meta.env.VITE_PORTAL_URL || 'https://portal.ex.com';
+
+/** Hard-redirects to a URL in another app (e.g., portal). Not an SPA navigate. */
+const ExternalRedirect = ({ to }: { to: string }) => {
+  React.useEffect(() => {
+    window.location.replace(to);
+  }, [to]);
+  return <LoadingSpinner />;
+};
+
 // Info pages relevant to pro (plans, terms, etc.)
 const PlansPage = lazy(() => import('@/pages/PlansPage'));
 const PrivacyPage = lazy(() => import('@/pages/info/PrivacyPage'));
@@ -30,7 +44,7 @@ const HelpPage = lazy(() => import('@/pages/info/HelpPage'));
 const ContactPage = lazy(() => import('@/pages/info/ContactPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 
-const AnimatedElement = ({ children }: { children: React.ReactElement }) => (
+const AnimatedElement = ({ children }: { children: any }) => (
   <PageTransition>{children}</PageTransition>
 );
 
@@ -46,8 +60,14 @@ const ProRoutes = () => {
             <Route path="/" element={<AnimatedElement><ProLandingPage /></AnimatedElement>} />
             <Route path="/como-funciona" element={<AnimatedElement><ProLandingPage /></AnimatedElement>} />
 
+            {/* Authentication Routes - Redirect to Portal */}
+            <Route path="/login/empresa" element={<ExternalRedirect to={`${PORTAL_URL}/login`} />} />
+            <Route path="/empresa/cadastro" element={<ExternalRedirect to={`${PORTAL_URL}/cadastro`} />} />
+            <Route path="/cadastro/empresa" element={<ExternalRedirect to={`${PORTAL_URL}/cadastro`} />} />
+
             {/* Shared legal/plan pages */}
-            <Route path="/assinatura" element={<AnimatedElement><PlansPage /></AnimatedElement>} />
+            <Route path="/assinatura" element={<Navigate to="/planos" replace />} />
+            <Route path="/planos" element={<AnimatedElement><PlansPage /></AnimatedElement>} />
             <Route path="/ajuda" element={<AnimatedElement><HelpPage /></AnimatedElement>} />
             <Route path="/contato" element={<AnimatedElement><ContactPage /></AnimatedElement>} />
             <Route path="/privacidade" element={<AnimatedElement><PrivacyPage /></AnimatedElement>} />

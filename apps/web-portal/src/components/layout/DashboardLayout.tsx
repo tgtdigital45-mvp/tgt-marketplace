@@ -76,10 +76,12 @@ const DashboardLayout: React.FC = () => {
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-slate-900 text-slate-300 p-4">
       <div className="mb-8 flex items-center gap-3 px-2">
-        <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center text-white shrink-0">
-          <span className="font-bold text-lg">C</span>
-        </div>
-        <div className="overflow-hidden">
+        <img
+          src="/logo-contratto.png"
+          alt="CONTRATTO"
+          className="h-7 w-auto brightness-0 invert opacity-90 flex-shrink-0"
+        />
+        <div className="overflow-hidden border-l border-slate-700 pl-3">
           <p className="text-white font-bold text-sm truncate">{company.company_name}</p>
           <p className="text-slate-400 text-[10px] uppercase tracking-wider font-semibold">Painel Parceiro</p>
         </div>
@@ -137,9 +139,7 @@ const DashboardLayout: React.FC = () => {
         {/* Topbar Mobile */}
         <header className="lg:hidden flex items-center justify-between h-14 bg-slate-900 px-4 shrink-0">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-indigo-500 rounded-lg flex items-center justify-center text-white">
-              <span className="font-bold text-sm">C</span>
-            </div>
+            <img src="/logo-contratto.png" alt="CONTRATTO" className="h-6 w-auto brightness-0 invert" />
             <span className="text-white font-bold text-sm">Portal</span>
           </div>
           <button

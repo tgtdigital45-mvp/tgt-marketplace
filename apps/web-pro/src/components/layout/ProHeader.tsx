@@ -10,7 +10,7 @@ import {
 
 const NAV_LINKS = [
   { label: 'Recursos', href: '/como-funciona', icon: BookOpen },
-  { label: 'Planos', href: '/assinatura', icon: CreditCard },
+  { label: 'Planos', href: '/planos', icon: CreditCard },
   { label: 'Suporte', href: '/ajuda', icon: HeadphonesIcon },
 ];
 
@@ -35,11 +35,10 @@ const ProHeader: React.FC = () => {
   return (
     <>
       <header
-        className={`sticky top-0 left-0 w-full z-50 transition-all duration-300 ${
-          scrolled
-            ? 'bg-white/90 backdrop-blur-xl border-b border-gray-200/60 shadow-sm'
-            : 'bg-white/95 backdrop-blur-sm border-b border-transparent'
-        }`}
+        className={`sticky top-0 left-0 w-full z-50 transition-all duration-300 ${scrolled
+          ? 'bg-white/90 backdrop-blur-xl border-b border-gray-200/60 shadow-sm'
+          : 'bg-white/95 backdrop-blur-sm border-b border-transparent'
+          }`}
       >
         <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16">
@@ -49,7 +48,8 @@ const ProHeader: React.FC = () => {
               <img
                 src="/logo-contratto.png"
                 alt="CONTRATTO"
-                className="h-9 sm:h-11 w-auto object-contain transition-opacity group-hover:opacity-80"
+                style={{ height: scrolled ? '58px' : '70px', width: 'auto' }}
+                className="object-contain transition-opacity group-hover:opacity-80"
               />
               <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-brand-primary/10 text-brand-primary text-[11px] font-semibold tracking-wide uppercase">
                 Parceiros
@@ -62,11 +62,10 @@ const ProHeader: React.FC = () => {
                 <Link
                   key={href}
                   to={href}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    location.pathname === href
-                      ? 'text-brand-primary bg-brand-primary/8'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                  }`}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname === href
+                    ? 'text-brand-primary bg-brand-primary/8'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    }`}
                 >
                   {label}
                 </Link>
