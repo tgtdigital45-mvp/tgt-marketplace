@@ -1,6 +1,8 @@
 import React from 'react';
-import Input from '@/components/ui/Input';
-import Button from '@/components/ui/Button';
+import { Input, Button } from '@tgt/ui-web';
+
+
+
 
 const DashboardAdministradoresPage: React.FC = () => {
     return (

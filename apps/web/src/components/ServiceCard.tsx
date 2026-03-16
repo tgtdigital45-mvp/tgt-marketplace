@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Service } from '@tgt/shared';
-import Button from '@/components/ui/Button';
+import { Service } from '@tgt/core';;
+
 import SellerBadge, { SellerLevel } from '@/components/SellerBadge';
 import OptimizedImage from '@/components/ui/OptimizedImage';
+import { Button } from '@tgt/ui-web';
+
 
 interface ServiceCardProps {
   service: Service;

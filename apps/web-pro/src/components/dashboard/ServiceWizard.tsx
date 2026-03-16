@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ImageCropModal from '@/components/ImageCropModal';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import Select from '@/components/ui/Select';
-import { ServicePackages } from '@tgt/shared';
+
+
+
+import { ServicePackages } from '@tgt/core';;
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 import { SERVICE_CATEGORIES } from '@/data/serviceDefinitions';
+import { Input, Select, Button } from '@tgt/ui-web';
+
 
 // Step Components (Placeholders for now)
 const StepOverview = ({ data, updateData, errors }: any) => {

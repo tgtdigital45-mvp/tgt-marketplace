@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { QrCode, X, CheckCircle2, ShieldCheck, Keyboard } from 'lucide-react';
-import Button from '../ui/Button';
+import { Button } from '@tgt/ui-web';
 
 interface OrderVerificationModalProps {
     isOpen: boolean;

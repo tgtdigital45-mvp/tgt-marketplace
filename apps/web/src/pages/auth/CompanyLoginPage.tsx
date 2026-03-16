@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { supabase } from '@tgt/shared';
-import Input from '@/components/ui/Input';
-import Button from '@/components/ui/Button';
+import { supabase } from '@tgt/core';;
+
+
 import SocialButton from '@/components/ui/SocialButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { Store, Briefcase, ShieldCheck } from 'lucide-react';
+import { Input, Button } from '@tgt/ui-web';
+
 
 const CompanyLoginPage: React.FC = () => {
     const isPro = (process.env as any).VITE_APP_TYPE === 'pro';

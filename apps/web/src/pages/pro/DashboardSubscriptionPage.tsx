@@ -2,9 +2,11 @@ import React from 'react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import PlanCard from '@/components/subscription/PlanCard';
-import Button from '@/components/ui/Button';
-import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
+
+
 import { motion } from 'framer-motion';
+import { Button, LoadingSkeleton } from '@tgt/ui-web';
+
 import {
   ChevronRight,
   ShieldCheck,

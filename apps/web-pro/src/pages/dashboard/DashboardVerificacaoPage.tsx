@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
-import Button from '@/components/ui/Button';
+
 import { useToast } from '@/contexts/ToastContext';
 import { motion } from 'framer-motion';
+import { Button } from '@tgt/ui-web';
+
 import { 
   ChevronRight, 
   CheckCircle2, 

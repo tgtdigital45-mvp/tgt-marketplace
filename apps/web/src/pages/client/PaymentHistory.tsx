@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@tgt/shared';
-import { LoadingSpinner } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
+import { LoadingSpinner, Badge, Button } from '@tgt/ui-web';;
 import {
     AreaChart,
     Area,
@@ -24,8 +24,8 @@ import {
     Wallet,
     Calendar
 } from 'lucide-react';
-import Button from '@/components/ui/Button';
-import Badge from '@/components/ui/Badge';
+
+
 
 interface PaymentHistoryProps {
     isEmbedded?: boolean;

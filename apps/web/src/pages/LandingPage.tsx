@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import SEO from '@/components/SEO';
 import { useCompanySearch } from '@/hooks/useCompanySearch';
-import Select from '@/components/ui/Select';
+
 import { Search, SlidersHorizontal, MapPin, ChevronLeft, ChevronRight, X, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 import CompanyGrid from '@/components/CompanyGrid';
+import { Select } from '@tgt/ui-web';
+
 
 // ─── Constants (matching DB values) ──────────────────────────────────────────
 const CATEGORY_OPTIONS = [

@@ -89,8 +89,9 @@ export default function ProfileScreen() {
     };
 
     const isProvider = profile?.user_type === 'company';
-    const fullName = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ') || 'Usuário';
-    const initials = [profile?.first_name?.[0], profile?.last_name?.[0]].filter(Boolean).join('').toUpperCase() || '?';
+    const fullName = profile?.full_name || 'Usuário';
+    const names = profile?.full_name?.split(' ') || [];
+    const initials = [names[0]?.[0], names.length > 1 ? names[names.length - 1]?.[0] : ''].filter(Boolean).join('').toUpperCase() || '?';
     const hasAvatar = !!profile?.avatar_url;
 
     const renderMenuItem = (icon: any, title: string, subtitle: string, onPress: () => void, color = Colors.primary) => (
@@ -137,9 +138,9 @@ export default function ProfileScreen() {
                         </TouchableOpacity>
 
                         <Text style={styles.heroName}>{fullName}</Text>
-                        <View style={styles.user_typeBadge}>
+                        <View style={styles.roleBadge}>
                             <Ionicons name={isProvider ? 'briefcase' : 'person'} size={12} color={Colors.primary} />
-                            <Text style={styles.user_typeText}>{isProvider ? 'PRESTADOR' : 'CLIENTE'}</Text>
+                            <Text style={styles.roleText}>{isProvider ? 'PRESTADOR' : 'CLIENTE'}</Text>
                         </View>
 
                         <TouchableOpacity

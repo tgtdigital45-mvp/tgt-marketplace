@@ -1,10 +1,12 @@
 import React from 'react';
 import { Search, Grid, Clock, ChevronRight, Star, DollarSign, Briefcase, MessageSquare, PlusCircle } from 'lucide-react';
-import Button from '@/components/ui/Button';
+
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClientProfileData } from '@/hooks/useClientProfileData';
 import OptimizedImage from '@/components/ui/OptimizedImage';
+import { Button } from '@tgt/ui-web';
+
 
 const categories = [
     { id: 'limpeza', name: 'Limpeza', icon: '🧹', color: 'bg-blue-50' },

@@ -1,12 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Button from '@/components/ui/Button';
+
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 import { useToast } from '@/contexts/ToastContext';
-import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
+
+import { Button, LoadingSkeleton } from '@tgt/ui-web';
+
 
 interface InquiryModalProps {
     isOpen: boolean;
@@ -72,7 +74,7 @@ const InquiryModal: React.FC<InquiryModalProps> = ({
             return;
         }
         if (!message.trim()) {
-            addToast("Por favor, escreva uma mensagem.", "warning");
+            addToast("Por favor, escreva uma mensagem.", "info");
             return;
         }
 

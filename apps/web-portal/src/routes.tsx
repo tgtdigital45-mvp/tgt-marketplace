@@ -3,7 +3,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
-import { LoadingSpinner, PageTransition, ErrorBoundary } from '@tgt/shared';
+import { LoadingSpinner, PageTransition, ErrorBoundary } from '@tgt/ui-web';;
 
 import AuthGuard from './components/AuthGuard';
 import DashboardLayout from './components/layout/DashboardLayout';

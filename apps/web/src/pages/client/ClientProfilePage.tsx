@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@tgt/shared';
-import { UserProfile } from '@tgt/shared';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+import { supabase } from '@tgt/core';;
+import { UserProfile } from '@tgt/core';;
+
+
 import { useToast } from '@/contexts/ToastContext';
-import Badge from '@/components/ui/Badge';
+
 import { Link, useLocation } from 'react-router-dom';
 import { useClientProfileData } from '@/hooks/useClientProfileData';
 import OptimizedImage from '@/components/ui/OptimizedImage';
@@ -25,6 +25,8 @@ import ClientHelp from './components/ClientHelp';
 import ClientSettings from './components/ClientSettings';
 import ClientPayments from './components/ClientPayments';
 import MyAppointments from '@/pages/client/MyAppointments';
+import { Badge, Input, Button } from '@tgt/ui-web';
+
 
 type TabType = 'home' | 'bookings' | 'budgets' | 'messages' | 'favorites' | 'profile' | 'addresses' | 'payments' | 'help' | 'settings';
 

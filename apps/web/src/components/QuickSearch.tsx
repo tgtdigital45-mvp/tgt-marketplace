@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CATEGORIES } from '@/constants';
-import Button from '@/components/ui/Button';
+import { Button } from '@tgt/ui-web';
+
+
 
 const QuickSearch: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');

@@ -1,8 +1,10 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Check, X } from 'lucide-react';
-import Button from '@/components/ui/Button';
+
 import { Link } from 'react-router-dom';
+import { Button } from '@tgt/ui-web';
+
 
 const PlansPage: React.FC = () => {
     return (

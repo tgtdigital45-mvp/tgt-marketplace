@@ -280,8 +280,22 @@ async function processEvent(event: Stripe.Event) {
             if (error) logStructured('error', 'Company update failed', { error: error.message })
         }
 
-    } catch (err) {
+    } catch (err: any) {
         logStructured('error', 'Background processing failed', { error: err.message })
+        
+        // --- DLQ DEAD LETTER QUEUE ---
+        try {
+            await supabaseClient.from('stripe_webhook_dlq').insert({
+                stripe_event_id: event.id,
+                event_type: event.type,
+                payload: event,
+                error_message: err.message || 'Unknown error',
+                status: 'pending'
+            });
+            logStructured('info', 'Event added to DLQ', { event_id: event.id });
+        } catch (dlqErr: any) {
+            logStructured('error', 'Failed to insert into DLQ', { error: dlqErr.message });
+        }
     }
 }
 
@@ -290,13 +304,6 @@ async function processEvent(event: Stripe.Event) {
 // ============================================================================
 serve(async (req) => {
     try {
-        const signature = req.headers.get('stripe-signature')
-        const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
-
-        if (!signature || !webhookSecret) {
-            return new Response(JSON.stringify({ error: 'Configuration error' }), { status: 400 })
-        }
-
         const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
             apiVersion: '2023-10-16',
             httpClient: Stripe.createFetchHttpClient(),
@@ -305,11 +312,30 @@ serve(async (req) => {
         const body = await req.text()
         let event
 
-        try {
-            event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret)
-        } catch (err) {
-            logStructured('error', 'Signature verification failed', { error: err.message })
-            return new Response(JSON.stringify({ error: 'Invalid signature' }), { status: 400 })
+        // Check if this is an internal retry (Service Role)
+        const isInternalRetry = req.headers.get('Authorization') === `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`;
+
+        if (isInternalRetry) {
+            logStructured('info', 'Internal DLQ retry received', {});
+            try {
+                event = JSON.parse(body);
+            } catch (err) {
+                return new Response(JSON.stringify({ error: 'Invalid JSON for internal retry' }), { status: 400 });
+            }
+        } else {
+            const signature = req.headers.get('stripe-signature')
+            const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
+
+            if (!signature || !webhookSecret) {
+                return new Response(JSON.stringify({ error: 'Configuration error' }), { status: 400 })
+            }
+
+            try {
+                event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret)
+            } catch (err: any) {
+                logStructured('error', 'Signature verification failed', { error: err.message })
+                return new Response(JSON.stringify({ error: 'Invalid signature' }), { status: 400 })
+            }
         }
 
         // Return 200 OK immediately

@@ -1,8 +1,10 @@
 import React from 'react';
 import { CreditCard, History, Plus, ExternalLink, ShieldCheck, Calendar, ArrowUpRight } from 'lucide-react';
-import Button from '@/components/ui/Button';
+
 import { useClientProfileData } from '@/hooks/useClientProfileData';
 import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@tgt/ui-web';
+
 
 const ClientPayments: React.FC = () => {
     const { user } = useAuth();

@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { supabase } from '../utils/supabase';
-import type { OrderStatus } from '@tgt/shared';
+import type { OrderStatus } from '@tgt/core';;
 
 type UserRole = 'client' | 'company';
 

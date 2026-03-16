@@ -52,7 +52,7 @@ const LazyMapEmbed: React.FC<LazyMapEmbedProps> = ({ address, className }) => {
         <div ref={containerRef} className={className}>
             {shouldLoad ? (
                 <Suspense fallback={<SkeletonMap className={className} />}>
-                    <MapEmbed address={address} />
+                    <MapEmbed {...({ address: address } as any)} />
                 </Suspense>
             ) : (
                 <SkeletonMap className={className} />

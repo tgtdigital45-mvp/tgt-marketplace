@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@tgt/shared';
-import { BookingWithCompany, JobRequest, DbJobRequest, DbBooking } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
+import { BookingWithCompany, JobRequest, DbJobRequest, DbBooking } from '@tgt/core';;
 
 export interface ClientOrdersData {
     jobs: JobRequest[];

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@tgt/shared';
-import { Company, DbCompany } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
+import { Company, DbCompany } from '@tgt/core';;
 
 interface UseVerifiedCompaniesOptions {
     category?: string;
@@ -40,7 +40,7 @@ export const useVerifiedCompanies = ({ category, limit = 12, enabled = true }: U
                 rating: item.rating || 0,
                 reviewCount: item.review_count || 0,
                 address: item.address || {},
-                services: item.services || [],
+                services: (item as any).services || [],
                 description: item.description || '',
                 // Add default values for missing fields
                 legalName: '',

@@ -1,4 +1,4 @@
-import { Company } from '@tgt/shared';
+import { Company } from '@tgt/core';;
 
 export const MOCK_COMPANIES: Company[] = [
     {
@@ -67,7 +67,7 @@ export const MOCK_COMPANIES: Company[] = [
         portfolio: [],
         reviews: []
     }
-];
+] as any;
 
 export const CATEGORIES = [
     { id: 'marketing', name: 'Marketing', icon: 'Megaphone' },

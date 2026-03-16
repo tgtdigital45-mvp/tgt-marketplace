@@ -1,8 +1,10 @@
 import React from 'react';
 import InfoPageLayout from '@/components/layout/InfoPageLayout';
-import Button from '@/components/ui/Button';
+
 import { Mail, MapPin, MessageSquare, Globe, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Button } from '@tgt/ui-web';
+
 
 const ContactPage: React.FC = () => {
   return (

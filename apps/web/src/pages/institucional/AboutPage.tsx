@@ -1,10 +1,12 @@
 import React from 'react';
 import OptimizedImage from '@/components/ui/OptimizedImage';
-import Button from '@/components/ui/Button';
+
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import SEO from '@/components/SEO';
-import { Rocket, Target, TrendingUp } from 'lucide-react'; // Import icons
+import { Rocket, Target, TrendingUp } from 'lucide-react';
+import { Button } from '@tgt/ui-web';
+ // Import icons
 
 const AboutPage: React.FC = () => {
   return (

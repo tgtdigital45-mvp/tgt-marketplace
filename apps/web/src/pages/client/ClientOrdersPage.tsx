@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import Button from '@/components/ui/Button';
+
 import { useAuth } from '@/contexts/AuthContext';
-import { BookingWithCompany } from '@tgt/shared';
+import { BookingWithCompany } from '@tgt/core';;
 import ProposalList from '@/components/client/ProposalList';
 import { useNavigate } from 'react-router-dom';
 import { useClientOrders } from '@/hooks/useClientOrders';
 import { useToast } from '@/contexts/ToastContext';
 import OrderDeliveryReviewModal from '@/components/dashboard/OrderDeliveryReviewModal';
 import { CheckCircle, Clock, AlertTriangle, Calendar } from 'lucide-react';
+import { Button } from '@tgt/ui-web';
+
 
 const ClientOrdersPage: React.FC = () => {
     const { user } = useAuth();

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import Button from '@/components/ui/Button';
-import { supabase } from '@tgt/shared';
+
+import { supabase } from '@tgt/core';;
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
+import { Button } from '@tgt/ui-web';
+
 
 interface MessageModalProps {
     companyId: string;

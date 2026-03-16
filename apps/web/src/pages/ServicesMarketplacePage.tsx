@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Search, MapPin, Wifi, Layers, Star, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { useServicesMarketplace, ServiceFilter } from '@/hooks/useServicesMarketplace';
 import OptimizedImage from '@/components/ui/OptimizedImage';
-import { DbService } from '@tgt/shared';
+import { DbService } from '@tgt/core';;
 
 // ─── Category definitions (must match DB category_tag values) ────────────────
 const CATEGORIES = [

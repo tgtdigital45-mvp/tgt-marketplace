@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@tgt/core';
 import { MessageSquare } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useOnClickOutside } from '@/hooks/useOnClickOutside';
@@ -60,7 +60,7 @@ const MessagesDropdown: React.FC = () => {
 
     const handleThreadClick = () => {
         // Redirecionamento simplificado – Vai para a tela de mensagens que já sabe qual chat abrir ou exibe todos.
-        if (user?.type === 'company' || user?.type === 'professional') {
+        if ((user as any)?.user_type === 'company' || (user as any)?.user_type === 'professional') {
             navigate('/painel/mensagens');
         } else {
             navigate('/minhas-mensagens');
@@ -69,7 +69,7 @@ const MessagesDropdown: React.FC = () => {
     };
 
     const handleViewAll = () => {
-        if (user?.type === 'company' || user?.type === 'professional') {
+        if ((user as any)?.user_type === 'company' || (user as any)?.user_type === 'professional') {
             navigate('/painel/mensagens');
         } else {
             navigate('/minhas-mensagens');

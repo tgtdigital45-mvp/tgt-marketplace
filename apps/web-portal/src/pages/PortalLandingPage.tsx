@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Check, ArrowRight, Building2, Lock, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
-import { LoadingSpinner } from '@tgt/shared';
+import { LoadingSpinner } from '@tgt/ui-web';;
 
 const PRO_URL = import.meta.env.VITE_PRO_URL || 'https://parceiros.contratto.com.br';
 

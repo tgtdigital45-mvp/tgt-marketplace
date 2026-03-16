@@ -10,7 +10,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { useDocuments, CRMDocument } from '@portal/hooks/useDocuments';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 
 interface DocumentManagerProps {
   customerId: string;

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+import { Input, Button } from '@tgt/ui-web';
+
+
+
 
 interface AuthModalProps {
     isOpen: boolean;

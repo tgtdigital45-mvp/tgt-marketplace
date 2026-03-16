@@ -1,6 +1,8 @@
 import React from 'react';
-import Button from '@/components/ui/Button';
+
 import { motion } from 'framer-motion';
+import { Button } from '@tgt/ui-web';
+
 import {
   ChevronRight,
   Users,

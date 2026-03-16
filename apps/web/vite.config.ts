@@ -74,7 +74,7 @@ export default defineConfig(({ mode }) => {
       dedupe: ['react', 'react-dom', 'react-router-dom', '@supabase/supabase-js'],
     },
     optimizeDeps: {
-      exclude: ['@tgt/shared'],
+      exclude: ['@tgt/core', '@tgt/ui-web'],
       force: true // Força limpar cache na próxima inicialização
     },
     esbuild: {

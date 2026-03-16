@@ -3,7 +3,7 @@ import { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
 import { supabase } from '../utils/supabase';
 import { registerForPushNotificationsAsync, setupNotificationListeners, unregisterPushToken } from '../utils/pushNotifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { DbProfile as Profile } from '@tgt/shared';
+import type { DbProfile as Profile } from '@tgt/core';;
 import { logger } from '../utils/logger';
 
 export type { Profile };

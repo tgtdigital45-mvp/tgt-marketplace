@@ -12,7 +12,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Send } from 'lucide-react-native';
 import { useAuth } from '@/src/providers/AuthProvider';
-import { supabase } from '@tgt/shared';
+import { supabase, useLock } from '@tgt/core';
 
 export default function RequestQuoteScreen() {
     const params = useLocalSearchParams<{
@@ -27,8 +27,9 @@ export default function RequestQuoteScreen() {
     const [description, setDescription] = useState('');
     const [budgetExpectation, setBudgetExpectation] = useState('');
     const [loading, setLoading] = useState(false);
+    const [withLock] = useLock();
 
-    const handleSubmit = async () => {
+    const handleSubmit = withLock(async () => {
         if (!user) {
             Alert.alert('Atenção', 'Você precisa estar logado para pedir um orçamento.');
             router.push('/(auth)/client-login');
@@ -66,7 +67,7 @@ export default function RequestQuoteScreen() {
         } finally {
             setLoading(false);
         }
-    };
+    });
 
     const isDisabled = loading || !description.trim();
 

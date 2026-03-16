@@ -1,8 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import Button from '@/components/ui/Button';
+
 import { ArrowRight, Sparkles, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Button } from '@tgt/ui-web';
+
 
 const SpecialistCTA: React.FC = () => {
   return (

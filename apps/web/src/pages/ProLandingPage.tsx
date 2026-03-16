@@ -11,8 +11,10 @@ import {
   ShieldCheck,
   Globe
 } from 'lucide-react';
-import Button from '@/components/ui/Button';
+
 import { motion } from 'framer-motion';
+import { Button } from '@tgt/ui-web';
+
 
 const ProLandingPage: React.FC = () => {
   return (
@@ -143,7 +145,7 @@ const ProLandingPage: React.FC = () => {
                 className="bg-white/5 backdrop-blur-md p-10 rounded-3xl border border-white/10 hover:bg-white/10 transition-all card-hover"
               >
                 <div className="w-16 h-16 bg-primary-600 rounded-2xl flex items-center justify-center mb-8 text-white shadow-lg shadow-primary-600/20">
-                  {React.cloneElement(feat.icon as React.ReactElement, { size: 32 })}
+                  {React.cloneElement(feat.icon as React.ReactElement, { size: 32 } as any)}
                 </div>
                 <h3 className="text-2xl font-bold mb-4">{feat.title}</h3>
                 <p className="text-slate-400 leading-relaxed">{feat.desc}</p>

@@ -1,9 +1,11 @@
 import React from 'react';
-import { Company } from '@tgt/shared';
-import Badge from '@/components/ui/Badge';
-import Button from '@/components/ui/Button';
+import { Company } from '@tgt/core';;
+
+
 import { MapPin, Calendar, Clock, CheckCircle, Facebook, Instagram, Linkedin, Globe, ExternalLink } from 'lucide-react';
 import OptimizedImage from '@/components/ui/OptimizedImage';
+import { Badge, Button } from '@tgt/ui-web';
+
 
 interface ProfileSidebarProps {
     company: Company;

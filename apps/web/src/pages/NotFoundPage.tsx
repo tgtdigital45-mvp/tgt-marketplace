@@ -1,8 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import Button from '@/components/ui/Button';
+
 import AnimatedSection from '@/components/ui/AnimatedSection';
+import { Button } from '@tgt/ui-web';
+
 
 const NotFoundPage: React.FC = () => {
     return (

@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import FileUpload from '@/components/FileUpload';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import { PortfolioItem as DbPortfolioItem } from '@tgt/shared';
+import { PortfolioItem as DbPortfolioItem } from '@tgt/core';;
 import OptimizedImage from '@/components/ui/OptimizedImage';
-import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
-import Button from '@/components/ui/Button';
+
+
 import { motion } from 'framer-motion';
 import ImageCropModal from '@/components/ImageCropModal';
+import { Button, LoadingSkeleton } from '@tgt/ui-web';
+
 import {
   ChevronRight,
   Camera,

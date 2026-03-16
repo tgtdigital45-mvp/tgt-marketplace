@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../utils/supabase';
-import type { Company } from '@tgt/shared';
+import type { Company } from '@tgt/core';;
 
 type UseCompanyResult = {
     company: Company | null;

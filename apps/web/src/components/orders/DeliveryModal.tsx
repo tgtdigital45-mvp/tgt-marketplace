@@ -1,7 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { supabase } from '@tgt/shared';
-import Button from '@/components/ui/Button';
+import { supabase } from '@tgt/core';;
+
 import { useToast } from '@/contexts/ToastContext';
+import { Button } from '@tgt/ui-web';
+
 
 interface DeliveryModalProps {
     orderId: string;

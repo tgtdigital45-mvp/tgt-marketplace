@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { supabase } from '@tgt/shared';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+import { supabase } from '@tgt/core';;
+
+
 import { useToast } from '@/contexts/ToastContext';
+import { Input, Button } from '@tgt/ui-web';
+
 
 interface DashboardOnboardingProps {
     companyId: string;

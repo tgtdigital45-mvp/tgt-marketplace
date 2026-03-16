@@ -1,7 +1,9 @@
 import React from 'react';
-import { ServicePackages } from '@tgt/shared';
+import { ServicePackages } from '@tgt/core';;
 import { CheckIcon, XMarkIcon } from '@heroicons/react/24/solid';
-import Button from '@/components/ui/Button';
+import { Button } from '@tgt/ui-web';
+
+
 
 interface ServiceComparisonTableProps {
     packages: ServicePackages;

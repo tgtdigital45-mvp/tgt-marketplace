@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@tgt/shared';
-import { SellerStats } from '@tgt/shared';
-import { LoadingSpinner } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
+import { SellerStats } from '@tgt/core';;
+import { LoadingSpinner, Button } from '@tgt/ui-web';;
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
-import Button from '@/components/ui/Button';
+
 import { Sparkles, Loader2, TrendingUp, Lightbulb, ChevronRight, Wallet, Clock, DollarSign, Zap, Landmark } from 'lucide-react';
 import { gemini } from '@/utils/gemini';
 import { useToast } from '@/contexts/ToastContext';

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 import { useCompany } from '@/contexts/CompanyContext';
 import { toast } from 'react-hot-toast';
 

@@ -1,6 +1,8 @@
 import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import Button from '@/components/ui/Button';
+import { Button } from '@tgt/ui-web';
+
+
 
 const BookingConfirmationPage: React.FC = () => {
     const location = useLocation();

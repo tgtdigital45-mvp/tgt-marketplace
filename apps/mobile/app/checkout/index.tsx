@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useStripe } from '@stripe/stripe-react-native';
-import { supabase } from '@tgt/shared';
+import { supabase, useLock } from '@tgt/core';
 import { ArrowLeft, CreditCard, ShieldCheck, Info } from 'lucide-react-native';
 
 export default function CheckoutScreen() {
@@ -29,6 +29,7 @@ export default function CheckoutScreen() {
     const { initPaymentSheet, presentPaymentSheet } = useStripe();
     const [loading, setLoading] = useState(false);
     const [initializing, setInitializing] = useState(true);
+    const [withLock] = useLock();
 
     const price = parseFloat(params.servicePrice || '0');
     const packageTier = params.packageTier || 'basic';
@@ -81,7 +82,7 @@ export default function CheckoutScreen() {
         }
     };
 
-    const handlePay = async () => {
+    const handlePay = withLock(async () => {
         setLoading(true);
         const { error } = await presentPaymentSheet();
 
@@ -95,7 +96,7 @@ export default function CheckoutScreen() {
                 { text: 'Ir para meus pedidos', onPress: () => router.replace('/(tabs)/orders') }
             ]);
         }
-    };
+    });
 
     if (initializing) {
         return (

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@tgt/shared';
-import Input from '@/components/ui/Input';
-import Button from '@/components/ui/Button';
+import { supabase } from '@tgt/core';;
+
+
 import { useToast } from '@/contexts/ToastContext';
+import { Input, Button } from '@tgt/ui-web';
+
 
 const ResetPasswordPage: React.FC = () => {
     const [password, setPassword] = useState('');

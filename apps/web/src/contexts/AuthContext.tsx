@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { User, supabase } from '@tgt/shared';
+import { User, supabase } from '@tgt/core';;
 
 // Extensão do tipo User para incluir dados do contexto
 interface UserContext extends User {

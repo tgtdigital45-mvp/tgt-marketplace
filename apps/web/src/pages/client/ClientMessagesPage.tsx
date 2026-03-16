@@ -2,11 +2,11 @@ import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from 
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import { supabase } from '@tgt/shared';
-import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
-import { LoadingSpinner } from '@tgt/shared';
-import Button from '@/components/ui/Button';
-import Badge from '@/components/ui/Badge';
+import { supabase } from '@tgt/core';;
+
+import { LoadingSpinner, Badge, Button, LoadingSkeleton } from '@tgt/ui-web';;
+
+
 import {
   ArrowLeft, Clock, ShieldCheck, Download, AlertCircle,
   CheckCircle, MessageSquare, Search, Video, CreditCard, Check, XCircle,
@@ -156,7 +156,7 @@ const ClientMessagesPage: React.FC = () => {
         }
       })
       .subscribe();
-    return () => { sub.unsubscribe(); };
+    return () => { supabase.removeChannel(sub); };
   }, [activeThread, user, fetchMessages]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -570,7 +570,7 @@ const ClientInfoPanel: React.FC<{ thread: Thread }> = ({ thread }) => {
     const ch = supabase.channel(`cow2_${thread.orderId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `id=eq.${thread.orderId}` }, fetchOrder)
       .subscribe();
-    return () => { ch.unsubscribe(); };
+    return () => { supabase.removeChannel(ch); };
   }, [thread.orderId, fetchOrder]);
 
   const isJobThread = !!thread.jobId && !thread.orderId;

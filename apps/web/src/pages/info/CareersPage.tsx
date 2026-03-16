@@ -1,8 +1,10 @@
 import React from 'react';
 import InfoPageLayout from '@/components/layout/InfoPageLayout';
-import Button from '@/components/ui/Button';
+
 import { motion } from 'framer-motion';
 import { MapPin, Briefcase, Sparkles, Rocket, ArrowRight } from 'lucide-react';
+import { Button } from '@tgt/ui-web';
+
 
 const CareersPage: React.FC = () => {
   return (

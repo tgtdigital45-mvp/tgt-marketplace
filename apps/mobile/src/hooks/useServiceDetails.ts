@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 
 export interface ServiceDetail {
     id: string;

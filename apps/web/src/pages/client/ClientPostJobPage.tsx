@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 import { useAuth } from '@/contexts/AuthContext';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+
+
 import { useToast } from '@/contexts/ToastContext';
+import { Input, Button } from '@tgt/ui-web';
+
 
 interface Category {
     id: string;
@@ -15,7 +17,7 @@ interface Category {
 const ClientPostJobPage: React.FC = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
-    const { showToast } = useToast();
+    const { addToast: showToast } = useToast();
 
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(false);

@@ -1,6 +1,8 @@
 import React from 'react';
 import { HelpCircle, MessageSquare, ShieldAlert, LifeBuoy, ChevronDown } from 'lucide-react';
-import Button from '@/components/ui/Button';
+import { Button } from '@tgt/ui-web';
+
+
 
 const faqs = [
     {

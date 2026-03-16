@@ -14,11 +14,11 @@ const ServiceBookingModal = lazy(() => import('../components/ServiceBookingModal
 const ReviewModal = lazy(() => import('../components/ReviewModal'));
 const InquiryModal = lazy(() => import('../components/InquiryModal'));
 import CompanyCard from '@/components/CompanyCard';
-import { Service } from '@tgt/shared';
-import { supabase } from '@tgt/shared';
+import { Service } from '@tgt/core';;
+import { supabase } from '@tgt/core';;
 import { useCompanyProfile } from '@/hooks/useCompanyProfile';
 import { useSimilarCompanies } from '@/hooks/useSimilarCompanies';
-import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
+
 import ProfileSidebar from '@/components/ProfileSidebar';
 import ReviewsList from '@/components/ReviewsList';
 import OptimizedImage from '@/components/ui/OptimizedImage';
@@ -31,6 +31,8 @@ import L from 'leaflet';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+import { LoadingSkeleton } from '@tgt/ui-web';
+
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({

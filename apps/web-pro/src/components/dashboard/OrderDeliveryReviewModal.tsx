@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { X, FileText, ExternalLink, ThumbsUp, AlertTriangle, CheckCircle2, MessageSquare } from 'lucide-react';
-import { supabase } from '@tgt/shared';
-import Button from '../ui/Button';
+import { supabase } from '@tgt/core';;
+import { Button } from '@tgt/ui-web';
 
 interface OrderDeliveryReviewModalProps {
     isOpen: boolean;

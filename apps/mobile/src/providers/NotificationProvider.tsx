@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, useRef, ReactNode } from 'react';
 import { Animated, Easing, Text, View, StyleSheet, TouchableOpacity } from 'react-native';
-import { supabase } from '@tgt/shared';
-import type { Notification } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
+import type { Notification } from '@tgt/core';;
 import { useAuth } from './AuthProvider';
 
 interface NotificationContextType {

@@ -2,9 +2,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { deduplicateCompanies } from '@/utils/companyUtils';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 import { calculateDistance } from '@/utils/geo';
-import { Company } from '@tgt/shared';
+import { Company } from '@tgt/core';;
 
 export const useCompanySearch = (itemsPerPage: number = 8) => {
     const [searchParams, setSearchParams] = useSearchParams();

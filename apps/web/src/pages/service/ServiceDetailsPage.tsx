@@ -1,9 +1,9 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { supabase } from '@tgt/shared';
-import { Service, DbCompany } from '@tgt/shared';
-import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
-import Button from '@/components/ui/Button';
+import { supabase } from '@tgt/core';;
+import { Service, DbCompany } from '@tgt/core';;
+
+
 import { useAuth } from '@/contexts/AuthContext';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import SellerBadge, { SellerLevel } from '@/components/SellerBadge';
@@ -16,6 +16,8 @@ const ServiceBookingModal = lazy(() => import('@/components/ServiceBookingModal'
 
 import { Disclosure } from '@headlessui/react';
 import { ChevronUpIcon, CheckIcon, StarIcon, MapPinIcon, ClockIcon, GlobeAmericasIcon, UserGroupIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/solid';
+import { Button, LoadingSkeleton } from '@tgt/ui-web';
+
 
 // Helper to format currency
 const formatCurrency = (value: number) =>

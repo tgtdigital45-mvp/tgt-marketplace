@@ -10,6 +10,7 @@ import { useToast } from '@/contexts/ToastContext';
 import AuthModal from '@/components/auth/AuthModal';
 import { useAvailability } from '@/hooks/useAvailability';
 import { DAYS } from '@/utils/availability';
+import { useLock } from '@tgt/core';
 
 interface ServiceBookingModalProps {
     isOpen: boolean;
@@ -37,6 +38,7 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [serviceForm, setServiceForm] = useState<{ id: string; questions: string[] } | null>(null);
     const [responses, setResponses] = useState<Record<string, string>>({});
+    const [withLock] = useLock();
 
     // Availability Logic
     const {
@@ -101,7 +103,7 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
 
     if (!isOpen || !service) return null;
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = withLock(async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!user) {
@@ -180,7 +182,7 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
         } finally {
             setLoading(false);
         }
-    };
+    });
 
     const isDateDisabled = (dateString: string) => {
         if (!availability || !service.use_company_availability) return false;

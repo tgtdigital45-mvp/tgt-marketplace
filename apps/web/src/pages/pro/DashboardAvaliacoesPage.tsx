@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 import { useAuth } from '@/contexts/AuthContext';
-import { Review } from '@tgt/shared';
-import Button from '@/components/ui/Button';
+import { Review } from '@tgt/core';;
+
 import { useToast } from '@/contexts/ToastContext';
+import { Button } from '@tgt/ui-web';
+
 
 interface ReviewWithReply extends Review {
     reply?: string;

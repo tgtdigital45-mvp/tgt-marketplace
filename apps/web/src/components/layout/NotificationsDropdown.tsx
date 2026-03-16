@@ -4,7 +4,7 @@ import { Bell, Check, Info, Briefcase, Calendar, MessageSquare, Star } from 'luc
 import { AnimatePresence, motion } from 'framer-motion';
 import { useOnClickOutside } from '@/hooks/useOnClickOutside';
 import { useNavigate } from 'react-router-dom';
-import { Notification } from '@tgt/shared';
+import { Notification } from '@tgt/core';;
 
 const NotificationsDropdown: React.FC = () => {
     const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();

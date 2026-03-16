@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 import { CompanyAvailability, getAvailableSlotsForDate } from '@/utils/availability';
 
 export const useAvailability = (companyId?: string, serviceDurationMinutes: number = 30) => {

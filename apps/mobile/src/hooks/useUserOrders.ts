@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 import { useAuth } from '@/providers/AuthProvider';
 
 export interface UserOrder {
@@ -61,7 +61,7 @@ export function useUserOrders() {
 
             const orders = (ordersRes.data ?? []) as unknown as UserOrder[];
 
-            const quotes: UserOrder[] = (quotesRes.data ?? []).map(q => {
+            const quotes: UserOrder[] = (quotesRes.data ?? []).map((q: any) => {
                 let mappedStatus = q.status; // pending, answered, rejected, accepted
                 if (q.status === 'pending') mappedStatus = 'pending_quote';
                 if (q.status === 'answered') mappedStatus = 'answered_quote';

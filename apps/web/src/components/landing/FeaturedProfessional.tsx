@@ -1,9 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import Button from '@/components/ui/Button';
+
 import { Star, CheckCircle2, ArrowRight } from 'lucide-react';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import { Link } from 'react-router-dom';
+import { Button } from '@tgt/ui-web';
+
 
 const FeaturedProfessional: React.FC = () => {
   return (

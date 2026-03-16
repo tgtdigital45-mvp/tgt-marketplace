@@ -1,8 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import Button from '@/components/ui/Button';
+
 import { useOnClickOutside } from '@/hooks/useOnClickOutside';
+import { Button } from '@tgt/ui-web';
+
 
 const LoginDropdown: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -41,7 +43,7 @@ const LoginDropdown: React.FC = () => {
                             onClick={() => setIsOpen(false)}
                         >
                             <span className="font-semibold block text-brand-primary">Sou Cliente</span>
-                            <span className="text-xs text-slate-500">Acesse sua área de pedidos e agendamentos</span>
+                            <span className="text-xs text-slate-500">Acesse sua ï¿½rea de pedidos e agendamentos</span>
                         </Link>
                     </motion.div>
                 )}

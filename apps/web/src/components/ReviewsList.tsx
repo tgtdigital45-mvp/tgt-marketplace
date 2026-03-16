@@ -1,5 +1,5 @@
 import React from 'react';
-import { Review } from '@tgt/shared';
+import { Review } from '@tgt/core';;
 import OptimizedImage from '@/components/ui/OptimizedImage';
 
 interface ReviewsListProps {

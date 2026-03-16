@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import Input from '@/components/ui/Input';
-import Button from '@/components/ui/Button';
+
+
 import { useToast } from '@/contexts/ToastContext';
 import { validatePassword } from '@/utils/validators';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';
+import { Input, Button } from '@tgt/ui-web';
+;
 
 const CompanyRegisterPage: React.FC = () => {
     const isPro = (process.env as any).VITE_APP_TYPE === 'pro';

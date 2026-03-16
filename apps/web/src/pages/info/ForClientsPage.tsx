@@ -11,8 +11,10 @@ import {
   MessageCircle,
   Star
 } from 'lucide-react';
-import Button from '@/components/ui/Button';
+
 import { motion } from 'framer-motion';
+import { Button } from '@tgt/ui-web';
+
 
 const ForClientsPage: React.FC = () => {
   return (

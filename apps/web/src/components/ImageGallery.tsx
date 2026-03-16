@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PortfolioItem } from '@tgt/shared';
+import { PortfolioItem } from '@tgt/core';;
 
 interface ImageGalleryProps {
   items: PortfolioItem[];
@@ -77,27 +77,27 @@ const GalleryItem: React.FC<{ item: PortfolioItem; openLightbox: (url: string) =
   return (
     <div
       className={`group relative aspect-square rounded-lg overflow-hidden cursor-pointer focus:outline-none focus:ring-4 focus:ring-brand-primary/50 ${imageError ? 'bg-gray-100 border-2 border-dashed border-gray-300' : ''}`}
-      onClick={() => !imageError && openLightbox(item.url)}
+      onClick={() => !imageError && openLightbox((item as any).url)}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
         if ((e.key === 'Enter' || e.key === ' ') && !imageError) {
           e.preventDefault();
-          openLightbox(item.url);
+          openLightbox((item as any).url);
         }
       }}
-      aria-label={`Ver imagem: ${item.caption}`}
+      aria-label={`Ver imagem: ${(item as any).caption}`}
     >
       {!imageError ? (
         <>
           <img
-            src={item.url}
-            alt={item.caption}
+            src={(item as any).url}
+            alt={(item as any).caption}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             onError={() => setImageError(true)}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-brand-secondary/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4" aria-hidden="true">
-            <p className="text-white font-medium transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">{item.caption}</p>
+            <p className="text-white font-medium transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">{(item as any).caption}</p>
           </div>
         </>
       ) : (

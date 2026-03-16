@@ -1,7 +1,9 @@
 import React from 'react';
-import Input from '@/components/ui/Input';
-import Select from '@/components/ui/Select';
+
+
 import { HiringQuestion } from '@/data/serviceDefinitions';
+import { Input, Select } from '@tgt/ui-web';
+
 
 interface HiringFormProps {
     questions: HiringQuestion[];

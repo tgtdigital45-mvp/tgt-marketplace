@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useCompany } from '@/contexts/CompanyContext';
-import { supabase } from '@tgt/shared';
-import Button from '@/components/ui/Button';
+import { supabase } from '@tgt/core';;
+
 import { useToast } from '@/contexts/ToastContext';
 import { Calendar as CalendarIcon, List, Check, X, ChevronLeft, ChevronRight as ChevronRightIcon, MessageCircle, Sparkles, Loader2, Settings2, Filter, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -10,6 +10,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import { DAYS, DAY_LABELS, DaySchedule } from '@/utils/availability';
 import AvailabilityModal from '@/components/modals/AvailabilityModal';
+import { Button } from '@tgt/ui-web';
+
 
 interface Order {
     id: string;

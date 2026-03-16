@@ -23,6 +23,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
     current,
     onSubscribe,
     loading,
+    tier,
 }) => {
     return (
         <div
@@ -72,6 +73,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
                             : 'bg-white text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50'
                     }
         `}
+                data-tier={tier}
             >
                 {loading ? (
                     <svg className="animate-spin h-5 w-5 mx-auto text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -93,7 +95,7 @@ export const PricingTable: React.FC = () => {
 
     const plans = [
         {
-            tier: 'starter',
+            tier: 'starter' as const,
             title: 'Starter',
             price: 'Grátis',
             rate: '20%',
@@ -106,7 +108,7 @@ export const PricingTable: React.FC = () => {
             priceId: undefined, // Free plan
         },
         {
-            tier: 'pro',
+            tier: 'pro' as const,
             title: 'CONTRATTO Pro',
             price: 'R$ 89,90',
             rate: '12%',
@@ -121,7 +123,7 @@ export const PricingTable: React.FC = () => {
             priceId: 'price_1Qv...Pro', // Replace with Actual Stripe Price ID or handle in Edge Function mapping
         },
         {
-            tier: 'agency',
+            tier: 'agency' as const,
             title: 'Agency',
             price: 'R$ 249,90',
             rate: '8%',

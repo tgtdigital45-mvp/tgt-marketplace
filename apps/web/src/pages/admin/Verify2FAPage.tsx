@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 import { useNavigate } from 'react-router-dom';
-import Button from '@/components/ui/Button';
+
 import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@tgt/ui-web';
+
 
 const Verify2FAPage = () => {
     const [code, setCode] = useState('');

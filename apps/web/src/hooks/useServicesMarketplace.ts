@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@tgt/shared';
-import { DbService } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
+import { DbService } from '@tgt/core';;
 import { getH3SearchIndexes } from '@/utils/h3Utils';
 
 export type ServiceFilter = 'all' | 'remote' | 'presential' | 'hybrid';

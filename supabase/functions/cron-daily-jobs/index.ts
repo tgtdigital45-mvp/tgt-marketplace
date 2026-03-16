@@ -195,12 +195,58 @@ serve(async (req) => {
             }
         }
 
+        // ============================================================================
+        // 4. RETRY DLQ WEBHOOKS
+        // ============================================================================
+        console.log('Starting DLQ Webhook Retry...');
+        const { data: dlqEvents, error: dlqError } = await supabaseClient
+            .from('stripe_webhook_dlq')
+            .select('*')
+            .eq('status', 'pending')
+            .lt('retry_count', 3);
+
+        if (!dlqError && dlqEvents) {
+            for (const dlq of dlqEvents) {
+                try {
+                    console.log(`Retrying DLQ event ${dlq.id}...`);
+                    
+                    const webhookUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/handle-payment-webhook`;
+                    const res = await fetch(webhookUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+                        },
+                        body: JSON.stringify(dlq.payload)
+                    });
+
+                    if (res.ok) {
+                        await supabaseClient.from('stripe_webhook_dlq').update({ status: 'processed' }).eq('id', dlq.id);
+                        console.log(`DLQ event ${dlq.id} succeeded.`);
+                    } else {
+                        throw new Error(`Webhook returned status ${res.status}`);
+                    }
+                } catch (err: any) {
+                    console.error(`Error retrying DLQ ${dlq.id}:`, err);
+                    const newRetryCount = dlq.retry_count + 1;
+                    await supabaseClient.from('stripe_webhook_dlq').update({ 
+                        retry_count: newRetryCount,
+                        status: newRetryCount >= 3 ? 'failed_permanently' : 'pending',
+                        error_message: err.message
+                    }).eq('id', dlq.id);
+                    results.errors.push({ type: 'dlq_retry', dlq_id: dlq.id, message: err.message });
+                }
+            }
+        } else if (dlqError) {
+             console.error('Failed to fetch DLQ events:', dlqError);
+        }
+
         return new Response(JSON.stringify(results), {
             headers: { 'Content-Type': 'application/json' },
             status: 200,
         })
 
-    } catch (err) {
+    } catch (err: any) {
         console.error('Cron Error:', err)
         return new Response(JSON.stringify({ error: err.message }), { status: 500 })
     }

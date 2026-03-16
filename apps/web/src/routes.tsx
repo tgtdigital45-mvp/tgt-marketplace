@@ -2,7 +2,7 @@ import React, { lazy } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
-import { LoadingSpinner, PageTransition, ErrorBoundary } from '@tgt/shared';
+import { LoadingSpinner, PageTransition, ErrorBoundary } from '@tgt/ui-web';;
 
 
 // Layouts & Global Components

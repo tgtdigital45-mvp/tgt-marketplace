@@ -2,18 +2,20 @@ import React, { useState } from 'react';
 import SEO from '@/components/SEO';
 import { Link, useNavigate } from 'react-router-dom';
 import SocialButton from '@/components/ui/SocialButton';
-import Input from '@/components/ui/Input';
-import Button from '@/components/ui/Button';
+
+
 import FileUpload from '@/components/FileUpload';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { validateCNPJ, validateCPF } from '@/utils/validators';
 import { CATEGORIES } from '@/constants';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 import { Store, Briefcase, ChevronRight, Check } from 'lucide-react';
 import { getCoordinatesFromAddress } from '@/utils/geocoding';
 import { coordsToH3 } from '@/utils/h3Utils';
 import AiAssistButton from '@/components/AiAssistButton';
+import { Input, Button } from '@tgt/ui-web';
+
 
 const CompanyRegistrationPage: React.FC = () => {
   const { user } = useAuth();

@@ -2,12 +2,14 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { StarIcon } from '@heroicons/react/24/solid';
 import { MapPinIcon } from '@heroicons/react/24/outline';
-import { Company } from '@tgt/shared';
+import { Company } from '@tgt/core';;
 import VerifiedBadge from '@/components/VerifiedBadge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import OptimizedImage from '@/components/ui/OptimizedImage';
-import Badge from '@/components/ui/Badge';
+import { Badge } from '@tgt/ui-web';
+
+
 
 
 interface CompanyCardProps {

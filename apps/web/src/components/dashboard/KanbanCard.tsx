@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import Button from '@/components/ui/Button';
+import { Button } from '@tgt/ui-web';
+
+
 
 interface Appointment {
     id: string;

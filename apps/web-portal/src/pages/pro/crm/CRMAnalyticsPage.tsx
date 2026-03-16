@@ -1,5 +1,5 @@
 import React from 'react';
-import { PageTransition } from '@tgt/shared';
+import { PageTransition } from '@tgt/ui-web';;
 import { useCRMAnalytics } from '@portal/hooks/useCRMAnalytics';
 import { 
   BarChart, 

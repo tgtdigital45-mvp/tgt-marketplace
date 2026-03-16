@@ -1,10 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Company } from '@tgt/shared';
+import { Company } from '@tgt/core';;
 import CompanyCard from '@/components/CompanyCard';
 import { deduplicateCompanies } from '@/utils/companyUtils';
 import EmptyState from '@/components/EmptyState';
-import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
+import { LoadingSkeleton } from '@tgt/ui-web';
+
+
 
 interface CompanyGridProps {
     companies: Company[];

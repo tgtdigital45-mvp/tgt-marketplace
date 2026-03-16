@@ -1,19 +1,19 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClientOrders } from '@/hooks/useClientOrders';
-import { LoadingSpinner } from '@tgt/shared';
+import { LoadingSpinner, Badge, Button } from '@tgt/ui-web';;
 import {
     CalendarIcon, ClockIcon, MapPinIcon,
     ChevronRight, AlertCircle, MessageSquare,
     Star, RefreshCw, XCircle, CheckCircle2,
     Navigation, Play
 } from 'lucide-react';
-import Button from '@/components/ui/Button';
+
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 import { useToast } from '@/contexts/ToastContext';
 import { useQueryClient } from '@tanstack/react-query';
-import Badge from '@/components/ui/Badge';
+
 
 interface MyAppointmentsProps {
     isEmbedded?: boolean;

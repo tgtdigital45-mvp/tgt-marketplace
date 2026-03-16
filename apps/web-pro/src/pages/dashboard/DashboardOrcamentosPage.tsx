@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import Button from '@/components/ui/Button';
-import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
+
+
 import { motion } from 'framer-motion';
+import { Button, LoadingSkeleton } from '@tgt/ui-web';
+
 import {
   ChevronRight,
   FileText,

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 
 interface CheckoutOptions {
     order_id: string;

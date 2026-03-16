@@ -11,8 +11,10 @@ import {
   ShieldCheck,
   Globe
 } from 'lucide-react';
-import Button from '@/components/ui/Button';
+
 import { motion } from 'framer-motion';
+import { Button } from '@tgt/ui-web';
+
 const PORTAL_URL = import.meta.env.VITE_PORTAL_URL || 'https://portal.ex.com';
 
 const ProLandingPage: React.FC = () => {

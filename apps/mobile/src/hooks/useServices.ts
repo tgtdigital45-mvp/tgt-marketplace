@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@tgt/shared';
-import type { DbService } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
+import type { DbService } from '@tgt/core';;
 
 export interface ServiceListItem {
     id: string;

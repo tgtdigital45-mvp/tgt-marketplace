@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Shield, Bell, Lock, Smartphone, Globe, Eye, EyeOff, ChevronRight } from 'lucide-react';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+
+
 import { useToast } from '@/contexts/ToastContext';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';
+import { Input, Button } from '@tgt/ui-web';
+;
 
 const ClientSettings: React.FC = () => {
     const { addToast } = useToast();

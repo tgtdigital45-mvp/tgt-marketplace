@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
+
 import { useCompany } from '@/contexts/CompanyContext';
 import { motion } from 'framer-motion';
+import { LoadingSkeleton } from '@tgt/ui-web';
+
 import {
   Wallet,
   Globe,

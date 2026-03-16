@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { supabase } from '@tgt/shared';
-import Button from '@/components/ui/Button';
+import { supabase } from '@tgt/core';;
+
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import OptimizedImage from '@/components/ui/OptimizedImage';
+import { Button } from '@tgt/ui-web';
+
 
 interface Proposal {
     id: string;
@@ -26,7 +28,7 @@ interface ProposalListProps {
 
 const ProposalList: React.FC<ProposalListProps> = ({ proposals, onProposalAccepted }) => {
     const { user } = useAuth();
-    const { showToast } = useToast();
+    const { addToast: showToast } = useToast();
     const [processing, setProcessing] = useState<string | null>(null);
 
     const handleAccept = async (proposal: Proposal) => {

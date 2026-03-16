@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import { LoadingSpinner } from '@tgt/shared';
-import Button from '@/components/ui/Button';
+import { LoadingSpinner, Button } from '@tgt/ui-web';;
+
 import { Link, useNavigate } from 'react-router-dom';
 
 interface Dispute {

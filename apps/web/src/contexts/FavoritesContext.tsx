@@ -1,7 +1,7 @@
 import React, { createContext, useContext, ReactNode, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 import { useToast } from '@/contexts/ToastContext';
 
 interface FavoritesContextType {

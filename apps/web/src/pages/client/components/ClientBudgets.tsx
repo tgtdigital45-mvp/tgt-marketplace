@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 import { useAuth } from '@/contexts/AuthContext';
 import { FileText, MessageSquare, Clock, ChevronRight, CheckCircle2, XCircle } from 'lucide-react';
-import Button from '@/components/ui/Button';
-import Badge from '@/components/ui/Badge';
+import { Badge, Button } from '@tgt/ui-web';
+
+
+
 
 const ClientBudgets: React.FC = () => {
     const { user } = useAuth();

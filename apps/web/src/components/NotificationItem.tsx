@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Notification } from '@tgt/shared';
+import { Notification } from '@tgt/core';;
 import { formatDistanceToNow } from '@/utils/dateUtils';
 
 interface NotificationItemProps {

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+
+
 import { useToast } from '@/contexts/ToastContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Input, Button } from '@tgt/ui-web';
+
 import {
   ChevronRight,
   ChevronDown,

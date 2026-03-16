@@ -1,9 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '@tgt/shared';
-import { DbMessage } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
+export interface DbMessage {
+    id: string;
+    order_id: string;
+    sender_id: string;
+    receiver_id?: string;
+    content: string;
+    file_url?: string | null;
+    created_at: string;
+}
 import { useAuth } from '@/contexts/AuthContext';
-import Button from '@/components/ui/Button';
+
 import { useToast } from '@/contexts/ToastContext';
+import { Button } from '@tgt/ui-web';
+
 
 interface OrderChatProps {
     orderId: string;

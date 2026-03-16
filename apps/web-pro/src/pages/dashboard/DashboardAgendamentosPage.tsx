@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import Button from '@/components/ui/Button';
-import Badge from '@/components/ui/Badge';
-import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
+
+
+
 import RescheduleModal from '@/components/booking/RescheduleModal';
 import KanbanCard from '@/components/dashboard/KanbanCard';
 import OrderVerificationModal from '@/components/dashboard/OrderVerificationModal';
 import OrderDeliveryModal from '@/components/dashboard/OrderDeliveryModal';
 import { Play, CheckCircle2, Calendar, User, Clock, MoreHorizontal, LayoutGrid, List } from 'lucide-react';
+import { Badge, Button, LoadingSkeleton } from '@tgt/ui-web';
+
 
 interface Order {
     id: string;

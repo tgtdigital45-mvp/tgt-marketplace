@@ -10,7 +10,9 @@ interface MapEmbedProps {
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import Button from '@/components/ui/Button';
+import { Button } from '@tgt/ui-web';
+
+
 
 // Fix Leaflet marker icons issues with Webpack/Vite
 // This handles the missing marker icon issue common in React Leaflet setups

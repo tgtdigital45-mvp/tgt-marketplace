@@ -2,8 +2,10 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, ArrowRight } from 'lucide-react';
 import OptimizedImage from '@/components/ui/OptimizedImage';
-import Button from '@/components/ui/Button';
+
 import { Link } from 'react-router-dom';
+import { Button } from '@tgt/ui-web';
+
 
 const IntroSection: React.FC = () => {
     return (

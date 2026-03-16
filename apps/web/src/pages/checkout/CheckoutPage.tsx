@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { supabase } from '@tgt/shared';
-import { Service } from '@tgt/shared';
-import { LoadingSpinner } from '@tgt/shared';
-import Button from '@/components/ui/Button';
+import { supabase } from '@tgt/core';;
+import { Service, useLock } from '@tgt/core';;
+import { LoadingSpinner, Button } from '@tgt/ui-web';;
+
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { useCheckout } from '@/hooks/useCheckout';
@@ -15,6 +15,7 @@ const CheckoutPage = () => {
     const { user } = useAuth();
     const { addToast } = useToast();
     const { redirectToCheckout, isLoading: isCheckoutLoading } = useCheckout();
+    const [withLock] = useLock();
 
     const tier = (searchParams.get('tier') || 'basic') as 'basic' | 'standard' | 'premium';
     const bookingDate = searchParams.get('date');
@@ -86,7 +87,7 @@ const CheckoutPage = () => {
         fetchDetails();
     }, [serviceId, orderIdParam]);
 
-    const handleConfirmPayment = async () => {
+    const handleConfirmPayment = withLock(async () => {
         if (!user || !service) return;
 
         setProcessing(true);
@@ -133,7 +134,7 @@ const CheckoutPage = () => {
         } finally {
             setProcessing(false);
         }
-    };
+    });
 
     if (loading) return (
         <div className="min-h-screen bg-gray-50 py-12">

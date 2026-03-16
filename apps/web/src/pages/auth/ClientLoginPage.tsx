@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@tgt/shared';
-import Input from '@/components/ui/Input';
-import Button from '@/components/ui/Button';
+import { supabase } from '@tgt/core';;
+
+
 import SocialButton from '@/components/ui/SocialButton';
 import { useToast } from '@/contexts/ToastContext';
 import { Store, Briefcase } from 'lucide-react';
+import { Input, Button } from '@tgt/ui-web';
+
 
 const ClientLoginPage: React.FC = () => {
     const isMarketplace = (process.env as any).VITE_APP_TYPE === 'marketplace';

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@tgt/shared';
-import { Company, DbCompany, DbProfile } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
+import { Company, DbCompany, DbProfile } from '@tgt/core';;
 
 export const useCompanyProfile = (slug: string | undefined) => {
     return useQuery({

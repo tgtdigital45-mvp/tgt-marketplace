@@ -7,7 +7,9 @@ import SEO from '@/components/SEO';
 import { MOCK_NEWS } from '@/data/news';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import { Calendar, User, Clock, ArrowLeft, Share2, Facebook, Twitter, Linkedin } from 'lucide-react';
-import Button from '@/components/ui/Button';
+import { Button } from '@tgt/ui-web';
+
+
 
 const NewsDetailPage: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();

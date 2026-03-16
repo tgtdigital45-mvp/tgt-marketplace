@@ -22,7 +22,7 @@ import {
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { PageTransition } from '@tgt/shared';
+import { PageTransition } from '@tgt/ui-web';;
 import { useCRM, CRMStage, CRMItem } from '@portal/hooks/useCRM';
 import { 
   LayoutDashboard, 

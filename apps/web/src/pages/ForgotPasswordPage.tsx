@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '@tgt/shared';
-import Input from '@/components/ui/Input';
-import Button from '@/components/ui/Button';
+import { supabase } from '@tgt/core';;
+
+
 import { useToast } from '@/contexts/ToastContext';
+import { Input, Button } from '@tgt/ui-web';
+
 
 const ForgotPasswordPage: React.FC = () => {
     const [email, setEmail] = useState('');

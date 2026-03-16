@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import Button from '@/components/ui/Button';
+import { Button } from '@tgt/ui-web';
+
+
 
 interface ReviewModalProps {
     isOpen: boolean;

@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 import { useAuth } from '@/contexts/AuthContext';
 import CompanyCard from '@/components/CompanyCard';
-import Button from '@/components/ui/Button';
-import { Company } from '@tgt/shared';
+
+import { Company } from '@tgt/core';
+import { Button } from '@tgt/ui-web';
+;
 
 const FavoritesPage: React.FC = () => {
   const { user } = useAuth();

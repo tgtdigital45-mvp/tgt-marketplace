@@ -21,7 +21,7 @@ export function useFavorites(userId: string | undefined): UseFavoritesResult {
             .eq('client_id', userId);
 
         if (data) {
-            setFavoriteIds(new Set(data.map(f => f.company_id)));
+            setFavoriteIds(new Set(data.map((f: any) => f.company_id)));
         }
         setIsLoading(false);
     }, [userId]);

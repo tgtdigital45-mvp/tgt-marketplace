@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase } from '@tgt/shared';
-import { Service, DbCompany } from '@tgt/shared';
-import { LoadingSpinner } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
+import { Service, DbCompany } from '@tgt/core';;
+import { LoadingSpinner, Button } from '@tgt/ui-web';;
 import { BookingCalendar } from '@/components/booking/BookingCalendar';
 import SEO from '@/components/SEO';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import HiringForm from '@/components/booking/HiringForm';
 import { SERVICE_CATEGORIES } from '@/data/serviceDefinitions';
-import Button from '@/components/ui/Button';
+
 
 const BookingPage = () => {
     const { serviceId } = useParams();

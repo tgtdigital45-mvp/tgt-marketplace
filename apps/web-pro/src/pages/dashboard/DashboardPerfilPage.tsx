@@ -2,14 +2,14 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useCompany, CompanyData } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 import { CATEGORIES } from '@/constants';
-import Input from '@/components/ui/Input';
-import Button from '@/components/ui/Button';
-import Select from '@/components/ui/Select';
+
+
+
 import OptimizedImage from '@/components/ui/OptimizedImage';
-import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
-import { PortfolioItem } from '@tgt/shared';
+
+import { PortfolioItem } from '@tgt/core';;
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import ImageCropModal from '@/components/ImageCropModal';
@@ -45,6 +45,8 @@ import {
   Landmark,
 } from 'lucide-react';
 import { gemini } from '@/utils/gemini';
+import { Input, Select, Button, LoadingSkeleton } from '@tgt/ui-web';
+
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 interface FormState {

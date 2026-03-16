@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeftIcon, ChevronRightIcon, ClockIcon } from '@heroicons/react/24/outline';
-import { Service, DbCompany } from '@tgt/shared';
-import { supabase } from '@tgt/shared';
+import { Service, DbCompany } from '@tgt/core';;
+import { supabase } from '@tgt/core';;
 
 interface BookingCalendarProps {
     service: Service;

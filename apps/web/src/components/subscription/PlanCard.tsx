@@ -1,6 +1,8 @@
 import React from 'react';
 import { Check } from 'lucide-react';
-import Button from '@/components/ui/Button';
+import { Button } from '@tgt/ui-web';
+
+
 
 interface PlanCardProps {
   title: string;

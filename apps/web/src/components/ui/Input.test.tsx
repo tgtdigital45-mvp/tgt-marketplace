@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import Input from '@/components/ui/Input';
+import { Input } from '@tgt/ui-web';
+
+
 
 describe('Input Component', () => {
     it('renders label correctly', () => {

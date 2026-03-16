@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 import { useAuth } from '@/contexts/AuthContext';
-import Button from '@/components/ui/Button';
+
 import QRCode from 'qrcode';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '@tgt/ui-web';
+
 
 const AdminSecurityPage = () => {
     const { user } = useAuth();

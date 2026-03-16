@@ -3,11 +3,11 @@ import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import { supabase } from '@tgt/shared';
-import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
-import { LoadingSpinner } from '@tgt/shared';
-import Button from '@/components/ui/Button';
-import Badge from '@/components/ui/Badge';
+import { supabase } from '@tgt/core';;
+
+import { LoadingSpinner, Badge, Button, LoadingSkeleton } from '@tgt/ui-web';;
+
+
 import { motion } from 'framer-motion';
 import {
     ChevronRight, Paperclip, Zap, ArrowLeft, Clock,

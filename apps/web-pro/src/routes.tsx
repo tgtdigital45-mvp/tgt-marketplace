@@ -1,7 +1,7 @@
 import React, { lazy } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { LoadingSpinner, PageTransition, ErrorBoundary } from '@tgt/shared';
+import { LoadingSpinner, PageTransition, ErrorBoundary } from '@tgt/ui-web';;
 import ProDashboardLayout from './components/layout/ProDashboardLayout';
 
 // Public Pages for Pro Platform

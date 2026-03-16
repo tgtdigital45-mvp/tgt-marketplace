@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';;
 import { useAuth } from '@/contexts/AuthContext';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+
+
 import { useToast } from '@/contexts/ToastContext';
 import { ArrowLeft } from 'lucide-react';
 import { Job } from '@/components/pro/JobCard';
+import { Input, Button } from '@tgt/ui-web';
+
 
 
 const ProJobDetailsPage: React.FC = () => {
     const { id, slug } = useParams<{ id: string; slug: string }>();
     const navigate = useNavigate();
     const { user } = useAuth();
-    const { showToast } = useToast();
+    const { addToast: showToast } = useToast();
 
     const [job, setJob] = useState<Job | null>(null);
     const [loading, setLoading] = useState(true);
@@ -110,7 +112,7 @@ const ProJobDetailsPage: React.FC = () => {
 
             // 4. Create Notification for the Job Owner (Client)
             await supabase.from('notifications').insert({
-                user_id: job.user_id,
+                user_id: (job as any).client_id || user.id, // Fallback if user_id is missing on job
                 type: 'proposal_received',
                 title: 'Nova Proposta Recebida',
                 message: `Você recebeu uma nova proposta de R$ ${parseFloat(price).toFixed(2)} para o pedido "${job.title}".`,

@@ -1,5 +1,5 @@
 
-import { Company } from '@tgt/shared';
+import { Company } from '@tgt/core';;
 
 export const CATEGORIES = [
   "Marketing",
@@ -95,4 +95,4 @@ export const MOCK_COMPANIES: Company[] = [
       { id: 'r1', author: 'Mariana Costa', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop', rating: 5, comment: 'Projeto entregue no prazo com qualidade impecável. Recomendo!', date: '1 mês atrás' },
     ]
   },
-];
+] as unknown as Company[];
