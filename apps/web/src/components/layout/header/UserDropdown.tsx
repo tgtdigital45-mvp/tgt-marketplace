@@ -65,17 +65,14 @@ const UserDropdown: React.FC = () => {
                                 <Link to="/perfil/cliente" state={{ activeTab: 'favorites' }} onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                                     Favoritos
                                 </Link>
-                                <Link to="/perfil/cliente" state={{ activeTab: 'messages' }} onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                <Link to="/minhas-mensagens" onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                                     Mensagens
                                 </Link>
                                 <Link to="/perfil/cliente" state={{ activeTab: 'bookings' }} onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                                     Meus Pedidos
                                 </Link>
-                                <Link to="/perfil/cliente" state={{ activeTab: 'appointments' }} onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                    Agendamentos
-                                </Link>
                                 <Link to="/perfil/cliente" state={{ activeTab: 'payments' }} onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                    Pagamentos / Faturas
+                                    Financeiro
                                 </Link>
                             </>
                         )}

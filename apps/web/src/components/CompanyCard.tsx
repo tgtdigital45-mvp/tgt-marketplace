@@ -39,7 +39,7 @@ const CompanyCard: React.FC<CompanyCardProps> = ({ company }) => {
     return (
         <article className="group relative">
             <Link to={company.slug ? `/empresa/${company.slug}` : '#'} className="block bg-white rounded-[var(--radius-box)] shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 ring-1 ring-gray-100 hover:ring-brand-primary">
-                <div className="relative w-full h-48 bg-gray-200">
+                <div className="relative w-full aspect-video bg-gray-200">
                     <OptimizedImage
                         src={company.coverImage}
                         alt={company.companyName}
@@ -47,7 +47,7 @@ const CompanyCard: React.FC<CompanyCardProps> = ({ company }) => {
                         optimizedWidth={1200}
                         quality={75}
                         fallbackSrc="https://placehold.co/1200x675/f1f5f9/94a3b8?text=CONTRATTO+Service"
-                        className="w-full h-48 object-cover"
+                        className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
 

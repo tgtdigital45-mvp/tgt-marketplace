@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Button from '@/components/ui/Button';
 import { useAuth } from '@/contexts/AuthContext';
 import NotificationsDropdown from '@/components/layout/NotificationsDropdown';
+import MessagesDropdown from '@/components/layout/MessagesDropdown';
 import UserDropdown from '@/components/layout/header/UserDropdown';
 import LoginDropdown from '@/components/layout/header/LoginDropdown';
 
@@ -36,7 +37,8 @@ const UserActions: React.FC = () => {
             )}
 
             {user && (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
+                    <MessagesDropdown />
                     <NotificationsDropdown />
                     <UserDropdown />
                 </div>

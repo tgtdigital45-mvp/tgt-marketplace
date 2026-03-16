@@ -181,24 +181,16 @@ const ClientProfilePage: React.FC = () => {
 
     if (!user) return null;
 
-    const NavItem = ({ id, label, icon: Icon, active, color = "text-brand-primary" }: { id: TabType, label: string, icon: any, active: boolean, color?: string }) => (
+    const NavItem = ({ id, label, icon: Icon, active }: { id: TabType, label: string, icon: any, active: boolean }) => (
         <button
             onClick={() => setActiveTab(id)}
-            className={`w-full flex items-center px-6 py-4 rounded-2xl transition-all duration-500 group relative ${active
-                ? 'bg-white shadow-[0_20px_40px_-12px_rgba(0,0,0,0.1)] text-slate-900 ring-1 ring-slate-100 translate-x-1'
-                : 'text-slate-500 hover:text-slate-900 hover:bg-white/60 hover:translate-x-1'
+            className={`flex items-center gap-2 px-5 py-3 rounded-full transition-all duration-300 whitespace-nowrap ${active
+                ? 'bg-brand-primary text-white font-black shadow-md shadow-brand-primary/20'
+                : 'bg-white/60 text-slate-500 font-bold hover:bg-white hover:text-slate-900 border border-slate-100 hover:shadow-sm'
                 }`}
         >
-            <div className={`mr-4 p-2.5 rounded-xl transition-all duration-500 ${active ? `bg-gradient-to-br from-white to-slate-50 shadow-sm ${color}` : 'bg-slate-50 text-slate-400 group-hover:bg-white group-hover:text-slate-600'}`}>
-                <Icon size={18} strokeWidth={active ? 2.5 : 2} className={active ? "animate-pulse" : ""} />
-            </div>
-            <span className={`text-sm tracking-tight transition-all duration-300 ${active ? 'font-black' : 'font-semibold'}`}>{label}</span>
-            {active && (
-                <div className="ml-auto relative flex items-center justify-center">
-                    <div className="absolute w-4 h-4 bg-brand-primary/20 rounded-full blur-sm"></div>
-                    <div className="w-1.5 h-6 bg-brand-primary rounded-full shadow-[0_0_12px_rgba(var(--brand-primary-rgb),0.6)]"></div>
-                </div>
-            )}
+            <Icon size={16} strokeWidth={active ? 2.5 : 2} />
+            <span className="text-xs uppercase tracking-widest">{label}</span>
         </button>
     );
 
@@ -214,15 +206,17 @@ const ClientProfilePage: React.FC = () => {
                 <div className="absolute inset-0 opacity-[0.015] grayscale" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}></div>
             </div>
 
-            <div className="relative px-4 pb-24 mx-auto w-full pt-16 max-w-7xl" style={{ zIndex: 1 }}>
-
-                {/* Glass Header Card */}
-                <div className="relative bg-white/70 backdrop-blur-3xl w-full mb-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] rounded-[3rem] p-10 mt-12 border border-white/50 ring-1 ring-white/20">
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-8">
-                        <div className="flex flex-col md:flex-row items-center gap-10">
-                            <div className="relative group">
-                                <div className="absolute -inset-1 bg-gradient-to-tr from-brand-primary to-indigo-500 rounded-[2.5rem] blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-                                <div className="relative w-32 h-32 border-4 border-white rounded-[2.5rem] shadow-2xl overflow-hidden bg-white">
+            <div className="relative px-4 pb-24 mx-auto w-full pt-16 max-w-[1800px] 2xl:px-12" style={{ zIndex: 1 }}>
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                    {/* Sidebar Navigation */}
+                    {/* Sidebar Profile Panel */}
+                    <aside className="lg:col-span-1">
+                        <div className="sticky top-24 space-y-6">
+                            {/* Main Identity Card */}
+                            <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] text-center relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-brand-primary/20 to-indigo-500/20"></div>
+                                
+                                <div className="relative group mx-auto w-32 h-32 border-4 border-white rounded-[2rem] shadow-xl overflow-hidden bg-white mt-4 mb-5">
                                     <OptimizedImage
                                         src={user.avatar || ''}
                                         alt="Avatar"
@@ -230,13 +224,12 @@ const ClientProfilePage: React.FC = () => {
                                         fallbackSrc={`https://ui-avatars.com/api/?name=${user.name}&background=random`}
                                     />
                                     
-                                    {/* Avatar Hover Overlay */}
                                     <label 
                                         htmlFor="avatar-upload"
-                                        className="absolute inset-0 bg-black/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer text-white"
+                                        className="absolute inset-0 bg-black/50 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer text-white"
                                     >
-                                        <Camera size={24} className="mb-1 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 delay-75">Alterar Foto</span>
+                                        <Camera size={24} className="mb-1" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest">Alterar</span>
                                         <input 
                                             type="file" 
                                             id="avatar-upload" 
@@ -247,83 +240,87 @@ const ClientProfilePage: React.FC = () => {
                                         />
                                     </label>
 
-                                    {/* Uploading State Overlay */}
                                     {(uploading || isAnalyzingImage) && (
                                         <div className="absolute inset-0 bg-white/80 backdrop-blur-md flex flex-col items-center justify-center z-20">
                                             <Loader2 size={24} className="text-brand-primary animate-spin mb-2" />
-                                            <span className="text-[9px] font-black uppercase tracking-tighter text-slate-500">
-                                                {isAnalyzingImage ? 'Analisando...' : 'Enviando...'}
-                                            </span>
                                         </div>
                                     )}
                                 </div>
+
+                                <h3 className="text-2xl font-black text-slate-900 tracking-tight leading-none mb-1">{user.name}</h3>
+                                <p className="text-[10px] font-black text-brand-primary uppercase tracking-widest mb-4">Cliente Premium</p>
+                                
+                                <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-slate-500 mb-6 bg-slate-50 py-2.5 px-4 rounded-xl border border-slate-100">
+                                    <MapPin size={14} className="text-brand-primary" /> 
+                                    {data?.profile?.address_city || 'Localização Pendente'}
+                                </div>
+
+                                <Button 
+                                    variant="outline" 
+                                    className="w-full rounded-2xl font-black text-[10px] uppercase tracking-widest border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-brand-primary shadow-sm"
+                                    onClick={() => setActiveTab('profile')}
+                                >
+                                    Editar Perfil
+                                </Button>
                             </div>
-                            <div className="text-center md:text-left">
-                                <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-brand-primary/10 text-brand-primary mb-3">CONTRATTO PLATINUM CLIENT</span>
-                                <h3 className="text-4xl font-black text-slate-900 tracking-tighter leading-none mb-2">{user.name}</h3>
-                                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-1">
-                                    <div className="flex items-center gap-1.5 px-3 py-1 bg-white/50 rounded-lg text-xs font-bold text-slate-500 border border-white/40">
-                                        <User size={12} /> {user.email}
-                                    </div>
-                                    <div className="flex items-center gap-1.5 px-3 py-1 bg-white/50 rounded-lg text-xs font-bold text-slate-500 border border-white/40">
-                                        <MapPin size={12} /> {data?.profile?.address_city || 'Localização não definida'}
+
+                            {/* Connected Accounts & Stats */}
+                            <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6">
+                                <div>
+                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Estatísticas</h4>
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="font-bold text-slate-600 flex items-center gap-2"><CreditCard size={16} className="text-emerald-500"/> Investimento</span>
+                                            <span className="font-black text-slate-900">R$ {totalSpent.toLocaleString('pt-BR')}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="font-bold text-slate-600 flex items-center gap-2"><Calendar size={16} className="text-blue-500"/> Pedidos</span>
+                                            <span className="font-black text-slate-900">{bookings.length}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="font-bold text-slate-600 flex items-center gap-2"><Heart size={16} className="text-rose-500"/> Favoritos</span>
+                                            <span className="font-black text-slate-900">{favorites.length}</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        <div className="flex items-center gap-12 bg-white/40 backdrop-blur-md p-8 rounded-[2rem] border border-white/50 shadow-inner">
-                            <HeaderStat label="Investimento" value={`R$ ${totalSpent.toLocaleString('pt-BR')}`} highlight="text-emerald-600" />
-                            <div className="w-px h-10 bg-white/50"></div>
-                            <HeaderStat label="Agendamentos" value={bookings.length.toString()} />
-                            <div className="w-px h-10 bg-white/50"></div>
-                            <HeaderStat label="Favoritos" value={favorites.length.toString()} />
-                        </div>
-                    </div>
-                </div>
+                                <hr className="border-slate-100" />
 
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
-                    {/* Sidebar Navigation */}
-                    <aside className="lg:col-span-1">
-                        <div className="sticky top-24 space-y-10">
-                            <section>
-                                <h6 className="font-black text-[11px] tracking-[0.2em] uppercase text-slate-400 mb-6 px-5">Menu Principal</h6>
-                                <nav className="flex flex-col space-y-2">
-                                    <NavItem id="home" label="Dashboard" icon={LayoutGrid} active={activeTab === 'home'} color="text-brand-primary" />
-                                    <NavItem id="bookings" label="Meus Pedidos" icon={Calendar} active={activeTab === 'bookings'} color="text-emerald-500" />
-                                    <NavItem id="budgets" label="Orçamentos" icon={FileText} active={activeTab === 'budgets'} color="text-orange-500" />
-                                    <NavItem id="messages" label="Mensagens" icon={MessageSquare} active={activeTab === 'messages'} color="text-blue-500" />
-                                    <NavItem id="favorites" label="Meus Favoritos" icon={Heart} active={activeTab === 'favorites'} color="text-rose-500" />
-                                </nav>
-                            </section>
+                                <div>
+                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Contas Conectadas</h4>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-500"><User size={14} /></div>
+                                            <span className="text-[10px] font-bold text-slate-700 flex-grow truncate">{user.email}</span>
+                                            <Badge className="bg-emerald-100 text-emerald-700 border-0 text-[8px] py-0 h-4">Verificado</Badge>
+                                        </div>
+                                    </div>
+                                </div>
 
-                            <section>
-                                <h6 className="font-black text-[11px] tracking-[0.2em] uppercase text-slate-400 mb-6 px-5">Minha Conta</h6>
-                                <nav className="flex flex-col space-y-3">
-                                    <NavItem id="profile" label="Perfil & Dados" icon={User} active={activeTab === 'profile'} color="text-slate-900" />
-                                    <NavItem id="addresses" label="Endereços" icon={MapPin} active={activeTab === 'addresses'} color="text-indigo-600" />
-                                    <NavItem id="payments" label="Financeiro" icon={CreditCard} active={activeTab === 'payments'} color="text-emerald-600" />
-                                    <NavItem id="settings" label="Configurações" icon={Settings} active={activeTab === 'settings'} color="text-slate-500" />
-                                    <NavItem id="help" label="Suporte" icon={HelpCircle} active={activeTab === 'help'} color="text-orange-600" />
-                                </nav>
-                            </section>
-
-                            <div className="px-5 pt-4">
                                 <button
                                     onClick={logout}
-                                    className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all duration-300 font-black text-xs uppercase tracking-widest group shadow-sm shadow-red-100"
+                                    className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest"
                                 >
-                                    <LogOut size={16} />
-                                    Encerrar Sessão
+                                    <LogOut size={14} /> Sair
                                 </button>
                             </div>
                         </div>
                     </aside>
 
           {/* Main Content Area */}
-          <div className="lg:col-span-3 pb-20">
+          <div className="lg:col-span-3 pb-20 flex flex-col gap-8">
+            {/* Horizontal Tabs Navigation */}
+            <div className="bg-white/60 backdrop-blur-xl border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[2rem] p-2.5 flex overflow-x-auto gap-2 no-scrollbar w-full xl:justify-start">
+                <NavItem id="home" label="Visão Geral" icon={LayoutGrid} active={activeTab === 'home'} />
+                <NavItem id="bookings" label="Serviços" icon={Calendar} active={activeTab === 'bookings'} />
+                <NavItem id="budgets" label="Orçamentos" icon={FileText} active={activeTab === 'budgets'} />
+                <NavItem id="messages" label="Mensagens" icon={MessageSquare} active={activeTab === 'messages'} />
+                <NavItem id="favorites" label="Favoritos" icon={Heart} active={activeTab === 'favorites'} />
+                <NavItem id="payments" label="Financeiro" icon={CreditCard} active={activeTab === 'payments'} />
+            </div>
+
             {/* Render selected tab content */}
-            <div className="min-h-[600px]">
+            <div className="min-h-[600px] w-full">
               {activeTab === 'home' && <ClientHome />}
 
               {activeTab === 'bookings' && (
@@ -472,11 +469,6 @@ const ClientProfilePage: React.FC = () => {
     );
 };
 
-const HeaderStat = ({ label, value, highlight = "text-slate-900" }: { label: string, value: string, highlight?: string }) => (
-    <div className="flex flex-col items-center md:items-start">
-        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</span>
-        <span className={`text-2xl font-black tracking-tighter ${highlight}`}>{value}</span>
-    </div>
-);
+
 
 export default ClientProfilePage;

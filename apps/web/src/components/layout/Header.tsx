@@ -6,6 +6,7 @@ import UserActions from '@/components/layout/header/UserActions';
 import SearchBar from '@/components/layout/header/SearchBar';
 import MobileSheet from '@/components/layout/header/MobileSheet';
 import NotificationsDropdown from '@/components/layout/NotificationsDropdown';
+import MessagesDropdown from '@/components/layout/MessagesDropdown';
 import { usePrefetchCriticalRoutes } from '@/hooks/usePrefetch';
 
 const Header: React.FC = () => {
@@ -62,6 +63,7 @@ const Header: React.FC = () => {
 
                         {/* Mobile Menu Button */}
                         <div className="lg:hidden flex items-center gap-1.5 sm:gap-2">
+                            {user && <MessagesDropdown />}
                             {user && <NotificationsDropdown />}
                             <button
                                 onClick={() => setIsMobileMenuOpen(true)}

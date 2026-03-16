@@ -233,16 +233,16 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
                                     <div className="space-y-1">
                                         {user.type === 'client' ? (
                                             <>
-                                                <Link to="/perfil/cliente" onClick={handleLinkClick} className="block px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg min-h-[40px] flex items-center">
+                                                <Link to="/perfil/cliente" state={{ activeTab: 'profile' }} onClick={handleLinkClick} className="block px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg min-h-[40px] flex items-center">
                                                     Meu Perfil
                                                 </Link>
-                                                <Link to="/favoritos" onClick={handleLinkClick} className="block px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg min-h-[40px] flex items-center">
+                                                <Link to="/perfil/cliente" state={{ activeTab: 'favorites' }} onClick={handleLinkClick} className="block px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg min-h-[40px] flex items-center">
                                                     Favoritos
                                                 </Link>
                                                 <Link to="/minhas-mensagens" onClick={handleLinkClick} className="block px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg min-h-[40px] flex items-center">
                                                     Mensagens
                                                 </Link>
-                                                <Link to="/perfil/pedidos" onClick={handleLinkClick} className="block px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg min-h-[40px] flex items-center">
+                                                <Link to="/perfil/cliente" state={{ activeTab: 'bookings' }} onClick={handleLinkClick} className="block px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg min-h-[40px] flex items-center">
                                                     Meus Pedidos
                                                 </Link>
                                             </>

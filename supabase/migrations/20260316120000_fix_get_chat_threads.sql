@@ -1,37 +1,6 @@
--- Migration: Security V2 - Marketplace Lockdown
--- Date: 2026-03-02
--- Author: Antigravity
+-- Fix ambiguous column references in get_chat_threads RPC
+-- Date: 2026-03-16
 
--- 1. Create a secure view for public company profiles
--- This avoids exposing sensitive columns like stripe_account_id, commission_rate, etc.
-DROP VIEW IF EXISTS public.public_company_profiles CASCADE;
-CREATE OR REPLACE VIEW public.public_company_profiles AS
-SELECT 
-    id, 
-    company_name, 
-    logo_url, 
-    cover_image_url,
-    rating, 
-    slug, 
-    category, 
-    status, 
-    city, 
-    state,
-    description,
-    created_at
-FROM public.companies
-WHERE status = 'approved';
-
--- Grant access to the view
-GRANT SELECT ON public.public_company_profiles TO anon, authenticated;
-
--- 2. Ensure SELECT access to "companies"
--- The system uses JOINs and .select('*') in many places. 
--- RLS policies already protect sensitive data visibility per user.
-GRANT SELECT ON public.companies TO anon, authenticated;
-
--- 3. Optimized Chat Thread RPC
--- Returns a summary of threads for a user without fetching all messages.
 DROP FUNCTION IF EXISTS public.get_chat_threads(uuid) CASCADE;
 CREATE OR REPLACE FUNCTION public.get_chat_threads(p_user_id uuid)
 RETURNS TABLE (
