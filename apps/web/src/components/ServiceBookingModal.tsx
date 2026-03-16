@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '@/components/ui/Button';
-import { Service } from '@tgt/shared';
+import { Service } from '@tgt/core';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@tgt/shared';
+import { supabase } from '@tgt/core';
 import { useToast } from '@/contexts/ToastContext';
 
 import AuthModal from '@/components/auth/AuthModal';

@@ -7,17 +7,19 @@ import { createClient } from '@supabase/supabase-js';
 // IMPORTANT: We do NOT use import.meta.env here because Hermes (React Native engine)
 // fails to PARSE files containing `import.meta` — even inside try/catch blocks.
 
-declare const VITE_SUPABASE_URL: string | undefined;
-declare const VITE_SUPABASE_ANON_KEY: string | undefined;
-declare const VITE_APP_TYPE: string | undefined;
+declare global {
+    var VITE_SUPABASE_URL: string | undefined;
+    var VITE_SUPABASE_ANON_KEY: string | undefined;
+    var VITE_APP_TYPE: string | undefined;
+}
 
-const supabaseUrl = (typeof VITE_SUPABASE_URL !== 'undefined' ? VITE_SUPABASE_URL : undefined) 
-    || (typeof process !== 'undefined' ? process.env?.EXPO_PUBLIC_SUPABASE_URL : undefined) 
-    || '';
+const supabaseUrl = (typeof globalThis !== 'undefined' && globalThis.VITE_SUPABASE_URL)
+    ? globalThis.VITE_SUPABASE_URL
+    : (typeof process !== 'undefined' ? process.env?.EXPO_PUBLIC_SUPABASE_URL : undefined) || '';
 
-const supabaseAnonKey = (typeof VITE_SUPABASE_ANON_KEY !== 'undefined' ? VITE_SUPABASE_ANON_KEY : undefined) 
-    || (typeof process !== 'undefined' ? process.env?.EXPO_PUBLIC_SUPABASE_ANON_KEY : undefined) 
-    || '';
+const supabaseAnonKey = (typeof globalThis !== 'undefined' && globalThis.VITE_SUPABASE_ANON_KEY)
+    ? globalThis.VITE_SUPABASE_ANON_KEY
+    : (typeof process !== 'undefined' ? process.env?.EXPO_PUBLIC_SUPABASE_ANON_KEY : undefined) || '';
 
 // Determine if running in a browser/web environment (has window object)
 const isWeb = typeof window !== 'undefined';
@@ -93,7 +95,8 @@ class SafeCookieStorage {
 const g = globalThis as any;
 if (!g._supabaseShared) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const appType = (typeof VITE_APP_TYPE !== 'undefined' ? VITE_APP_TYPE : undefined) || 'shared';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const appType = (typeof globalThis !== 'undefined' && globalThis.VITE_APP_TYPE) ? globalThis.VITE_APP_TYPE : 'shared';
     const authOptions: any = {
         autoRefreshToken: true,
         persistSession: true,
