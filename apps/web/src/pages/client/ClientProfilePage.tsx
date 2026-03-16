@@ -12,188 +12,313 @@ import OptimizedImage from '@/components/ui/OptimizedImage';
 import {
   CreditCard, Heart, MessageSquare, User, LogOut,
   Calendar, Clock, LayoutGrid, FileText, Settings,
-  HelpCircle, MapPin, ChevronRight
+  HelpCircle, MapPin, ChevronRight, Camera, Loader2
 } from 'lucide-react';
+
+import ImageCropModal from '@/components/ImageCropModal';
 
 // New Section Components
 import ClientHome from './components/ClientHome';
 import ClientBudgets from './components/ClientBudgets';
 import ClientAddresses from './components/ClientAddresses';
 import ClientHelp from './components/ClientHelp';
+import ClientSettings from './components/ClientSettings';
+import ClientPayments from './components/ClientPayments';
 import MyAppointments from '@/pages/client/MyAppointments';
-import PaymentHistory from '@/pages/client/PaymentHistory';
 
-type TabType = 'home' | 'bookings' | 'budgets' | 'messages' | 'favorites' | 'profile' | 'addresses' | 'payments' | 'help';
+type TabType = 'home' | 'bookings' | 'budgets' | 'messages' | 'favorites' | 'profile' | 'addresses' | 'payments' | 'help' | 'settings';
 
 const ClientProfilePage: React.FC = () => {
-  const { user, logout } = useAuth();
-  const { addToast } = useToast();
-  const location = useLocation();
-  const [activeTab, setActiveTab] = useState<TabType>('home');
+    const { user, logout, refreshSession } = useAuth();
+    const { addToast } = useToast();
+    const location = useLocation();
+    const [activeTab, setActiveTab] = useState<TabType>('home');
+    const [uploading, setUploading] = useState(false);
+    const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
+    const [cropModal, setCropModal] = useState<{
+        isOpen: boolean;
+        imageSrc: string;
+    }>({ isOpen: false, imageSrc: '' });
 
-  // Unified Data Fetching
-  const { data, isLoading: loading } = useClientProfileData(user?.id);
+    // Unified Data Fetching
+    const { data, isLoading: loading } = useClientProfileData(user?.id);
 
-  // Local state for profile form editing
-  const [profileData, setProfileData] = useState<UserProfile | null>(null);
+    // Local state for profile form editing
+    const [profileData, setProfileData] = useState<UserProfile | null>(null);
 
-  useEffect(() => {
-    const state = location.state as { activeTab?: TabType };
-    if (state?.activeTab) {
-      setActiveTab(state.activeTab);
-    }
-  }, [location]);
+    useEffect(() => {
+        const state = location.state as { activeTab?: TabType };
+        if (state?.activeTab) {
+            setActiveTab(state.activeTab);
+        }
+    }, [location]);
 
-  // Sync profile data for editing when fetched
-  useEffect(() => {
-    if (data?.profile) {
-      setProfileData({ ...user!, ...data.profile });
-    } else if (user) {
-      setProfileData({ ...user } as UserProfile);
-    }
-  }, [data?.profile, user]);
+    // Sync profile data for editing when fetched
+    useEffect(() => {
+        if (data?.profile) {
+            setProfileData({ ...user!, ...data.profile });
+        } else if (user) {
+            setProfileData({ ...user } as UserProfile);
+        }
+    }, [data?.profile, user]);
 
-  const bookings = data?.bookings || [];
-  const conversations = data?.conversations || [];
-  const favorites = data?.favorites || [];
+    const bookings = data?.bookings || [];
+    const favorites = data?.favorites || [];
+    const conversations = data?.conversations || [];
+    const totalSpent = data?.totalSpent || 0;
 
-  // -- PROFILE HANDLERS --
-  const handleProfileUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !profileData) return;
+    // -- PROFILE HANDLERS --
+    const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setCropModal({ isOpen: true, imageSrc: reader.result as string });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
-    try {
-      const { error } = await supabase.from('profiles').upsert({
-        id: user.id,
-        email: user.email,
-        full_name: profileData.name,
-        cpf: profileData.cpf,
-        phone: profileData.phone,
-        date_of_birth: profileData.date_of_birth,
-        address_zip: profileData.address_zip,
-        address_street: profileData.address_street,
-        address_number: profileData.address_number,
-        address_complement: profileData.address_complement,
-        address_neighborhood: profileData.address_neighborhood,
-        address_city: profileData.address_city,
-        address_state: profileData.address_state,
-        updated_at: new Date().toISOString()
-      });
+    const uploadAvatar = async (file: File) => {
+        try {
+            setUploading(true);
+            
+            // 1. IA Analysis (Optional but recommended for consistency)
+            try {
+                setIsAnalyzingImage(true);
+                const reader = new FileReader();
+                const base64Promise = new Promise<string>((resolve) => {
+                    reader.onloadend = () => {
+                        const base64 = (reader.result as string).split(',')[1];
+                        resolve(base64);
+                    };
+                });
+                reader.readAsDataURL(file);
+                const base64Image = await base64Promise;
 
-      if (error) throw error;
-      addToast("Perfil atualizado!", "success");
-    } catch (err) {
-      console.error(err);
-      addToast("Erro ao atualizar.", "error");
-    }
-  };
+                const { data: analysis, error: aiError } = await supabase.functions.invoke('analyze-image', {
+                    body: { image: base64Image, type: 'avatar' }
+                });
 
-  if (!user) return null;
+                if (!aiError && analysis && !analysis.is_valid) {
+                    addToast(`Imagem rejeitada pela IA: ${analysis.reason}`, 'error');
+                    setIsAnalyzingImage(false);
+                    return;
+                }
+            } catch (err) {
+                console.warn('AI Analysis failed, proceeding anyway:', err);
+            } finally {
+                setIsAnalyzingImage(false);
+            }
 
-  const NavItem = ({ id, label, icon: Icon, active, color = "text-[#1E293B]" }: { id: TabType, label: string, icon: any, active: boolean, color?: string }) => (
-    <button
-      onClick={() => setActiveTab(id)}
-      className={`w-full flex items-center px-5 py-3.5 rounded-2xl transition-all duration-200 ${active
-        ? 'bg-white shadow-sm text-gray-900 font-bold'
-        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100/50 font-medium'
-        }`}
-    >
-      <div className={`mr-4 ${active ? color : 'text-gray-400'}`}>
-        <Icon size={20} className={active ? "fill-current/10" : ""} />
-      </div>
-      <span className="text-sm tracking-wide">{label}</span>
-      {active && <div className="ml-auto w-1.5 h-6 bg-brand-primary rounded-full blur-[1px]"></div>}
-    </button>
-  );
+            // 2. Upload to Storage
+            const path = `avatars/${user?.id}-${Date.now()}.jpg`;
+            const { error: uploadError } = await supabase.storage.from('client-assets').upload(path, file, { upsert: true });
+            
+            if (uploadError) {
+                // Fallback secondary bucket
+                const { error: fallbackError } = await supabase.storage.from('portfolio').upload(path, file, { upsert: true });
+                if (fallbackError) throw uploadError;
+            }
 
-  return (
-    <div className="relative w-full min-h-screen bg-gray-50 pb-12">
-      {/* Background Gradient Header */}
-      <div className="absolute top-0 w-full h-[320px] bg-gradient-to-r from-[#00b09b] to-[#2c3e50] rounded-b-[3rem]" style={{ zIndex: 0 }}></div>
+            const { data: { publicUrl } } = supabase.storage.from(uploadError ? 'portfolio' : 'client-assets').getPublicUrl(path);
 
-      <div className="relative px-4 pb-20 mx-auto w-full pt-20 max-w-7xl" style={{ zIndex: 1 }}>
+            // 3. Update Profile & Auth
+            const { error: updateError } = await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', user?.id);
+            if (updateError) throw updateError;
 
-        {/* Profile Header Card */}
-        <div className="relative flex flex-col min-w-0 break-words bg-white/80 backdrop-blur-xl w-full mb-10 shadow-xl rounded-[2.5rem] p-8 mt-16 border border-white/40">
-          <div className="px-6">
-            <div className="flex flex-wrap justify-between items-center">
-              <div className="flex items-center gap-8">
-                <div className="relative">
-                  <div className="w-28 h-28 border-[6px] border-white rounded-[2rem] shadow-2xl overflow-hidden bg-white -mt-20 backdrop-blur-xl">
-                    <OptimizedImage
-                      src={user.avatar || ''}
-                      alt="Avatar"
-                      className="w-full h-full object-cover"
-                      fallbackSrc={`https://ui-avatars.com/api/?name=${user.name}&background=random`}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-3xl font-black text-[#1E293B] tracking-tight">{user.name}</h3>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="info" className="bg-blue-100 text-blue-700 border-none font-bold">Cliente</Badge>
-                    <p className="text-gray-400 font-medium text-sm">{user.email}</p>
-                  </div>
-                </div>
-              </div>
+            await supabase.auth.updateUser({ data: { avatar_url: publicUrl } });
+            
+            if (refreshSession) await refreshSession();
+            
+            addToast('Foto de perfil atualizada!', 'success');
+            setCropModal({ isOpen: false, imageSrc: '' });
+        } catch (err: any) {
+            console.error('Error uploading avatar:', err);
+            addToast('Erro ao atualizar foto de perfil.', 'error');
+        } finally {
+            setUploading(false);
+        }
+    };
 
-              <div className="flex gap-12 mt-6 md:mt-0">
-                <div className="flex flex-col items-center">
-                  <span className="text-3xl font-black text-[#1E293B] block">{bookings.length}</span>
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Agendamentos</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <span className="text-3xl font-black text-[#1E293B] block">{favorites.length}</span>
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Favoritos</span>
-                </div>
-              </div>
+    const handleProfileUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!user || !profileData) return;
+
+        try {
+            const { error } = await supabase.from('profiles').upsert({
+                id: user.id,
+                email: user.email,
+                full_name: profileData.name,
+                cpf: profileData.cpf,
+                phone: profileData.phone,
+                date_of_birth: profileData.date_of_birth,
+                address_zip: profileData.address_zip,
+                address_street: profileData.address_street,
+                address_number: profileData.address_number,
+                address_complement: profileData.address_complement,
+                address_neighborhood: profileData.address_neighborhood,
+                address_city: profileData.address_city,
+                address_state: profileData.address_state,
+                updated_at: new Date().toISOString()
+            });
+
+            if (error) throw error;
+
+            // Update Auth Metadata to keep session in sync
+            await supabase.auth.updateUser({
+                data: { name: profileData.name }
+            });
+
+            if (refreshSession) await refreshSession();
+            
+            addToast("Perfil atualizado!", "success");
+        } catch (err) {
+            console.error(err);
+            addToast("Erro ao atualizar.", "error");
+        }
+    };
+
+    if (!user) return null;
+
+    const NavItem = ({ id, label, icon: Icon, active, color = "text-brand-primary" }: { id: TabType, label: string, icon: any, active: boolean, color?: string }) => (
+        <button
+            onClick={() => setActiveTab(id)}
+            className={`w-full flex items-center px-6 py-4 rounded-2xl transition-all duration-500 group relative ${active
+                ? 'bg-white shadow-[0_20px_40px_-12px_rgba(0,0,0,0.1)] text-slate-900 ring-1 ring-slate-100 translate-x-1'
+                : 'text-slate-500 hover:text-slate-900 hover:bg-white/60 hover:translate-x-1'
+                }`}
+        >
+            <div className={`mr-4 p-2.5 rounded-xl transition-all duration-500 ${active ? `bg-gradient-to-br from-white to-slate-50 shadow-sm ${color}` : 'bg-slate-50 text-slate-400 group-hover:bg-white group-hover:text-slate-600'}`}>
+                <Icon size={18} strokeWidth={active ? 2.5 : 2} className={active ? "animate-pulse" : ""} />
             </div>
-          </div>
-        </div>
+            <span className={`text-sm tracking-tight transition-all duration-300 ${active ? 'font-black' : 'font-semibold'}`}>{label}</span>
+            {active && (
+                <div className="ml-auto relative flex items-center justify-center">
+                    <div className="absolute w-4 h-4 bg-brand-primary/20 rounded-full blur-sm"></div>
+                    <div className="w-1.5 h-6 bg-brand-primary rounded-full shadow-[0_0_12px_rgba(var(--brand-primary-rgb),0.6)]"></div>
+                </div>
+            )}
+        </button>
+    );
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar Navigation */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24 space-y-6">
-
-              <section>
-                <h6 className="font-black text-[10px] tracking-widest uppercase text-slate-400 mb-4 px-5">Principal</h6>
-                <nav className="flex flex-col space-y-1">
-                  <NavItem id="home" label="Início" icon={LayoutGrid} active={activeTab === 'home'} color="text-brand-primary" />
-                  <NavItem id="bookings" label="Meus Agendamentos" icon={Calendar} active={activeTab === 'bookings'} color="text-blue-500" />
-                  <NavItem id="budgets" label="Área de Orçamentos" icon={FileText} active={activeTab === 'budgets'} color="text-orange-500" />
-                  <NavItem id="messages" label="Mensagens" icon={MessageSquare} active={activeTab === 'messages'} color="text-indigo-500" />
-                  <NavItem id="favorites" label="Favoritos" icon={Heart} active={activeTab === 'favorites'} color="text-red-500" />
-                </nav>
-              </section>
-
-              <section>
-                <h6 className="font-black text-[10px] tracking-widest uppercase text-slate-400 mb-4 px-5">Configurações</h6>
-                <nav className="flex flex-col space-y-1">
-                  <NavItem id="profile" label="Dados Pessoais" icon={User} active={activeTab === 'profile'} />
-                  <NavItem id="addresses" label="Meus Endereços" icon={MapPin} active={activeTab === 'addresses'} />
-                  <NavItem id="payments" label="Formas de Pagamento" icon={CreditCard} active={activeTab === 'payments'} />
-                </nav>
-              </section>
-
-              <section>
-                <h6 className="font-black text-[10px] tracking-widest uppercase text-slate-400 mb-4 px-5">Ajuda</h6>
-                <nav className="flex flex-col space-y-1">
-                  <NavItem id="help" label="Central de Suporte" icon={HelpCircle} active={activeTab === 'help'} color="text-green-600" />
-
-                  <div className="h-4"></div>
-
-                  <button
-                    onClick={logout}
-                    className="w-full flex items-center px-5 py-3.5 rounded-2xl text-red-500 hover:bg-red-50 transition-all duration-200 group font-bold"
-                  >
-                    <LogOut size={20} className="mr-4 opacity-70 group-hover:opacity-100" />
-                    <span className="text-sm tracking-wide">Sair da Conta</span>
-                  </button>
-                </nav>
-              </section>
+    return (
+        <div className="relative w-full min-h-screen bg-transparent">
+            {/* High-End Fluid Background */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
+                <div className="absolute top-[-10%] right-[-5%] w-[70%] h-[60%] bg-gradient-to-br from-brand-primary/10 via-brand-primary/5 to-transparent rounded-full blur-[140px] opacity-60"></div>
+                <div className="absolute bottom-[-10%] left-[-5%] w-[60%] h-[50%] bg-gradient-to-tr from-indigo-500/10 via-indigo-500/5 to-transparent rounded-full blur-[120px] opacity-40"></div>
+                <div className="absolute top-[20%] left-[10%] w-[40%] h-[40%] bg-gradient-to-r from-emerald-400/5 to-transparent rounded-full blur-[100px] opacity-30"></div>
+                
+                {/* Texture/Noise Overlay */}
+                <div className="absolute inset-0 opacity-[0.015] grayscale" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}></div>
             </div>
-          </div>
+
+            <div className="relative px-4 pb-24 mx-auto w-full pt-16 max-w-7xl" style={{ zIndex: 1 }}>
+
+                {/* Glass Header Card */}
+                <div className="relative bg-white/70 backdrop-blur-3xl w-full mb-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] rounded-[3rem] p-10 mt-12 border border-white/50 ring-1 ring-white/20">
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+                        <div className="flex flex-col md:flex-row items-center gap-10">
+                            <div className="relative group">
+                                <div className="absolute -inset-1 bg-gradient-to-tr from-brand-primary to-indigo-500 rounded-[2.5rem] blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+                                <div className="relative w-32 h-32 border-4 border-white rounded-[2.5rem] shadow-2xl overflow-hidden bg-white">
+                                    <OptimizedImage
+                                        src={user.avatar || ''}
+                                        alt="Avatar"
+                                        className="w-full h-full object-cover transform transition-transform group-hover:scale-110 duration-500"
+                                        fallbackSrc={`https://ui-avatars.com/api/?name=${user.name}&background=random`}
+                                    />
+                                    
+                                    {/* Avatar Hover Overlay */}
+                                    <label 
+                                        htmlFor="avatar-upload"
+                                        className="absolute inset-0 bg-black/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer text-white"
+                                    >
+                                        <Camera size={24} className="mb-1 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 delay-75">Alterar Foto</span>
+                                        <input 
+                                            type="file" 
+                                            id="avatar-upload" 
+                                            className="hidden" 
+                                            accept="image/*"
+                                            onChange={handleAvatarSelect}
+                                            disabled={uploading}
+                                        />
+                                    </label>
+
+                                    {/* Uploading State Overlay */}
+                                    {(uploading || isAnalyzingImage) && (
+                                        <div className="absolute inset-0 bg-white/80 backdrop-blur-md flex flex-col items-center justify-center z-20">
+                                            <Loader2 size={24} className="text-brand-primary animate-spin mb-2" />
+                                            <span className="text-[9px] font-black uppercase tracking-tighter text-slate-500">
+                                                {isAnalyzingImage ? 'Analisando...' : 'Enviando...'}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="text-center md:text-left">
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-brand-primary/10 text-brand-primary mb-3">CONTRATTO PLATINUM CLIENT</span>
+                                <h3 className="text-4xl font-black text-slate-900 tracking-tighter leading-none mb-2">{user.name}</h3>
+                                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-1">
+                                    <div className="flex items-center gap-1.5 px-3 py-1 bg-white/50 rounded-lg text-xs font-bold text-slate-500 border border-white/40">
+                                        <User size={12} /> {user.email}
+                                    </div>
+                                    <div className="flex items-center gap-1.5 px-3 py-1 bg-white/50 rounded-lg text-xs font-bold text-slate-500 border border-white/40">
+                                        <MapPin size={12} /> {data?.profile?.address_city || 'Localização não definida'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-12 bg-white/40 backdrop-blur-md p-8 rounded-[2rem] border border-white/50 shadow-inner">
+                            <HeaderStat label="Investimento" value={`R$ ${totalSpent.toLocaleString('pt-BR')}`} highlight="text-emerald-600" />
+                            <div className="w-px h-10 bg-white/50"></div>
+                            <HeaderStat label="Agendamentos" value={bookings.length.toString()} />
+                            <div className="w-px h-10 bg-white/50"></div>
+                            <HeaderStat label="Favoritos" value={favorites.length.toString()} />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
+                    {/* Sidebar Navigation */}
+                    <aside className="lg:col-span-1">
+                        <div className="sticky top-24 space-y-10">
+                            <section>
+                                <h6 className="font-black text-[11px] tracking-[0.2em] uppercase text-slate-400 mb-6 px-5">Menu Principal</h6>
+                                <nav className="flex flex-col space-y-2">
+                                    <NavItem id="home" label="Dashboard" icon={LayoutGrid} active={activeTab === 'home'} color="text-brand-primary" />
+                                    <NavItem id="bookings" label="Meus Pedidos" icon={Calendar} active={activeTab === 'bookings'} color="text-emerald-500" />
+                                    <NavItem id="budgets" label="Orçamentos" icon={FileText} active={activeTab === 'budgets'} color="text-orange-500" />
+                                    <NavItem id="messages" label="Mensagens" icon={MessageSquare} active={activeTab === 'messages'} color="text-blue-500" />
+                                    <NavItem id="favorites" label="Meus Favoritos" icon={Heart} active={activeTab === 'favorites'} color="text-rose-500" />
+                                </nav>
+                            </section>
+
+                            <section>
+                                <h6 className="font-black text-[11px] tracking-[0.2em] uppercase text-slate-400 mb-6 px-5">Minha Conta</h6>
+                                <nav className="flex flex-col space-y-3">
+                                    <NavItem id="profile" label="Perfil & Dados" icon={User} active={activeTab === 'profile'} color="text-slate-900" />
+                                    <NavItem id="addresses" label="Endereços" icon={MapPin} active={activeTab === 'addresses'} color="text-indigo-600" />
+                                    <NavItem id="payments" label="Financeiro" icon={CreditCard} active={activeTab === 'payments'} color="text-emerald-600" />
+                                    <NavItem id="settings" label="Configurações" icon={Settings} active={activeTab === 'settings'} color="text-slate-500" />
+                                    <NavItem id="help" label="Suporte" icon={HelpCircle} active={activeTab === 'help'} color="text-orange-600" />
+                                </nav>
+                            </section>
+
+                            <div className="px-5 pt-4">
+                                <button
+                                    onClick={logout}
+                                    className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all duration-300 font-black text-xs uppercase tracking-widest group shadow-sm shadow-red-100"
+                                >
+                                    <LogOut size={16} />
+                                    Encerrar Sessão
+                                </button>
+                            </div>
+                        </div>
+                    </aside>
 
           {/* Main Content Area */}
           <div className="lg:col-span-3 pb-20">
@@ -293,7 +418,12 @@ const ClientProfilePage: React.FC = () => {
                   <h2 className="text-2xl font-black text-slate-800 mb-8">Dados Pessoais</h2>
                   <form onSubmit={handleProfileUpdate} className="space-y-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <Input label="Nome Completo" value={profileData.name} disabled className="bg-slate-50 opacity-70" />
+                      <Input 
+                        label="Nome Completo" 
+                        value={profileData.name} 
+                        onChange={e => setProfileData({ ...profileData, name: e.target.value })}
+                        placeholder="Seu nome completo"
+                      />
                       <Input label="Email de Cadastro" value={profileData.email} disabled className="bg-slate-50 opacity-70" />
                       <Input
                         label="CPF (Para notas fiscais)"
@@ -320,21 +450,33 @@ const ClientProfilePage: React.FC = () => {
 
               {activeTab === 'addresses' && <ClientAddresses />}
 
-              {activeTab === 'payments' && (
-                <div className="bg-white rounded-[2.5rem] shadow-xl p-8 border border-slate-100 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <h2 className="text-2xl font-black text-slate-800 mb-2">Formas de Pagamento</h2>
-                  <p className="text-sm text-slate-500 font-medium mb-8">Gerencie seus cartões salvos para checkout rápido.</p>
-                  <PaymentHistory isEmbedded={true} />
-                </div>
-              )}
+              {activeTab === 'payments' && <ClientPayments />}
+
+              {activeTab === 'settings' && <ClientSettings />}
 
               {activeTab === 'help' && <ClientHelp />}
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+            {/* Image Crop Modal */}
+            <ImageCropModal
+                isOpen={cropModal.isOpen}
+                imageSrc={cropModal.imageSrc}
+                aspectRatio={1}
+                onClose={() => setCropModal({ isOpen: false, imageSrc: '' })}
+                onCropComplete={uploadAvatar}
+                isAnalyzing={isAnalyzingImage}
+            />
+        </div>
+    );
 };
+
+const HeaderStat = ({ label, value, highlight = "text-slate-900" }: { label: string, value: string, highlight?: string }) => (
+    <div className="flex flex-col items-center md:items-start">
+        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</span>
+        <span className={`text-2xl font-black tracking-tighter ${highlight}`}>{value}</span>
+    </div>
+);
 
 export default ClientProfilePage;

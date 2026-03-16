@@ -5,10 +5,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+import { checkRateLimit } from '../_shared/rate-limit.ts'
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
+
+  // Proteção contra abuso de IA: 3 requisições a cada 60 segundos
+  const rateLimitResponse = await checkRateLimit(req, 'ai-assistant', 3, 60);
+  if (rateLimitResponse) return rateLimitResponse;
 
   try {
     const { action, content, context } = await req.json();

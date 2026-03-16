@@ -1,12 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@tgt/shared';
-import { UserProfile, Booking, Favorite, Conversation } from '@tgt/shared';
+import { UserProfile, Booking, Favorite, Conversation, DbOrder, DbQuote } from '@tgt/shared';
 
 interface ClientProfileData {
     profile: UserProfile | null;
     bookings: Booking[];
     favorites: Favorite[];
     conversations: Conversation[];
+    orders: DbOrder[];
+    quotes: DbQuote[];
+    totalSpent: number;
 }
 
 export const useClientProfileData = (userId: string | undefined) => {
@@ -14,12 +17,12 @@ export const useClientProfileData = (userId: string | undefined) => {
         queryKey: ['client-profile-data', userId],
         queryFn: async (): Promise<ClientProfileData> => {
             if (!userId) {
-                return { profile: null, bookings: [], favorites: [], conversations: [] };
+                return { profile: null, bookings: [], favorites: [], conversations: [], orders: [], quotes: [], totalSpent: 0 };
             }
 
             // Parallel Fetching
             try {
-                const [profileRes, bookingsRes, messagesRes, favoritesRes] = await Promise.all([
+                const [profileRes, bookingsRes, messagesRes, favoritesRes, ordersRes, quotesRes] = await Promise.all([
                     // 1. Profile
                     supabase.from('profiles').select('*').eq('id', userId).single(),
 
@@ -44,13 +47,29 @@ export const useClientProfileData = (userId: string | undefined) => {
             *,
             company:companies(id, company_name, logo_url, description, category, address, slug)
           `)
+                        .eq('user_id', userId),
+
+                    // 5. Orders
+                    supabase
+                        .from('orders')
+                        .select('*, service:services(id, title, company:companies(id, company_name, logo_url, slug))')
+                        .eq('buyer_id', userId)
+                        .order('created_at', { ascending: false }),
+
+                    // 6. Quotes
+                    supabase
+                        .from('quotes')
+                        .select('*, service:services(id, title), companies:services(company:companies(id, company_name, logo_url, slug))')
                         .eq('user_id', userId)
+                        .order('created_at', { ascending: false })
                 ]);
 
-                // Check for individual query errors that might not throw but return { error }
+                // Check for individual query errors
                 if (bookingsRes.error) console.error('Bookings Fetch Error:', bookingsRes.error);
                 if (messagesRes.error) console.error('Messages Fetch Error:', messagesRes.error);
                 if (favoritesRes.error) console.error('Favorites Fetch Error:', favoritesRes.error);
+                if (ordersRes.error) console.error('Orders Fetch Error:', ordersRes.error);
+                if (quotesRes.error) console.error('Quotes Fetch Error:', quotesRes.error);
 
 
                 // Process Profile
@@ -65,6 +84,15 @@ export const useClientProfileData = (userId: string | undefined) => {
                     }
                 })) as Booking[];
 
+                // Process Orders & Total Spent
+                const orders = (ordersRes.data || []) as DbOrder[];
+                const totalSpent = orders
+                    .filter(o => o.status === 'completed' || o.saga_status === 'COMPLETED')
+                    .reduce((acc, curr) => acc + (Number(curr.price) || 0), 0);
+
+                // Process Quotes
+                const quotes = (quotesRes.data || []) as DbQuote[];
+
                 // Process Favorites
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const favoritesRaw = (favoritesRes.data || []) as any[];
@@ -76,8 +104,8 @@ export const useClientProfileData = (userId: string | undefined) => {
                         logo_url: fav.company?.logo_url,
                         description: fav.company?.description,
                         category: fav.company?.category,
-                        rating: 0, // Not available in list view currently
-                        review_count: 0, // Not available in list view currently
+                        rating: 0,
+                        review_count: 0,
                         city: fav.company?.address?.city || '',
                         state: fav.company?.address?.state || ''
                     }
@@ -104,7 +132,6 @@ export const useClientProfileData = (userId: string | undefined) => {
                         }
                     }
 
-                    // Fetch company names for these contacts
                     const contactIdArray = Array.from(contactIds);
                     if (contactIdArray.length > 0) {
                         const { data: companies } = await supabase
@@ -112,7 +139,6 @@ export const useClientProfileData = (userId: string | undefined) => {
                             .select('id, company_name, profile_id')
                             .in('profile_id', contactIdArray);
 
-                        // Merge names
                         conversations.push(...rawConvos.map(c => {
                             const comp = companies?.find((co) => co.profile_id === c.contactId);
                             return {
@@ -127,7 +153,10 @@ export const useClientProfileData = (userId: string | undefined) => {
                     profile,
                     bookings,
                     favorites,
-                    conversations
+                    conversations,
+                    orders,
+                    quotes,
+                    totalSpent
                 };
 
             } catch (err) {

@@ -3,7 +3,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Stripe from 'https://esm.sh/stripe@12.0.0?target=deno'
-import { corsHeaders } from '../_shared/cors.ts'
+import { checkRateLimit } from '../_shared/rate-limit.ts'
 
 console.log('Create Checkout Session Function Invoked')
 
@@ -11,6 +11,10 @@ serve(async (req) => {
     if (req.method === 'OPTIONS') {
         return new Response(null, { headers: corsHeaders, status: 204 })
     }
+
+    // Proteção contra abuso: 5 requisições a cada 60 segundos
+    const rateLimitResponse = await checkRateLimit(req, 'create-checkout-session', 5, 60);
+    if (rateLimitResponse) return rateLimitResponse;
 
     try {
         const supabaseClient = createClient(

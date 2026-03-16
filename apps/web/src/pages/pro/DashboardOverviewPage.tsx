@@ -209,7 +209,7 @@ const DashboardOverviewPage: React.FC = () => {
             supabase.from('orders').select('id', { count: 'exact', head: true })
               .eq('seller_id', user.id).gte('scheduled_for', `${today}T00:00:00`).lte('scheduled_for', `${today}T23:59:59`).in('status', ['pending', 'accepted']),
             supabase.from('messages').select('id', { count: 'exact', head: true })
-              .eq('receiver_id', user.id).filter('read_at', 'is', null),
+              .eq('receiver_id', user.id).eq('is_read', false),
             supabase.from('orders').select('id', { count: 'exact', head: true })
               .eq('seller_id', user.id).eq('status', 'pending'),
           ]);
@@ -491,29 +491,32 @@ const DashboardOverviewPage: React.FC = () => {
           <p className="text-[10px] sm:text-xs text-gray-400 mb-4">
             {chartPeriod === '7d' ? 'Ultimos 7 dias' : 'Ultimos 30 dias'}
           </p>
-          <div className="w-full h-[300px] min-h-[300px] relative">
-            {filteredChart.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+          <div className="w-full h-[300px] relative">
+            {filteredChart && filteredChart.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={filteredChart} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-brand-secondary)" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="var(--color-brand-secondary)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 11 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 11 }} />
-                <Tooltip
-                  formatter={(value: number) => [`R$ ${value}`, 'Vendas']}
-                  contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.06)', fontSize: '12px' }}
-                />
-                <Area type="monotone" dataKey="sales" stroke="var(--color-brand-secondary)" strokeWidth={2.5} fillOpacity={1} fill="url(#colorSales)" />
-              </AreaChart>
-            </ResponsiveContainer>
+                  <defs>
+                    <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 11 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 11 }} />
+                  <Tooltip
+                    formatter={(value: any) => [`R$ ${Number(value).toLocaleString('pt-BR')}`, 'Vendas']}
+                    contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.06)', fontSize: '12px' }}
+                  />
+                  <Area type="monotone" dataKey="sales" stroke="#6366f1" strokeWidth={2.5} fillOpacity={1} fill="url(#colorSales)" />
+                </AreaChart>
+              </ResponsiveContainer>
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm italic">
-                Aguardando dados de vendas...
+              <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 text-sm gap-2">
+                <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 opacity-20" />
+                </div>
+                <p>Nenhum dado de vendas disponível</p>
               </div>
             )}
           </div>
@@ -523,19 +526,20 @@ const DashboardOverviewPage: React.FC = () => {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.55 }}
-          className="bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl shadow-sm p-5 sm:p-6 text-white relative overflow-hidden"
+          className="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-2xl shadow-sm p-5 sm:p-6 text-white relative overflow-hidden"
         >
           <div className="relative z-10 w-full h-full flex flex-col">
             <h3 className="text-sm sm:text-base font-bold mb-1">Pedidos Realizados</h3>
             <p className="text-white/60 text-[10px] sm:text-xs mb-4">Volume mensal</p>
-            <div className="flex-1 w-full h-[220px] min-h-[220px] relative">
-              {chartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+            <div className="flex-1 w-full h-[220px] relative">
+              {chartData && chartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData} margin={{ top: 10, right: 5, left: -30, bottom: 0 }}>
                     <Bar dataKey="orders_count" fill="rgba(255,255,255,0.8)" radius={[4, 4, 0, 0]} barSize={8} />
                     <Tooltip
                       cursor={{ fill: 'rgba(255,255,255,0.1)' }}
                       contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '10px', color: '#fff', fontSize: '12px' }}
+                      formatter={(val: any) => [val, 'Pedidos']}
                     />
                   </BarChart>
                 </ResponsiveContainer>

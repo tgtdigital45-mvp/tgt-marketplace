@@ -20,7 +20,7 @@ interface Message {
   receiver_id: string;
   content: string;
   created_at: string;
-  read_at: string | null;
+  is_read: boolean;
   job_id?: string;
   order_id?: string;
   type?: 'text' | 'image' | 'file';
@@ -130,7 +130,7 @@ const ClientMessagesPage: React.FC = () => {
             partnerAvatar: profile?.avatar_url,
             lastMessage: msg.content,
             lastMessageTime: msg.created_at,
-            unreadCount: (msg.receiver_id === user.id && !msg.read_at) ? 1 : 0
+            unreadCount: (msg.receiver_id === user.id && !msg.is_read) ? 1 : 0
           });
         }
       });
@@ -212,7 +212,7 @@ const ClientMessagesPage: React.FC = () => {
         id: 'temp-' + Date.now(),
         ...insertPayload,
         created_at: new Date().toISOString(),
-        read_at: null
+        is_read: false
       }]);
       setNewMessage('');
     }

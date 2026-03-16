@@ -15,7 +15,7 @@ const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
 
 // Landing Page
-const PortalLandingPage = lazy(() => import('@/pages/PortalLandingPage'));
+const PortalLandingPage = lazy(() => import('@portal/pages/PortalLandingPage'));
 
 // Dashboard Pages
 const DashboardOverviewPage = lazy(() => import('@/pages/pro/DashboardOverviewPage'));
@@ -36,9 +36,13 @@ const DashboardEquipePage = lazy(() => import('@/pages/pro/DashboardEquipePage')
 const DashboardFaturamentoPage = lazy(() => import('@/pages/pro/DashboardFaturamentoPage'));
 const DashboardOrcamentosPage = lazy(() => import('@/pages/pro/DashboardOrcamentosPage'));
 const DashboardVerificacaoPage = lazy(() => import('@/pages/pro/DashboardVerificacaoPage'));
-const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
+const SalesPipelinePage = lazy(() => import('@portal/pages/pro/crm/SalesPipeline'));
+const CustomerDetailsPage = lazy(() => import('@portal/pages/pro/crm/CustomerDetailsPage'));
+const LeadsDashboard = lazy(() => import('@portal/pages/pro/crm/LeadsDashboard'));
+const CRMAnalyticsPage = lazy(() => import('@portal/pages/pro/crm/CRMAnalyticsPage'));
+const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
 
-const AnimatedElement = ({ children }: { children: React.ReactNode }) => (
+const AnimatedElement = ({ children }: { children: any }) => (
   <PageTransition>{children}</PageTransition>
 );
 
@@ -46,13 +50,24 @@ const DashboardRedirect = () => {
   const { user, loading } = useAuth();
   const { company, isLoading: companyLoading } = useCompany();
 
-  if (loading || companyLoading) return <LoadingSpinner />;
+  // 1. Prioridade máxima: Slug que já veio no objeto User (via RPC ou Metadata)
+  const activeSlug = company?.slug || user?.companySlug || (user as any)?.user_metadata?.company_slug;
+  
+  // 2. Se já temos o slug, redireciona IMEDIATAMENTE (não espera o resto do profile carregar)
+  if (activeSlug) {
+    return <Navigate to={`/dashboard/empresa/${activeSlug}`} replace />;
+  }
+
+  // 3. Fallback: Se ainda está carregando o Auth ou a Company e não temos o slug, mostra spinner
+  if (loading || companyLoading) {
+    return <LoadingSpinner />;
+  }
+
+  // 4. Se carregou e não temos usuário, volta pro login
   if (!user) return <Navigate to="/login" replace state={{ error: 'Acesso restrito a empresas parceiras.' }} />;
   if (user.type !== 'company') return <Navigate to="/login" replace state={{ error: 'Esta área é exclusiva para empresas parceiras CONTRATTO.' }} />;
 
-  if (company?.slug) return <Navigate to={`/dashboard/empresa/${company.slug}`} replace />;
-  if (user.companySlug) return <Navigate to={`/dashboard/empresa/${user.companySlug}`} replace />;
-
+  // 5. Se chegamos aqui e não temos slug nem carregando, vai pro cadastro
   return <Navigate to="/cadastro" replace />;
 };
 
@@ -96,6 +111,10 @@ const PortalRoutes = () => {
                 <Route path="verificacao" element={<AnimatedElement><DashboardVerificacaoPage /></AnimatedElement>} />
                 <Route path="vagas" element={<AnimatedElement><ProFindJobsPage /></AnimatedElement>} />
                 <Route path="vagas/:id" element={<AnimatedElement><ProJobDetailsPage /></AnimatedElement>} />
+                <Route path="crm/funil" element={<AnimatedElement><SalesPipelinePage /></AnimatedElement>} />
+                <Route path="crm/prospeccao" element={<AnimatedElement><LeadsDashboard /></AnimatedElement>} />
+                <Route path="crm/analytics" element={<AnimatedElement><CRMAnalyticsPage /></AnimatedElement>} />
+                <Route path="crm/cliente/:id" element={<AnimatedElement><CustomerDetailsPage /></AnimatedElement>} />
               </Route>
             </Route>
 

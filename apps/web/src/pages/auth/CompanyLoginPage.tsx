@@ -4,6 +4,7 @@ import { supabase } from '@tgt/shared';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import SocialButton from '@/components/ui/SocialButton';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { Store, Briefcase, ShieldCheck } from 'lucide-react';
 
@@ -19,8 +20,17 @@ const CompanyLoginPage: React.FC = () => {
     const location = useLocation();
     const locationState = location.state as { error?: string; from?: string } | null;
 
+    const { user, loading: authLoading } = useAuth();
     const { addToast } = useToast();
     const [isMounted, setIsMounted] = useState(true);
+
+    // Redirect if already logged in
+    React.useEffect(() => {
+        if (user && !isLoading && !authLoading) {
+            console.log('[CompanyLoginPage] User already logged in, redirecting to dashboard');
+            navigate('/dashboard');
+        }
+    }, [user, isLoading, authLoading, navigate]);
 
     React.useEffect(() => {
         return () => setIsMounted(false);

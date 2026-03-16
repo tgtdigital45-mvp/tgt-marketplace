@@ -14,7 +14,12 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     define: {
       'process.env.VITE_APP_TYPE': JSON.stringify('portal'),
-      'globalThis.__VITE_ENV__': JSON.stringify(env),
+      'globalThis.VITE_APP_TYPE': JSON.stringify('portal'),
+      'globalThis.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL),
+      'globalThis.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY),
+      'globalThis.VITE_PORTAL_URL': JSON.stringify(env.VITE_PORTAL_URL),
+      'globalThis.VITE_LANDING_URL': JSON.stringify(env.VITE_LANDING_URL),
+      'globalThis.VITE_PRO_APP_URL': JSON.stringify(env.VITE_PRO_APP_URL),
     },
     resolve: {
       alias: {
@@ -26,8 +31,12 @@ export default defineConfig(({ mode }) => {
     optimizeDeps: {
       exclude: ['@tgt/shared'],
     },
+    esbuild: {
+      drop: mode === 'production' ? ['console', 'debugger'] : [],
+    },
     build: {
       outDir: 'dist',
+      sourcemap: false,
       chunkSizeWarningLimit: 500,
       rollupOptions: {
         output: {

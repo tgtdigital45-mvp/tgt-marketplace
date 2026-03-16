@@ -16,8 +16,8 @@ function getEnvVar(viteKey: string, expoKey: string, fallback?: string): string 
     // This avoids import.meta.env which crashes Hermes at parse time.
     try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const viteEnv = (globalThis as any).__VITE_ENV__;
-        if (viteEnv && viteEnv[viteKey]) return viteEnv[viteKey];
+        const val = (globalThis as any)[viteKey];
+        if (val) return val;
     } catch {
         // globalThis not available — ignore
     }
@@ -27,14 +27,12 @@ function getEnvVar(viteKey: string, expoKey: string, fallback?: string): string 
 
 const supabaseUrl = getEnvVar(
     'VITE_SUPABASE_URL',
-    'EXPO_PUBLIC_SUPABASE_URL',
-    'https://rclsllzolsiodyebfcfj.supabase.co'
+    'EXPO_PUBLIC_SUPABASE_URL'
 );
 
 const supabaseAnonKey = getEnvVar(
     'VITE_SUPABASE_ANON_KEY',
-    'EXPO_PUBLIC_SUPABASE_ANON_KEY',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjbHNsbHpvbHNpb2R5ZWJmY2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1NTE0MjMsImV4cCI6MjA4NTEyNzQyM30.EgLsqMiLPG4no7fjl0MibFWzy5hQPG0lPSa54Xg7yIQ'
+    'EXPO_PUBLIC_SUPABASE_ANON_KEY'
 );
 
 // Determine if running in a browser/web environment (has window object)
@@ -73,16 +71,51 @@ function buildLockFn(): ((name: string, timeout: number, fn: () => Promise<unkno
     };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CUSTOM COOKIE STORAGE — Substitui LocalStorage para maior segurança (Anti-XSS)
+// ─────────────────────────────────────────────────────────────────────────────
+class SafeCookieStorage {
+    getItem(key: string): string | null {
+        if (!isWeb) return null;
+        const name = key + "=";
+        const decodedCookie = decodeURIComponent(document.cookie);
+        const ca = decodedCookie.split(';');
+        for (let i = 0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) === ' ') c = c.substring(1);
+            if (c.indexOf(name) === 0) return c.substring(name.length, c.length);
+        }
+        return null;
+    }
+
+    setItem(key: string, value: string): void {
+        if (!isWeb) return;
+        // Expiração de 7 dias (ajustável)
+        const d = new Date();
+        d.setTime(d.getTime() + (7 * 24 * 60 * 60 * 1000));
+        const expires = "expires=" + d.toUTCString();
+        // Segurança: SameSite=Strict e Secure (requer HTTPS)
+        document.cookie = `${key}=${value};${expires};path=/;SameSite=Strict;Secure`;
+    }
+
+    removeItem(key: string): void {
+        if (!isWeb) return;
+        document.cookie = `${key}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;SameSite=Strict;Secure`;
+    }
+}
+
 // Singleton guard — ensures only ONE supabase client across HMR reloads in development.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const g = globalThis as any;
 if (!g._supabaseShared) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const appType = getEnvVar('VITE_APP_TYPE', '', 'shared');
     const authOptions: any = {
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: isWeb,
-        storageKey: 'contratto-auth-session',
+        storageKey: `contratto-auth-session-${appType}`,
+        storage: isWeb ? new SafeCookieStorage() : undefined, // Usa cookies no web, default (AsyncStorage) no mobile
         lock: buildLockFn(),
     };
 

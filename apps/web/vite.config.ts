@@ -58,10 +58,14 @@ export default defineConfig(({ mode }) => {
       })
     ],
     define: {
-      'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
       'process.env.VITE_APP_TYPE': JSON.stringify('marketplace'),
-      'globalThis.__VITE_ENV__': JSON.stringify(env)
+      'globalThis.VITE_APP_TYPE': JSON.stringify('marketplace'),
+      'globalThis.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL),
+      'globalThis.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY),
+      'globalThis.VITE_PORTAL_URL': JSON.stringify(env.VITE_PORTAL_URL),
+      'globalThis.VITE_LANDING_URL': JSON.stringify(env.VITE_LANDING_URL),
+      'globalThis.VITE_PRO_APP_URL': JSON.stringify(env.VITE_PRO_APP_URL),
+      'globalThis.VITE_STRIPE_PUBLISHABLE_KEY': JSON.stringify(env.VITE_STRIPE_PUBLISHABLE_KEY),
     },
     resolve: {
       alias: {
@@ -77,6 +81,7 @@ export default defineConfig(({ mode }) => {
       drop: mode === 'production' ? ['console', 'debugger'] : [],
     },
     build: {
+      sourcemap: false,
       chunkSizeWarningLimit: 500,
       rollupOptions: {
         output: {

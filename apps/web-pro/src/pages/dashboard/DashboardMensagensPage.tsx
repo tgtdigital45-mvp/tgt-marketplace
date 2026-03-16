@@ -39,7 +39,7 @@ interface Message {
     proposal_id?: string | null;
     is_system_message?: boolean;
     created_at: string;
-    read_at?: string | null;
+    is_read: boolean;
     job_id?: string;
     order_id?: string;
     // Relationships for UI render
@@ -188,7 +188,7 @@ const DashboardMensagensPage: React.FC = () => {
                 id: 'temp-' + Date.now(),
                 ...insertPayload,
                 created_at: new Date().toISOString(),
-                read_at: null
+                is_read: false
             }]);
             setNewMessage('');
         }
@@ -219,7 +219,7 @@ const DashboardMensagensPage: React.FC = () => {
                 id: 'temp-' + Date.now(),
                 ...insertPayload,
                 created_at: new Date().toISOString(),
-                read_at: null
+                is_read: false
             }]);
         } catch (err) {
             console.error('Attachment error:', err);
