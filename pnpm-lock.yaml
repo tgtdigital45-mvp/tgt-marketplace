@@ -573,6 +573,9 @@ importers:
 
   packages/ui-web:
     dependencies:
+      '@headlessui/react':
+        specifier: ^2.2.0
+        version: 2.2.9(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@radix-ui/react-dialog':
         specifier: ^1.0.5
         version: 1.1.15(@types/react-dom@19.1.1(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
