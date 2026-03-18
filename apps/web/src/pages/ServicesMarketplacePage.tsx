@@ -40,7 +40,7 @@ const ServiceCard: React.FC<{ service: DbService }> = ({ service }) => {
             {/* Thumbnail */}
             <div className="relative aspect-video bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
                 <OptimizedImage
-                    src={service.image_url}
+                    src={service.image_url || service.company_cover_url}
                     alt={service.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     optimizedWidth={400}

@@ -208,6 +208,7 @@ export interface DbService {
   company_logo?: string;
   company_rating?: number;
   company_slug?: string;
+  company_cover_url?: string;
   company?: DbCompany;
   service_forms?: { id: string; questions: string[] }[];
 }

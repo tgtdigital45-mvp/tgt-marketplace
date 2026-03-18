@@ -67,6 +67,7 @@ export function useServicesMarketplace({
                 companies!inner (
                     company_name,
                     logo_url,
+                    cover_image_url,
                     rating,
                     slug,
                     status
@@ -110,6 +111,7 @@ export function useServicesMarketplace({
             ...s,
             company_name: s.companies?.company_name,
             company_logo: s.companies?.logo_url,
+            company_cover_url: s.companies?.cover_image_url,
             company_rating: s.companies?.rating,
             company_slug: s.companies?.slug,
         }));
