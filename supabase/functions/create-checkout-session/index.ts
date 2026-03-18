@@ -38,7 +38,7 @@ serve(async (req) => {
             httpClient: Stripe.createFetchHttpClient(),
         })
 
-        const { order_id } = await req.json()
+        const { order_id, proposal_id } = await req.json()
 
         if (!order_id) {
             throw new Error('Missing required field: order_id')
@@ -67,39 +67,62 @@ serve(async (req) => {
         if (!service) throw new Error('Associated service not found')
 
         // 2. Validate Price Source (Security Check)
-        // We use the price stored in the order, BUT we should verify it matches the current service price if the order is new?
-        // Or simply trust the order price if it was created correctly? 
-        // Logic: For this MVP, we trust the `order.agreed_price` or `order.price` which should have been set securely or verified at creation.
-        // However, the prompt says "Busque o preço do serviço no banco de dados (NUNCA confie no preço enviado pelo front)".
-        // Since `order` IS from the database, we are safe. We are NOT taking price from `req.json()`.
+        let priceFromDb = order.price || order.agreed_price
+        let commissionRate = service.companies?.commission_rate ?? 0.20
+        let applicationFeeAmount = 0
+        let unitAmount = 0
+        let proposalTitle = service.title
+        let proposalData = null
 
-        // Let's use order.price directly as it represents the contract value.
-        const priceFromDb = order.price || order.agreed_price
+        // If paying a proposal (chat hiring flow)
+        if (proposal_id) {
+            const { data: proposalMessage, error: proposalError } = await supabaseClient
+                .from('messages')
+                .select('metadata')
+                .eq('id', proposal_id)
+                .single()
+            
+            if (proposalError || !proposalMessage) {
+                throw new Error('Proposal not found')
+            }
 
-        if (!priceFromDb) throw new Error('Order price is invalid')
+            if (proposalMessage.metadata?.type !== 'proposal') {
+                throw new Error('Invalid proposal message')
+            }
 
-        // 3. Calculate Fee (Dynamic Take Rate)
-        // 3. Calculate Fee (Dynamic Take Rate)
-        const sellerCompany = service.companies
-        const commissionRate = sellerCompany.commission_rate ?? 0.20
+            proposalData = proposalMessage.metadata
+            
+            // For split proposals we charge the UPFRONT AMOUNT
+            priceFromDb = proposalData.upfrontAmount
+            proposalTitle = `${service.title} - Sinal Antecipado (${proposalData.upfrontPercentage}%)`
+            
+            unitAmount = Math.round(priceFromDb * 100)
+            
+            // The platform fee on the upfront is proportional or full. 
+            // In our system, TGT takes all its 10% from the upfront to avoid holding risk, or proportionally.
+            // Let's use proportional to the charged amount for simplicity.
+            const totalProjRate = proposalData.platformFee / proposalData.totalValue
+            applicationFeeAmount = Math.round(unitAmount * totalProjRate)
+            
+        } else {
+            if (!priceFromDb) throw new Error('Order price is invalid')
+            unitAmount = Math.round(priceFromDb * 100)
+            applicationFeeAmount = Math.round(unitAmount * commissionRate)
+        }
 
-        // Stripe expects cents
-        const unitAmount = Math.round(priceFromDb * 100)
-        const applicationFeeAmount = Math.round(unitAmount * commissionRate)
-
-        console.log(`Creating session for Order: ${order.id}. Total: ${unitAmount / 100}. Fee: ${applicationFeeAmount / 100} (${commissionRate * 100}%)`)
+        console.log(`Creating session for Order: ${order.id}. Total: ${unitAmount / 100}. Fee: ${applicationFeeAmount / 100}`)
 
         // 3.1 Verifica Conta Conectada e Configura Separate Charge & Transfer
         const sellerStripeAccountId = sellerCompany.stripe_account_id
-        let paymentData = {}
+        let paymentData = {
+            payment_intent_data: {
+                setup_future_usage: 'off_session'
+            }
+        }
 
         if (sellerStripeAccountId) {
             console.log(`Setting up Separate Charge for Seller Connect Account: ${sellerStripeAccountId}`)
-            paymentData = {
-                payment_intent_data: {
-                    transfer_group: order.id,
-                },
-            }
+            paymentData.payment_intent_data.transfer_group = order.id
         } else {
             console.warn(`Seller ${sellerCompany.id} has no Stripe Connected Account. Funds will remain in Platform Account.`)
         }
@@ -112,11 +135,12 @@ serve(async (req) => {
                     price_data: {
                         currency: 'brl',
                         product_data: {
-                            name: `${service.title} (${order.package_tier})`,
-                            description: `Order #${order.id.slice(0, 8)} - ${service.companies?.company_name}`,
+                            name: proposalTitle,
+                            description: `Order #${order.id.slice(0, 8)} - ${sellerCompany.company_name}`,
                             metadata: {
                                 service_id: service.id,
-                                order_id: order.id
+                                order_id: order.id,
+                                proposal_id: proposal_id || null
                             }
                         },
                         unit_amount: unitAmount,
@@ -133,11 +157,13 @@ serve(async (req) => {
                 service_id: service.id,
                 application_fee_amount: applicationFeeAmount,
                 commission_rate: commissionRate,
-                seller_id: sellerCompany.id
+                seller_id: sellerCompany.id,
+                proposal_id: proposal_id || null,
+                payment_phase: proposal_id ? 'upfront' : 'full'
             },
             ...paymentData // Inject Separate Charge transfer_group if available
         }, {
-            idempotencyKey: `checkout_${order.id}`
+            idempotencyKey: `checkout_${order.id}_${proposal_id || 'full'}_${Date.now()}`
         })
 
         return new Response(

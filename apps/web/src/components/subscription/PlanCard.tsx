@@ -7,6 +7,7 @@ import { Button } from '@tgt/ui-web';
 interface PlanCardProps {
   title: string;
   price: string;
+  period?: string;
   description: string;
   features: string[];
   isCurrent?: boolean;
@@ -20,6 +21,7 @@ interface PlanCardProps {
 const PlanCard: React.FC<PlanCardProps> = ({
   title,
   price,
+  period = '/mês',
   description,
   features,
   isCurrent,
@@ -59,7 +61,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
         <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">{title}</h3>
         <div className="mt-3 flex items-baseline">
           <span className="text-3xl font-extrabold text-gray-900">{price}</span>
-          <span className="ml-1 text-gray-400 text-xs">/mes</span>
+          <span className="ml-1 text-gray-400 text-xs">{period}</span>
         </div>
         <p className="mt-3 text-xs text-gray-500 leading-relaxed min-h-[36px]">{description}</p>
       </div>

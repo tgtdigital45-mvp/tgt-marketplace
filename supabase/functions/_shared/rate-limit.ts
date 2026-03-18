@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { corsHeaders } from './cors.ts';
 
 /**
  * Middleware de Rate Limiting para Edge Functions
@@ -40,12 +41,12 @@ export async function checkRateLimit(
         if (!allowed) {
             return new Response(
                 JSON.stringify({
-                    error: 'Muitas requisições. Por favor, tente novamente mais tarde.',
+                    error: 'Muitas requisições. Por favor, aguarde 1 minuto e tente novamente.',
                     code: 'rate_limit_exceeded'
                 }),
                 {
                     status: 429,
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
                 }
             );
         }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import PlanCard from '@/components/subscription/PlanCard';
@@ -16,11 +16,18 @@ import {
   Sparkles,
 } from 'lucide-react';
 
-// Real Stripe Price IDs
+// Real Stripe Price IDs (Test Mode)
 const PRICES = {
-  STARTER: 'price_1SzSFqE72T1QHvIbDVIMu7nR',
-  PRO: 'price_1SzSFTE72T1QHvIbUuPtfr7T',
-  AGENCY: 'price_1SzSFTE72T1QHvIbFhyM0f6J',
+  MONTHLY: {
+    STARTER: 'price_1TCON8E72T1QHvIbaI6bWTee',
+    PRO: 'price_1TCON9E72T1QHvIb9sWMS11c',
+    AGENCY: 'price_1TCON9E72T1QHvIbU94cmdBj',
+  },
+  ANNUAL: {
+    STARTER: 'price_1TCONAE72T1QHvIbOhS8iUCd',
+    PRO: 'price_1TCONBE72T1QHvIbzBzuu5MA',
+    AGENCY: 'price_1TCONCE72T1QHvIbh3DazzwM',
+  }
 };
 
 const TIER_LABELS: Record<string, string> = {
@@ -32,6 +39,8 @@ const TIER_LABELS: Record<string, string> = {
 const DashboardSubscriptionPage: React.FC = () => {
   const { company, isLoading: isCompanyLoading } = useCompany();
   const { subscribe, manageSubscription, isLoadingSubscribe: isSubLoading } = useSubscription();
+  const [isAnnual, setIsAnnual] = useState(false);
+  const [loadingPriceId, setLoadingPriceId] = useState<string | null>(null);
 
   if (isCompanyLoading) {
     return (
@@ -54,10 +63,11 @@ const DashboardSubscriptionPage: React.FC = () => {
     company.subscription_status === 'active' || company.subscription_status === 'trialing';
 
   const handleSubscribe = (priceId: string) => {
+    setLoadingPriceId(priceId);
     if (hasActiveSub) {
-      manageSubscription();
+      subscribe(priceId, company.id, !isAnnual);
     } else {
-      subscribe(priceId, company.id);
+      subscribe(priceId, company.id, !isAnnual);
     }
   };
 
@@ -169,9 +179,26 @@ const DashboardSubscriptionPage: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <div className="flex items-center gap-2 mb-4">
-          <Sparkles size={14} className="text-primary-500" />
-          <h3 className="text-sm font-bold text-gray-800">Escolha seu plano</h3>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-2">
+            <Sparkles size={14} className="text-primary-500" />
+            <h3 className="text-sm font-bold text-gray-800">Escolha seu plano</h3>
+          </div>
+          
+          <div className="flex items-center gap-1 bg-gray-100/80 p-1 rounded-xl">
+            <button
+              onClick={() => setIsAnnual(false)}
+              className={`px-4 py-1.5 text-xs font-medium rounded-lg transition-all ${!isAnnual ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Mensal
+            </button>
+            <button
+              onClick={() => setIsAnnual(true)}
+              className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium rounded-lg transition-all ${isAnnual ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Anual <span className="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-[9px] uppercase font-bold tracking-wider">Livre de trial</span>
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -183,17 +210,21 @@ const DashboardSubscriptionPage: React.FC = () => {
             <PlanCard
               tier="starter"
               title="Starter"
-              price="R$ 49,90"
-              description="Para quem esta comecando a vender servicos."
+              price={isAnnual ? "R$ 499,00" : "R$ 49,90"}
+              period={isAnnual ? "/ano" : "/mês"}
+              description="Para quem está começando a vender serviços."
               features={[
-                'Ate 5 servicos ativos',
-                'Taxa de servico: 20%',
-                'Perfil basico da empresa',
+                'Até 5 serviços ativos',
+                'Taxa de serviço: 20%',
+                'Perfil básico da empresa',
                 'Listagem na busca',
               ]}
-              isCurrent={currentTier === 'starter'}
-              buttonText="Seu Plano Atual"
-              onButtonClick={() => {}}
+              isCurrent={currentTier === 'starter' && hasActiveSub}
+              isLoading={isSubLoading && loadingPriceId === (isAnnual ? PRICES.ANNUAL.STARTER : PRICES.MONTHLY.STARTER)}
+              buttonText={
+                 hasActiveSub && currentTier !== 'starter' ? 'Alterar para Starter' : (hasActiveSub && currentTier === 'starter' ? 'Seu Plano Atual' : 'Assinar Agora')
+              }
+              onButtonClick={() => handleSubscribe(isAnnual ? PRICES.ANNUAL.STARTER : PRICES.MONTHLY.STARTER)}
             />
           </motion.div>
 
@@ -205,21 +236,22 @@ const DashboardSubscriptionPage: React.FC = () => {
             <PlanCard
               tier="pro"
               title="CONTRATTO Pro"
-              price="R$ 99,90"
+              price={isAnnual ? "R$ 199,90" : "R$ 99,90"}
+              period={isAnnual ? "/ano" : "/mês"}
               description="Para profissionais que buscam mais visibilidade e menor taxa."
               features={[
-                'Servicos ilimitados',
+                'Serviços ilimitados',
                 'Taxa reduzida: 12%',
                 'Selo de Verificado',
-                'Emissor de NF-e Automatico',
+                'Emissor de NF-e Automático',
               ]}
               highlight
-              isCurrent={currentTier === 'pro'}
-              isLoading={isSubLoading}
+              isCurrent={currentTier === 'pro' && hasActiveSub}
+              isLoading={isSubLoading && loadingPriceId === (isAnnual ? PRICES.ANNUAL.PRO : PRICES.MONTHLY.PRO)}
               buttonText={
-                hasActiveSub && currentTier !== 'pro' ? 'Alterar para Pro' : 'Assinar Agora'
+                hasActiveSub && currentTier !== 'pro' ? 'Alterar para Pro' : (hasActiveSub && currentTier === 'pro' ? 'Seu Plano Atual' : 'Assinar Agora')
               }
-              onButtonClick={() => handleSubscribe(PRICES.PRO)}
+              onButtonClick={() => handleSubscribe(isAnnual ? PRICES.ANNUAL.PRO : PRICES.MONTHLY.PRO)}
             />
           </motion.div>
 
@@ -231,23 +263,24 @@ const DashboardSubscriptionPage: React.FC = () => {
             <PlanCard
               tier="agency"
               title="Agency"
-              price="R$ 299,90"
-              description="Para agencias e empresas com alto volume de vendas."
+              price={isAnnual ? "R$ 299,00" : "R$ 299,90"}
+              period={isAnnual ? "/ano" : "/mês"}
+              description="Para agências e empresas com alto volume de vendas."
               features={[
                 'Tudo do plano Pro',
-                'Taxa minima: 8%',
+                'Taxa mínima: 8%',
                 'Menor taxa do mercado',
-                'Multi-usuarios',
-                'Relatorios de Inteligencia',
+                'Multi-usuários',
+                'Relatórios de Inteligência',
               ]}
-              isCurrent={currentTier === 'agency'}
-              isLoading={isSubLoading}
+              isCurrent={currentTier === 'agency' && hasActiveSub}
+              isLoading={isSubLoading && loadingPriceId === (isAnnual ? PRICES.ANNUAL.AGENCY : PRICES.MONTHLY.AGENCY)}
               buttonText={
                 hasActiveSub && currentTier !== 'agency'
                   ? 'Alterar para Agency'
-                  : 'Assinar Agora'
+                  : (hasActiveSub && currentTier === 'agency' ? 'Seu Plano Atual' : 'Assinar Agora')
               }
-              onButtonClick={() => handleSubscribe(PRICES.AGENCY)}
+              onButtonClick={() => handleSubscribe(isAnnual ? PRICES.ANNUAL.AGENCY : PRICES.MONTHLY.AGENCY)}
             />
           </motion.div>
         </div>

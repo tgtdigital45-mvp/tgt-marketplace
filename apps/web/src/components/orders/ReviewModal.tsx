@@ -35,7 +35,7 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ orderId, reviewerId, reviewee
                 .insert({
                     order_id: orderId,
                     reviewer_id: reviewerId,
-                    reviewee_id: revieweeId,
+                    reviewed_id: revieweeId,
                     rating: rating,
                     comment: comment
                 });

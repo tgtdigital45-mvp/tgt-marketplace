@@ -552,6 +552,7 @@ const ServiceDetailsPage = () => {
                         onClose={() => setIsBookingModalOpen(false)}
                         service={service}
                         companyName={company?.company_name || ""}
+                        sellerId={company?.profile_id || ""}
                         canCheckout={company?.is_active !== false && (service.requires_quote || company?.stripe_charges_enabled !== false)}
                         checkoutDisabledReason={
                             company?.is_active === false

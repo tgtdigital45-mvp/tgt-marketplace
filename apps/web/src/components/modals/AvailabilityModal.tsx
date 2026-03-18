@@ -33,25 +33,43 @@ const AvailabilityModal: React.FC<AvailabilityModalProps> = ({
         }
     }, [currentAvailability, isOpen]);
 
+    const DEFAULT_DAY: DaySchedule = {
+        active: false,
+        start: '09:00',
+        end: '18:00',
+        hasBreak: false,
+        breakStart: '12:00',
+        breakEnd: '13:00'
+    };
+
     const toggleDay = (day: string) => {
-        setAvailability(prev => ({
-            ...prev,
-            [day]: { ...prev[day], active: !prev[day].active }
-        }));
+        setAvailability(prev => {
+            const currentDay = prev[day] || DEFAULT_DAY;
+            return {
+                ...prev,
+                [day]: { ...currentDay, active: !currentDay.active }
+            };
+        });
     };
 
     const toggleBreak = (day: string) => {
-        setAvailability(prev => ({
-            ...prev,
-            [day]: { ...prev[day], hasBreak: !prev[day].hasBreak }
-        }));
+        setAvailability(prev => {
+            const currentDay = prev[day] || DEFAULT_DAY;
+            return {
+                ...prev,
+                [day]: { ...currentDay, hasBreak: !currentDay.hasBreak }
+            };
+        });
     };
 
     const handleTimeChange = (day: string, field: keyof DaySchedule, value: string) => {
-        setAvailability(prev => ({
-            ...prev,
-            [day]: { ...prev[day], [field]: value }
-        }));
+        setAvailability(prev => {
+            const currentDay = prev[day] || DEFAULT_DAY;
+            return {
+                ...prev,
+                [day]: { ...currentDay, [field]: value }
+            };
+        });
     };
 
     const handleSubmit = async () => {

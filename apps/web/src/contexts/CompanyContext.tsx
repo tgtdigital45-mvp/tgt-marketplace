@@ -10,8 +10,8 @@ interface Address {
     city: string;
     state: string;
     cep: string;
-    latitude?: number;
-    longitude?: number;
+    lat?: number;
+    lng?: number;
 }
 
 export interface CompanyData {
@@ -124,8 +124,8 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
                 cep: rawAddress?.cep || '',
                 number: rawAddress?.number || '',
                 district: rawAddress?.district || '',
-                latitude: rawAddress?.latitude,
-                longitude: rawAddress?.longitude
+                lat: rawAddress?.lat,
+                lng: rawAddress?.lng
             };
 
             console.log("[CompanyContext] Successfully loaded company for slug:", companyRecord.slug);

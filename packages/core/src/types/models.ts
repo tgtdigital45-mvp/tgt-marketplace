@@ -217,6 +217,7 @@ export interface PortfolioItem {
   title: string;
   description?: string;
   image_url: string;
+  video_url?: string;
   company_id?: string;
   created_at?: string;
 }

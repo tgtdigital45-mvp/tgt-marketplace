@@ -102,7 +102,7 @@ const ProLandingPage: React.FC = () => {
                 <div className="absolute inset-0 bg-primary-600/5 rounded-3xl blur-3xl -rotate-6" />
                 <div className="bg-white rounded-3xl shadow-elevated border border-slate-100 p-2 overflow-hidden relative z-10">
                     <div className="aspect-video bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100 overflow-hidden">
-                        <img src="https://picsum.photos/seed/dashboard/800/450" alt="Painel do Parceiro" className="w-full h-full object-cover" />
+                        <img src="https://picsum.photos/seed/dashboard/800/450" alt="Painel do Parceiro" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                     </div>
                 </div>
             </div>

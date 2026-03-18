@@ -20,7 +20,7 @@ export const useCompanyProfile = (slug: string | undefined) => {
                   services (*),
                   reviews (
                     *,
-                    profiles:client_id (
+                    profiles:reviewer_id (
                       full_name,
                       avatar_url
                     )
@@ -140,8 +140,8 @@ export const useCompanyProfile = (slug: string | undefined) => {
                     city: raw.address?.city || '',
                     state: raw.address?.state || '',
                     cep: raw.address?.cep || '',
-                    lat: raw.address?.lat || -23.55052,
-                    lng: raw.address?.lng || -46.63330
+                    lat: raw.address?.lat || raw.address?.latitude || undefined,
+                    lng: raw.address?.lng || raw.address?.longitude || undefined
                 },
 
                 phone: raw.phone,

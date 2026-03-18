@@ -250,7 +250,7 @@ const CompanyLoginPage: React.FC = () => {
 
                     <p className="mt-8 text-center text-sm text-gray-600">
                         Quer cadastrar sua empresa?{' '}
-                        <Link to="/empresa/cadastro" className="font-bold text-brand-primary hover:text-brand-primary-hover transition-colors">
+                        <Link to="/cadastro" className="font-bold text-brand-primary hover:text-brand-primary-hover transition-colors">
                             Começar agora
                         </Link>
                     </p>

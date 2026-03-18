@@ -14,20 +14,38 @@ export const useSubscription = () => {
     const { addToast } = useToast();
     const { company } = useCompany();
 
-    const subscribe = async (priceId: string, companyId: string) => {
+    const subscribe = async (priceId: string, companyId: string, isMonthly: boolean = true) => {
         setIsLoading(true);
         setError(null);
         try {
-            const { data, error } = await supabase.functions.invoke('create-subscription-checkout', {
-                body: {
+            const { data: sessionData } = await supabase.auth.getSession();
+            const token = sessionData?.session?.access_token;
+            // Pegando a URL via import.meta.env
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+            const url = `${supabaseUrl}/functions/v1/create-subscription-checkout`;
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({
                     price_id: priceId,
+                    is_monthly: isMonthly,
                     success_url: getRedirectUrl(`/dashboard/empresa/${companyId}/assinatura?success=true`),
                     cancel_url: getRedirectUrl(`/dashboard/empresa/${companyId}/assinatura?canceled=true`),
-                },
+                }),
             });
 
-            if (error) throw error;
-            if (data?.error) throw new Error(data.error);
+            const responseData = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                console.error("Supabase Edge Function falhou com 400:", responseData);
+                throw new Error(responseData.error || `Erro HTTP ${response.status}`);
+            }
+
+            const data = responseData;
 
             // Redirect to Stripe
             if (data?.url) {
@@ -78,9 +96,9 @@ export const useSubscription = () => {
         }
     };
 
-    const handleSubscribe = async (priceId?: string) => {
+    const handleSubscribe = async (priceId?: string, isMonthly: boolean = true) => {
         if (priceId && company?.id) {
-            await subscribe(priceId, company.id);
+            await subscribe(priceId, company.id, isMonthly);
         } else {
             await manageSubscription();
         }

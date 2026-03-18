@@ -22,7 +22,8 @@ import { useSimilarCompanies } from '@/hooks/useSimilarCompanies';
 import ProfileSidebar from '@/components/ProfileSidebar';
 import ReviewsList from '@/components/ReviewsList';
 import OptimizedImage from '@/components/ui/OptimizedImage';
-import { LayoutGrid, Info, Star, MapPin as MapPinIcon } from 'lucide-react';
+import PortfolioLightbox from '@/components/PortfolioLightbox';
+import { LayoutGrid, Info, Star, MapPin as MapPinIcon, Youtube } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -56,7 +57,7 @@ const CompanyProfilePage: React.FC = () => {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [submittingReview, setSubmittingReview] = useState(false);
-  const [activeTab, setActiveTab] = useState<'services' | 'about' | 'reviews'>('services');
+  const [lightboxState, setLightboxState] = useState<{ isOpen: boolean; index: number }>({ isOpen: false, index: 0 });
 
   const error = queryError ? (queryError as Error).message : null;
 
@@ -120,7 +121,7 @@ const CompanyProfilePage: React.FC = () => {
 
     setSubmittingReview(true);
     try {
-      const payload = { company_id: company.id, client_id: user.id, rating, comment };
+      const payload = { company_id: company.id, reviewer_id: user.id, reviewed_id: company.profileId, rating, comment };
       const { error } = await supabase.from('reviews').insert(payload);
       if (error) throw error;
       addToast("Avaliação enviada com sucesso!", 'success');
@@ -200,73 +201,51 @@ const CompanyProfilePage: React.FC = () => {
 
           {/* RIGHT MAIN CONTENT */}
           <div className="lg:col-span-8 order-1 lg:order-2">
-            {/* Tabs */}
+            {/* MAIN CONTENT START */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
-              <div className="flex border-b border-gray-100">
-                <button
-                  onClick={() => setActiveTab('services')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-4 text-sm font-semibold transition-all relative ${activeTab === 'services' ? 'text-brand-primary' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-                >
-                  <LayoutGrid className="w-4 h-4" />
-                  Serviços
-                  <span className="ml-1 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">{company.services.length}</span>
-                  {activeTab === 'services' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-brand-primary" />}
-                </button>
-                <button
-                  onClick={() => setActiveTab('about')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-4 text-sm font-semibold transition-all relative ${activeTab === 'about' ? 'text-brand-primary' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-                >
-                  <Info className="w-4 h-4" />
-                  Quem Somos
-                  {activeTab === 'about' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-brand-primary" />}
-                </button>
-                <button
-                  onClick={() => setActiveTab('reviews')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-4 text-sm font-semibold transition-all relative ${activeTab === 'reviews' ? 'text-brand-primary' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-                >
-                  <Star className="w-4 h-4" />
-                  Avaliações
-                  <span className="ml-1 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">{company.reviewCount || 0}</span>
-                  {activeTab === 'reviews' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-brand-primary" />}
-                </button>
-              </div>
+              <div className="p-6 md:p-8">
+                {/* 1. Serviços */}
+                <div className="mb-14">
+                  <h3 className="font-display text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                    <LayoutGrid className="w-6 h-6 text-brand-primary" />
+                    Serviços
+                  </h3>
+                  {company.services.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {company.services.map(service => (
+                        <ServiceCard key={service.id} service={service} onRequestQuote={() => handleRequestQuote(service)} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                      <p className="text-gray-500">Nenhum serviço disponível.</p>
+                    </div>
+                  )}
+                </div>
 
-              {/* Tab Content */}
-              <div className="p-6 md:p-8 min-h-[400px]">
-                {activeTab === 'services' && (
-                  <div className="animate-in fade-in duration-300">
-                    {company.services.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {company.services.map(service => (
-                          <ServiceCard key={service.id} service={service} onRequestQuote={() => handleRequestQuote(service)} />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-20 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                        <p className="text-gray-500">Nenhum serviço disponível.</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {activeTab === 'about' && (
-                  <div className="space-y-8 animate-in fade-in duration-300">
+                {/* 2. Quem Somos */}
+                <div className="mb-14">
+                  <h3 className="font-display text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                    <Info className="w-6 h-6 text-brand-primary" />
+                    Quem Somos
+                  </h3>
+                  <div className="space-y-8 bg-gray-50/50 rounded-2xl p-6 md:p-8 border border-gray-100">
                     <section>
-                      <h3 className="font-display text-lg font-bold text-gray-900 mb-3">Sobre</h3>
+                      <h4 className="font-bold text-gray-900 mb-3 text-lg">Sobre a Empresa</h4>
                       <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">{company.description || "Sem descrição."}</p>
                     </section>
 
-                    {/* Languages & Skills (moved from sidebar) */}
+                    {/* Languages & Skills */}
                     {(owner?.languages?.length || owner?.skills?.length) ? (
-                      <section className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-100">
+                      <section className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-200/80">
                         {owner?.languages && owner.languages.length > 0 && (
                           <div>
-                            <h3 className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wider">Idiomas</h3>
+                            <h4 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">Idiomas</h4>
                             <ul className="space-y-2">
                               {owner.languages.map((lang, idx) => (
-                                <li key={idx} className="flex justify-between text-sm text-gray-700 bg-gray-50 px-3 py-2 rounded-lg">
-                                  <span>{lang.language}</span>
-                                  <span className="text-gray-400 text-xs font-medium">{lang.level}</span>
+                                <li key={idx} className="flex justify-between items-center text-sm text-gray-700 bg-white px-4 py-3 rounded-xl border border-gray-100 shadow-sm">
+                                  <span className="font-medium">{lang.language}</span>
+                                  <span className="text-gray-500 text-xs font-semibold bg-gray-50 px-2 py-1 rounded-md">{lang.level}</span>
                                 </li>
                               ))}
                             </ul>
@@ -274,10 +253,10 @@ const CompanyProfilePage: React.FC = () => {
                         )}
                         {owner?.skills && owner.skills.length > 0 && (
                           <div>
-                            <h3 className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wider">Competências</h3>
+                            <h4 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">Competências</h4>
                             <div className="flex flex-wrap gap-2">
                               {owner.skills.map((skill, idx) => (
-                                <span key={idx} className="px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium border border-gray-200">
+                                <span key={idx} className="px-3 py-1.5 bg-white text-gray-700 text-sm rounded-lg font-medium border border-gray-200 shadow-sm">
                                   {skill}
                                 </span>
                               ))}
@@ -286,81 +265,112 @@ const CompanyProfilePage: React.FC = () => {
                         )}
                       </section>
                     ) : null}
-
-                    {/* Portfolio */}
-                    {company.portfolio.length > 0 && (
-                      <section className="pt-6 border-t border-gray-100">
-                        <h3 className="font-display text-lg font-bold text-gray-900 mb-4">Portfólio</h3>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                          {company.portfolio.map((item, idx) => (
-                            <div key={item.id || idx} className="aspect-square rounded-xl overflow-hidden bg-gray-100 hover:opacity-90 transition-opacity shadow-sm border border-gray-200">
-                              <OptimizedImage
-                                src={item.image_url}
-                                alt={item.title}
-                                className="w-full h-full object-cover"
-                                optimizedWidth={400}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </section>
-                    )}
-
-                    {/* Location & Map */}
-                    <section className="pt-8 border-t border-gray-100 mt-8">
-                      <div className="flex items-center gap-2 mb-4">
-                        <MapPinIcon className="w-5 h-5 text-brand-primary" />
-                        <h3 className="font-display text-lg font-bold text-gray-900">Localização</h3>
-                      </div>
-
-                      {company.address ? (
-                        <div className="space-y-4">
-                          <p className="text-sm text-gray-600 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                            {company.address.street}, {company.address.number} - {company.address.district}
-                            <br />
-                            {company.address.city}, {company.address.state} - CEP: {company.address.cep}
-                          </p>
-
-                          <div className="h-72 w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm relative z-0">
-                            {company.address.lat && company.address.lng ? (
-                              <MapContainer
-                                center={[company.address.lat, company.address.lng]}
-                                zoom={15}
-                                scrollWheelZoom={false}
-                                className="h-full w-full"
-                              >
-                                <TileLayer
-                                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                                />
-                                <Marker position={[company.address.lat, company.address.lng]}>
-                                  <Popup>
-                                    <div className="text-center font-semibold p-1">
-                                      {company.companyName}
-                                    </div>
-                                  </Popup>
-                                </Marker>
-                              </MapContainer>
-                            ) : (
-                              <div className="h-full w-full bg-gray-50 flex flex-col items-center justify-center text-gray-400 gap-2">
-                                <MapPinIcon className="w-8 h-8 opacity-20" />
-                                <p className="text-xs">Geolocalização não disponível para este endereço.</p>
+                  </div>
+                </div>
+                {/* 3. Portfólio */}
+                {company.portfolio.length > 0 && (
+                  <div className="mb-14">
+                    <h3 className="font-display text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                      <LayoutGrid className="w-6 h-6 text-brand-primary" />
+                      Portfólio
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {company.portfolio.map((item, idx) => (
+                        <button 
+                          key={item.id || idx} 
+                          onClick={() => setLightboxState({ isOpen: true, index: idx })}
+                          className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100 hover:opacity-90 transition-opacity shadow-sm border border-gray-200"
+                        >
+                          <OptimizedImage
+                            src={item.image_url}
+                            alt={item.title || 'Portfolio Item'}
+                            className="w-full h-full object-cover relative z-0 group-hover:scale-105 transition-transform duration-500"
+                            optimizedWidth={400}
+                          />
+                          {(item as any).video_url && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <div className="bg-black/40 backdrop-blur-sm rounded-full p-3 text-white">
+                                <Youtube size={24} />
                               </div>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-gray-500 italic">Endereço não informado.</p>
-                      )}
-                    </section>
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
 
-                {activeTab === 'reviews' && (
-                  <div className="animate-in fade-in duration-300">
-                    <ReviewsList reviews={company.reviews} overallRating={company.rating} reviewCount={company.reviewCount} />
+                {/* 4. Avaliações */}
+                <div className="mb-14">
+                  <div className="flex items-center justify-between gap-3 mb-8">
+                    <div className="flex items-center gap-3">
+                      <Star className="w-6 h-6 text-brand-primary" />
+                      <h3 className="font-display text-xl font-bold text-gray-900">
+                        Avaliações
+                      </h3>
+                      <span className="px-3 py-1 rounded-full bg-gray-100 text-sm font-bold text-gray-700">
+                        {company.reviewCount || 0}
+                      </span>
+                    </div>
+                    {isClient && (
+                      <button 
+                        onClick={() => setIsReviewModalOpen(true)}
+                        className="px-4 py-2 bg-brand-primary text-white text-sm font-bold rounded-xl hover:bg-brand-primary-hover transition-colors shadow-sm"
+                      >
+                        Avaliar Empresa
+                      </button>
+                    )}
                   </div>
-                )}
+                  <ReviewsList reviews={company.reviews} overallRating={company.rating} reviewCount={company.reviewCount} />
+                </div>
+
+                {/* 5. Localização */}
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 mb-6">
+                    <MapPinIcon className="w-6 h-6 text-brand-primary" />
+                    <h3 className="font-display text-xl font-bold text-gray-900">Localização</h3>
+                  </div>
+
+                  {company.address ? (
+                    <div className="space-y-4">
+                      <p className="text-base text-gray-700 bg-gray-50/80 p-5 rounded-xl border border-gray-100 shadow-sm">
+                        <span className="font-medium">{company.address.street}, {company.address.number}</span> - {company.address.district}
+                        <br />
+                        <span className="text-gray-500 mt-1 block text-sm">{company.address.city}, {company.address.state} - CEP: {company.address.cep}</span>
+                      </p>
+
+                      <div className="h-80 w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm relative z-0">
+                        {company.address.lat && company.address.lng ? (
+                          <MapContainer
+                            center={[company.address.lat, company.address.lng]}
+                            zoom={15}
+                            scrollWheelZoom={false}
+                            className="h-full w-full"
+                          >
+                            <TileLayer
+                              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            />
+                            <Marker position={[company.address.lat, company.address.lng]}>
+                              <Popup>
+                                <div className="text-center font-semibold p-1">
+                                  {company.companyName}
+                                </div>
+                              </Popup>
+                            </Marker>
+                          </MapContainer>
+                        ) : (
+                          <div className="h-full w-full bg-gray-50 flex flex-col items-center justify-center text-gray-400 gap-2">
+                            <MapPinIcon className="w-10 h-10 opacity-20" />
+                            <p className="text-sm font-medium">Geolocalização não disponível para este endereço.</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 italic bg-gray-50 p-4 rounded-xl border border-gray-100">Endereço não informado pela empresa.</p>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -388,6 +398,7 @@ const CompanyProfilePage: React.FC = () => {
           onClose={() => setIsBookingModalOpen(false)}
           service={selectedService}
           companyName={company.companyName}
+          sellerId={company.profileId || ""}
           canCheckout={company?.is_active !== false && (!selectedService || selectedService.requires_quote || company?.stripe_charges_enabled !== false)}
           checkoutDisabledReason={
             company?.is_active === false
@@ -398,6 +409,13 @@ const CompanyProfilePage: React.FC = () => {
           }
         />}
         {isReviewModalOpen && <ReviewModal isOpen={isReviewModalOpen} onClose={() => setIsReviewModalOpen(false)} onSubmit={handleReviewSubmit} isLoading={submittingReview} />}
+        
+        <PortfolioLightbox 
+          items={company.portfolio as any}
+          initialIndex={lightboxState.index}
+          isOpen={lightboxState.isOpen}
+          onClose={() => setLightboxState({ isOpen: false, index: 0 })}
+        />
       </Suspense>
     </main>
   );

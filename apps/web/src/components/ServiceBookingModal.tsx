@@ -19,6 +19,7 @@ interface ServiceBookingModalProps {
     companyName: string;
     canCheckout?: boolean;
     checkoutDisabledReason?: string;
+    sellerId?: string;
 }
 
 
@@ -30,6 +31,7 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
     companyName,
     canCheckout,
     checkoutDisabledReason,
+    sellerId,
 }) => {
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -40,6 +42,8 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
     const [responses, setResponses] = useState<Record<string, string>>({});
     const [withLock] = useLock();
 
+    const resolvedCompanyId = service?.companyId || (service as any)?.company_id;
+
     // Availability Logic
     const {
         availability,
@@ -48,7 +52,7 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
         selectedDate: date,
         setSelectedDate,
         bookedSlots // For future use or consistency
-    } = useAvailability(service?.companyId, service?.duration_minutes || 30);
+    } = useAvailability(resolvedCompanyId, service?.duration_minutes || 30);
 
     const [formData, setFormData] = useState({
         date: '',
@@ -133,9 +137,12 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
                 // For quotes, we insert into 'orders' with status 'pending'
                 // and we set price to 0 or null (if allowed) for now, until it's negotiated
                 
+                // We try sellerId prop first, then service.company.profile_id, finally falling back to resolvedCompanyId
+                const finalSellerId = sellerId || (service as any)?.company?.profile_id || resolvedCompanyId;
+
                 const { data: newOrder, error } = await supabase.from('orders').insert({
                     buyer_id: user.id,
-                    seller_id: service.companyId,
+                    seller_id: finalSellerId,
                     service_id: service.id,
                     service_title: service.title,
                     price: 0, // Quote starts at 0 or empty
@@ -157,9 +164,12 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
                     ? `${formData.date}T${formData.time}:00` 
                     : null;
 
+                // We try sellerId prop first, then service.company.profile_id, finally falling back to resolvedCompanyId
+                const finalSellerId = sellerId || (service as any)?.company?.profile_id || resolvedCompanyId;
+
                 const { error } = await supabase.from('orders').insert({
                     buyer_id: user.id, // Updated: client_id -> buyer_id
-                    seller_id: service.companyId, // Updated: company_id -> seller_id
+                    seller_id: finalSellerId, // Updated: company_id -> seller_id
                     service_id: service.id,
                     service_title: service.title,
                     price: finalPrice, // Updated: service_price -> price

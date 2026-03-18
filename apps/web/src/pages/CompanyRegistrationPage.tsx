@@ -230,13 +230,29 @@ const CompanyRegistrationPage: React.FC = () => {
       if (coverImage) coverUrl = await uploadFile(coverImage, 'covers', userId);
       if (cnpjDocument) cnpjUrl = await uploadFile(cnpjDocument, 'documents', userId);
 
-      const slug = formData.companyName
+      let baseSlug = formData.companyName
         .toLowerCase()
         .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
         .replace(/[^a-z0-9\s-]/g, '')
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
         .replace(/^-+|-+$/g, '');
+
+      if (!baseSlug) baseSlug = 'empresa';
+
+      let slug = baseSlug;
+      let slugExists = true;
+      let suffix = 1;
+
+      while (slugExists) {
+        const { data } = await supabase.from('companies').select('id').eq('slug', slug).maybeSingle();
+        if (data) {
+          slug = `${baseSlug}-${suffix}`;
+          suffix++;
+        } else {
+          slugExists = false;
+        }
+      }
 
       // 2.5 Geocode Address & Calculate H3
       let h3Index = null;
@@ -280,8 +296,8 @@ const CompanyRegistrationPage: React.FC = () => {
           city: formData.city,
           state: formData.state,
           cep: formData.cep,
-          latitude: lat,
-          longitude: lng
+          lat: lat,
+          lng: lng
         },
         h3_index: h3Index,
         rating: 0,
@@ -299,14 +315,16 @@ const CompanyRegistrationPage: React.FC = () => {
         // For paid plans, we will redirect to checkout.
       });
 
+      if (dbError) throw dbError;
+
       addToast('Cadastro realizado! Redirecionando para pagamento...', 'success');
 
       // 4. Redirect to Stripe Checkout
-      // Placeholder IDs - SHOULD be environment variables
+      // Usar a assinatura MENSAL como padrão inicial no cadastro
       const PRICES = {
-        'starter': 'price_1Q...',
-        'pro': 'price_1Q...',
-        'agency': 'price_1Q...'
+        'starter': 'price_1TCON8E72T1QHvIbaI6bWTee', // MONTHLY.STARTER
+        'pro': 'price_1TCON9E72T1QHvIb9sWMS11c',     // MONTHLY.PRO
+        'agency': 'price_1TCON9E72T1QHvIbU94cmdBj'   // MONTHLY.AGENCY
       };
 
       const selectedPriceId = PRICES[formData.selectedPlan as keyof typeof PRICES];
@@ -314,16 +332,34 @@ const CompanyRegistrationPage: React.FC = () => {
       if (selectedPriceId) {
         // Timeout wrapper for checking out invoke
         const invokeCheckout = async () => {
-          const { data, error } = await supabase.functions.invoke('create-subscription-checkout', {
-            body: {
-              priceId: selectedPriceId,
-              userId: userId,
-              successUrl: `${window.location.origin}/dashboard`, // Simplified success URL for now
-              cancelUrl: `${window.location.origin}/dashboard/empresa/${slug}/assinatura`,
-              companyId: null
+          const { data: sessionData } = await supabase.auth.getSession();
+          const token = sessionData?.session?.access_token;
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+          
+          try {
+            const res = await fetch(`${supabaseUrl}/functions/v1/create-subscription-checkout`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                priceId: selectedPriceId,
+                userId: userId,
+                successUrl: `${window.location.origin}/dashboard`,
+                cancelUrl: `${window.location.origin}/dashboard/empresa/${slug}/assinatura`,
+                companyId: null
+              })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+              console.error("Stripe Edge Function Error Payload:", data);
+              throw new Error(data.error || `HTTP ${res.status}`);
             }
-          });
-          return { data, error };
+            return { data, error: null };
+          } catch (err) {
+            return { data: null, error: err };
+          }
         };
 
         const { data, error } = await Promise.race([
@@ -338,6 +374,7 @@ const CompanyRegistrationPage: React.FC = () => {
           setTimeout(() => {
             window.location.href = `/dashboard/empresa/${slug}/assinatura`;
           }, 2000);
+          return;
         } else if (data?.url) {
           window.location.href = data.url;
           return;
@@ -407,25 +444,9 @@ const CompanyRegistrationPage: React.FC = () => {
         <div className="mx-auto w-full max-w-4xl">
           <div className="bg-white rounded-2xl shadow-xl p-8 sm:p-10 border border-gray-100">
 
-            {/* Account Type Toggle */}
+            {/* Social Login Options */}
             <div className="max-w-md mx-auto mb-8">
-              <div className="bg-gray-100 p-1 rounded-xl flex">
-                <Link
-                  to="/cadastro/cliente"
-                  className="flex-1 flex items-center justify-center py-2 px-4 text-sm font-medium rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all"
-                >
-                  <Store className="w-4 h-4 mr-2" />
-                  Cliente
-                </Link>
-                <button
-                  className="flex-1 flex items-center justify-center py-2 px-4 text-sm font-medium rounded-lg bg-white text-gray-900 shadow-sm transition-all"
-                >
-                  <Briefcase className="w-4 h-4 mr-2 text-brand-primary" />
-                  Empresa
-                </button>
-              </div>
-
-              <div className="mt-8 text-center">
+              <div className="text-center">
                 <p className="text-sm text-gray-500 mb-4">Cadastre-se com</p>
                 <div className="flex justify-center gap-4">
                   <SocialButton

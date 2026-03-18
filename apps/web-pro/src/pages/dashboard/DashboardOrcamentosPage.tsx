@@ -321,7 +321,7 @@ const DashboardOrcamentosPage: React.FC = () => {
               </div>
 
               {/* Photos */}
-              {selectedQuote.photos.length > 0 && (
+              {selectedQuote.photos && selectedQuote.photos.length > 0 && (
                 <div className="mb-4">
                   <p className="text-xs font-bold text-gray-400 uppercase mb-2">Fotos anexadas</p>
                   <div className="grid grid-cols-3 gap-2">

@@ -1,5 +1,5 @@
 import React, { lazy } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { LoadingSpinner, PageTransition, ErrorBoundary } from '@tgt/ui-web';;
 import ProDashboardLayout from './components/layout/ProDashboardLayout';
@@ -33,6 +33,13 @@ const ExternalRedirect = ({ to }: { to: string }) => {
   React.useEffect(() => {
     window.location.replace(to);
   }, [to]);
+  return <LoadingSpinner />;
+};
+
+const ExternalRedirectWithParams = ({ to }: { to: string }) => {
+  const { slug } = useParams();
+  const resolvedTo = to.includes(':slug') && slug ? to.replace(':slug', slug) : to;
+  React.useEffect(() => { window.location.replace(resolvedTo); }, [resolvedTo]);
   return <LoadingSpinner />;
 };
 
@@ -92,6 +99,9 @@ const ProRoutes = () => {
 
             {/* Compatibility Redirects */}
             <Route path="/login/empresa" element={<Navigate to="/" replace />} />
+            
+            {/* Redirecionamento de Perfil Público para o Marketplace */}
+            <Route path="/empresa/:slug" element={<ExternalRedirectWithParams to={`${((import.meta as any).env?.VITE_LANDING_URL || 'http://localhost:3001').replace(/\/+$/, '')}/empresa/:slug`} />} />
 
             {/* Anything else → 404/NotFound */}
             <Route path="*" element={<AnimatedElement><NotFoundPage /></AnimatedElement>} />

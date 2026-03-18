@@ -49,11 +49,7 @@ export const useClientOrders = (userId: string | undefined) => {
                             seller:profiles!orders_seller_id_fkey (
                                 id,
                                 full_name,
-                                avatar_url,
-                                companies!profile_id (
-                                    company_name,
-                                    logo_url
-                                )
+                                avatar_url
                             )
                         `)
                         .eq('buyer_id', userId)

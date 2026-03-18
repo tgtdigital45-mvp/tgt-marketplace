@@ -9,11 +9,11 @@ import { LoadingSpinner, Badge, Button, LoadingSkeleton } from '@tgt/ui-web';;
 
 
 import { motion } from 'framer-motion';
-import {
-    ChevronRight, Paperclip, Zap, ArrowLeft, Clock,
-    MessagesSquare, Search, Video, CreditCard, X, Check, XCircle
+import { ChevronRight, Paperclip, Zap, ArrowLeft, Clock,
+    MessagesSquare, Search, Video, CreditCard, X, Check, XCircle, FileText
 } from 'lucide-react';
-
+import { ProposalModal } from '@/components/orders/ProposalModal';
+import { calculateProjectFees } from '@tgt/core';
 const DeliveryModal = lazy(() => import('@/components/orders/DeliveryModal'));
 
 const PLATFORM_FEE = 0.10; // 10% taxa Contratto
@@ -43,6 +43,8 @@ interface Message {
     file_type?: string | null;
     proposal_id?: string | null;
     is_system_message?: boolean;
+    type?: string;
+    metadata?: any;
     created_at: string;
     is_read: boolean;
     job_id?: string;
@@ -82,12 +84,9 @@ const DashboardMensagensPage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState<'all' | 'leads'>('all');
 
-    // Payment request modal
-    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-    const [paymentTitle, setPaymentTitle] = useState('');
-    const [paymentDescription, setPaymentDescription] = useState('');
-    const [paymentAmount, setPaymentAmount] = useState('');
-    const [sendingPayment, setSendingPayment] = useState(false);
+    // Proposal modal
+    const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
+    const [sendingProposal, setSendingProposal] = useState(false);
 
     const scrollToBottom = () => {
         if (chatContainerRef.current) {
@@ -228,39 +227,41 @@ const DashboardMensagensPage: React.FC = () => {
         window.open(videoUrl, '_blank');
     };
 
-    const handleSendPaymentRequest = async () => {
+    const handleSendProposal = async (proposalData: { description: string; totalValue: number; upfrontPercentage: number }) => {
         if (!activeThread || !user) return;
-        const numericAmount = parseFloat(paymentAmount.replace(',', '.'));
-        if (isNaN(numericAmount) || numericAmount <= 0) {
-            addToast('Digite um valor válido.', 'error');
-            return;
-        }
-        setSendingPayment(true);
+        setSendingProposal(true);
         try {
-            const feeAmount = numericAmount * PLATFORM_FEE;
-            const netAmount = numericAmount - feeAmount;
-            const payload: any = {
-                sender_id: user.id, receiver_id: activeThread.partnerId,
-                content: JSON.stringify({
-                    type: 'payment_request',
-                    title: paymentTitle || 'Solicitação de Pagamento',
-                    description: paymentDescription,
-                    amount: numericAmount,
-                    fee: feeAmount,
-                    net: netAmount,
-                }),
-                is_system_message: true,
-                job_id: activeThread.jobId, order_id: activeThread.orderId
+            const fees = calculateProjectFees(proposalData.totalValue, false, proposalData.upfrontPercentage);
+            const metadata = {
+                type: 'proposal',
+                description: proposalData.description,
+                totalValue: fees.totalValue,
+                upfrontAmount: fees.upfrontAmount,
+                finalAmount: fees.finalAmount,
+                upfrontPercentage: proposalData.upfrontPercentage,
+                platformFee: fees.platformFee,
+                status: 'pending'
             };
+
+            const payload: any = {
+                sender_id: user.id, 
+                receiver_id: activeThread.partnerId,
+                content: 'Nova Proposta de Serviço',
+                type: 'proposal',
+                metadata,
+                job_id: activeThread.jobId, 
+                order_id: activeThread.orderId
+            };
+
             await supabase.from('messages').insert(payload);
             setMessages(prev => [...prev, { id: 'temp-' + Date.now(), ...payload, created_at: new Date().toISOString(), is_read: false }]);
-            addToast('Solicitação de pagamento enviada!', 'success');
-            setIsPaymentModalOpen(false);
-            setPaymentTitle(''); setPaymentDescription(''); setPaymentAmount('');
-        } catch {
-            addToast('Erro ao enviar solicitação.', 'error');
+            addToast('Proposta enviada com sucesso!', 'success');
+            setIsProposalModalOpen(false);
+        } catch (err: any) {
+            console.error('Erro ao enviar proposta:', err);
+            addToast('Erro ao enviar a proposta.', 'error');
         } finally {
-            setSendingPayment(false);
+            setSendingProposal(false);
         }
     };
 
@@ -388,46 +389,7 @@ const DashboardMensagensPage: React.FC = () => {
                                     const isMe = msg.sender_id === user?.id;
 
                                     if (msg.is_system_message) {
-                                        // Try to parse payment request payload
-                                        let paymentData: any = null;
-                                        try {
-                                            const parsed = JSON.parse(msg.content);
-                                            if (parsed.type === 'payment_request') paymentData = parsed;
-                                        } catch { /* plain system message */ }
-
-                                        if (paymentData) {
-                                            return (
-                                                <div key={msg.id} className="flex justify-center my-2">
-                                                    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 w-full max-w-sm">
-                                                        <div className="flex items-center gap-2 mb-3">
-                                                            <div className="w-7 h-7 bg-emerald-100 rounded-full flex items-center justify-center">
-                                                                <CreditCard size={14} className="text-emerald-600" />
-                                                            </div>
-                                                            <span className="font-bold text-sm text-gray-900">{paymentData.title}</span>
-                                                        </div>
-                                                        {paymentData.description && <p className="text-xs text-gray-500 mb-3">{paymentData.description}</p>}
-                                                        <div className="space-y-1 text-xs bg-gray-50 rounded-xl p-3">
-                                                            <div className="flex justify-between text-gray-600">
-                                                                <span>Valor do serviço</span>
-                                                                <span className="font-semibold">R$ {paymentData.amount.toFixed(2)}</span>
-                                                            </div>
-                                                            <div className="flex justify-between text-gray-400">
-                                                                <span>Taxa Contratto (10%)</span>
-                                                                <span>-R$ {paymentData.fee.toFixed(2)}</span>
-                                                            </div>
-                                                            <div className="flex justify-between text-emerald-600 font-bold border-t border-gray-200 pt-1 mt-1">
-                                                                <span>Você recebe</span>
-                                                                <span>R$ {paymentData.net.toFixed(2)}</span>
-                                                            </div>
-                                                        </div>
-                                                        <p className="text-[10px] text-gray-400 text-center mt-2">
-                                                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            );
-                                        }
-
+                                        // Legacy System Messages
                                         return (
                                             <div key={msg.id} className="flex justify-center my-2">
                                                 <div className="bg-gray-100 text-gray-500 text-xs px-3 py-1.5 rounded-full text-center max-w-xs">
@@ -436,6 +398,8 @@ const DashboardMensagensPage: React.FC = () => {
                                             </div>
                                         );
                                     }
+
+                                    const isProposal = msg.type === 'proposal' && msg.metadata;
 
                                     return (
                                         <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
@@ -454,7 +418,45 @@ const DashboardMensagensPage: React.FC = () => {
                                                     />
                                                 )}
 
-                                                <span>{msg.content}</span>
+                                                {isProposal ? (
+                                                    <div className={`rounded-xl overflow-hidden mt-1 mb-2 border ${isMe ? 'border-primary-400 bg-primary-600' : 'border-gray-200 bg-white shadow-sm'}`}>
+                                                        <div className={`p-3 font-bold flex items-center gap-2 border-b ${isMe ? 'border-primary-400/50 text-white' : 'border-gray-100 text-gray-900'}`}>
+                                                            <FileText size={18} /> Proposta de Serviço
+                                                        </div>
+                                                        <div className={`p-3 space-y-3 ${isMe ? 'text-primary-100' : 'text-gray-600'}`}>
+                                                            <p className="whitespace-pre-wrap text-[13px]">{msg.metadata.description}</p>
+                                                            
+                                                            <div className={`p-3 rounded-lg flex flex-col gap-1 ${isMe ? 'bg-primary-700/50 text-white' : 'bg-gray-50 text-gray-800'}`}>
+                                                                <div className="flex items-center justify-between font-bold">
+                                                                    <span>Valor Total Cobrado:</span>
+                                                                    <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(msg.metadata.totalValue)}</span>
+                                                                </div>
+                                                                {isMe && (
+                                                                    <div className="text-[11px] text-primary-200 flex justify-between">
+                                                                        <span>Taxas (TGT + Stripe):</span>
+                                                                        <span>-{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(msg.metadata.platformFee + (msg.metadata.stripeFee || 0))}</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div className={`p-2 rounded mt-2 text-xs font-semibold flex justify-between items-center ${isMe ? 'bg-black/10' : 'bg-primary-50 text-primary-600'}`}>
+                                                                <span>Sinal Antecipado ({msg.metadata.upfrontPercentage}%):</span>
+                                                                <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(msg.metadata.upfrontAmount)}</span>
+                                                            </div>
+                                                            
+                                                            <div className="flex items-center justify-center pt-2">
+                                                                <Badge className={
+                                                                    msg.metadata.status === 'accepted' ? 'bg-emerald-500 text-white border-0 text-[10px]' :
+                                                                    msg.metadata.status === 'rejected' ? 'bg-red-500 text-white border-0 text-[10px]' :
+                                                                    'bg-amber-400 text-white border-0 text-[10px]'
+                                                                }>
+                                                                    {msg.metadata.status === 'accepted' ? 'Aceita' : msg.metadata.status === 'rejected' ? 'Recusada' : 'Aguardando Pagamento'}
+                                                                </Badge>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <span>{msg.content}</span>
+                                                )}
                                                 <div className={`text-[10px] mt-1 text-right ${isMe ? 'text-blue-100' : 'text-gray-400'}`}>
                                                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </div>
@@ -508,87 +510,20 @@ const DashboardMensagensPage: React.FC = () => {
                         <InfoPanel
                             thread={activeThread}
                             onVideoCall={handleVideoCall}
-                            onRequestPayment={() => setIsPaymentModalOpen(true)}
+                            onRequestPayment={() => setIsProposalModalOpen(true)}
                         />
                     </div>
                 )}
             </div>
 
-            {/* ── Payment Request Modal ── */}
-            {isPaymentModalOpen && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl w-full max-w-md shadow-xl">
-                        <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-                            <h2 className="text-lg font-bold text-gray-900">Solicitar Pagamento</h2>
-                            <button onClick={() => setIsPaymentModalOpen(false)} className="text-gray-400 hover:text-gray-600 p-1">
-                                <X size={20} />
-                            </button>
-                        </div>
-                        <div className="p-5 space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Título do Serviço</label>
-                                <input
-                                    type="text"
-                                    placeholder="Ex: Criação de Logo"
-                                    className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-                                    value={paymentTitle}
-                                    onChange={e => setPaymentTitle(e.target.value)}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Descrição (opcional)</label>
-                                <textarea
-                                    placeholder="Detalhes do que está incluído..."
-                                    className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm min-h-[80px] resize-none"
-                                    value={paymentDescription}
-                                    onChange={e => setPaymentDescription(e.target.value)}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Valor (R$)</label>
-                                <input
-                                    type="number"
-                                    placeholder="0,00"
-                                    min="0"
-                                    step="0.01"
-                                    className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-                                    value={paymentAmount}
-                                    onChange={e => setPaymentAmount(e.target.value)}
-                                />
-                            </div>
-
-                            {/* Fee preview */}
-                            {paymentAmount && !isNaN(parseFloat(paymentAmount)) && parseFloat(paymentAmount) > 0 && (() => {
-                                const amt = parseFloat(paymentAmount);
-                                const fee = amt * PLATFORM_FEE;
-                                const net = amt - fee;
-                                return (
-                                    <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 space-y-1 text-xs">
-                                        <div className="flex justify-between text-gray-600">
-                                            <span>Valor cobrado do cliente</span>
-                                            <span className="font-semibold">R$ {amt.toFixed(2)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-gray-400">
-                                            <span>Taxa Contratto (10%)</span>
-                                            <span>-R$ {fee.toFixed(2)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-emerald-700 font-bold border-t border-emerald-200 pt-1">
-                                            <span>Você recebe</span>
-                                            <span>R$ {net.toFixed(2)}</span>
-                                        </div>
-                                    </div>
-                                );
-                            })()}
-                        </div>
-                        <div className="p-5 flex gap-3 border-t border-gray-100">
-                            <Button variant="secondary" className="flex-1" onClick={() => setIsPaymentModalOpen(false)}>Cancelar</Button>
-                            <Button className="flex-1" isLoading={sendingPayment} onClick={handleSendPaymentRequest}>
-                                Enviar Proposta
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* ── Proposal Modal (Substitui o Request Payment) ── */}
+            <ProposalModal
+                isOpen={isProposalModalOpen}
+                onClose={() => setIsProposalModalOpen(false)}
+                onSubmit={handleSendProposal}
+                isProCompany={false} // Dependendo da regra da empresa
+                isSending={sendingProposal}
+            />
         </div>
     );
 };
@@ -699,10 +634,10 @@ const InfoPanel: React.FC<{
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Ações Rápidas</p>
                 <button
                     onClick={onRequestPayment}
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-gray-200 hover:border-primary-300 hover:bg-primary-50 text-sm font-medium text-gray-700 hover:text-primary-700 transition-all"
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-primary-200 bg-primary-50 hover:bg-primary-100 text-sm font-bold text-primary-700 transition-all shadow-sm"
                 >
-                    <CreditCard size={16} className="text-primary-500 shrink-0" />
-                    Solicitar Pagamento
+                    <FileText size={16} className="text-primary-600 shrink-0" />
+                    Enviar Proposta
                 </button>
                 <button
                     onClick={onVideoCall}

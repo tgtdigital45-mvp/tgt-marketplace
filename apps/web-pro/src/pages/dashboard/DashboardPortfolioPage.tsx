@@ -9,6 +9,7 @@ import OptimizedImage from '@/components/ui/OptimizedImage';
 
 import { motion } from 'framer-motion';
 import ImageCropModal from '@/components/ImageCropModal';
+import VideoLinkModal from '@/components/VideoLinkModal';
 import { Button, LoadingSkeleton } from '@tgt/ui-web';
 
 import {
@@ -18,6 +19,7 @@ import {
   Trash2,
   ImageIcon,
   Lightbulb,
+  Youtube,
 } from 'lucide-react';
 
 const DashboardPortfolioPage: React.FC = () => {
@@ -34,6 +36,7 @@ const DashboardPortfolioPage: React.FC = () => {
     imageSrc: string;
   }>({ isOpen: false, imageSrc: '' });
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -145,6 +148,33 @@ const DashboardPortfolioPage: React.FC = () => {
     }
   };
 
+  const handleAddVideo = async (videoUrl: string, thumbnailUrl: string, title: string) => {
+    if (!companyId) return;
+    setUploading(true);
+    try {
+      const { data: newItem, error: dbError } = await supabase
+        .from('portfolio_items')
+        .insert({ 
+          company_id: companyId, 
+          image_url: thumbnailUrl, 
+          video_url: videoUrl,
+          title: title || 'Vídeo'
+        })
+        .select()
+        .single();
+      
+      if (dbError) throw dbError;
+      setItems(prev => [newItem, ...prev]);
+      addToast('Vídeo adicionado com sucesso!', 'success');
+      setVideoModalOpen(false);
+    } catch (err: any) {
+      console.error('Error adding video:', err);
+      addToast(err.message || 'Erro ao adicionar vídeo.', 'error');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (!window.confirm('Tem certeza que deseja excluir esta imagem?')) return;
     try {
@@ -194,6 +224,10 @@ const DashboardPortfolioPage: React.FC = () => {
         </div>
         {items.length > 0 && (
           <div className="flex items-center gap-2">
+            <Button onClick={() => setVideoModalOpen(true)} variant="outline" size="sm" className="!rounded-xl text-gray-600 border-gray-200">
+              <Youtube size={14} className="mr-1.5" />
+              Vídeo
+            </Button>
             <div className="relative">
               <FileUpload onFileChange={handleFileSelect} accept="image/*" maxSizeMb={5} />
               {uploading && <span className="text-xs text-gray-400 ml-2">Enviando...</span>}
@@ -239,10 +273,16 @@ const DashboardPortfolioPage: React.FC = () => {
           <div className="hidden">
             <FileUpload onFileChange={handleFileSelect} accept="image/*" maxSizeMb={5} />
           </div>
-          <Button onClick={triggerUpload} disabled={uploading || !companyId} size="sm" className="!rounded-xl">
-            <Plus size={14} className="mr-1.5" />
-            {uploading ? 'Enviando...' : 'Adicionar ao Portfolio'}
-          </Button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button onClick={triggerUpload} disabled={uploading || !companyId} size="sm" className="!rounded-xl w-full sm:w-auto">
+              <Plus size={14} className="mr-1.5" />
+              {uploading ? 'Enviando...' : 'Adicionar Foto'}
+            </Button>
+            <Button onClick={() => setVideoModalOpen(true)} disabled={uploading || !companyId} variant="outline" size="sm" className="!rounded-xl w-full sm:w-auto text-gray-700 bg-white">
+              <Youtube size={14} className="mr-1.5 text-red-500" />
+              Adicionar Vídeo
+            </Button>
+          </div>
           {!companyId && <p className="text-red-500 mt-3 text-xs">Erro: Perfil de empresa nao encontrado.</p>}
         </motion.div>
       ) : (
@@ -261,6 +301,13 @@ const DashboardPortfolioPage: React.FC = () => {
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 optimizedWidth={400}
               />
+              {item.video_url && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="bg-black/40 backdrop-blur-sm rounded-full p-3 text-white">
+                    <Youtube size={24} />
+                  </div>
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-between p-3">
                 <p className="text-white text-xs font-bold truncate mr-2">{item.title}</p>
                 <button
@@ -295,6 +342,13 @@ const DashboardPortfolioPage: React.FC = () => {
         onClose={() => !isAnalyzing && setCropModal({ isOpen: false, imageSrc: '' })}
         onCropComplete={handleCropComplete}
         isAnalyzing={isAnalyzing}
+      />
+      
+      <VideoLinkModal 
+        isOpen={videoModalOpen} 
+        onClose={() => setVideoModalOpen(false)} 
+        onSubmit={handleAddVideo} 
+        isSubmitting={uploading} 
       />
     </div>
   );

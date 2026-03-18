@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@tgt/core';;
+import { supabase } from '@tgt/core';
 import { useAuth } from '@/contexts/AuthContext';
-import { Review } from '@tgt/core';;
+import { Review } from '@tgt/core';
 
 import { useToast } from '@/contexts/ToastContext';
 import { Button } from '@tgt/ui-web';
@@ -40,7 +40,7 @@ const DashboardAvaliacoesPage: React.FC = () => {
                     .from('reviews')
                     .select(`
                         *,
-                        reviewer:profiles!reviews_client_id_fkey (
+                        reviewer:profiles!reviews_client_id_fkey_profiles (
                             full_name,
                             avatar_url
                         )

@@ -141,6 +141,48 @@ async function processEvent(event: Stripe.Event) {
                 p_log_data: { [isPI ? 'stripe_pi' : 'stripe_session_id']: object.id, amount: amountTotal }
             });
 
+            // SPRINT 4: REGISTRAR PARCELAMENTO SE FOR PROPOSTA
+            if (metadata.proposal_id) {
+                // Registrar parcela paga (Sinal)
+                await supabaseClient.from('order_installments').insert({
+                    order_id: order.id,
+                    phase: metadata.payment_phase || 'upfront',
+                    amount: amountTotal / 100,
+                    stripe_payment_intent_id: isPI ? object.id : object.payment_intent,
+                    status: 'paid',
+                    paid_at: new Date().toISOString()
+                })
+
+                // Atualizar status da proposta no metadata da mensagem para 'accepted'
+                const { data: proposalMessage } = await supabaseClient.from('messages')
+                    .select('metadata')
+                    .eq('id', metadata.proposal_id)
+                    .single()
+                    
+                if (proposalMessage && proposalMessage.metadata) {
+                    const newMetadata = { ...proposalMessage.metadata, status: 'accepted' }
+                    await supabaseClient.from('messages').update({ metadata: newMetadata }).eq('id', metadata.proposal_id)
+                }
+
+                // Inserir mensagem de sistema de sucesso no chat
+                await supabaseClient.from('messages').insert({
+                    order_id: order.id,
+                    sender_id: metadata.buyer_id, // technically the system on behalf of the buyer
+                    receiver_id: metadata.seller_id,
+                    content: JSON.stringify({
+                         type: 'payment_success',
+                         title: metadata.payment_phase === 'upfront' ? 'Sinal Antecipado Recebido!' : 'Pagamento Final Recebido!',
+                         description: metadata.payment_phase === 'upfront' 
+                            ? 'O cliente pagou o sinal. O projeto está oficialmente iniciado.' 
+                            : 'O cliente liberou o pagamento final. Excelente trabalho!',
+                         amount: amountTotal / 100,
+                         fee: metadata.application_fee_amount ? Number(metadata.application_fee_amount) / 100 : undefined,
+                         net: (amountTotal - Number(metadata.application_fee_amount || 0)) / 100
+                    }),
+                    is_system_message: true
+                })
+            }
+
             // COMMISSION SPLIT & WALLET
             // Hierarquia de resolução da taxa de comissão:
             // 1. metadata do Stripe (definido no checkout — mais preciso)
@@ -174,17 +216,22 @@ async function processEvent(event: Stripe.Event) {
                 commissionRate = 0.20;
                 logStructured('warn', 'commission_rate não encontrado, usando fallback 0.20', {
                     order_id,
-                    seller_id
+                    seller_id: metadata.seller_id
                 });
             }
 
-            const totalOrderValue = order.agreed_price || order.price || 0
-            const sellerNetIncome = totalOrderValue * (1 - commissionRate)
+            // CRITICAL SPRINT 4 FIX: Use the actual amounts transacted, not the theoretical full project amount.
+            // When paying a 30% proposal, the order.agreed_price logic would've given the seller 100% of the money!
+            const realAmountPaid = amountTotal / 100;
+            // Prefer the exact fee amount we computed in the checkout metadata to avoid micro-cent rounding mismatches
+            const exactFeeAmount = metadata.application_fee_amount ? Number(metadata.application_fee_amount) / 100 : (realAmountPaid * commissionRate);
+            
+            const sellerNetIncome = realAmountPaid - exactFeeAmount;
 
             // Get/Create Wallet
-            let { data: wallet } = await supabaseClient.from('wallets').select('*').eq('user_id', seller_id).single()
+            let { data: wallet } = await supabaseClient.from('wallets').select('*').eq('user_id', metadata.seller_id).single()
             if (!wallet) {
-                const { data: newWallet } = await supabaseClient.from('wallets').insert({ user_id: seller_id }).select().single()
+                const { data: newWallet } = await supabaseClient.from('wallets').insert({ user_id: metadata.seller_id }).select().single()
                 wallet = newWallet
             }
 
@@ -225,11 +272,15 @@ async function processEvent(event: Stripe.Event) {
                 }
             }
 
-            // SAGA: WAITING_ACCEPTANCE
+            // SAGA: WAITING_ACCEPTANCE or ORDER_ACTIVE automatically if upfront
+            const newSagaStatus = metadata.proposal_id && metadata.payment_phase === 'upfront' 
+                ? 'ORDER_ACTIVE' // If it's a proposal upfront payment, activate order directly
+                : 'WAITING_ACCEPTANCE';
+
             await supabaseClient.rpc('transition_saga_status', {
                 p_order_id: order.id,
-                p_new_status: 'WAITING_ACCEPTANCE',
-                p_log_data: { wallet_tx: wallet.id }
+                p_new_status: newSagaStatus,
+                p_log_data: { wallet_tx: existingTx ? existingTx.id : 'new' }
             });
 
             // Log Job completion
@@ -240,24 +291,29 @@ async function processEvent(event: Stripe.Event) {
                 payload: { [isPI ? 'stripe_pi' : 'stripe_session_id']: object.id, processed_at: new Date().toISOString() }
             });
 
-        } else if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
+        } else if (
+            event.type === 'customer.subscription.created' ||
+            event.type === 'customer.subscription.updated' || 
+            event.type === 'customer.subscription.deleted'
+        ) {
             const subscription = event.data.object
             const customerId = subscription.customer
             const status = subscription.status
             const priceId = subscription.items.data[0].price.id
-            const productId = subscription.items.data[0].price.product
 
-            logStructured('info', `Processing ${event.type}`, { customer_id: customerId, status })
+            logStructured('info', `Processing ${event.type}`, { customer_id: customerId, status, price_id: priceId })
 
             let planTier = 'starter'
             let commissionRate = 0.20
-            const PRO_PRODUCT_ID = Deno.env.get('STRIPE_PRODUCT_ID_PRO')
-            const AGENCY_PRODUCT_ID = Deno.env.get('STRIPE_PRODUCT_ID_AGENCY')
+            
+            // New recurring price IDs
+            const PRO_PRICES = ['price_1TCON9E72T1QHvIb9sWMS11c', 'price_1TCONBE72T1QHvIbzBzuu5MA']; // Monthly, Annual
+            const AGENCY_PRICES = ['price_1TCON9E72T1QHvIbU94cmdBj', 'price_1TCONCE72T1QHvIbh3DazzwM']; // Monthly, Annual
 
             if (['active', 'trialing'].includes(status)) {
-                if (productId === AGENCY_PRODUCT_ID) {
+                if (AGENCY_PRICES.includes(priceId)) {
                     planTier = 'agency'; commissionRate = 0.08
-                } else if (productId === PRO_PRODUCT_ID) {
+                } else if (PRO_PRICES.includes(priceId)) {
                     planTier = 'pro'; commissionRate = 0.12
                 }
             } else if (['past_due', 'canceled', 'unpaid'].includes(status)) {
@@ -267,7 +323,7 @@ async function processEvent(event: Stripe.Event) {
                 logStructured('warn', `Subscription ${status} - downgrading company`, { customer_id: customerId })
             }
 
-            const { error } = await supabaseClient
+            const { error: updateError } = await supabaseClient
                 .from('companies')
                 .update({
                     subscription_status: status,
@@ -277,7 +333,7 @@ async function processEvent(event: Stripe.Event) {
                 })
                 .eq('stripe_customer_id', customerId)
 
-            if (error) logStructured('error', 'Company update failed', { error: error.message })
+            if (updateError) logStructured('error', 'Company update failed', { error: updateError.message })
         }
 
     } catch (err: any) {

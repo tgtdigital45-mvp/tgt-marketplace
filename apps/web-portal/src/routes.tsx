@@ -1,5 +1,5 @@
 import React, { lazy } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -45,6 +45,13 @@ const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
 const AnimatedElement = ({ children }: { children: any }) => (
   <PageTransition>{children}</PageTransition>
 );
+
+const ExternalRedirectWithParams = ({ to }: { to: string }) => {
+  const { slug } = useParams();
+  const resolvedTo = to.includes(':slug') && slug ? to.replace(':slug', slug) : to;
+  React.useEffect(() => { window.location.replace(resolvedTo); }, [resolvedTo]);
+  return <LoadingSpinner />;
+};
 
 const DashboardRedirect = () => {
   const { user, loading } = useAuth();
@@ -117,6 +124,9 @@ const PortalRoutes = () => {
                 <Route path="crm/cliente/:id" element={<AnimatedElement><CustomerDetailsPage /></AnimatedElement>} />
               </Route>
             </Route>
+
+            {/* Redirecionamento de Perfil Público para o Marketplace */}
+            <Route path="/empresa/:slug" element={<ExternalRedirectWithParams to={`${((import.meta as any).env?.VITE_LANDING_URL || 'http://localhost:3001').replace(/\/+$/, '')}/empresa/:slug`} />} />
 
             {/* 404 */}
             <Route path="*" element={<AnimatedElement><NotFoundPage /></AnimatedElement>} />

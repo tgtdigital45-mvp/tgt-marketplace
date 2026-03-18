@@ -44,8 +44,8 @@ export const useSimilarCompanies = (category: string | undefined, currentId: str
                         city: compAddress.city || '',
                         state: compAddress.state || '',
                         cep: compAddress.cep || '',
-                        lat: compAddress.lat || -23.55052,
-                        lng: compAddress.lng || -46.63330
+                        lat: compAddress.lat || undefined,
+                        lng: compAddress.lng || undefined
                     },
                     phone: comp.phone,
                     email: comp.email,

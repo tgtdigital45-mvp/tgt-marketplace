@@ -101,6 +101,10 @@ const CompaniesListPage: React.FC = () => {
     setSearchTerm(internalSearch);
     setLocationTerm(internalLocation);
     setCurrentPage(1);
+
+    setTimeout(() => {
+      document.getElementById('search-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -307,7 +311,7 @@ const CompaniesListPage: React.FC = () => {
       </section>
 
       {/* Main Content Area */}
-      <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <div id="search-results" className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Mobile Filter Toggle */}
         <div className="lg:hidden mb-6">
           <button

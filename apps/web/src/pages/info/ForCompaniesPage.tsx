@@ -218,7 +218,7 @@ const ForCompaniesPage: React.FC = () => {
               </p>
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-full bg-slate-100 p-1 border border-slate-200">
-                  <img src="https://picsum.photos/seed/adega/100/100" className="w-full h-full rounded-full object-cover" alt="Roberto Mendes" />
+                  <img src="https://picsum.photos/seed/adega/100/100" className="w-full h-full rounded-full object-cover" alt="Roberto Mendes" loading="lazy" decoding="async" />
                 </div>
                 <div>
                   <p className="font-bold text-slate-900">Roberto Mendes</p>
@@ -237,7 +237,7 @@ const ForCompaniesPage: React.FC = () => {
               </p>
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-full bg-slate-100 p-1 border border-slate-200">
-                  <img src="https://picsum.photos/seed/tech/100/100" className="w-full h-full rounded-full object-cover" alt="Carla Dias" />
+                  <img src="https://picsum.photos/seed/tech/100/100" className="w-full h-full rounded-full object-cover" alt="Carla Dias" loading="lazy" decoding="async" />
                 </div>
                 <div>
                   <p className="font-bold text-slate-900">Carla Dias</p>

@@ -33,14 +33,14 @@ const DashboardAvaliacoesPage: React.FC = () => {
                     .eq('profile_id', user.id)
                     .single();
 
-                if (!companyData) return;
+                if (!companyData) return;
 
                 // 2. Fetch Reviews with Reviewer (Profiles) details
                 const { data, error } = await supabase
                     .from('reviews')
                     .select(`
                         *,
-                        reviewer:profiles!reviews_client_id_fkey (
+                        reviewer:profiles!reviews_client_id_fkey_profiles (
                             full_name,
                             avatar_url
                         )

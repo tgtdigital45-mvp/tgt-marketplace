@@ -743,8 +743,8 @@ const DashboardPerfilPage: React.FC = () => {
       setSaving(true);
 
       let h3Index = company?.h3_index;
-      let lat = company?.address?.latitude;
-      let lng = company?.address?.longitude;
+      let lat = company?.address?.lat;
+      let lng = company?.address?.lng;
 
       try {
         const coordinates = await getCoordinatesFromAddress(
@@ -771,7 +771,7 @@ const DashboardPerfilPage: React.FC = () => {
         category: formData.category,
         description: formData.description,
         email: formData.email,
-        address: { ...formData.address, latitude: lat, longitude: lng },
+        address: { ...formData.address, lat, lng },
         h3_index: h3Index,
         social_links: formData.socialLinks,
         coverage_radius_km: formData.coverage_radius_km,
