@@ -106,6 +106,36 @@ export const useCompanySearch = (itemsPerPage: number = 8) => {
 
             // Fallback to standard TST search if AI search fails or isn't needed
             if (!queryData.length) {
+                let companyIds: string[] | null = null;
+                
+                if (searchTerm) {
+                    const cleanTerm = searchTerm.trim();
+                    // 1. Search in companies
+                    const { data: cData } = await supabase
+                        .from('public_company_profiles')
+                        .select('id')
+                        .or(`company_name.ilike.%${cleanTerm}%,description.ilike.%${cleanTerm}%`);
+                        
+                    // 2. Search in services
+                    const { data: sData } = await supabase
+                        .from('services')
+                        .select('company_id')
+                        .or(`title.ilike.%${cleanTerm}%,description.ilike.%${cleanTerm}%,category_tag.ilike.%${cleanTerm}%`)
+                        .eq('is_active', true);
+                        
+                    const setIds = new Set([
+                        ...(cData?.map((c: any) => c.id) || []),
+                        ...(sData?.map((s: any) => s.company_id) || [])
+                    ]);
+                    
+                    companyIds = Array.from(setIds);
+                    
+                    // Se não encontrou nenhuma empresa com o termo, retorna vazio imediatamente
+                    if (companyIds.length === 0) {
+                        return { companies: [], count: 0 };
+                    }
+                }
+
                 let query = supabase
                     .from('public_company_profiles')
                     .select(`
@@ -113,9 +143,9 @@ export const useCompanySearch = (itemsPerPage: number = 8) => {
                       services (*)
                     `, { count: 'exact' });
 
-                // 1. Text Search
-                if (searchTerm) {
-                    query = query.or(`company_name.ilike.%${searchTerm}%`);
+                // 1. Filtro Texto (aplicando os IDs encontrados caso tenha tido busca por texto)
+                if (searchTerm && companyIds) {
+                    query = query.in('id', companyIds);
                 }
 
                 // 2. Location

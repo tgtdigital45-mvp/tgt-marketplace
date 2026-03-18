@@ -39,7 +39,7 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
     const [loading, setLoading] = useState(false);
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [serviceForm, setServiceForm] = useState<{ id: string; questions: string[] } | null>(null);
-    const [responses, setResponses] = useState<Record<string, string>>({});
+    const [responses, setResponses] = useState<Record<number, string>>({});
     const [withLock] = useLock();
 
     const resolvedCompanyId = service?.companyId || (service as any)?.company_id;
@@ -93,8 +93,8 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
                     .maybeSingle();
                 setServiceForm(data);
                 if (data?.questions) {
-                    const initialResponses: Record<string, string> = {};
-                    data.questions.forEach((q: string) => initialResponses[q] = '');
+                    const initialResponses: Record<number, string> = {};
+                    data.questions.forEach((q: string, idx: number) => initialResponses[idx] = '');
                     setResponses(initialResponses);
                 }
             };
@@ -132,6 +132,19 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
 
         setLoading(true);
 
+        const formattedResponses: Record<string, string> = {};
+        if (serviceForm?.questions) {
+            serviceForm.questions.forEach((q, idx) => {
+                let key = q;
+                let count = 2;
+                while (key in formattedResponses) {
+                    key = `${q} (${count})`;
+                    count++;
+                }
+                formattedResponses[key] = responses[idx] || '';
+            });
+        }
+
         try {
             if (isQuote) {
                 // For quotes, we insert into 'orders' with status 'pending'
@@ -146,7 +159,7 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
                     service_id: service.id,
                     service_title: service.title,
                     price: 0, // Quote starts at 0 or empty
-                    hiring_responses: responses,
+                    hiring_responses: formattedResponses,
                     status: 'pending',
                     package_tier: 'basic',
                     notes: formData.notes,
@@ -174,7 +187,7 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
                     service_title: service.title,
                     price: finalPrice, // Updated: service_price -> price
                     scheduled_for: scheduledFor, // Updated: booking_date/time -> scheduled_for
-                    hiring_responses: responses,
+                    hiring_responses: formattedResponses,
                     status: 'pending',
                     package_tier: 'basic' // Default tier for direct bookings
                 });
@@ -373,8 +386,8 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
                                                         type="text"
                                                         required
                                                         className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-all text-sm"
-                                                        value={responses[q] || ''}
-                                                        onChange={(e) => setResponses({ ...responses, [q]: e.target.value })}
+                                                        value={responses[idx] || ''}
+                                                        onChange={(e) => setResponses({ ...responses, [idx]: e.target.value })}
                                                         placeholder="Sua resposta..."
                                                     />
                                                 </div>

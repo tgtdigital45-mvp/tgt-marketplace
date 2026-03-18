@@ -107,11 +107,6 @@ const CompaniesListPage: React.FC = () => {
     }, 100);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearchTrigger();
-    }
-  };
 
   const getDynamicTitle = () => {
     let title = 'Guia de Empresas e Servicos';
@@ -279,7 +274,6 @@ const CompaniesListPage: React.FC = () => {
                 type="text"
                 value={internalSearch}
                 onChange={(e) => setInternalSearch(e.target.value)}
-                onKeyPress={handleKeyPress}
                 placeholder="O que voce precisa hoje?"
                 className="w-full pl-10 sm:pl-14 pr-3 sm:pr-4 py-3 sm:py-4 bg-transparent border-none outline-none text-slate-900 placeholder:text-slate-400 font-medium text-sm sm:text-base"
               />
@@ -291,7 +285,6 @@ const CompaniesListPage: React.FC = () => {
               <input
                 value={internalLocation}
                 onChange={(e) => setInternalLocation(e.target.value)}
-                onKeyPress={handleKeyPress}
                 placeholder="Localizacao"
                 className="w-full pl-10 sm:pl-14 pr-3 sm:pr-4 py-3 sm:py-4 bg-transparent border-none outline-none text-slate-900 placeholder:text-slate-400 font-medium text-sm sm:text-base"
               />
