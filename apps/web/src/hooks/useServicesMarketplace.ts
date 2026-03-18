@@ -74,7 +74,7 @@ export function useServicesMarketplace({
                 )
             `, { count: 'exact' })
             .eq('is_active', true)
-            .eq('companies.status', 'approved')
+            .in('companies.status', ['approved', 'active'])
             .is('deleted_at', null); // Soft Delete Filter
 
         // Service type filter

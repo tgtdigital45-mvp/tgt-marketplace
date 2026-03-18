@@ -15,7 +15,7 @@ export const useVerifiedCompanies = ({ category, limit = 12, enabled = true }: U
             let query = supabase
                 .from('companies')
                 .select('id, company_name, slug, logo_url, cover_image_url, category, address, rating, review_count, services, status, verified')
-                .eq('status', 'approved')
+                .in('status', ['approved', 'active'])
                 .range(0, limit - 1);
 
             if (category && category !== 'all') {
