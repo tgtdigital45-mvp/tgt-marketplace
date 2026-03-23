@@ -1,4 +1,4 @@
-﻿import React, { useState, lazy, Suspense } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { deduplicateCompanies } from '@/utils/companyUtils';
 import { Helmet } from 'react-helmet-async';
 import SEO from '@/components/SEO';
@@ -204,50 +204,6 @@ const CompanyProfilePage: React.FC = () => {
             {/* MAIN CONTENT START */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
               <div className="p-6 md:p-8">
-                {/* 1. Quem Somos */}
-                <div className="mb-14">
-                  <h3 className="font-display text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                    <Info className="w-6 h-6 text-brand-primary" />
-                    Quem Somos
-                  </h3>
-                  <div className="space-y-8 bg-gray-50/50 rounded-2xl p-6 md:p-8 border border-gray-100">
-                    <section>
-                      <h4 className="font-bold text-gray-900 mb-3 text-lg">Sobre a Empresa</h4>
-                      <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">{company.description || "Sem descrição."}</p>
-                    </section>
-
-                    {/* Languages & Skills */}
-                    {(owner?.languages?.length || owner?.skills?.length) ? (
-                      <section className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-200/80">
-                        {owner?.languages && owner.languages.length > 0 && (
-                          <div>
-                            <h4 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">Idiomas</h4>
-                            <ul className="space-y-2">
-                              {owner.languages.map((lang, idx) => (
-                                <li key={idx} className="flex justify-between items-center text-sm text-gray-700 bg-white px-4 py-3 rounded-xl border border-gray-100 shadow-sm">
-                                  <span className="font-medium">{lang.language}</span>
-                                  <span className="text-gray-500 text-xs font-semibold bg-gray-50 px-2 py-1 rounded-md">{lang.level}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        {owner?.skills && owner.skills.length > 0 && (
-                          <div>
-                            <h4 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">Competências</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {owner.skills.map((skill, idx) => (
-                                <span key={idx} className="px-3 py-1.5 bg-white text-gray-700 text-sm rounded-lg font-medium border border-gray-200 shadow-sm">
-                                  {skill}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </section>
-                    ) : null}
-                  </div>
-                </div>
 
                 {/* 2. Serviços */}
                 <div className="mb-14">

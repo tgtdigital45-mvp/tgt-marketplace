@@ -1,8 +1,8 @@
-﻿import React from 'react';
+import React from 'react';
 import { Company } from '@tgt/core';
 
 
-import { MapPin, Calendar, Clock, CheckCircle, Facebook, Instagram, Linkedin, Globe, ExternalLink } from 'lucide-react';
+import { MapPin, Calendar, Clock, CheckCircle, Facebook, Instagram, Linkedin, Globe, ExternalLink, Star, Info } from 'lucide-react';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import { Badge, Button } from '@tgt/ui-web';
 
@@ -82,32 +82,23 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                 </div>
 
                 {/* Stats Partition */}
-                <div className="grid grid-cols-2 gap-4 w-full border-t border-b border-gray-50 py-5 bg-gray-50/30">
-                    <div className="flex flex-col items-center border-r border-gray-100">
-                        <span className="text-lg font-bold text-gray-900">{company.reviewCount || 0}</span>
-                        <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Avaliações</span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                        <span className="text-lg font-bold text-gray-900">{company.rating ? company.rating.toFixed(1) : 'N/A'}</span>
-                        <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Nota</span>
-                    </div>
+                <div className="flex items-center justify-center gap-2 w-full border-t border-b border-gray-50 py-4 bg-gray-50/30">
+                    <Star className="w-5 h-5 text-brand-accent fill-brand-accent" />
+                    <span className="text-xl font-bold text-gray-900 leading-none">{company.rating ? company.rating.toFixed(1) : 'N/A'}</span>
+                    <span className="text-sm text-gray-500 font-medium">
+                        ({company.reviewCount || 0} {company.reviewCount === 1 ? 'avaliação' : 'avaliações'})
+                    </span>
                 </div>
 
-                {/* Action Buttons Section */}
-                <div className="px-8 py-6 w-full space-y-3">
-                    <Button
-                        onClick={onContactClick}
-                        className="w-full bg-brand-primary hover:bg-brand-primary/90 text-white shadow-lg shadow-brand-primary/20 rounded-xl py-3 font-semibold text-sm h-auto transition-transform hover:-translate-y-0.5 active:translate-y-0"
-                    >
-                        Fale Comigo
-                    </Button>
-                    <Button
-                        variant="outline"
-                        onClick={onRequestQuote}
-                        className="w-full border-gray-100 text-gray-700 hover:bg-gray-50 hover:border-gray-200 rounded-xl py-3 font-semibold text-sm h-auto bg-white transition-all shadow-sm"
-                    >
-                        Solicitar Orçamento
-                    </Button>
+                {/* Quem Somos - Moved to Sidebar */}
+                <div className="px-8 py-6 w-full text-center">
+                    <h3 className="font-display text-sm font-bold text-gray-900 mb-3 uppercase tracking-wider flex items-center justify-center gap-1.5">
+                        <Info className="w-4 h-4 text-brand-primary" />
+                        Quem Somos
+                    </h3>
+                    <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
+                        {company.description || "Sem descrição."}
+                    </p>
                 </div>
 
                 {/* Simplified Map Section */}

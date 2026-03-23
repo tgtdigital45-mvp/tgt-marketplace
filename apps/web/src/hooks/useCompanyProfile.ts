@@ -15,7 +15,7 @@ export const useCompanyProfile = (slug: string | undefined) => {
                 .from('companies')
                 .select(`
                   id, profile_id, company_name, slug, description, logo_url, cover_image_url, 
-                  category, status, city, state, address, phone, email, website, 
+                  category, status, city, state, address, phone, email, website, social_links,
                   verified, rating, created_at, legal_name, cnpj,
                   services (*),
                   reviews (
@@ -149,6 +149,7 @@ export const useCompanyProfile = (slug: string | undefined) => {
                 phone: raw.phone,
                 email: raw.email,
                 website: raw.website || undefined,
+                social_links: (raw as any).social_links,
 
                 services: services,
                 portfolio: portfolio,

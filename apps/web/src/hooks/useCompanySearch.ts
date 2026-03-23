@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { deduplicateCompanies } from '@/utils/companyUtils';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -112,8 +112,9 @@ export const useCompanySearch = (itemsPerPage: number = 8) => {
                     const cleanTerm = searchTerm.trim();
                     // 1. Search in companies
                     const { data: cData } = await supabase
-                        .from('public_company_profiles')
+                        .from('companies')
                         .select('id')
+                        .in('status', ['active', 'approved'])
                         .or(`company_name.ilike.%${cleanTerm}%,description.ilike.%${cleanTerm}%`);
                         
                     // 2. Search in services
@@ -137,11 +138,13 @@ export const useCompanySearch = (itemsPerPage: number = 8) => {
                 }
 
                 let query = supabase
-                    .from('public_company_profiles')
+                    .from('companies')
                     .select(`
                       *,
-                      services (*)
-                    `, { count: 'exact' });
+                      services (*),
+                      reviews (id, rating)
+                    `, { count: 'exact' })
+                    .in('status', ['active', 'approved']);
 
                 // 1. Filtro Texto (aplicando os IDs encontrados caso tenha tido busca por texto)
                 if (searchTerm && companyIds) {
@@ -223,7 +226,16 @@ export const useCompanySearch = (itemsPerPage: number = 8) => {
                     console.warn('Failed to parse company address:', c.address);
                 }
 
+                const validReviews = Array.isArray(c.reviews) ? c.reviews : [];
+                const realReviewCount = validReviews.length;
+                let realRating = c.rating || 5.0;
+                if (realReviewCount > 0) {
+                    const sum = validReviews.reduce((acc, rev) => acc + (rev.rating || 0), 0);
+                    realRating = sum / realReviewCount;
+                }
+
                 return {
+                    ...c,
                     id: c.id,
                     profileId: c.profile_id || c.id,
                     slug: c.slug,
@@ -233,8 +245,8 @@ export const useCompanySearch = (itemsPerPage: number = 8) => {
                     logo: c.logo_url || 'https://placehold.co/150',
                     coverImage: c.cover_image_url || 'https://placehold.co/1200x400',
                     category: c.category,
-                    rating: c.rating || 5.0,
-                    reviewCount: c.review_count || 0,
+                    rating: realReviewCount > 0 ? realRating : (c.rating || 5.0),
+                    reviewCount: realReviewCount > 0 ? realReviewCount : (c.review_count || 0),
                     level: c.level || 'Bronze',
                     description: c.description || '',
                     address: parsedAddress as any, // Cast to any to avoid strict Address interface issues for now since we are mapping from DB
@@ -243,7 +255,7 @@ export const useCompanySearch = (itemsPerPage: number = 8) => {
                     website: c.website || '',
                     services: c.services || [],
                     portfolio: [],
-                    reviews: []
+                    reviews: validReviews
                 };
             }) as Company[];
 
