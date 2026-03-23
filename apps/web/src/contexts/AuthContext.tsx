@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { User, supabase } from '@tgt/core';;
+import { User, supabase } from '@tgt/core';
 
 // Extensão do tipo User para incluir dados do contexto
 interface UserContext extends User {
@@ -11,7 +11,6 @@ interface UserContext extends User {
 interface AuthContextType {
   user: UserContext | null;
   loading: boolean;
-  login: (email: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   refreshSession: () => Promise<void>;
@@ -31,18 +30,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  // Helper para commitar o estado do usuário de forma segura
-  const commitUserState = (userData: UserContext, fetchId: string) => {
+  // Helper para commitar o estado do usuário de forma segura,
+  // descartando respostas stale de chamadas concorrentes (race condition).
+  const commitUserState = (userData: UserContext, callId: number) => {
     if (!mountedRef.current) return;
+    // Descarta se uma chamada mais recente já foi iniciada
+    if (callId < callCounter.current) return;
 
     const appType = (globalThis as any).VITE_APP_TYPE || 'marketplace';
 
-    // 1. Cache para carregamento instantâneo futuro
+    // Cache para carregamento instantâneo futuro
     if (userData.companySlug) {
       localStorage.setItem(`contratto-cached-slug-${appType}`, userData.companySlug);
     }
 
-    // 2. Verificação de Segurança por App
+    // Verificação de Segurança por App
     if (appType === 'marketplace' && userData.type === 'company' && !userData.role?.includes('admin')) {
       console.warn('[AuthContext] Company user in marketplace. Redirecting...');
       window.location.href = (globalThis as any).VITE_PORTAL_URL || '/';
@@ -54,22 +56,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return;
     }
 
-    console.log(`${fetchId} Comitando estado:`, userData.id);
     setUser(userData);
     setLoading(false);
   };
 
   // Busca perfil completo com Race Strategy (RPC vs Fallback)
   const fetchUserProfile = async (userId: string, metadata: any = {}, callId: number): Promise<void> => {
-    const fetchId = `[ID: ${callId}]`;
-    console.log(`AuthContext.tsx:${callId} ${fetchId} Buscando contexto (Race Strategy)...`);
-
-    const start = Date.now();
-
     try {
       // Race: RPC vs 3s Timeout
       const rpcPromise = supabase.rpc('get_user_session_context', { p_user_id: userId });
-      const timeoutPromise = new Promise((_, reject) =>
+      const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('RPC_TIMEOUT')), 3000)
       );
 
@@ -80,16 +76,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const result: any = await Promise.race([rpcPromise, timeoutPromise]);
         rpcData = result.data;
         rpcError = result.error;
-      } catch (err: any) {
-        if (err.message === 'RPC_TIMEOUT') {
-          console.warn(`${fetchId} RPC Timeout (3s). Tentando Fallback...`);
-          rpcError = { message: 'Timeout' };
-        } else {
-          rpcError = err;
+      } catch (err: unknown) {
+        const isTimeout = err instanceof Error && err.message === 'RPC_TIMEOUT';
+        if (isTimeout) {
+          console.warn('[AuthContext] RPC timeout (3s), usando fallback...');
         }
+        rpcError = { message: isTimeout ? 'Timeout' : 'Unknown' };
       }
-
-      console.log(`${fetchId} RPC Finalizou em ${Date.now() - start}ms. Erro:`, rpcError);
 
       if (!rpcError && rpcData) {
         const userData: UserContext = {
@@ -101,12 +94,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           companySlug: rpcData.company_slug || metadata.slug,
           email: metadata.email || ''
         };
-        commitUserState(userData, fetchId);
+        commitUserState(userData, callId);
         return;
       }
 
       // FALLBACK: Consultas manuais se a RPC falhar
-      console.log(`${fetchId} Executando fallback manual...`);
       const [profileRes, companyRes] = await Promise.all([
         supabase.from('profiles').select('full_name, avatar_url, role, user_type').eq('id', userId).maybeSingle(),
         supabase.from('companies').select('slug').eq('profile_id', userId).maybeSingle()
@@ -122,17 +114,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         email: metadata.email || ''
       };
 
-      commitUserState(finalUserData, fetchId);
-    } catch (error) {
-      console.error(`${fetchId} Erro fatal no AuthContext:`, error);
-      setLoading(false);
+      commitUserState(finalUserData, callId);
+    } catch (error: unknown) {
+      console.error('[AuthContext] Erro fatal ao buscar perfil:', error);
+      if (mountedRef.current) setLoading(false);
     }
   };
 
   // Handler principal de mudança de estado de autenticação
   const handleAuthStateChange = async (event: string, session: any) => {
     if (!mountedRef.current) return;
-    console.log(`[AuthContext] Auth Event: ${event}`);
 
     if (session?.user) {
       const userId = session.user.id;
@@ -215,7 +206,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [user?.id]);
 
   // Metódos expositivos
-  const login = async () => {}; // Login é feito nas páginas específicas
   const signInWithGoogle = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -241,7 +231,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signInWithGoogle, logout, refreshSession }}>
+    <AuthContext.Provider value={{ user, loading, signInWithGoogle, logout, refreshSession }}>
       {children}
     </AuthContext.Provider>
   );

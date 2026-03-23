@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '@tgt/core';;
+﻿import React, { useState, useEffect } from 'react';
+import { supabase } from '@tgt/core';
 import { useAuth } from '@/contexts/AuthContext';
 import { FileText, MessageSquare, Clock, ChevronRight, CheckCircle2, XCircle } from 'lucide-react';
 import { Badge, Button } from '@tgt/ui-web';

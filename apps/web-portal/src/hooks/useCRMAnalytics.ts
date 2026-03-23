@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@tgt/core';;
+﻿import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@tgt/core';
 import { useCompany } from '@/contexts/CompanyContext';
 
 export interface FunnelStageData {

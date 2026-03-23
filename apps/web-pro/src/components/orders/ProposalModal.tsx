@@ -6,7 +6,7 @@ import { X, FileText, DollarSign } from 'lucide-react';
 interface ProposalModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (proposalData: { description: string; totalValue: number; upfrontPercentage: number }) => Promise<void>;
+    onSubmit: (proposalData: { description: string; totalValue: number; upfrontPercentage: number; estimatedDuration?: string; notes?: string }) => Promise<void>;
     isProCompany?: boolean;
     isSending?: boolean;
 }
@@ -21,12 +21,16 @@ export const ProposalModal: React.FC<ProposalModalProps> = ({
     const [description, setDescription] = useState('');
     const [totalValue, setTotalValue] = useState<number | ''>('');
     const [upfrontPercentage, setUpfrontPercentage] = useState<number>(30);
+    const [estimatedDuration, setEstimatedDuration] = useState('');
+    const [notes, setNotes] = useState('');
 
     useEffect(() => {
         if (isOpen) {
             setDescription('');
             setTotalValue('');
             setUpfrontPercentage(30);
+            setEstimatedDuration('');
+            setNotes('');
         }
     }, [isOpen]);
 
@@ -39,7 +43,9 @@ export const ProposalModal: React.FC<ProposalModalProps> = ({
         await onSubmit({
             description,
             totalValue: Number(totalValue),
-            upfrontPercentage
+            upfrontPercentage,
+            estimatedDuration: estimatedDuration.trim() || undefined,
+            notes: notes.trim() || undefined,
         });
     };
 
@@ -99,6 +105,29 @@ export const ProposalModal: React.FC<ProposalModalProps> = ({
                                 <option value={50}>50% Inicial / 50% Final</option>
                                 <option value={100}>100% Antecipado</option>
                             </select>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Prazo Estimado <span className="text-gray-400 font-normal">(opcional)</span></label>
+                            <input
+                                type="text"
+                                value={estimatedDuration}
+                                onChange={(e) => setEstimatedDuration(e.target.value)}
+                                placeholder="Ex: 3 dias úteis"
+                                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-primary outline-none"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Notas ao Cliente <span className="text-gray-400 font-normal">(opcional)</span></label>
+                            <input
+                                type="text"
+                                value={notes}
+                                onChange={(e) => setNotes(e.target.value)}
+                                placeholder="Observações adicionais..."
+                                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-primary outline-none"
+                            />
                         </div>
                     </div>
 

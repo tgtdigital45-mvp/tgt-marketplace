@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 
 import { useToast } from '@/contexts/ToastContext';
-import { Service } from '@tgt/core';;
-import { supabase } from '@tgt/core';;
+import { Service } from '@tgt/core';
+import { supabase } from '@tgt/core';
 import { useAuth } from '@/contexts/AuthContext';
 
 import ServiceWizard from '@/components/dashboard/ServiceWizard';

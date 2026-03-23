@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { supabase } from '@tgt/core';;
+import { supabase } from '@tgt/core';
 
 interface CheckoutOptions {
     order_id: string;
+    proposal_id?: string;
 }
 
 interface UseCheckoutReturn {
@@ -15,14 +16,14 @@ export const useCheckout = (): UseCheckoutReturn => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const redirectToCheckout = async ({ order_id }: CheckoutOptions) => {
+    const redirectToCheckout = async ({ order_id, proposal_id }: CheckoutOptions) => {
         setIsLoading(true);
         setError(null);
 
         try {
             // 1. Invoke the Stripe Edge Function
             const { data, error: funcError } = await supabase.functions.invoke('create-checkout-session', {
-                body: { order_id },
+                body: { order_id, proposal_id },
             });
 
             if (funcError) {
@@ -39,9 +40,10 @@ export const useCheckout = (): UseCheckoutReturn => {
             // 2. Redirect to Stripe Checkout
             window.location.href = data.paymentUrl;
 
-        } catch (err: any) {
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'An unexpected error occurred during checkout';
             console.error('Checkout error:', err);
-            setError(err.message || 'An unexpected error occurred during checkout');
+            setError(message);
         } finally {
             setIsLoading(false);
         }

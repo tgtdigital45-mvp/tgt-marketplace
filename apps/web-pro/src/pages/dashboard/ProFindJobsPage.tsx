@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { supabase } from '@tgt/core';;
+import { supabase } from '@tgt/core';
 import JobCard, { Job } from '@/components/pro/JobCard';
 import { Search } from 'lucide-react';
 

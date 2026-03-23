@@ -1,4 +1,4 @@
-import { Company } from '@tgt/core';;
+﻿import { Company } from '@tgt/core';
 
 /**
  * Deduplicates an array of companies based on their ID.

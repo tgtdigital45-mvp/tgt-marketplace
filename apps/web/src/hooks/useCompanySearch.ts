@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
 import { deduplicateCompanies } from '@/utils/companyUtils';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@tgt/core';;
+import { supabase } from '@tgt/core';
 import { calculateDistance } from '@/utils/geo';
-import { Company } from '@tgt/core';;
+import { Company } from '@tgt/core';
 
 export const useCompanySearch = (itemsPerPage: number = 8) => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -158,14 +158,53 @@ export const useCompanySearch = (itemsPerPage: number = 8) => {
                     query = query.eq('category', selectedCategory);
                 }
 
-                // 4. Sorting (Server-side)
+                // 4. Filtro de Preço Server-Side (antes da paginação)
+                // Buscamos os IDs das empresas que têm serviços na faixa desejada,
+                // exatamente como fazemos com o filtro de texto.
+                if (priceRange !== 'all') {
+                    const priceFilters: Record<string, { min?: number; max?: number }> = {
+                        low:  { max: 100 },
+                        mid:  { min: 100, max: 300 },
+                        high: { min: 300 },
+                    };
+                    const { min, max } = priceFilters[priceRange];
+
+                    let priceQuery = supabase
+                        .from('services')
+                        .select('company_id')
+                        .eq('is_active', true);
+                    if (min !== undefined) priceQuery = priceQuery.gte('price', min);
+                    if (max !== undefined) priceQuery = priceQuery.lt('price', max);
+
+                    const { data: priceData } = await priceQuery;
+                    const priceIds: string[] = Array.from(
+                        new Set((priceData || []).map((s: { company_id: string }) => s.company_id))
+                    ).filter(Boolean) as string[];
+
+                    if (priceIds.length === 0) {
+                        return { companies: [], count: 0 };
+                    }
+
+                    // Intersecta com companyIds de texto (se existir)
+                    if (companyIds) {
+                        const intersect = priceIds.filter(id => companyIds!.includes(id));
+                        if (intersect.length === 0) return { companies: [], count: 0 };
+                        companyIds = intersect;
+                    } else {
+                        companyIds = priceIds;
+                    }
+                    query = query.in('id', companyIds);
+                }
+
+                // 5. Sorting (Server-side)
                 if (sortBy === 'name') {
                     query = query.order('company_name', { ascending: true });
                 } else if (sortBy === 'rating') {
-                    query = query.order('created_at', { ascending: false });
+                    // Ordenar por rating DESC — empresas sem rating vão para o final
+                    query = query.order('rating', { ascending: false, nullsFirst: false });
                 }
 
-                // 5. Pagination
+                // 6. Pagination
                 query = query.range(from, to);
 
                 const { data, count: supabaseCount, error } = await query;
@@ -208,19 +247,8 @@ export const useCompanySearch = (itemsPerPage: number = 8) => {
                 };
             }) as Company[];
 
-            // Price Filtering (Client Side)
-            if (priceRange !== 'all') {
-                mappedCompanies = mappedCompanies.filter(c => {
-                    const services = c.services || [];
-                    const minPrice = services.length > 0
-                        ? Math.min(...services.map((s: any) => (typeof s === 'object' && s && 'price' in s ? Number(s.price) || 0 : 0)))
-                        : 0;
-                    if (priceRange === 'low') return minPrice < 100;
-                    if (priceRange === 'mid') return minPrice >= 100 && minPrice < 300;
-                    if (priceRange === 'high') return minPrice >= 300;
-                    return true;
-                });
-            }
+            // Price Filtering: agora feito server-side antes da paginação (ver acima).
+            // O bloco de filtro client-side foi removido para evitar resultados truncados por página.
 
             // Calculate Distance
             if (userCoords) {

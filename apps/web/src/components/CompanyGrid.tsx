@@ -1,6 +1,6 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'framer-motion';
-import { Company } from '@tgt/core';;
+import { Company } from '@tgt/core';
 import CompanyCard from '@/components/CompanyCard';
 import { deduplicateCompanies } from '@/utils/companyUtils';
 import EmptyState from '@/components/EmptyState';

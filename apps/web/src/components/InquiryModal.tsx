@@ -1,10 +1,10 @@
-
+﻿
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@tgt/core';;
+import { supabase } from '@tgt/core';
 import { useToast } from '@/contexts/ToastContext';
 
 import { Button, LoadingSkeleton } from '@tgt/ui-web';

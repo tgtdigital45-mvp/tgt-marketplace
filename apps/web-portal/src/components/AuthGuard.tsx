@@ -1,8 +1,8 @@
-import React from 'react';
+﻿import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
-import { LoadingSpinner } from '@tgt/ui-web';;
+import { LoadingSpinner } from '@tgt/ui-web';
 
 export const AuthGuard: React.FC = () => {
   const { user, loading } = useAuth();

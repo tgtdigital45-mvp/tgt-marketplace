@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import FileUpload from '@/components/FileUpload';
-import { supabase } from '@tgt/core';;
+import { supabase } from '@tgt/core';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import { PortfolioItem as DbPortfolioItem } from '@tgt/core';;
+import { PortfolioItem as DbPortfolioItem } from '@tgt/core';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 
 

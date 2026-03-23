@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '@tgt/core';;
+import { supabase } from '@tgt/core';
 import { useAuth } from '@/contexts/AuthContext';
 import CompanyCard from '@/components/CompanyCard';
 

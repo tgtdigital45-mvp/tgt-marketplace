@@ -1,0 +1,4 @@
+﻿
+> marketplace-app@1.0.0 test
+> jest __tests__/validators.test.ts
+

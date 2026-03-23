@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import SEO from '@/components/SEO';
 import { Link, useNavigate } from 'react-router-dom';
 import SocialButton from '@/components/ui/SocialButton';
@@ -9,7 +9,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { validateCNPJ, validateCPF } from '@/utils/validators';
 import { CATEGORIES } from '@/constants';
-import { supabase } from '@tgt/core';;
+import { supabase } from '@tgt/core';
 import { Store, Briefcase, ChevronRight, Check } from 'lucide-react';
 import { getCoordinatesFromAddress } from '@/utils/geocoding';
 import { coordsToH3 } from '@/utils/h3Utils';

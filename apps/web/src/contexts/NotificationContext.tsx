@@ -1,6 +1,6 @@
-import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { Notification } from '@tgt/core';;
-import { supabase } from '@tgt/core';;
+﻿import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import { Notification } from '@tgt/core';
+import { supabase } from '@tgt/core';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 

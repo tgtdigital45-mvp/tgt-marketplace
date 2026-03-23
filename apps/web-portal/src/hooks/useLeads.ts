@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@tgt/core';;
+import { supabase } from '@tgt/core';
 import { useCompany } from '@/contexts/CompanyContext';
 import { toast } from 'react-hot-toast';
 
@@ -47,7 +47,9 @@ export const useLeads = () => {
         score: item.score,
         temperature: item.temperature,
         last_interaction_at: item.last_interaction_at,
-        // These would ideally come from the same query or a separate aggregation
+        // @TODO [CRITICAL]: These values are currently MOCKED as 0.
+        // Needs a dedicated SQL function or view to aggregate total quotes and sum projected values 
+        // from the `proposals` or `orders` tables per customer.
         total_quotes: 0, 
         potential_value: 0
       })) as LeadOpportunity[];

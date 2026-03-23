@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { supabase } from '@tgt/core';;
+import { supabase } from '@tgt/core';
 
 
 import SocialButton from '@/components/ui/SocialButton';

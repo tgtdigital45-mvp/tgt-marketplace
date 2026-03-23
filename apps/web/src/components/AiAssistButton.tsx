@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Sparkles, Loader2 } from 'lucide-react';
-import { supabase } from '@tgt/core';;
+import { supabase } from '@tgt/core';
 import { useToast } from '@/contexts/ToastContext';
 
 interface AiAssistButtonProps {

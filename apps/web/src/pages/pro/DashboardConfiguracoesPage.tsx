@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useToast } from '@/contexts/ToastContext';
-import { supabase } from '@tgt/core';;
+import { supabase } from '@tgt/core';
 import { Switch } from '@headlessui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input, Button } from '@tgt/ui-web';

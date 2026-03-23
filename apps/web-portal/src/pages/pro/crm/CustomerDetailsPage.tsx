@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { PageTransition } from '@tgt/ui-web';;
+import { PageTransition } from '@tgt/ui-web';
 import { useCustomer, CustomerInteraction, InternalNote } from '@portal/hooks/useCustomer';
 import { 
   User, 

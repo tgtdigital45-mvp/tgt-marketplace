@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ImageCropModal from '@/components/ImageCropModal';
 
 
 
-import { ServicePackages } from '@tgt/core';;
+import { ServicePackages } from '@tgt/core';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@tgt/core';;
+import { supabase } from '@tgt/core';
 import { SERVICE_CATEGORIES } from '@/data/serviceDefinitions';
 import { Input, Select, Button } from '@tgt/ui-web';
 

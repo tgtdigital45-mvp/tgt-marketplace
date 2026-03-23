@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { 
   FileText, 
   Download, 
@@ -10,7 +10,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { useDocuments, CRMDocument } from '@portal/hooks/useDocuments';
-import { supabase } from '@tgt/core';;
+import { supabase } from '@tgt/core';
 
 interface DocumentManagerProps {
   customerId: string;

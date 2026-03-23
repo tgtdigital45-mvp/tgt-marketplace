@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@tgt/core';;
-import { BookingWithCompany, JobRequest, DbJobRequest, DbBooking } from '@tgt/core';;
+import { supabase } from '@tgt/core';
+import { BookingWithCompany, JobRequest, DbJobRequest, DbBooking } from '@tgt/core';
 
 export interface ClientOrdersData {
     jobs: JobRequest[];
@@ -57,10 +57,10 @@ export const useClientOrders = (userId: string | undefined) => {
                 ]);
 
                 if (jobsResponse.error) {
-                    console.error('Error fetching jobs:', jobsResponse.error);
+                    throw new Error(`Erro ao buscar pedidos: ${jobsResponse.error.message}`);
                 }
                 if (bookingsResponse.error) {
-                    console.error('Error fetching bookings:', bookingsResponse.error);
+                    throw new Error(`Erro ao buscar agendamentos: ${bookingsResponse.error.message}`);
                 }
 
                 // Transform Jobs Data
@@ -112,7 +112,9 @@ export const useClientOrders = (userId: string | undefined) => {
                 // Transform Bookings/Orders Data (Detecting Quotes)
                 const rawBookings = (bookingsResponse.data || []) as any[];
                 const bookings: BookingWithCompany[] = rawBookings.map((b) => {
-                    const isQuote = b.service?.requires_quote || b.price === 0 || ['pending', 'viewed', 'in_review'].includes(b.status);
+                    // Fonte de verdade: campo `requires_quote` do serviço.
+                    // Evita falso-positivo de booking normal (price=0 ou status=pending).
+                    const isQuote = b.service?.requires_quote === true;
                     
                     let mappedStatus = b.status;
                     if (isQuote) {

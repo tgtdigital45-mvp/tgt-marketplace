@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import SEO from '@/components/SEO';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -6,7 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import SocialButton from '@/components/ui/SocialButton';
 import { useToast } from '@/contexts/ToastContext';
 import { validatePassword } from '@/utils/validators';
-import { supabase } from '@tgt/core';;
+import { supabase } from '@tgt/core';
 import { Store, Briefcase } from 'lucide-react';
 import { Input, Button } from '@tgt/ui-web';
 

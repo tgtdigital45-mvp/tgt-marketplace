@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '@tgt/core';;
+﻿import React, { useState, useEffect } from 'react';
+import { supabase } from '@tgt/core';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 

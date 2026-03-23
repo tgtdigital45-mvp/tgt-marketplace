@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { useCompany } from '@/contexts/CompanyContext';
-import { supabase } from '@tgt/core';;
+import { supabase } from '@tgt/core';
 
 import { useToast } from '@/contexts/ToastContext';
 import { Calendar as CalendarIcon, List, Check, X, ChevronLeft, ChevronRight as ChevronRightIcon, MessageCircle, Sparkles, Loader2, Settings2, Filter, Clock } from 'lucide-react';

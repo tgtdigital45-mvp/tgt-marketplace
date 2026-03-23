@@ -1,4 +1,4 @@
-import React, { useState, lazy, Suspense } from 'react';
+﻿import React, { useState, lazy, Suspense } from 'react';
 import { deduplicateCompanies } from '@/utils/companyUtils';
 import { Helmet } from 'react-helmet-async';
 import SEO from '@/components/SEO';
@@ -14,8 +14,8 @@ const ServiceBookingModal = lazy(() => import('../components/ServiceBookingModal
 const ReviewModal = lazy(() => import('../components/ReviewModal'));
 const InquiryModal = lazy(() => import('../components/InquiryModal'));
 import CompanyCard from '@/components/CompanyCard';
-import { Service } from '@tgt/core';;
-import { supabase } from '@tgt/core';;
+import { Service } from '@tgt/core';
+import { supabase } from '@tgt/core';
 import { useCompanyProfile } from '@/hooks/useCompanyProfile';
 import { useSimilarCompanies } from '@/hooks/useSimilarCompanies';
 
@@ -182,7 +182,7 @@ const CompanyProfilePage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
           {/* LEFT SIDEBAR (Sticky) */}
-          <aside className="lg:col-span-4 order-2 lg:order-1 sticky top-24">
+          <aside className="lg:col-span-4 sticky top-24">
             <ProfileSidebar
               company={company}
               onContactClick={async () => {
@@ -200,30 +200,11 @@ const CompanyProfilePage: React.FC = () => {
           </aside>
 
           {/* RIGHT MAIN CONTENT */}
-          <div className="lg:col-span-8 order-1 lg:order-2">
+          <div className="lg:col-span-8">
             {/* MAIN CONTENT START */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
               <div className="p-6 md:p-8">
-                {/* 1. Serviços */}
-                <div className="mb-14">
-                  <h3 className="font-display text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                    <LayoutGrid className="w-6 h-6 text-brand-primary" />
-                    Serviços
-                  </h3>
-                  {company.services.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {company.services.map(service => (
-                        <ServiceCard key={service.id} service={service} onRequestQuote={() => handleRequestQuote(service)} />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                      <p className="text-gray-500">Nenhum serviço disponível.</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* 2. Quem Somos */}
+                {/* 1. Quem Somos */}
                 <div className="mb-14">
                   <h3 className="font-display text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                     <Info className="w-6 h-6 text-brand-primary" />
@@ -266,6 +247,25 @@ const CompanyProfilePage: React.FC = () => {
                       </section>
                     ) : null}
                   </div>
+                </div>
+
+                {/* 2. Serviços */}
+                <div className="mb-14">
+                  <h3 className="font-display text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                    <LayoutGrid className="w-6 h-6 text-brand-primary" />
+                    Serviços
+                  </h3>
+                  {company.services.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {company.services.map(service => (
+                        <ServiceCard key={service.id} service={service} onRequestQuote={() => handleRequestQuote(service)} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                      <p className="text-gray-500">Nenhum serviço disponível.</p>
+                    </div>
+                  )}
                 </div>
                 {/* 3. Portfólio */}
                 {company.portfolio.length > 0 && (

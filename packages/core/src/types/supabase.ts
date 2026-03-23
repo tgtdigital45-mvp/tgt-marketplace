@@ -21,8 +21,7 @@ const supabaseAnonKey = (typeof globalThis !== 'undefined' && globalThis.VITE_SU
     ? globalThis.VITE_SUPABASE_ANON_KEY
     : (typeof process !== 'undefined' ? process.env?.EXPO_PUBLIC_SUPABASE_ANON_KEY : undefined) || '';
 
-// Determine if running in a browser/web environment (has window object)
-const isWeb = typeof window !== 'undefined';
+const isWeb = typeof window !== 'undefined' && typeof document !== 'undefined';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CUSTOM NAVIGATOR LOCK — Previne NavigatorLockAcquireTimeoutError
@@ -94,6 +93,21 @@ class SafeCookieStorage {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const g = globalThis as any;
 if (!g._supabaseShared) {
+const nativeStorageAdapter = {
+    getItem: (key: string) => {
+        if (!g._SUPABASE_STORAGE) return null;
+        return g._SUPABASE_STORAGE.getItem(key);
+    },
+    setItem: (key: string, value: string) => {
+        if (!g._SUPABASE_STORAGE) return;
+        return g._SUPABASE_STORAGE.setItem(key, value);
+    },
+    removeItem: (key: string) => {
+        if (!g._SUPABASE_STORAGE) return;
+        return g._SUPABASE_STORAGE.removeItem(key);
+    }
+};
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const appType = (typeof globalThis !== 'undefined' && globalThis.VITE_APP_TYPE) ? globalThis.VITE_APP_TYPE : 'shared';
@@ -102,7 +116,7 @@ if (!g._supabaseShared) {
         persistSession: true,
         detectSessionInUrl: isWeb,
         storageKey: `contratto-auth-session-${appType}`,
-        storage: isWeb ? new SafeCookieStorage() : undefined, // Usa cookies no web, default (AsyncStorage) no mobile
+        storage: isWeb ? new SafeCookieStorage() : nativeStorageAdapter, // Usa cookies no web, adapter dinamico no mobile
         lock: buildLockFn(),
     };
 

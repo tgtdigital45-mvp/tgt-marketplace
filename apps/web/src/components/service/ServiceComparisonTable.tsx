@@ -1,5 +1,5 @@
-import React from 'react';
-import { ServicePackages } from '@tgt/core';;
+﻿import React from 'react';
+import { ServicePackages } from '@tgt/core';
 import { CheckIcon, XMarkIcon } from '@heroicons/react/24/solid';
 import { Button } from '@tgt/ui-web';
 

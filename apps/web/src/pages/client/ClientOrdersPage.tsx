@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { BookingWithCompany } from '@tgt/core';;
+import { BookingWithCompany } from '@tgt/core';
 import ProposalList from '@/components/client/ProposalList';
 import { useNavigate } from 'react-router-dom';
 import { useClientOrders } from '@/hooks/useClientOrders';

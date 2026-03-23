@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+﻿import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useCompany, CompanyData } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import { supabase } from '@tgt/core';;
+import { supabase } from '@tgt/core';
 import { CATEGORIES } from '@/constants';
 
 
 
 import OptimizedImage from '@/components/ui/OptimizedImage';
 
-import { PortfolioItem } from '@tgt/core';;
+import { PortfolioItem } from '@tgt/core';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import ImageCropModal from '@/components/ImageCropModal';

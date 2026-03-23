@@ -1,0 +1,70 @@
+{
+  "expo": {
+    "name": "Contrato Parceiros",
+    "slug": "contrato-parceiros",
+    "version": "1.0.0",
+    "runtimeVersion": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0D3B2E"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.tgtdigital.contratoparceiros",
+      "buildNumber": "1",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "NSCameraUsageDescription": "Precisamos de acesso à câmera para você tirar fotos do serviço ou atualizar seu perfil.",
+        "NSPhotoLibraryUsageDescription": "Precisamos de acesso à galeria para você anexar arquivos e fotos do serviço.",
+        "NSLocationWhenInUseUsageDescription": "Usamos sua localização para encontrar prestadores de serviço próximos a você.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Usamos sua localização para encontrar prestadores de serviço próximos a você."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0D3B2E",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.tgtdigital.contratoparceiros",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "POST_NOTIFICATIONS"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "scheme": "contratoparceiros",
+    "extra": {
+      "eas": {
+        "projectId": "6f39929d-547e-409b-9920-e8c2822de3da"
+      },
+      "router": {}
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.tgtdigital.contratoparceiros",
+          "enableGooglePay": true
+        }
+      ]
+    ],
+    "owner": "matheuscfs"
+  }
+}

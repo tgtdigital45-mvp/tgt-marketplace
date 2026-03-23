@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@tgt/core';;
-import { Company } from '@tgt/core';;
+﻿import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@tgt/core';
+import { Company } from '@tgt/core';
 
 export const useSimilarCompanies = (category: string | undefined, currentId: string | undefined) => {
     return useQuery({

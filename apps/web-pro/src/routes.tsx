@@ -1,7 +1,7 @@
-import React, { lazy } from 'react';
+﻿import React, { lazy } from 'react';
 import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { LoadingSpinner, PageTransition, ErrorBoundary } from '@tgt/ui-web';;
+import { LoadingSpinner, PageTransition, ErrorBoundary } from '@tgt/ui-web';
 import ProDashboardLayout from './components/layout/ProDashboardLayout';
 
 // Public Pages for Pro Platform
@@ -9,7 +9,6 @@ const ProLandingPage = lazy(() => import('./pages/ProLandingPage'));
 
 // Dashboard Pages
 const DashboardOverviewPage = lazy(() => import('./pages/dashboard/DashboardOverviewPage'));
-const DashboardOrcamentosPage = lazy(() => import('./pages/dashboard/DashboardOrcamentosPage'));
 const DashboardMensagensPage = lazy(() => import('./pages/dashboard/DashboardMensagensPage'));
 const DashboardAgendaPage = lazy(() => import('./pages/dashboard/DashboardAgendaPage'));
 const DashboardServicosPage = lazy(() => import('./pages/dashboard/DashboardServicosPage'));
@@ -83,7 +82,7 @@ const ProRoutes = () => {
             {/* Novo Dashboard Profissional */}
             <Route path="/dashboard/empresa/:slug" element={<ProDashboardLayout />}>
               <Route index element={<AnimatedElement><DashboardOverviewPage /></AnimatedElement>} />
-              <Route path="orcamentos" element={<AnimatedElement><DashboardOrcamentosPage /></AnimatedElement>} />
+              <Route path="orcamentos" element={<Navigate to="mensagens" replace />} />
               <Route path="mensagens" element={<AnimatedElement><DashboardMensagensPage /></AnimatedElement>} />
               <Route path="agenda" element={<AnimatedElement><DashboardAgendaPage /></AnimatedElement>} />
               <Route path="servicos" element={<AnimatedElement><DashboardServicosPage /></AnimatedElement>} />

@@ -1,7 +1,7 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+﻿import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { supabase } from '@tgt/core';;
-import { Service, DbCompany } from '@tgt/core';;
+import { supabase } from '@tgt/core';
+import { Service, DbCompany } from '@tgt/core';
 
 
 import { useAuth } from '@/contexts/AuthContext';
@@ -335,8 +335,59 @@ const ServiceDetailsPage = () => {
                         {/* 2. Gallery */}
                         <ServiceGallery images={service.gallery || []} title={service.title} />
 
+                        {/* Mobile Pricing Card (Sidebar Duplicate for Mobile) */}
+                        <div className="block lg:hidden mt-6 mb-8">
+                            <PricingCard
+                                packages={service.packages}
+                                onCheckout={handleCheckout}
+                                requiresQuote={service.requires_quote}
+                                canCheckout={company?.is_active !== false && (service.requires_quote || company?.stripe_charges_enabled !== false)}
+                                checkoutDisabledReason={
+                                    company?.is_active === false
+                                        ? "Esta empresa está temporariamente suspensa."
+                                        : (!service.requires_quote && company?.stripe_charges_enabled === false)
+                                            ? "Esta empresa está finalizando a configuração de pagamentos e não pode receber agendamentos no momento."
+                                            : undefined
+                                }
+                            />
+
+                            <div className="mt-8 bg-gray-50 rounded-xl p-6 border border-gray-100 text-center shadow-sm">
+                                <h4 className="font-bold text-gray-900 mb-2">Precisa de algo personalizado?</h4>
+                                <p className="text-sm text-gray-600 mb-4">Entre em contato com a empresa para um orçamento sob medida.</p>
+                                <Button variant="outline" className="w-full bg-white hover:bg-gray-50" onClick={() => navigate(`/empresa/${company?.slug}`)}>
+                                    Falar com a Empresa
+                                </Button>
+                            </div>
+                        </div>
+
+                        {/* 4. About Service */}
+                        <div className="space-y-6 mt-8">
+                            <h2 className="font-display text-2xl font-bold text-gray-900">Sobre este serviço</h2>
+                            <div className="prose prose-purple max-w-none text-gray-600 whitespace-pre-wrap">
+                                {service.description}
+                            </div>
+
+                            {/* Service Details/Methodology if available */}
+                            {service.details && (
+                                <div className="grid gap-6 mt-6">
+                                    {Object.entries(service.details).map(([key, value]) => (
+                                        <div key={key}>
+                                            <h4 className="font-bold text-gray-900 capitalize mb-1">{key.replace(/_/g, ' ')}</h4>
+                                            <p className="text-gray-600 text-sm">{value}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* 6. Characteristics (Attributes) */}
+                        <div className="border-t border-b border-gray-100 py-8 my-8">
+                            <h3 className="font-bold text-lg text-gray-900 mb-4">Ficha Técnica</h3>
+                            <ServiceAttributes attributes={service.attributes} />
+                        </div>
+
                         {/* 3. Highlighted Reviews (Mocked for now) */}
-                        <div className="border-b border-gray-100 pb-8">
+                        <div className="border-b border-gray-100 pb-8 mb-8">
                             <h3 className="font-display font-bold text-xl text-gray-900 mb-4">O que as pessoas estão dizendo</h3>
                             <div className="grid md:grid-cols-2 gap-4">
                                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
@@ -360,32 +411,6 @@ const ServiceDetailsPage = () => {
                                     <p className="text-sm text-gray-600 italic">"Profissional muito atencioso, recomendo a todos."</p>
                                 </div>
                             </div>
-                        </div>
-
-                        {/* 4. About Service */}
-                        <div className="space-y-6">
-                            <h2 className="font-display text-2xl font-bold text-gray-900">Sobre este serviço</h2>
-                            <div className="prose prose-purple max-w-none text-gray-600 whitespace-pre-wrap">
-                                {service.description}
-                            </div>
-
-                            {/* Service Details/Methodology if available */}
-                            {service.details && (
-                                <div className="grid gap-6 mt-6">
-                                    {Object.entries(service.details).map(([key, value]) => (
-                                        <div key={key}>
-                                            <h4 className="font-bold text-gray-900 capitalize mb-1">{key.replace(/_/g, ' ')}</h4>
-                                            <p className="text-gray-600 text-sm">{value}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* 6. Characteristics (Attributes) */}
-                        <div className="border-t border-b border-gray-100 py-8">
-                            <h3 className="font-bold text-lg text-gray-900 mb-4">Ficha Técnica</h3>
-                            <ServiceAttributes attributes={service.attributes} />
                         </div>
 
                         {/* 5 & 8. Plans & Comparison */}
@@ -519,7 +544,7 @@ const ServiceDetailsPage = () => {
                     </div>
 
                     {/* RIGHT SIDEBAR (Sticky) */}
-                    <div className="lg:col-span-4 relative">
+                    <div className="hidden lg:block lg:col-span-4 relative">
                         <PricingCard
                             packages={service.packages}
                             onCheckout={handleCheckout}

@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@tgt/core';;
-import { Service } from '@tgt/core';;
+﻿import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@tgt/core';
+import { Service } from '@tgt/core';
 
 export const useFeaturedServices = () => {
   return useQuery({

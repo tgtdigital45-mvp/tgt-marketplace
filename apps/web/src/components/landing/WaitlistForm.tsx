@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { supabase } from '@tgt/core';;
+﻿import React, { useState } from 'react';
+import { supabase } from '@tgt/core';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { toast } from 'react-hot-toast';

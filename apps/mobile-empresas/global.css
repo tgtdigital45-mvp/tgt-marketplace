@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        /* Brand Colors - Premium Slate & Blue */
+        --brand-primary: #0f172a;
+        /* Slate 900 */
+        --brand-secondary: #475569;
+        /* Slate 600 */
+        --brand-accent: #2563eb;
+        /* Blue 600 */
+        --brand-background: #f8fafc;
+        /* Slate 50 */
+        --brand-surface: #ffffff;
+
+        /* Gradients */
+        --grad-premium: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        --grad-accent: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+    }
+}
+
+@layer utilities {
+    .bg-premium-dark {
+        background-color: #0f172a;
+    }
+
+    .text-shadow-sm {
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .glass-card {
+        background-color: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+}

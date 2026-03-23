@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@tgt/core';;
-import { UserProfile, Booking, Favorite, Conversation, DbOrder, DbQuote } from '@tgt/core';;
+﻿import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@tgt/core';
+import { UserProfile, Booking, Favorite, Conversation, DbOrder, DbQuote } from '@tgt/core';
 
 interface ClientProfileData {
     profile: UserProfile | null;

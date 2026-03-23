@@ -1,0 +1,61 @@
+﻿
+> marketplace-app@1.0.0 test
+> jest __tests__/validators.test.ts
+
+node.exe : FAIL __tests
+__/validators.test.ts
+No linha:1 caractere:1
++ & "D:\node/node.exe" 
+"D:\node/node_modules/n
+pm/bin/npm-cli.js" 
+test _ ...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (FAIL __tests_   
+ _/validators.test.    
+ts:String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+  ÔùÅ Test suite 
+failed to run
+
+    ReferenceError: 
+You are trying to 
+`import` a file 
+outside of the scope 
+of the test code.
+
+      at 
+Runtime._execModule (no
+de_modules/jest-runtime
+/build/index.js:1212:13
+)
+      at require (node_
+modules/expo/src/winter
+/runtime.native.ts:20:4
+3)
+      at getValue (node
+_modules/expo/src/winte
+r/installGlobal.ts:97:2
+1)
+      at Object.get 
+[as __ExpoImportMetaReg
+istry] (node_modules/ex
+po/src/winter/installGl
+obal.ts:44:16)
+
+Test Suites: 1 failed, 
+1 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        0.996 s
+Ran all test suites 
+matching __tests__/vali
+dators.test.ts.

@@ -1,5 +1,5 @@
-import React from 'react';
-import { Company } from '@tgt/core';;
+﻿import React from 'react';
+import { Company } from '@tgt/core';
 
 
 import { MapPin, Calendar, Clock, CheckCircle, Facebook, Instagram, Linkedin, Globe, ExternalLink } from 'lucide-react';

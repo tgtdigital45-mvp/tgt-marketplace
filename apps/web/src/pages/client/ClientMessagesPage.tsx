@@ -2,17 +2,19 @@ import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from 
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import { supabase } from '@tgt/core';;
+import { supabase } from '@tgt/core';
 
-import { LoadingSpinner, Badge, Button, LoadingSkeleton } from '@tgt/ui-web';;
+import { LoadingSpinner, Badge, Button, LoadingSkeleton } from '@tgt/ui-web';
+import { useCheckout } from '@/hooks/useCheckout';
+import { ScheduleModal } from '@/components/booking/ScheduleModal';
 
 
 import {
-  ArrowLeft, Clock, ShieldCheck, Download, AlertCircle,
+  ArrowLeft, Clock, ShieldCheck, Download, AlertCircle, FileText,
   CheckCircle, MessageSquare, Search, Video, CreditCard, Check, XCircle,
   Archive, Flag, Ban, Trash2, MapPin, Briefcase, Plus, MoreVertical
 } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 
 const ReviewModal = lazy(() => import('@/components/orders/ReviewModal'));
 const DisputeModal = lazy(() => import('@/components/orders/DisputeModal'));
@@ -42,6 +44,8 @@ interface Message {
   file_url?: string | null;
   file_type?: string | null;
   order_proposals?: OrderProposal | null;
+  type?: string;
+  metadata?: any;
 }
 
 interface Thread {
@@ -64,12 +68,18 @@ interface Thread {
 const ClientMessagesPage: React.FC = () => {
   const { user } = useAuth();
   const { state } = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { addToast } = useToast();
+  const { redirectToCheckout } = useCheckout();
+  
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeThread, setActiveThread] = useState<Thread | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [orderForSchedule, setOrderForSchedule] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -104,11 +114,12 @@ const ClientMessagesPage: React.FC = () => {
       }));
       setThreads(mapped);
 
-      if (state?.threadId) {
-        const target = mapped.find(t => t.threadId === state.threadId);
+      const threadParam = searchParams.get('thread');
+      if (threadParam || state?.threadId) {
+        const target = mapped.find(t => t.threadId === (threadParam || state?.threadId));
         if (target) {
           setActiveThread(target);
-          window.history.replaceState({}, document.title);
+          window.history.replaceState({}, document.title, window.location.pathname);
         }
       }
     } catch (err) {
@@ -137,6 +148,19 @@ const ClientMessagesPage: React.FC = () => {
     setThreads(prev => prev.map(t =>
       t.threadId === activeThread.threadId ? { ...t, unreadCount: 0 } : t
     ));
+
+    const success = searchParams.get('success');
+    if (success === 'true' && activeThread.orderId) {
+      searchParams.delete('success');
+      setSearchParams(searchParams);
+      
+      supabase.from('orders').select('*').eq('id', activeThread.orderId).single().then(({ data }) => {
+          if (data) {
+              setOrderForSchedule(data);
+              setScheduleModalOpen(true);
+          }
+      });
+    }
 
     const col = activeThread.jobId ? 'job_id' : 'order_id';
     const sub = supabase
@@ -201,6 +225,71 @@ const ClientMessagesPage: React.FC = () => {
           sender_id: user?.id,
           receiver_id: activeThread.partnerId,
           content: '❌ Orçamento recusado.',
+          is_system_message: true,
+        });
+      }
+
+      addToast(action === 'accepted' ? 'Proposta aceita!' : 'Proposta recusada.', action === 'accepted' ? 'success' : 'info');
+      fetchMessages(activeThread!.threadId, !!activeThread!.jobId);
+    } catch {
+      addToast('Erro ao responder proposta.', 'error');
+    }
+  };
+
+  // Handler para propostas enviadas via metadata (msg.type === 'proposal')
+  const handleMetadataProposalAction = async (messageId: string, action: 'accepted' | 'rejected', proposalValue?: number) => {
+    try {
+      // Buscar metadata atual da mensagem
+      const { data: msgData, error: fetchErr } = await supabase
+        .from('messages')
+        .select('metadata')
+        .eq('id', messageId)
+        .single();
+      if (fetchErr) throw fetchErr;
+
+      const updatedMetadata = { ...msgData.metadata, status: action };
+      const { error: updateErr } = await supabase
+        .from('messages')
+        .update({ metadata: updatedMetadata })
+        .eq('id', messageId);
+      if (updateErr) throw updateErr;
+
+      // Atualizar estado local imediatamente (UI otimista)
+      setMessages(prev => prev.map(m =>
+        m.id === messageId ? { ...m, metadata: updatedMetadata } : m
+      ));
+
+      if (action === 'accepted' && activeThread?.orderId) {
+        // Atualizar order.price com o valor da proposta aceita
+        if (proposalValue) {
+          await supabase
+            .from('orders')
+            .update({ price: proposalValue })
+            .eq('id', activeThread.orderId);
+        }
+        await supabase.rpc('transition_saga_status', {
+          p_order_id: activeThread.orderId,
+          p_new_status: 'ORDER_ACTIVE'
+        });
+        await supabase.from('messages').insert({
+          order_id: activeThread.orderId,
+          sender_id: user?.id,
+          receiver_id: activeThread.partnerId,
+          content: '✅ Proposta aceita! Redirecionando para o pagamento do sinal...',
+          is_system_message: true,
+        });
+
+        // Redireciona para o Checkout passando o order_id e messageId (como proposal_id)
+        redirectToCheckout({ order_id: activeThread.orderId, proposal_id: messageId });
+        return; // Interrompe para não carregar mais nada e efetuar o redirect
+      }
+
+      if (action === 'rejected' && activeThread?.orderId) {
+        await supabase.from('messages').insert({
+          order_id: activeThread.orderId,
+          sender_id: user?.id,
+          receiver_id: activeThread.partnerId,
+          content: '❌ Proposta recusada.',
           is_system_message: true,
         });
       }
@@ -339,7 +428,7 @@ const ClientMessagesPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-4 space-y-4 custom-scrollbar min-h-0">
+                  <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-4 pb-12 space-y-4 custom-scrollbar min-h-0">
                     {messages.map(msg => {
                       const isMe = msg.sender_id === user?.id;
 
@@ -396,6 +485,100 @@ const ClientMessagesPage: React.FC = () => {
                         );
                       }
 
+                      // ── Proposta via metadata (enviada pelo profissional via DashboardMensagensPage) ──
+                      if (msg.type === 'proposal' && msg.metadata) {
+                        const proposal = msg.metadata;
+                        const isPending = proposal.status === 'pending';
+                        const isAccepted = proposal.status === 'accepted';
+                        const isRejected = proposal.status === 'rejected';
+                        return (
+                          <div key={msg.id} className="flex justify-center my-3">
+                            <div className="bg-white border border-gray-200 rounded-2xl shadow-md p-5 w-full max-w-sm">
+                              <div className="flex items-start justify-between mb-4">
+                                <div>
+                                  <p className="text-[10px] uppercase tracking-widest text-gray-400 font-black mb-1">Proposta de Serviço</p>
+                                  <span className="font-black text-2xl leading-none tracking-tight text-gray-900">
+                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(proposal.totalValue)}
+                                  </span>
+                                </div>
+                                <Badge className={
+                                  isAccepted ? 'bg-emerald-500 text-white border-0 text-[10px]' :
+                                  isRejected ? 'bg-red-500 text-white border-0 text-[10px]' :
+                                  'bg-amber-400 text-white border-0 text-[10px]'
+                                }>
+                                  {isAccepted ? 'Aceita ✓' : isRejected ? 'Recusada' : 'Aguardando'}
+                                </Badge>
+                              </div>
+
+                              {/* Descrição */}
+                              {proposal.description && (
+                                <p className="text-sm text-gray-600 mb-3 leading-relaxed">{proposal.description}</p>
+                              )}
+
+                              {/* Breakdown financeiro */}
+                              <div className="bg-slate-50 rounded-xl p-3 text-xs space-y-1.5 border border-slate-100 mb-3">
+                                <div className="flex justify-between font-medium text-slate-500">
+                                  <span>Valor do Serviço</span>
+                                  <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(proposal.totalValue)}</span>
+                                </div>
+                                <div className="flex justify-between font-bold text-slate-800 pt-1.5 border-t border-slate-200 mt-1.5">
+                                  <span>Total a Pagar</span>
+                                  <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(proposal.totalValue)}</span>
+                                </div>
+                              </div>
+
+                              {/* Condições */}
+                              <div className="text-[11px] space-y-1.5 mb-4">
+                                <div className="flex items-center gap-1.5 text-gray-500">
+                                  <CreditCard size={12} />
+                                  <span className="font-bold">Sinal inicial ({proposal.upfrontPercentage}%):</span>
+                                  <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(proposal.upfrontAmount)}</span>
+                                </div>
+                                {proposal.estimatedDuration && (
+                                  <div className="flex items-center gap-1.5 text-gray-500">
+                                    <Clock size={12} />
+                                    <span className="font-bold">Prazo:</span>
+                                    <span>{proposal.estimatedDuration}</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Notas do profissional */}
+                              {proposal.notes && (
+                                <div className="text-[11px] italic mb-4 p-2.5 rounded-lg border bg-amber-50/50 border-amber-100/50 text-slate-600">
+                                  <div className="font-bold not-italic mb-1 flex items-center gap-1">
+                                    <MessageSquare size={10} /> Notas do profissional:
+                                  </div>
+                                  "{proposal.notes}"
+                                </div>
+                              )}
+
+                              {/* Botões aceitar/recusar — só se pending e enviado pelo profissional */}
+                              {isPending && !isMe && (
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleMetadataProposalAction(msg.id, 'rejected', proposal.totalValue)}
+                                    className="flex-1 flex items-center justify-center gap-1 text-xs py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 font-medium transition-colors"
+                                  >
+                                    <XCircle size={13} /> Recusar
+                                  </button>
+                                  <button
+                                    onClick={() => handleMetadataProposalAction(msg.id, 'accepted', proposal.totalValue)}
+                                    className="flex-1 flex items-center justify-center gap-1 text-xs py-2 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 font-medium transition-colors"
+                                  >
+                                    <Check size={13} /> Aceitar Proposta
+                                  </button>
+                                </div>
+                              )}
+
+                              <p className="text-[10px] text-gray-400 text-center mt-3">
+                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      }
+
                       return (
                         <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                           <div className={`max-w-[82%] px-4 py-3 rounded-2xl shadow-sm text-sm break-words ${isMe ? 'bg-brand-primary text-white rounded-br-none' : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'}`}>
@@ -405,7 +588,62 @@ const ClientMessagesPage: React.FC = () => {
                                 : <a href={msg.file_url} target="_blank" rel="noreferrer" className={`flex items-center gap-2 underline mb-2 ${isMe ? 'text-blue-100' : 'text-brand-primary'}`}>Ver Anexo</a>
                             )}
 
-                            {/* Proposal card — client can accept/reject pending proposals */}
+                            {/* Quote and Booking Request Cards (Read-only on client side) */}
+                            {msg.type === 'quote_request' && msg.metadata && (
+                              <div className={`rounded-xl overflow-hidden mt-1 mb-2 border ${isMe ? 'border-brand-primary/40 bg-brand-primary' : 'border-gray-200 bg-white shadow-sm'}`}>
+                                  <div className={`p-3 font-bold flex items-center gap-2 border-b ${isMe ? 'border-white/20 text-white' : 'border-gray-100 text-gray-900'}`}>
+                                      <FileText size={18} /> Sua Solicitação de Orçamento
+                                  </div>
+                                  <div className={`p-3 space-y-3 ${isMe ? 'text-blue-50' : 'text-gray-600'}`}>
+                                      {msg.metadata.notes && (
+                                          <p className="whitespace-pre-wrap text-[13px]">{msg.metadata.notes}</p>
+                                      )}
+                                      
+                                      {msg.metadata.responses && Object.keys(msg.metadata.responses).length > 0 && (
+                                          <div className={`p-3 rounded-lg flex flex-col gap-2 ${isMe ? 'bg-black/10 text-white' : 'bg-gray-50 text-gray-800'}`}>
+                                              <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Respostas do Questionário</p>
+                                              {Object.entries(msg.metadata.responses).map(([q, a], idx) => (
+                                                  <div key={idx} className="text-xs">
+                                                      <span className="font-bold opacity-90">{q}:</span> <span className="opacity-100">{a as React.ReactNode}</span>
+                                                  </div>
+                                              ))}
+                                          </div>
+                                      )}
+                                      
+                                      {msg.metadata.budgetExpectation && (
+                                          <div className={`p-2 rounded mt-2 text-xs font-semibold flex justify-between items-center ${isMe ? 'bg-black/10 text-white' : 'bg-brand-primary/10 text-brand-primary'}`}>
+                                              <span>Sua Expectativa:</span>
+                                              <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(msg.metadata.budgetExpectation))}</span>
+                                          </div>
+                                      )}
+                                  </div>
+                              </div>
+                            )}
+
+                            {msg.type === 'booking_request' && msg.metadata && (
+                              <div className={`rounded-xl overflow-hidden mt-1 mb-2 border ${isMe ? 'border-brand-primary/40 bg-brand-primary' : 'border-gray-200 bg-white shadow-sm'}`}>
+                                  <div className={`p-3 font-bold flex items-center gap-2 border-b ${isMe ? 'border-white/20 text-white' : 'border-gray-100 text-gray-900'}`}>
+                                      <Briefcase size={18} /> Solicitação de Agendamento
+                                  </div>
+                                  <div className={`p-3 space-y-3 ${isMe ? 'text-blue-50' : 'text-gray-600'}`}>
+                                      <div className={`p-3 rounded-lg flex flex-col gap-2 ${isMe ? 'bg-black/10 text-white' : 'bg-gray-50 text-gray-800'}`}>
+                                          <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-2">
+                                              <span className="font-bold text-xs uppercase opacity-80">Valor Total Booking:</span>
+                                              <span className="font-black">R$ {msg.metadata.price.toFixed(2)}</span>
+                                          </div>
+                                          {msg.metadata.scheduledFor && (
+                                              <div className="text-xs flex gap-2 items-center">
+                                                  <Clock size={14} className="opacity-80"/>
+                                                  <span className="font-bold opacity-90">Para:</span> 
+                                                  <span className="opacity-100">{new Date(msg.metadata.scheduledFor).toLocaleString('pt-BR')}</span>
+                                              </div>
+                                          )}
+                                      </div>
+                                  </div>
+                              </div>
+                            )}
+
+                            {/* Proposal card (tabela order_proposals) — cliente pode aceitar/recusar */}
                             {msg.order_proposals && (
                               <ClientProposalCard
                                 proposal={msg.order_proposals}
@@ -455,6 +693,16 @@ const ClientMessagesPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <ScheduleModal 
+        isOpen={scheduleModalOpen} 
+        onClose={() => setScheduleModalOpen(false)} 
+        order={orderForSchedule} 
+        onSuccess={() => {
+          setScheduleModalOpen(false);
+          // O toast e as novas mensagens já são feitas dentro do próprio ScheduleModal
+        }} 
+      />
     </>
   );
 };
@@ -634,44 +882,17 @@ const ClientInfoPanel: React.FC<{ thread: Thread }> = ({ thread }) => {
       {/* Briefing / Order management */}
       {thread.orderId && (
         <div className="p-5 flex-grow overflow-y-auto">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Briefing do Pedido</p>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Gestão do Pedido</p>
 
           {loadingOrder
             ? <LoadingSkeleton className="h-24 w-full rounded-2xl" />
             : order && (
               <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm space-y-4">
-                <div>
-                  <h4 className="font-black text-sm text-slate-800 leading-tight mb-2">{order.service_title}</h4>
-                  <div className="flex items-center gap-2 flex-wrap mb-3">
-                    <Badge variant="primary" className="text-[9px] h-[18px] py-0">{order.package_tier}</Badge>
-                    <span className="text-sm font-black text-brand-primary">R$ {order.price}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {order.status === 'active' && <Badge className="bg-blue-600 text-white border-0 text-[10px]">Ativo</Badge>}
+                <div className="flex flex-wrap gap-1.5">
+                    {order.status === 'active' && <Badge className="bg-blue-600 text-white border-0 text-[10px]">Em Andamento</Badge>}
                     {order.status === 'in_progress' && <Badge className="bg-blue-500 text-white border-0 text-[10px]">Em Revisão</Badge>}
                     {order.status === 'delivered' && <Badge className="bg-amber-500 text-white border-0 text-[10px]">Ag. Aprovação</Badge>}
                     {order.status === 'completed' && <Badge className="bg-emerald-600 text-white border-0 text-[10px]">Finalizado</Badge>}
-                  </div>
-                </div>
-
-                {/* Resumo Financeiro no Briefing (Invoice Style) */}
-                <div className="bg-slate-50 rounded-xl p-3 text-xs space-y-1.5 border border-slate-100">
-                  <div className="flex justify-between font-medium text-slate-500">
-                    <span>Subtotal do Serviço</span>
-                    <span>R$ {(order.price * 0.9).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between font-medium text-slate-500">
-                    <span>Taxa da plataforma (10%)</span>
-                    <span>R$ {(order.price * 0.1).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between font-black text-slate-800 pt-1.5 border-t border-slate-200 mt-1.5">
-                    <span>Total Pago</span>
-                    <span>R$ {order.price}</span>
-                  </div>
-                  <div className="flex justify-between font-medium text-slate-500 pt-1.5">
-                    <span>Método</span>
-                    <span>Termos de Proteção</span>
-                  </div>
                 </div>
 
                 {/* Download delivery */}

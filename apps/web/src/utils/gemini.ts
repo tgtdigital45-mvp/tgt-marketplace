@@ -1,4 +1,4 @@
-import { supabase } from '@tgt/core';;
+﻿import { supabase } from '@tgt/core';
 
 /**
  * Utilitário legado que agora roteia para as novas Edge Functions de IA (OpenAI)

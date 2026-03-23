@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { supabase } from '@tgt/core';;
-import { Service, useLock } from '@tgt/core';;
-import { LoadingSpinner, Button } from '@tgt/ui-web';;
+import { supabase } from '@tgt/core';
+import { Service, useLock } from '@tgt/core';
+import { LoadingSpinner, Button } from '@tgt/ui-web';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';

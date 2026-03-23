@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '@tgt/core';;
+﻿import React, { useState, useEffect, useRef } from 'react';
+import { supabase } from '@tgt/core';
 export interface DbMessage {
     id: string;
     order_id: string;

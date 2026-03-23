@@ -75,34 +75,42 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
     }
     const finalPrice = service ? (service.price || 0) * totalDays : 0;
 
-    // Sync formData.date with hook's selectedDate
+    // Sync formData.date com o hook de disponibilidade
     React.useEffect(() => {
         if (formData.date) {
             setSelectedDate(formData.date);
         }
-    }, [formData.date]);
+    }, [formData.date, setSelectedDate]);
 
-    // Fetch dynamic form
+    // Busca o questionário dinâmico do serviço
     React.useEffect(() => {
-        if (service?.id) {
-            const fetchForm = async () => {
-                const { data } = await supabase
-                    .from('service_forms')
-                    .select('*')
-                    .eq('service_id', service.id)
-                    .maybeSingle();
-                setServiceForm(data);
-                if (data?.questions) {
-                    const initialResponses: Record<number, string> = {};
-                    data.questions.forEach((q: string, idx: number) => initialResponses[idx] = '');
-                    setResponses(initialResponses);
-                }
-            };
-            fetchForm();
-        } else {
+        if (!service?.id) {
             setServiceForm(null);
             setResponses({});
+            return;
         }
+
+        let cancelled = false; // evita setState após unmount (memory leak)
+
+        const fetchForm = async () => {
+            const { data } = await supabase
+                .from('service_forms')
+                .select('*')
+                .eq('service_id', service.id)
+                .maybeSingle();
+
+            if (cancelled) return; // componente já desmontou, ignora
+
+            setServiceForm(data);
+            if (data?.questions) {
+                const initialResponses: Record<number, string> = {};
+                data.questions.forEach((_q: string, idx: number) => { initialResponses[idx] = ''; });
+                setResponses(initialResponses);
+            }
+        };
+
+        fetchForm();
+        return () => { cancelled = true; };
     }, [service?.id]);
 
     if (!isOpen || !service) return null;
@@ -168,9 +176,23 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
 
                 if (error) throw error;
 
+                // Create initial chat message with the quote request
+                await supabase.from('messages').insert({
+                    order_id: newOrder.id,
+                    sender_id: user.id,
+                    receiver_id: finalSellerId,
+                    content: 'Nova Solicitação de Orçamento.',
+                    type: 'quote_request',
+                    metadata: {
+                        notes: formData.notes,
+                        budgetExpectation: formData.budgetExpectation,
+                        responses: formattedResponses
+                    }
+                });
+
                 addToast("Solicitação de orçamento enviada com sucesso!", "success");
                 onClose();
-                navigate('/perfil/pedidos');
+                navigate(`/minhas-mensagens?thread=${newOrder.id}`);
             } else {
                 // Combine date and time for scheduled_for
                 const scheduledFor = formData.date && formData.time 
@@ -180,7 +202,7 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
                 // We try sellerId prop first, then service.company.profile_id, finally falling back to resolvedCompanyId
                 const finalSellerId = sellerId || (service as any)?.company?.profile_id || resolvedCompanyId;
 
-                const { error } = await supabase.from('orders').insert({
+                const { data: newBooking, error } = await supabase.from('orders').insert({
                     buyer_id: user.id, // Updated: client_id -> buyer_id
                     seller_id: finalSellerId, // Updated: company_id -> seller_id
                     service_id: service.id,
@@ -190,13 +212,28 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
                     hiring_responses: formattedResponses,
                     status: 'pending',
                     package_tier: 'basic' // Default tier for direct bookings
-                });
+                }).select().single();
 
                 if (error) throw error;
 
+                // Create initial chat message for direct booking
+                await supabase.from('messages').insert({
+                    order_id: newBooking.id,
+                    sender_id: user.id,
+                    receiver_id: finalSellerId,
+                    content: 'Novo pedido de agendamento.',
+                    type: 'booking_request',
+                    metadata: {
+                        scheduledFor,
+                        price: finalPrice,
+                        responses: formattedResponses,
+                        notes: formData.notes
+                    }
+                });
+
                 addToast("Solicitação enviada com sucesso!", "success");
                 onClose();
-                navigate('/perfil/pedidos');
+                navigate(`/minhas-mensagens?thread=${newBooking.id}`);
             }
         } catch (err) {
             console.error("Booking error:", err);

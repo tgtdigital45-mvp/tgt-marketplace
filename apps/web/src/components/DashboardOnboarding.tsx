@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { supabase } from '@tgt/core';;
+﻿import React, { useState } from 'react';
+import { supabase } from '@tgt/core';
 
 
 import { useToast } from '@/contexts/ToastContext';

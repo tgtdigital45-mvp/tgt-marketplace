@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase } from '@tgt/core';;
-import { Service, DbCompany } from '@tgt/core';;
-import { LoadingSpinner, Button } from '@tgt/ui-web';;
+import { supabase } from '@tgt/core';
+import { Service, DbCompany } from '@tgt/core';
+import { LoadingSpinner, Button } from '@tgt/ui-web';
 import { BookingCalendar } from '@/components/booking/BookingCalendar';
 import SEO from '@/components/SEO';
 import { ChevronLeftIcon } from '@heroicons/react/24/outline';
@@ -24,7 +24,19 @@ const BookingPage = () => {
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
     const subcategoryData = SERVICE_CATEGORIES.flatMap(cat => cat.subcategories).find(sub => sub.id === (service as any)?.subcategory);
-    const questions = subcategoryData?.hiringQuestions || [];
+    const staticQuestions = subcategoryData?.hiringQuestions || [];
+    
+    // Mapeia perguntas customizadas (string[]) do banco para o formato HiringQuestion esperado pelo HiringForm
+    const customQuestions = (service as any)?.service_forms?.[0]?.questions?.map((qStr: string, index: number) => ({
+        id: `custom_q_${index}`,
+        question: qStr,
+        type: 'textarea', // Usa textarea pois perguntas costumam ser dissertativas
+        placeholder: 'Sua resposta aqui...',
+        required: true
+    })) || [];
+
+    // Prioriza as perguntas customizadas do profissional; caso não existam, usa o fallback estático da categoria
+    const questions = customQuestions.length > 0 ? customQuestions : staticQuestions;
 
     useEffect(() => {
         const fetchService = async () => {
@@ -32,7 +44,7 @@ const BookingPage = () => {
             try {
                 const { data, error } = await supabase
                     .from('services')
-                    .select('*, company:companies(*)')
+                    .select('*, company:companies(*), service_forms(*)')
                     .eq('id', serviceId)
                     .single();
 

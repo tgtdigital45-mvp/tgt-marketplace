@@ -1,7 +1,7 @@
-import React from 'react';
+﻿import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClientOrders } from '@/hooks/useClientOrders';
-import { LoadingSpinner, Badge, Button } from '@tgt/ui-web';;
+import { LoadingSpinner, Badge, Button } from '@tgt/ui-web';
 import {
     CalendarIcon, ClockIcon, MapPinIcon,
     ChevronRight, AlertCircle, MessageSquare,
@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@tgt/core';;
+import { supabase } from '@tgt/core';
 import { useToast } from '@/contexts/ToastContext';
 import { useQueryClient } from '@tanstack/react-query';
 

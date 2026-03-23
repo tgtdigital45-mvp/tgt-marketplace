@@ -1,5 +1,5 @@
-
-import { Company } from '@tgt/core';;
+﻿
+import { Company } from '@tgt/core';
 
 export const CATEGORIES = [
   "Marketing",

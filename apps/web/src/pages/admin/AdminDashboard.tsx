@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '@tgt/core';;
+﻿import React, { useEffect, useState } from 'react';
+import { supabase } from '@tgt/core';
 import { useAuth } from '@/contexts/AuthContext';
 import KPICard from '@/components/admin/KPICard';
 import TransactionsTable from '@/components/admin/TransactionsTable';
-import { LoadingSpinner } from '@tgt/ui-web';;
+import { LoadingSpinner } from '@tgt/ui-web';
 import { Link } from 'react-router-dom';
 
 // Icons

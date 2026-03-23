@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '@tgt/core';;
+import { supabase } from '@tgt/core';
 import { useToast } from '@/contexts/ToastContext';
 import { useCompany } from '@/contexts/CompanyContext';
 
@@ -54,12 +54,11 @@ export const useSubscription = () => {
                 throw new Error('No checkout URL returned');
             }
 
-        } catch (err: any) {
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Falha ao iniciar checkout.';
             console.error('Subscription error:', err);
-            const msg = err.message || 'Falha ao iniciar checkout.';
             setError(msg);
             addToast(msg, 'error');
-            // Re-throw if you want the component to handle it too
             throw err;
         } finally {
             setIsLoading(false);
@@ -85,9 +84,9 @@ export const useSubscription = () => {
                 throw new Error('No portal URL returned');
             }
 
-        } catch (err: any) {
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Falha ao abrir portal de cobrança.';
             console.error('Portal error:', err);
-            const msg = err.message || 'Falha ao abrir portal de cobrança.';
             setError(msg);
             addToast(msg, 'error');
             throw err;

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@tgt/core';;
-import { Company, DbCompany, DbProfile } from '@tgt/core';;
+import { supabase } from '@tgt/core';
+import { Company, DbCompany, DbProfile } from '@tgt/core';
 
 export const useCompanyProfile = (slug: string | undefined) => {
     return useQuery({
@@ -93,14 +93,16 @@ export const useCompanyProfile = (slug: string | undefined) => {
             let owner = undefined;
             let level: 'Iniciante' | 'Nível 1' | 'Pro' = 'Iniciante';
 
-            if ((raw as any).owner_id) {
-                const { data: stats } = await supabase
+            if (raw.profile_id) {
+                // Como não podemos garantir a sintaxe exata do Join PostgREST entre Profiles e Seller_stats aqui sem a DDL,
+                // usamos o profile_id (que agora está corretamente tipado no objeto raw pela nossa interface)
+                const { data: stats, error: statsError } = await supabase
                     .from('seller_stats')
                     .select('current_level')
-                    .eq('seller_id', (raw as any).owner_id)
-                    .single();
+                    .eq('seller_id', raw.profile_id)
+                    .maybeSingle();
 
-                if (stats && stats.current_level) {
+                if (!statsError && stats?.current_level) {
                     // Map backend levels to UI levels
                     const levelMap: Record<string, 'Iniciante' | 'Nível 1' | 'Pro'> = {
                         'Beginner': 'Iniciante',
@@ -140,8 +142,8 @@ export const useCompanyProfile = (slug: string | undefined) => {
                     city: raw.address?.city || '',
                     state: raw.address?.state || '',
                     cep: raw.address?.cep || '',
-                    lat: raw.address?.lat || raw.address?.latitude || undefined,
-                    lng: raw.address?.lng || raw.address?.longitude || undefined
+                    lat: raw.address?.lat || (raw.address as any)?.latitude || undefined,
+                    lng: raw.address?.lng || (raw.address as any)?.longitude || undefined
                 },
 
                 phone: raw.phone,

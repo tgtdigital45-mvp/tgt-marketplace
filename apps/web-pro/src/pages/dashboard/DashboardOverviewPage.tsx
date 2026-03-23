@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '@tgt/core';;
+﻿import React, { useEffect, useState } from 'react';
+import { supabase } from '@tgt/core';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
@@ -305,7 +305,7 @@ const DashboardOverviewPage: React.FC = () => {
               </Link>
             )}
             {alerts.pendingQuotes > 0 && (
-              <Link to={`/dashboard/empresa/${company?.slug}/orcamentos`} className="flex items-center gap-1.5 bg-white border border-purple-200 text-purple-800 text-[10px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full hover:bg-purple-50 transition-colors">
+              <Link to={`/dashboard/empresa/${company?.slug}/mensagens`} className="flex items-center gap-1.5 bg-white border border-purple-200 text-purple-800 text-[10px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full hover:bg-purple-50 transition-colors">
                 <FileText size={12} />
                 {alerts.pendingQuotes} orcamento{alerts.pendingQuotes > 1 ? 's' : ''} pendente{alerts.pendingQuotes > 1 ? 's' : ''}
               </Link>

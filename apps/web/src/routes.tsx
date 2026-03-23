@@ -1,8 +1,8 @@
 import React, { lazy } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
-import { LoadingSpinner, PageTransition, ErrorBoundary } from '@tgt/ui-web';;
+import { LoadingSpinner, PageTransition, ErrorBoundary } from '@tgt/ui-web';
 
 
 // Layouts & Global Components
@@ -72,7 +72,7 @@ const ExternalRedirect = ({ to }: { to: string }) => {
     return <LoadingSpinner />;
 };
 
-import { useParams } from 'react-router-dom';
+
 /** Redireciona mantendo parâmetros da URL (ex: :slug) */
 const ExternalRedirectWithParams = ({ to }: { to: string }) => {
     const params = useParams();
@@ -103,11 +103,16 @@ const ProtectedRoute = ({ userType, element }: ProtectedRouteProps): React.React
 /** Redirects /orders/:orderId to the correct messages page based on user type. */
 const OrderRedirect = () => {
     const { user } = useAuth();
+    const location = useLocation();
+    const { orderId } = useParams();
+
     if (!user) return <Navigate to="/login/cliente" replace />;
     if (user.type === 'company' && user.companySlug) {
-        return <ExternalRedirect to={`${PRO_APP_URL}/dashboard/empresa/${user.companySlug}/mensagens`} />;
+        const joiner = location.search ? '&' : '?';
+        return <ExternalRedirect to={`${PRO_APP_URL}/dashboard/empresa/${user.companySlug}/mensagens${location.search}${joiner}thread=${orderId}`} />;
     }
-    return <Navigate to="/minhas-mensagens" replace />;
+    const joiner = location.search ? '&' : '?';
+    return <Navigate to={`/minhas-mensagens${location.search}${joiner}thread=${orderId}`} replace />;
 };
 
 const MainRoutes = () => {

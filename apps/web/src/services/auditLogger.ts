@@ -1,4 +1,4 @@
-import { supabase } from '@tgt/core';;
+﻿import { supabase } from '@tgt/core';
 
 interface AuditLogParams {
     action: string;

@@ -1,11 +1,11 @@
-import React from 'react';
+﻿import React from 'react';
 import { deduplicateCompanies } from '@/utils/companyUtils';
 import { motion } from 'framer-motion';
 import { useVerifiedCompanies } from '@/hooks/useVerifiedCompanies';
 import CompanyCard from '@/components/CompanyCard';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { Company } from '@tgt/core';;
+import { Company } from '@tgt/core';
 
 const TrustSection: React.FC = () => {
     // Fetch verified companies

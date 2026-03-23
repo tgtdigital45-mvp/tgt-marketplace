@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
+﻿import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import { supabase } from '@tgt/core';;
+import { supabase } from '@tgt/core';
 
-import { LoadingSpinner, Badge, Button, LoadingSkeleton } from '@tgt/ui-web';;
+import { LoadingSpinner, Badge, Button, LoadingSkeleton } from '@tgt/ui-web';
 
 
 import { motion } from 'framer-motion';
@@ -227,7 +227,7 @@ const DashboardMensagensPage: React.FC = () => {
         window.open(videoUrl, '_blank');
     };
 
-    const handleSendProposal = async (proposalData: { description: string; totalValue: number; upfrontPercentage: number }) => {
+    const handleSendProposal = async (proposalData: { description: string; totalValue: number; upfrontPercentage: number; estimatedDuration?: string; notes?: string }) => {
         if (!activeThread || !user) return;
         setSendingProposal(true);
         try {
@@ -240,13 +240,15 @@ const DashboardMensagensPage: React.FC = () => {
                 finalAmount: fees.finalAmount,
                 upfrontPercentage: proposalData.upfrontPercentage,
                 platformFee: fees.platformFee,
+                estimatedDuration: proposalData.estimatedDuration,
+                notes: proposalData.notes,
                 status: 'pending'
             };
 
             const payload: any = {
                 sender_id: user.id, 
                 receiver_id: activeThread.partnerId,
-                content: 'Nova Proposta de Serviço',
+                content: `💼 Proposta de R$ ${fees.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
                 type: 'proposal',
                 metadata,
                 job_id: activeThread.jobId, 
@@ -384,7 +386,7 @@ const DashboardMensagensPage: React.FC = () => {
                             </div>
 
                             {/* Messages */}
-                            <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                            <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-4 pb-12 space-y-4 custom-scrollbar">
                                 {messages.map((msg) => {
                                     const isMe = msg.sender_id === user?.id;
 
@@ -400,6 +402,7 @@ const DashboardMensagensPage: React.FC = () => {
                                     }
 
                                     const isProposal = msg.type === 'proposal' && msg.metadata;
+                                    const isQuoteRequest = msg.type === 'quote_request' && msg.metadata;
 
                                     return (
                                         <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
@@ -418,7 +421,44 @@ const DashboardMensagensPage: React.FC = () => {
                                                     />
                                                 )}
 
-                                                {isProposal ? (
+                                                {isQuoteRequest ? (
+                                                    <div className={`rounded-xl overflow-hidden mt-1 mb-2 border ${isMe ? 'border-primary-400 bg-primary-600' : 'border-gray-200 bg-white shadow-sm'}`}>
+                                                        <div className={`p-3 font-bold flex items-center gap-2 border-b ${isMe ? 'border-primary-400/50 text-white' : 'border-gray-100 text-gray-900'}`}>
+                                                            <FileText size={18} /> Solicitação de Orçamento
+                                                        </div>
+                                                        <div className={`p-3 space-y-3 ${isMe ? 'text-primary-100' : 'text-gray-600'}`}>
+                                                            {msg.metadata.notes && (
+                                                                <p className="whitespace-pre-wrap text-[13px]">{msg.metadata.notes}</p>
+                                                            )}
+                                                            
+                                                            {msg.metadata.responses && Object.keys(msg.metadata.responses).length > 0 && (
+                                                                <div className={`p-3 rounded-lg flex flex-col gap-2 ${isMe ? 'bg-black/10 text-white' : 'bg-gray-50 text-gray-800'}`}>
+                                                                    <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Respostas do Questionário</p>
+                                                                    {Object.entries(msg.metadata.responses).map(([q, a], idx) => (
+                                                                        <div key={idx} className="text-xs">
+                                                                            <span className="font-bold opacity-90">{q}:</span> <span className="opacity-100">{a as React.ReactNode}</span>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                            
+                                                            {msg.metadata.budgetExpectation && (
+                                                                <div className={`p-2 rounded mt-2 text-xs font-semibold flex justify-between items-center ${isMe ? 'bg-black/10 text-white' : 'bg-primary-50 text-primary-600'}`}>
+                                                                    <span>Expectativa do Cliente:</span>
+                                                                    <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(msg.metadata.budgetExpectation))}</span>
+                                                                </div>
+                                                            )}
+
+                                                            {!isMe && (
+                                                                <div className="pt-2">
+                                                                    <Button size="sm" className="w-full text-xs" onClick={() => setIsProposalModalOpen(true)}>
+                                                                        Responder com Proposta
+                                                                    </Button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ) : isProposal ? (
                                                     <div className={`rounded-xl overflow-hidden mt-1 mb-2 border ${isMe ? 'border-primary-400 bg-primary-600' : 'border-gray-200 bg-white shadow-sm'}`}>
                                                         <div className={`p-3 font-bold flex items-center gap-2 border-b ${isMe ? 'border-primary-400/50 text-white' : 'border-gray-100 text-gray-900'}`}>
                                                             <FileText size={18} /> Proposta de Serviço

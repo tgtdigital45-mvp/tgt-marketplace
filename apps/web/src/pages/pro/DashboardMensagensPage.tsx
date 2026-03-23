@@ -1,17 +1,18 @@
-import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
+﻿import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import { supabase } from '@tgt/core';;
+import { supabase } from '@tgt/core';
 
-import { LoadingSpinner, Badge, Button, LoadingSkeleton } from '@tgt/ui-web';;
+import { LoadingSpinner, Badge, Button, LoadingSkeleton } from '@tgt/ui-web';
+import { ProposalModal } from '@/components/orders/ProposalModal';
 
 
 import { motion } from 'framer-motion';
 import {
     ChevronRight, Paperclip, Zap, ArrowLeft, Clock,
-    MessagesSquare, Search, Video, CreditCard, X, Check, XCircle
+    MessagesSquare, Search, Video, CreditCard, X, Check, XCircle, FileText
 } from 'lucide-react';
 
 const DeliveryModal = lazy(() => import('@/components/orders/DeliveryModal'));
@@ -48,6 +49,8 @@ interface Message {
     job_id?: string;
     order_id?: string;
     order_proposals?: OrderProposal | null;
+    type?: string;
+    metadata?: any;
 }
 
 interface Thread {
@@ -81,12 +84,9 @@ const DashboardMensagensPage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState<'all' | 'leads'>('all');
 
-    // Payment request modal
-    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-    const [paymentTitle, setPaymentTitle] = useState('');
-    const [paymentDescription, setPaymentDescription] = useState('');
-    const [paymentAmount, setPaymentAmount] = useState('');
-    const [sendingPayment, setSendingPayment] = useState(false);
+    // Proposal modal
+    const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
+    const [sendingProposal, setSendingProposal] = useState(false);
 
     const scrollToBottom = () => {
         if (chatContainerRef.current) {
@@ -219,40 +219,38 @@ const DashboardMensagensPage: React.FC = () => {
         window.open(videoUrl, '_blank');
     };
 
-    const handleSendPaymentRequest = async () => {
+    const handleSendProposal = async (proposalData: { description: string; totalValue: number; upfrontPercentage: number; estimatedDuration?: string; notes?: string }) => {
         if (!activeThread || !user) return;
-        const numericAmount = parseFloat(paymentAmount.replace(',', '.'));
-        if (isNaN(numericAmount) || numericAmount <= 0) {
-            addToast('Digite um valor válido.', 'error');
-            return;
-        }
-        setSendingPayment(true);
+        setSendingProposal(true);
         try {
-            const feeAmount = numericAmount * PLATFORM_FEE;
-            const netAmount = numericAmount - feeAmount;
             const payload: any = {
                 sender_id: user.id, receiver_id: activeThread.partnerId,
-                content: JSON.stringify({
-                    type: 'payment_request',
-                    title: paymentTitle || 'Solicitação de Pagamento',
-                    description: paymentDescription,
-                    amount: numericAmount,
-                    fee: feeAmount,
-                    net: netAmount,
-                }),
-                is_system_message: true,
+                content: 'Enviei uma proposta para o seu projeto.',
+                type: 'proposal',
+                metadata: {
+                    totalValue: proposalData.totalValue,
+                    description: proposalData.description,
+                    status: 'pending',
+                    upfrontPercentage: proposalData.upfrontPercentage,
+                    upfrontAmount: proposalData.totalValue * (proposalData.upfrontPercentage / 100),
+                    estimatedDuration: proposalData.estimatedDuration || null,
+                    notes: proposalData.notes || null,
+                },
                 job_id: activeThread.jobId, order_id: activeThread.orderId
             };
             await supabase.from('messages').insert(payload);
             setMessages(prev => [...prev, { id: 'temp-' + Date.now(), ...payload, created_at: new Date().toISOString(), is_read: false }]);
-            addToast('Solicitação de pagamento enviada!', 'success');
-            setIsPaymentModalOpen(false);
-            setPaymentTitle(''); setPaymentDescription(''); setPaymentAmount('');
+            addToast('Proposta enviada com sucesso!', 'success');
+            setIsProposalModalOpen(false);
         } catch {
-            addToast('Erro ao enviar solicitação.', 'error');
+            addToast('Erro ao enviar proposta.', 'error');
         } finally {
-            setSendingPayment(false);
+            setSendingProposal(false);
         }
+    };
+
+    const handleSendQuoteProposal = () => {
+        setIsProposalModalOpen(true);
     };
 
     const filteredThreads = threads.filter(t => {
@@ -428,6 +426,64 @@ const DashboardMensagensPage: React.FC = () => {
                                         );
                                     }
 
+                                    const isQuoteRequest = msg.type === 'quote_request' && msg.metadata;
+                                    const isProposal = msg.type === 'proposal' && msg.metadata;
+
+                                    if (isQuoteRequest) {
+                                        return (
+                                            <div key={msg.id} className="flex justify-start my-4">
+                                                <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 w-full max-w-lg">
+                                                    <div className="flex items-center gap-2 mb-4">
+                                                        <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center shrink-0">
+                                                            <MessagesSquare size={16} className="text-primary-600" />
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="font-bold text-gray-900 text-sm">Briefing Recebido</h4>
+                                                            <p className="text-[10px] text-gray-500">O cliente respondeu ao questionário</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-4">
+                                                        {/* responses pode ser array [{question,answer}] ou objeto {pergunta: resposta} */}
+                                                        {Array.isArray(msg.metadata.responses)
+                                                            ? msg.metadata.responses.map((resp: any, i: number) => (
+                                                                <div key={i} className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                                                                    <p className="text-xs font-bold text-gray-700 mb-1">{resp.question}</p>
+                                                                    <p className="text-sm text-gray-900">{resp.answer}</p>
+                                                                </div>
+                                                            ))
+                                                            : msg.metadata.responses && Object.keys(msg.metadata.responses).length > 0
+                                                                ? Object.entries(msg.metadata.responses).map(([q, a], i) => (
+                                                                    <div key={i} className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                                                                        <p className="text-xs font-bold text-gray-700 mb-1">{q}</p>
+                                                                        <p className="text-sm text-gray-900">{a as string}</p>
+                                                                    </div>
+                                                                ))
+                                                                : null
+                                                        }
+                                                        {msg.metadata.notes && (
+                                                            <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                                                                <p className="text-xs font-bold text-gray-700 mb-1">Observações adicionais</p>
+                                                                <p className="text-sm text-gray-900 whitespace-pre-wrap">{msg.metadata.notes}</p>
+                                                            </div>
+                                                        )}
+                                                        {msg.metadata.budgetExpectation && (
+                                                            <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-100">
+                                                                <p className="text-xs font-bold text-emerald-800 mb-1">Expectativa de orçamento</p>
+                                                                <p className="text-sm text-emerald-900 font-medium">{msg.metadata.budgetExpectation}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center justify-between mt-4 border-t border-gray-100 pt-3">
+                                                        <p className="text-[10px] text-gray-400">
+                                                            Recebido às {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </p>
+                                                        <Button size="sm" onClick={handleSendQuoteProposal}>Responder com Proposta</Button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+
                                     return (
                                         <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                                             <div className={`max-w-[82%] px-4 py-3 rounded-2xl shadow-sm text-sm break-words ${isMe ? 'bg-primary-500 text-white rounded-br-none' : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'}`}>
@@ -445,7 +501,45 @@ const DashboardMensagensPage: React.FC = () => {
                                                     />
                                                 )}
 
-                                                <span>{msg.content}</span>
+                                                {!msg.order_proposals && isProposal ? (
+                                                    <div className={`rounded-xl overflow-hidden mt-1 mb-2 border ${isMe ? 'border-primary-400 bg-primary-600' : 'border-gray-200 bg-white shadow-sm'}`}>
+                                                        <div className={`p-3 font-bold flex items-center gap-2 border-b ${isMe ? 'border-primary-400/50 text-white' : 'border-gray-100 text-gray-900'}`}>
+                                                            <FileText size={18} /> Proposta de Serviço
+                                                        </div>
+                                                        <div className={`p-3 space-y-3 ${isMe ? 'text-primary-100' : 'text-gray-600'}`}>
+                                                            <p className="whitespace-pre-wrap text-[13px]">{msg.metadata.description}</p>
+                                                            
+                                                            <div className={`p-3 rounded-lg flex flex-col gap-1 ${isMe ? 'bg-primary-700/50 text-white' : 'bg-gray-50 text-gray-800'}`}>
+                                                                <div className="flex items-center justify-between font-bold">
+                                                                    <span>Valor Total Cobrado:</span>
+                                                                    <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(msg.metadata.totalValue)}</span>
+                                                                </div>
+                                                                {isMe && (
+                                                                    <div className="text-[11px] text-primary-200 flex justify-between">
+                                                                        <span>Taxas (TGT + Stripe):</span>
+                                                                        <span>-{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((msg.metadata.platformFee || 0) + (msg.metadata.stripeFee || 0))}</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div className={`p-2 rounded mt-2 text-xs font-semibold flex justify-between items-center ${isMe ? 'bg-black/10' : 'bg-primary-50 text-primary-600'}`}>
+                                                                <span>Sinal Antecipado ({msg.metadata.upfrontPercentage}%):</span>
+                                                                <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(msg.metadata.upfrontAmount)}</span>
+                                                            </div>
+                                                            
+                                                            <div className="flex items-center justify-center pt-2">
+                                                                <div className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                                                    msg.metadata.status === 'accepted' ? 'bg-emerald-500 text-white' :
+                                                                    msg.metadata.status === 'rejected' ? 'bg-red-500 text-white' :
+                                                                    'bg-amber-400 text-white'
+                                                                }`}>
+                                                                    {msg.metadata.status === 'accepted' ? 'Aceita' : msg.metadata.status === 'rejected' ? 'Recusada' : 'Aguardando Avaliação'}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ) : !msg.order_proposals && (
+                                                    <span>{msg.content}</span>
+                                                )}
                                                 <div className={`text-[10px] mt-1 text-right ${isMe ? 'text-blue-100' : 'text-gray-400'}`}>
                                                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </div>
@@ -499,87 +593,20 @@ const DashboardMensagensPage: React.FC = () => {
                         <InfoPanel
                             thread={activeThread}
                             onVideoCall={handleVideoCall}
-                            onRequestPayment={() => setIsPaymentModalOpen(true)}
+                            onRequestPayment={() => setIsProposalModalOpen(true)}
                         />
                     </div>
                 )}
             </div>
 
-            {/* ── Payment Request Modal ── */}
-            {isPaymentModalOpen && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl w-full max-w-md shadow-xl">
-                        <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-                            <h2 className="text-lg font-bold text-gray-900">Solicitar Pagamento</h2>
-                            <button onClick={() => setIsPaymentModalOpen(false)} className="text-gray-400 hover:text-gray-600 p-1">
-                                <X size={20} />
-                            </button>
-                        </div>
-                        <div className="p-5 space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Título do Serviço</label>
-                                <input
-                                    type="text"
-                                    placeholder="Ex: Criação de Logo"
-                                    className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-                                    value={paymentTitle}
-                                    onChange={e => setPaymentTitle(e.target.value)}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Descrição (opcional)</label>
-                                <textarea
-                                    placeholder="Detalhes do que está incluído..."
-                                    className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm min-h-[80px] resize-none"
-                                    value={paymentDescription}
-                                    onChange={e => setPaymentDescription(e.target.value)}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Valor (R$)</label>
-                                <input
-                                    type="number"
-                                    placeholder="0,00"
-                                    min="0"
-                                    step="0.01"
-                                    className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-                                    value={paymentAmount}
-                                    onChange={e => setPaymentAmount(e.target.value)}
-                                />
-                            </div>
-
-                            {/* Fee preview */}
-                            {paymentAmount && !isNaN(parseFloat(paymentAmount)) && parseFloat(paymentAmount) > 0 && (() => {
-                                const amt = parseFloat(paymentAmount);
-                                const fee = amt * PLATFORM_FEE;
-                                const net = amt - fee;
-                                return (
-                                    <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 space-y-1 text-xs">
-                                        <div className="flex justify-between text-gray-600">
-                                            <span>Valor cobrado do cliente</span>
-                                            <span className="font-semibold">R$ {amt.toFixed(2)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-gray-400">
-                                            <span>Taxa Contratto (10%)</span>
-                                            <span>-R$ {fee.toFixed(2)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-emerald-700 font-bold border-t border-emerald-200 pt-1">
-                                            <span>Você recebe</span>
-                                            <span>R$ {net.toFixed(2)}</span>
-                                        </div>
-                                    </div>
-                                );
-                            })()}
-                        </div>
-                        <div className="p-5 flex gap-3 border-t border-gray-100">
-                            <Button variant="secondary" className="flex-1" onClick={() => setIsPaymentModalOpen(false)}>Cancelar</Button>
-                            <Button className="flex-1" isLoading={sendingPayment} onClick={handleSendPaymentRequest}>
-                                Enviar Proposta
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* ── Proposal Modal ── */}
+            <ProposalModal
+                isOpen={isProposalModalOpen}
+                onClose={() => setIsProposalModalOpen(false)}
+                onSubmit={handleSendProposal}
+                isProCompany={true}
+                isSending={sendingProposal}
+            />
         </div>
     );
 };

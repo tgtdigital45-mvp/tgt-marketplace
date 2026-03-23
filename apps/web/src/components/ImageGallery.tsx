@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { PortfolioItem } from '@tgt/core';;
+﻿import React, { useState } from 'react';
+import { PortfolioItem } from '@tgt/core';
 
 interface ImageGalleryProps {
   items: PortfolioItem[];

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '@tgt/core';;
-import { DbWallet, DbTransaction, SellerStats } from '@tgt/core';;
-import { LoadingSpinner, Button } from '@tgt/ui-web';;
+﻿import React, { useState, useEffect } from 'react';
+import { supabase } from '@tgt/core';
+import { DbWallet, DbTransaction, SellerStats } from '@tgt/core';
+import { LoadingSpinner, Button } from '@tgt/ui-web';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/layout/Header';
 
