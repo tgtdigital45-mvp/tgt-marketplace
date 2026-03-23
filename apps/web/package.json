@@ -11,6 +11,7 @@
     "generate:sitemap": "tsx scripts/generate-sitemap.ts",
     "test": "vitest",
     "test:ui": "vitest --ui",
+    "test:e2e": "playwright test",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
