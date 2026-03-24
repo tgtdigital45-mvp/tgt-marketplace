@@ -34,7 +34,7 @@ const HeroSection: React.FC = () => {
             transition={{ duration: 0.6 }}
           >
             <span className="inline-block py-1.5 sm:py-2 px-4 sm:px-6 rounded-full bg-primary-600/10 text-primary-400 text-[10px] sm:text-xs font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] mb-6 sm:mb-8 border border-primary-500/20 backdrop-blur-sm">
-              A Rede Verificada #1 do Parana
+              A Rede Verificada #1 do Brasil
             </span>
           </motion.div>
 

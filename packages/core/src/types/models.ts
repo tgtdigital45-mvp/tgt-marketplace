@@ -188,6 +188,7 @@ export interface DbService {
   faq?: { question: string; answer: string; }[];
   // H3 + Marketplace fields
   service_type?: 'remote_fixed' | 'local_client_fixed' | 'local_provider_fixed' | 'requires_quote' | string;
+  location_type?: 'in_store' | 'at_home' | 'remote' | 'hybrid' | string;
   allows_escrow?: boolean;
   is_single_package?: boolean;
   requires_quote?: boolean;

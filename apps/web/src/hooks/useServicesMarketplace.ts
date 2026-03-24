@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@tgt/core';
 import { DbService } from '@tgt/core';
 import { getH3SearchIndexes } from '@/utils/h3Utils';
@@ -79,9 +79,9 @@ export function useServicesMarketplace({
 
         // Service type filter
         if (serviceFilter === 'remote') {
-            query = query.in('service_type', ['remote', 'hybrid']);
+            query = query.in('location_type', ['remote', 'hybrid']);
         } else if (serviceFilter === 'presential') {
-            query = query.in('service_type', ['presential', 'hybrid']);
+            query = query.in('location_type', ['in_store', 'at_home', 'hybrid']);
             // Apply H3 location filter if available
             if (h3Indexes && h3Indexes.length > 0) {
                 query = query.in('h3_index', h3Indexes);

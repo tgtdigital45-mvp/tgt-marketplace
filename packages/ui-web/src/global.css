@@ -7,9 +7,9 @@
      ============================================ */
 
   /* Brand Colors - Refined palette with better contrast */
-  --color-brand-primary: #FF6B35;
-  --color-brand-primary-hover: #E85D2E;
-  --color-brand-primary-light: #fff4ed;
+  --color-brand-primary: #0284c7;
+  --color-brand-primary-hover: #0369a1;
+  --color-brand-primary-light: #e0f2fe;
   --color-brand-secondary: #004E89;
   --color-brand-secondary-hover: #003B66;
   --color-brand-accent: #F7B801;
@@ -17,18 +17,18 @@
   --color-brand-background: #FAFBFC;
   --color-brand-dark: #0B1120;
 
-  /* Primary Palette (Orange-based) */
-  --color-primary-50: #fff4ed;
-  --color-primary-100: #ffe6d5;
-  --color-primary-200: #feccaa;
-  --color-primary-300: #fdac74;
-  --color-primary-400: #fb803c;
-  --color-primary-500: #f96316;
-  --color-primary-600: #FF6B35;
-  --color-primary-700: #c23809;
-  --color-primary-800: #9b2f0e;
-  --color-primary-900: #7c290f;
-  --color-primary-950: #431205;
+  /* Primary Palette (Ocean Blue-based) */
+  --color-primary-50: #f0f9ff;
+  --color-primary-100: #e0f2fe;
+  --color-primary-200: #bae6fd;
+  --color-primary-300: #7dd3fc;
+  --color-primary-400: #38bdf8;
+  --color-primary-500: #0ea5e9;
+  --color-primary-600: #0284c7;
+  --color-primary-700: #0369a1;
+  --color-primary-800: #075985;
+  --color-primary-900: #0c4a6e;
+  --color-primary-950: #082f49;
 
   /* Typography */
   --font-sans: 'DM Sans', system-ui, sans-serif;
@@ -231,7 +231,7 @@ h6,
 
   /* Glow effect for CTAs */
   .glow-primary {
-    box-shadow: 0 0 20px rgba(255, 107, 53, 0.3), 0 0 60px rgba(255, 107, 53, 0.1);
+    box-shadow: 0 0 20px rgba(2, 132, 199, 0.3), 0 0 60px rgba(2, 132, 199, 0.1);
   }
 
   /* Smooth card hover */
@@ -381,7 +381,7 @@ h6,
 /* Gradient mesh background */
 .mesh-gradient {
   background:
-    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(255, 107, 53, 0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(2, 132, 199, 0.08) 0%, transparent 70%),
     radial-gradient(ellipse 60% 40% at 80% 20%, rgba(0, 78, 137, 0.06) 0%, transparent 70%),
     radial-gradient(ellipse 50% 60% at 50% 80%, rgba(247, 184, 1, 0.04) 0%, transparent 70%);
 }

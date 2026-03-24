@@ -59,6 +59,7 @@ const PlansPage = lazy(() => import('@/pages/PlansPage'));
 const AboutPage = lazy(() => import('@/pages/institucional/AboutPage'));
 const NewsPage = lazy(() => import('@/pages/institucional/NewsPage'));
 const BlogPage = lazy(() => import('@/pages/institucional/BlogPage'));
+const BlogDetailPage = lazy(() => import('@/pages/institucional/BlogDetailPage'));
 const NewsDetailPage = lazy(() => import('@/pages/NewsDetailPage'));
 
 // Animated route wrapper
@@ -175,6 +176,7 @@ const MainRoutes = () => {
                         <Route path="/noticias" element={<Navigate to="/institucional/noticias" replace />} />
                         <Route path="/noticias/:slug" element={<AnimatedElement><NewsDetailPage /></AnimatedElement>} />
                         <Route path="/blog" element={<Navigate to="/institucional/blog" replace />} />
+                        <Route path="/institucional/blog/:slug" element={<AnimatedElement><BlogDetailPage /></AnimatedElement>} />
 
                         <Route path="/carreiras" element={<AnimatedElement><CareersPage /></AnimatedElement>} />
                         <Route path="/privacidade" element={<AnimatedElement><PrivacyPage /></AnimatedElement>} />

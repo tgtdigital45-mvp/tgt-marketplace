@@ -79,6 +79,11 @@ async function generateSitemap() {
                 priority: 0.7
             },
             {
+                loc: `${baseUrl}/servicos`,
+                changefreq: 'weekly',
+                priority: 0.7
+            },
+            {
                 loc: `${baseUrl}/sobre`,
                 changefreq: 'monthly',
                 priority: 0.6

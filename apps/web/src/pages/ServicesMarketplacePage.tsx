@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, MapPin, Wifi, Layers, Star, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { useServicesMarketplace, ServiceFilter } from '@/hooks/useServicesMarketplace';
@@ -30,7 +30,9 @@ const SERVICE_TYPE_FILTERS: { label: string; value: ServiceFilter; icon: React.R
 // ─── Service Card ─────────────────────────────────────────────────────────────
 const ServiceCard: React.FC<{ service: DbService }> = ({ service }) => {
     const price = service.starting_price ?? service.price;
-    const isPresential = service.service_type === 'presential';
+    const isQuote = !!service.requires_quote;
+    const lType = service.location_type || 'remote';
+    const isPresential = lType === 'in_store' || lType === 'at_home';
 
     return (
         <Link
@@ -48,13 +50,15 @@ const ServiceCard: React.FC<{ service: DbService }> = ({ service }) => {
 
                 {/* Service type badge */}
                 <span
-                    className={`absolute top-3 left-3 flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold z-10 ${isPresential
+                    className={`absolute top-3 left-3 flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold z-10 ${isQuote
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : isPresential
                         ? 'bg-amber-100 text-amber-700'
                         : 'bg-blue-100 text-blue-700'
                         }`}
                 >
-                    {isPresential ? <MapPin size={10} /> : <Wifi size={10} />}
-                    {isPresential ? 'Presencial' : 'Remoto'}
+                    {isQuote ? <Layers size={10} /> : isPresential ? <MapPin size={10} /> : <Wifi size={10} />}
+                    {isQuote ? 'Orçamento' : lType === 'in_store' ? 'Presencial Empresa' : lType === 'at_home' ? 'Presencial Cliente' : 'Remoto'}
                 </span>
                 {/* Category tag */}
                 {service.category_tag && (
@@ -302,7 +306,7 @@ export default function ServicesMarketplacePage({ hideHeader = false }: { hideHe
                                 className="flex-1 px-4 py-3 bg-transparent outline-none text-sm"
                             />
                             <button
-                                className="bg-brand-primary text-white font-semibold px-6 py-3 rounded-xl hover:bg-orange-600 transition-colors whitespace-nowrap"
+                                className="bg-brand-primary text-white font-semibold px-6 py-3 rounded-xl hover:bg-brand-primary-hover transition-colors whitespace-nowrap"
                                 onClick={() => alert("Interesse registrado! Entraremos em contato em breve.")}
                             >
                                 Me avise

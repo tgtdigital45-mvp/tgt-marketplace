@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "vite",
     "start": "vite",
-    "build": "vite build",
+    "build": "npm run generate:sitemap && vite build",
     "preview": "vite preview",
-    "generate:sitemap": "tsx scripts/generate-sitemap.ts",
+    "generate:sitemap": "tsx ../../scripts/generate-sitemap.ts",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",
