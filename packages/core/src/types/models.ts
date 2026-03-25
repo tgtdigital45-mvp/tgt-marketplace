@@ -212,6 +212,7 @@ export interface DbService {
   company_cover_url?: string;
   company?: DbCompany;
   service_forms?: { id: string; questions: string[] }[];
+  created_at?: string;
 }
 
 export interface PortfolioItem {

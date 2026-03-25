@@ -98,6 +98,7 @@ export function useServicesMarketplace({
             query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,category_tag.ilike.%${searchQuery}%`);
         }
 
+        query = query.order('rating', { ascending: false, referencedTable: 'companies' });
         query = query.order('created_at', { ascending: false }).limit(limit);
 
         const { data, error: queryError, count } = await query;
@@ -203,11 +204,15 @@ export function useServicesMarketplace({
                 return true;
             });
 
-            // Sort: by company rating desc, then by title
+            // Sort: by company rating desc, then by created_at desc
             unique.sort((a, b) => {
                 const ratingDiff = (b.company_rating ?? 0) - (a.company_rating ?? 0);
                 if (ratingDiff !== 0) return ratingDiff;
-                return a.title.localeCompare(b.title);
+                
+                // Tie-breaker: newest first (with null safety)
+                const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+                const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+                return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
             });
 
             if (totalCount === 0 || unique.length > totalCount) {

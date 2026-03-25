@@ -5,19 +5,40 @@ import { useServicesMarketplace, ServiceFilter } from '@/hooks/useServicesMarket
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import { DbService } from '@tgt/core';
 
-// ─── Category definitions (must match DB category_tag values) ────────────────
+// ─── Category translation and normalization ──────────────────────────────────
+const CATEGORY_LABELS: Record<string, string> = {
+    'Marketing': 'Marketing',
+    'Tecnologia': 'Tecnologia',
+    'technology': 'Tecnologia',
+    'Design': 'Design',
+    'Consultoria': 'Consultoria',
+    'Contabilidade': 'Contabilidade',
+    'Advocacia': 'Advocacia',
+    'Arquitetura': 'Arquitetura',
+    'Fotografia': 'Fotografia',
+    'Educação': 'Educação',
+    'Saúde': 'Saúde',
+    'saude': 'Saúde',
+    'healthcare': 'Saúde',
+    'SEO': 'SEO',
+    'events': 'Eventos',
+    'domestic': 'Serviços Domésticos',
+};
+
 const CATEGORIES = [
     { label: 'Todos', value: '' },
     { label: 'Marketing', value: 'Marketing' },
     { label: 'Tecnologia', value: 'Tecnologia' },
     { label: 'Design', value: 'Design' },
+    { label: 'Saúde', value: 'Saúde' },
     { label: 'Consultoria', value: 'Consultoria' },
+    { label: 'Eventos', value: 'Eventos' },
+    { label: 'Serviços Domésticos', value: 'Serviços Domésticos' },
     { label: 'Contabilidade', value: 'Contabilidade' },
     { label: 'Advocacia', value: 'Advocacia' },
     { label: 'Arquitetura', value: 'Arquitetura' },
     { label: 'Fotografia', value: 'Fotografia' },
     { label: 'Educação', value: 'Educação' },
-    { label: 'Saúde', value: 'Saúde' },
     { label: 'SEO', value: 'SEO' },
 ];
 
@@ -145,7 +166,8 @@ export default function ServicesMarketplacePage({ hideHeader = false }: { hideHe
         if (activeCategory || debouncedSearch) return null; // flat list when filtering
         const map = new Map<string, DbService[]>();
         services.forEach((s) => {
-            const cat = s.category_tag || 'Outros';
+            const rawCat = s.category_tag || 'Outros';
+            const cat = CATEGORY_LABELS[rawCat] || CATEGORY_LABELS[rawCat.toLowerCase()] || rawCat;
             if (!map.has(cat)) map.set(cat, []);
             map.get(cat)!.push(s);
         });
@@ -163,7 +185,7 @@ export default function ServicesMarketplacePage({ hideHeader = false }: { hideHe
                             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                             <input
                                 type="text"
-                                placeholder="O que você precisa? Ex: Logo Design, Gestão de Tráfego..."
+                                placeholder="O que você precisa? Ex: Design de Logo, Gestão de Tráfego..."
                                 value={searchQuery}
                                 onChange={handleSearchChange}
                                 className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none text-sm transition-all"
