@@ -56,29 +56,53 @@ const ClientPayments: React.FC = () => {
                                     Nenhuma transação encontrada.
                                 </div>
                             ) : (
-                                orders.map((order) => (
-                                    <div key={order.id} className="flex items-center justify-between p-6 rounded-3xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 group">
-                                        <div className="flex items-center gap-6">
-                                            <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-emerald-500 transition-colors">
-                                                <Calendar size={20} />
-                                            </div>
-                                            <div>
-                                                <h5 className="font-black text-slate-800">{order.service_title || 'Serviço Contratado'}</h5>
-                                                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-0.5">
-                                                    {new Date(order.created_at).toLocaleDateString('pt-BR')} • Cartão de Crédito
-                                                </p>
+                                orders.map((order: any) => {
+                                    // Determine payment status visually
+                                    const isPaid = order.payment_status === 'paid' || order.saga_status === 'PAYMENT_CONFIRMED' || order.status === 'completed';
+                                    const statusText = isPaid ? 'Pago' : (order.status === 'cancelled' ? 'Cancelado' : 'Pendente');
+                                    const statusClass = isPaid
+                                        ? 'bg-emerald-50 text-emerald-600'
+                                        : (order.status === 'cancelled' ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-orange-600');
+                                    
+                                    return (
+                                        <div key={order.id} className="flex items-center justify-between p-6 rounded-3xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 group">
+                                            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 w-full">
+                                                <div className="flex items-center gap-6">
+                                                    <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-slate-100 flex-shrink-0 flex items-center justify-center text-slate-400 group-hover:text-emerald-500 transition-colors">
+                                                        <Calendar size={20} />
+                                                    </div>
+                                                    <div>
+                                                        <h5 className="font-black text-slate-800 line-clamp-1">{order.service_title || order.service?.title || 'Serviço Contratado'}</h5>
+                                                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-0.5">
+                                                            {new Date(order.created_at).toLocaleDateString('pt-BR')} • {order.payment_status === 'paid' ? 'Cartão / Pix' : 'Aguardando'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="flex items-center justify-between sm:justify-end gap-6 sm:ml-auto w-full sm:w-auto mt-4 sm:mt-0">
+                                                    <div className="text-left sm:text-right">
+                                                        <div className="text-lg font-black text-slate-900">R$ {Number(order.price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                                                        <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${statusClass}`}>
+                                                            {statusText}
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    {isPaid && order.receipt_url && (
+                                                        <a 
+                                                            href={order.receipt_url} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 hover:bg-brand-primary hover:text-white transition-colors"
+                                                            title="Ver Recibo"
+                                                        >
+                                                            <ExternalLink size={16} />
+                                                        </a>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="text-right">
-                                            <div className="text-lg font-black text-slate-900">R$ {order.price?.toLocaleString('pt-BR')}</div>
-                                            <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${
-                                                order.status === 'completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-600'
-                                            }`}>
-                                                {order.status === 'completed' ? 'Concluído' : 'Pendente'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))
+                                    );
+                                })
                             )}
                         </div>
                     </section>

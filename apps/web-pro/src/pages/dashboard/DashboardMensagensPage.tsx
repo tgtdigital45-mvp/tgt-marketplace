@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -145,9 +145,23 @@ const DashboardMensagensPage: React.FC = () => {
     useEffect(() => {
         if (!activeThread || !user) return;
         fetchMessages(activeThread.threadId, !!activeThread.jobId);
+        
+        // Update local unread count
         setThreads(prev => prev.map(t =>
             t.threadId === activeThread.threadId ? { ...t, unreadCount: 0 } : t
         ));
+
+        // Mark messages as read in the database
+        const markAsRead = async () => {
+            const col = activeThread.jobId ? 'job_id' : 'order_id';
+            await supabase
+                .from('messages')
+                .update({ is_read: true })
+                .eq(col, activeThread.threadId)
+                .eq('receiver_id', user.id)
+                .eq('is_read', false);
+        };
+        markAsRead();
 
         const filterColumn = activeThread.jobId ? 'job_id' : 'order_id';
         const sub = supabase

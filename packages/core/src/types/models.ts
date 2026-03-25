@@ -377,6 +377,7 @@ export interface DbOrder {
   service_title: string;
   package_tier: 'basic' | 'standard' | 'premium';
   price: number;
+  payment_status?: string;
   status: OrderStatus;
   saga_status: SagaStatus;
   delivery_deadline: string;
@@ -483,6 +484,8 @@ export interface Conversation {
   date: string;
   unread: boolean;
   name: string;
+  threadId?: string;
+  jobTitle?: string;
 }
 
 export interface SellerStats {

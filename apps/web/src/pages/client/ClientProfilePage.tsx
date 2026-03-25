@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@tgt/core';
 import { UserProfile } from '@tgt/core';
@@ -354,7 +354,7 @@ const ClientProfilePage: React.FC = () => {
                     <ul className="space-y-3">
                       {conversations.map((conv, idx) => (
                         <li key={idx}>
-                          <Link to="/minhas-mensagens" className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-slate-100 group">
+                          <Link to={conv.threadId ? `/minhas-mensagens?thread=${conv.threadId}` : "/minhas-mensagens"} className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-slate-100 group">
                             <div className="flex items-center gap-4">
                               <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-brand-primary font-black text-xl shadow-sm border border-slate-100 group-hover:border-brand-primary/20 transition-all">
                                 {conv.name.charAt(0)}

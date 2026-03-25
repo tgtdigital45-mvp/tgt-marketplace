@@ -220,6 +220,75 @@ const StepOverview = ({ data, updateData, errors }: any) => {
                     />
                 </div>
 
+                {/* Ficha Técnica (Atributos) */}
+                <div className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-sm space-y-6">
+                    <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-black text-gray-900 uppercase tracking-widest text-center">Ficha Técnica</label>
+                        <p className="text-[10px] text-gray-400 font-bold">Características específicas (Chave: Valor)</p>
+                    </div>
+
+                    <div className="space-y-4">
+                        {Object.entries(data.attributes || {}).map(([key, value], idx) => (
+                            <div key={idx} className="flex gap-4 items-center">
+                                <div className="flex-1">
+                                    <Input
+                                        placeholder="Ex: Formato"
+                                        value={key}
+                                        onChange={(e) => {
+                                            const newAttrs = { ...data.attributes };
+                                            const val = newAttrs[key];
+                                            delete newAttrs[key];
+                                            newAttrs[e.target.value] = val;
+                                            updateData({ attributes: newAttrs });
+                                        }}
+                                        className="!py-3"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <Input
+                                        placeholder="Ex: Digital (.pdf)"
+                                        value={value as string}
+                                        onChange={(e) => {
+                                            const newAttrs = { ...data.attributes };
+                                            newAttrs[key] = e.target.value;
+                                            updateData({ attributes: newAttrs });
+                                        }}
+                                        className="!py-3"
+                                    />
+                                </div>
+                                <button 
+                                    type="button"
+                                    onClick={() => {
+                                        const newAttrs = { ...data.attributes };
+                                        delete newAttrs[key];
+                                        updateData({ attributes: newAttrs });
+                                    }}
+                                    className="p-3 text-gray-300 hover:text-red-500 transition-colors"
+                                >
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                </button>
+                            </div>
+                        ))}
+
+                        <button 
+                            type="button"
+                            onClick={() => {
+                                const index = Object.keys(data.attributes || {}).length + 1;
+                                updateData({ 
+                                    attributes: { 
+                                        ...(data.attributes || {}), 
+                                        [`Característica ${index}`]: '' 
+                                    } 
+                                });
+                            }}
+                            className="w-full py-4 border-2 border-dashed border-gray-100 rounded-2xl text-gray-400 font-bold hover:bg-gray-50 hover:border-primary-200 hover:text-primary-500 transition-all flex items-center justify-center gap-2"
+                        >
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 6v6m0 0v6m0-6h6m-6 0H6" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>
+                            Adicionar Atributo
+                        </button>
+                    </div>
+                </div>
+
                 {/* Professional Registration Fields */}
                 <AnimatePresence>
                     {(selectedSubcategory?.requiresBoard || selectedSubcategory?.requiresCertification) && (
@@ -761,7 +830,8 @@ const ServiceWizard = ({ onCancel, initialData, onSuccess }: { onCancel?: () => 
         registrationNumber: initialData?.registration_number || '',
         registrationState: initialData?.registration_state || '',
         registrationImage: initialData?.registration_image || null,
-        certificationId: initialData?.certification_id || ''
+        certificationId: initialData?.certification_id || '',
+        attributes: initialData?.attributes || {}
     });
 
     const isEditing = !!initialData;
@@ -852,7 +922,8 @@ const ServiceWizard = ({ onCancel, initialData, onSuccess }: { onCancel?: () => 
                 registration_number: formData.registrationNumber,
                 registration_state: formData.registrationState,
                 registration_image: (formData.registrationImage?.startsWith('blob:')) ? null : formData.registrationImage,
-                certification_id: formData.certificationId
+                certification_id: formData.certificationId,
+                attributes: formData.attributes
             };
 
             let serviceId = initialData?.id;

@@ -37,7 +37,7 @@ export const useAvailability = (companyId?: string, serviceDurationMinutes: numb
                 .from('orders')
                 .select(`
                     scheduled_for,
-                    services:service_id ( duration_minutes )
+                    services ( duration_minutes )
                 `)
                 .eq('seller_id', companyId!)
                 .gte('scheduled_for', `${selectedDate}T00:00:00`)

@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClientOrders } from '@/hooks/useClientOrders';
 import { LoadingSpinner, Badge, Button } from '@tgt/ui-web';
@@ -99,9 +99,8 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({ isEmbedded = false }) =
     };
 
     const handleChat = (booking: any) => {
-        // Navega para as mensagens
-        // Se houver um ID de conversa específico no futuro, poderíamos usá-lo.
-        navigate('/minhas-mensagens');
+        // Navega para as mensagens, usando o order_id como thread
+        navigate(`/minhas-mensagens?thread=${booking.order_id || booking.id}`);
     };
 
     if (isLoading) return (

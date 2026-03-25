@@ -1,5 +1,5 @@
-﻿import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@tgt/core';
 
@@ -17,6 +17,8 @@ const ClientLoginPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [portalError, setPortalError] = useState<string | null>(null);
     const navigate = useNavigate();
+    const location = useLocation();
+    const from = location.state?.from || '/';
     const { addToast } = useToast();
     const { signInWithGoogle } = useAuth();
     const [isMounted, setIsMounted] = useState(true);
@@ -61,7 +63,7 @@ const ClientLoginPage: React.FC = () => {
                     // Persist user_type in metadata for faster future loads (avoids RPC on refresh)
                     await supabase.auth.updateUser({ data: { user_type: 'client', type: 'client' } });
                     addToast('Login realizado com sucesso!', 'success');
-                    navigate('/');
+                    navigate(from);
                 }
             }
         } catch (err: unknown) {

@@ -4,6 +4,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Stripe from 'https://esm.sh/stripe@12.0.0?target=deno'
 import { checkRateLimit } from '../_shared/rate-limit.ts'
+import { corsHeaders } from '../_shared/cors.ts'
 
 console.log('Create Checkout Session Function Invoked')
 
@@ -64,7 +65,10 @@ serve(async (req) => {
         }
 
         const service = order.services
-        if (!service) throw new Error('Associated service not found')
+        if (!service) throw new Error('Associated service not found');
+
+        const sellerCompany = service.companies;
+        if (!sellerCompany) throw new Error('Associated company not found');
 
         // 2. Validate Price Source (Security Check)
         let priceFromDb = order.price || order.agreed_price
@@ -188,3 +192,4 @@ serve(async (req) => {
         )
     }
 })
+

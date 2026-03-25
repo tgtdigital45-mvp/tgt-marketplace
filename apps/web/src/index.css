@@ -6,10 +6,10 @@
      CONTRATTO Design System v2.0 - Refined Tokens
      ============================================ */
 
-  /* Brand Colors - Refined palette with better contrast */
-  --color-brand-primary: #FF6B35;
-  --color-brand-primary-hover: #E85D2E;
-  --color-brand-primary-light: #fff4ed;
+  /* Brand Colors - Azul Petroleo */
+  --color-brand-primary: #04B4E0;
+  --color-brand-primary-hover: #039BBF;
+  --color-brand-primary-light: #f0fbfd;
   --color-brand-secondary: #004E89;
   --color-brand-secondary-hover: #003B66;
   --color-brand-accent: #F7B801;
@@ -17,18 +17,18 @@
   --color-brand-background: #FAFBFC;
   --color-brand-dark: #0B1120;
 
-  /* Primary Palette (Orange-based) */
-  --color-primary-50: #fff4ed;
-  --color-primary-100: #ffe6d5;
-  --color-primary-200: #feccaa;
-  --color-primary-300: #fdac74;
-  --color-primary-400: #fb803c;
-  --color-primary-500: #f96316;
-  --color-primary-600: #FF6B35;
-  --color-primary-700: #c23809;
-  --color-primary-800: #9b2f0e;
-  --color-primary-900: #7c290f;
-  --color-primary-950: #431205;
+  /* Primary Palette (Azul Petroleo-based) */
+  --color-primary-50: #f0fbfd;
+  --color-primary-100: #daf5fb;
+  --color-primary-200: #bdedf6;
+  --color-primary-300: #8ee2f0;
+  --color-primary-400: #57d0e7;
+  --color-primary-500: #04B4E0;
+  --color-primary-600: #039BBF;
+  --color-primary-700: #25859d;
+  --color-primary-800: #256a7f;
+  --color-primary-900: #22596b;
+  --color-primary-950: #133a48;
 
   /* Typography */
   --font-sans: 'DM Sans', system-ui, sans-serif;

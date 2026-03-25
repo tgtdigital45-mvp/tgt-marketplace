@@ -28,7 +28,6 @@ export const useCompanyProfile = (slug: string | undefined) => {
                   portfolio_items (*)
                 `)
                 .eq('slug', slug)
-                .is('services.deleted_at', null)
                 .single();
 
             if (error) throw error;
@@ -61,8 +60,10 @@ export const useCompanyProfile = (slug: string | undefined) => {
             const totalRating = reviews.reduce((acc, r) => acc + r.rating, 0);
             const avgRating = reviews.length > 0 ? (totalRating / reviews.length) : 0;
 
-            // Map Services
-            const services = (raw.services || []).map(s => ({
+            // Map Services (filter out deleted or inactive ones first)
+            const services = (raw.services || [])
+                .filter(s => !s.deleted_at && s.is_active !== false)
+                .map(s => ({
                 id: s.id,
                 title: s.title,
                 description: s.description,

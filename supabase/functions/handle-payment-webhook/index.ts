@@ -188,6 +188,7 @@ async function processEvent(event: Stripe.Event) {
             // 1. metadata do Stripe (definido no checkout — mais preciso)
             // 2. companies.commission_rate do vendedor (taxa contratual atual)
             // 3. Fallback de segurança: 0.20
+            const seller_id = metadata.seller_id;
             let commissionRate: number | null = metadata.commission_rate
                 ? parseFloat(metadata.commission_rate)
                 : null;
@@ -421,3 +422,4 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: 'Server error' }), { status: 500 })
     }
 })
+

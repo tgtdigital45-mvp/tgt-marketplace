@@ -115,19 +115,53 @@ const ClientMessagesPage: React.FC = () => {
       setThreads(mapped);
 
       const threadParam = searchParams.get('thread');
-      if (threadParam || state?.threadId) {
-        const target = mapped.find(t => t.threadId === (threadParam || state?.threadId));
+      const targetId = threadParam || state?.threadId;
+      
+      if (targetId) {
+        let target = mapped.find(t => t.threadId === targetId || t.orderId === targetId);
+        
+        if (!target) {
+            // Check if it's a new order that doesn't have messages yet
+            const { data: orderData } = await supabase
+              .from('orders')
+              .select('id, service_title, service:services(title), seller:profiles!orders_seller_id_fkey(id, full_name, avatar_url, companies(company_name, logo_url))')
+              .eq('id', targetId)
+              .maybeSingle();
+
+            if (orderData) {
+              const sellerProfile = (orderData as any).seller;
+              const companyData = sellerProfile?.companies?.[0];
+              
+              target = {
+                threadId: orderData.id,
+                orderId: orderData.id,
+                jobTitle: (orderData as any).service?.title || (orderData as any).service_title || 'Serviço Contratado',
+                partnerId: sellerProfile?.id || '',
+                partnerName: companyData?.company_name || sellerProfile?.full_name || 'Empresa',
+                partnerAvatar: companyData?.logo_url || sellerProfile?.avatar_url,
+                lastMessage: 'Envie a primeira mensagem!',
+                lastMessageTime: new Date().toISOString(),
+                unreadCount: 0
+              };
+              mapped.unshift(target);
+            }
+        }
+
         if (target) {
           setActiveThread(target);
-          window.history.replaceState({}, document.title, window.location.pathname);
+          // Don't clear URL immediately if we need 'success' param later, but let's just clear 'thread'
+          searchParams.delete('thread');
+          setSearchParams(searchParams, { replace: true });
         }
       }
+      
+      setThreads(mapped);
     } catch (err) {
       console.error('[ClientMessages] fetchThreads error:', err);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, searchParams, state?.threadId, setSearchParams]);
 
   const fetchMessages = useCallback(async (threadId: string, isJob: boolean) => {
     if (!user) return;
@@ -145,9 +179,23 @@ const ClientMessagesPage: React.FC = () => {
   useEffect(() => {
     if (!activeThread || !user) return;
     fetchMessages(activeThread.threadId, !!activeThread.jobId);
+    
+    // Update unread count locally
     setThreads(prev => prev.map(t =>
       t.threadId === activeThread.threadId ? { ...t, unreadCount: 0 } : t
     ));
+
+    // Mark messages as read in Database
+    const markAsRead = async () => {
+      const col = activeThread.jobId ? 'job_id' : 'order_id';
+      await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .eq(col, activeThread.threadId)
+        .eq('receiver_id', user.id)
+        .eq('is_read', false);
+    };
+    markAsRead();
 
     const success = searchParams.get('success');
     if (success === 'true' && activeThread.orderId) {

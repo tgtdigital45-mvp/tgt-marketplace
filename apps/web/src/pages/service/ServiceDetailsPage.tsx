@@ -1,5 +1,5 @@
-﻿import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@tgt/core';
 import { Service, DbCompany } from '@tgt/core';
 
@@ -12,6 +12,7 @@ import ServiceGallery from '@/components/service/ServiceGallery';
 import ServiceAttributes from '@/components/service/ServiceAttributes';
 import ServiceComparisonTable from '@/components/service/ServiceComparisonTable';
 import { BookingCalendar } from '@/components/booking/BookingCalendar';
+import { ServiceAgendaModal } from '@/components/booking/ServiceAgendaModal';
 const ServiceBookingModal = lazy(() => import('@/components/ServiceBookingModal'));
 
 import { Disclosure } from '@headlessui/react';
@@ -144,6 +145,7 @@ const ServiceDetailsPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { user } = useAuth();
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const [service, setService] = useState<Service | null>(null);
     const [company, setCompany] = useState<DbCompany | null>(null);
@@ -151,6 +153,7 @@ const ServiceDetailsPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+    const [isAgendaModalOpen, setIsAgendaModalOpen] = useState(false);
     const [selectedTier, setSelectedTier] = useState<string | null>(null);
     const [selectedSlot, setSelectedSlot] = useState<{ date: string, time: string, endDate?: string } | null>(null);
 
@@ -197,6 +200,19 @@ const ServiceDetailsPage = () => {
         window.scrollTo(0, 0);
     }, [id]);
 
+    useEffect(() => {
+        if (searchParams.get('openAgenda') === 'true' && user) {
+            setIsAgendaModalOpen(true);
+            const tier = searchParams.get('tier');
+            if (tier) setSelectedTier(tier);
+            
+            // Clean up URL without triggering re-renders if possible
+            const newParams = new URLSearchParams(searchParams);
+            newParams.delete('openAgenda');
+            setSearchParams(newParams, { replace: true });
+        }
+    }, [searchParams, user, setSearchParams]);
+
     const handleCheckout = (tier: string) => {
         setSelectedTier(tier);
 
@@ -207,15 +223,15 @@ const ServiceDetailsPage = () => {
 
         if (!user) {
             const redirectPath = service?.use_company_availability
-                ? `/agendar/${id}?tier=${tier}`
+                ? `/servico/${id}?openAgenda=true&tier=${tier}`
                 : `/checkout/${id}?tier=${tier}`;
             navigate('/login/cliente', { state: { from: redirectPath } });
             return;
         }
 
-        // Focus on the calendar section if it exists
+        // Open calendar in modal or go to checkout
         if (service?.use_company_availability) {
-            document.getElementById('booking-section')?.scrollIntoView({ behavior: 'smooth' });
+            setIsAgendaModalOpen(true);
         } else {
             navigate(`/checkout/${id}?tier=${tier}`);
         }
@@ -430,29 +446,7 @@ const ServiceDetailsPage = () => {
                             </div>
                         )}
 
-                        {/* 6. Booking Calendar Section (If direct booking & availability enabled) */}
-                        {!service.requires_quote && service.use_company_availability && company && (
-                            <div id="booking-section" className="space-y-6 pt-4">
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                    <div>
-                                        <h2 className="font-display text-2xl font-bold text-gray-900">Agenda de Atendimento</h2>
-                                        <p className="text-gray-600">Escolha uma data e horário disponível para prosseguir.</p>
-                                    </div>
-                                    {selectedTier && (
-                                        <div className="bg-brand-primary/5 px-4 py-2 rounded-xl border border-brand-primary/10">
-                                            <span className="text-[10px] font-bold text-brand-primary uppercase tracking-wider block">Pacote Selecionado</span>
-                                            <span className="text-sm font-bold text-gray-900 capitalize">{selectedTier}</span>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <BookingCalendar
-                                    service={service}
-                                    company={company}
-                                    onSelect={handleSlotSelect}
-                                />
-                            </div>
-                        )}
+                        {/* 6. Booking Calendar Section Removed - Now in Modal */}
 
                         {/* 7. About The Company (Advanced) */}
                         <div className="bg-gray-50 rounded-2xl p-8 border border-gray-200">
@@ -571,6 +565,17 @@ const ServiceDetailsPage = () => {
             </div>
 
             <Suspense fallback={null}>
+                {isAgendaModalOpen && service && company && (
+                    <ServiceAgendaModal
+                        isOpen={isAgendaModalOpen}
+                        onClose={() => setIsAgendaModalOpen(false)}
+                        service={service}
+                        company={company}
+                        selectedTier={selectedTier}
+                        onSelect={handleSlotSelect}
+                    />
+                )}
+                
                 {isBookingModalOpen && (
                     <ServiceBookingModal
                         isOpen={isBookingModalOpen}

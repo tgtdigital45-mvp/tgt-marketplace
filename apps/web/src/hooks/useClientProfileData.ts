@@ -1,4 +1,4 @@
-﻿import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@tgt/core';
 import { UserProfile, Booking, Favorite, Conversation, DbOrder, DbQuote } from '@tgt/core';
 
@@ -33,12 +33,8 @@ export const useClientProfileData = (userId: string | undefined) => {
                         .eq('client_id', userId)
                         .order('created_at', { ascending: false }),
 
-                    // 3. Messages (for conversations)
-                    supabase
-                        .from('messages')
-                        .select('*')
-                        .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
-                        .order('created_at', { ascending: false }),
+                    // 3. Messages (for conversations via RPC)
+                    supabase.rpc('get_chat_threads', { p_user_id: userId }),
 
                     // 4. Favorites
                     supabase
@@ -87,7 +83,7 @@ export const useClientProfileData = (userId: string | undefined) => {
                 // Process Orders & Total Spent
                 const orders = (ordersRes.data || []) as DbOrder[];
                 const totalSpent = orders
-                    .filter(o => o.status === 'completed' || o.saga_status === 'COMPLETED')
+                    .filter(o => o.payment_status === 'paid' || o.status === 'completed' || o.saga_status === 'COMPLETED')
                     .reduce((acc, curr) => acc + (Number(curr.price) || 0), 0);
 
                 // Process Quotes
@@ -111,43 +107,17 @@ export const useClientProfileData = (userId: string | undefined) => {
                     }
                 }));
 
-                // Process Messages -> Conversations
-                const msgs = messagesRes.data || [];
-                const conversations: Conversation[] = [];
-
-                if (msgs.length > 0) {
-                    const contactIds = new Set<string>();
-                    const rawConvos: { contactId: string; lastMessage: string; date: string; unread: boolean; }[] = [];
-
-                    for (const m of msgs) {
-                        const otherId = m.sender_id === userId ? m.receiver_id : m.sender_id;
-                        if (!contactIds.has(otherId)) {
-                            contactIds.add(otherId);
-                            rawConvos.push({
-                                contactId: otherId,
-                                lastMessage: m.content,
-                                date: m.created_at,
-                                unread: m.receiver_id === userId && !m.read
-                            });
-                        }
-                    }
-
-                    const contactIdArray = Array.from(contactIds);
-                    if (contactIdArray.length > 0) {
-                        const { data: companies } = await supabase
-                            .from('companies')
-                            .select('id, company_name, profile_id')
-                            .in('profile_id', contactIdArray);
-
-                        conversations.push(...rawConvos.map(c => {
-                            const comp = companies?.find((co) => co.profile_id === c.contactId);
-                            return {
-                                ...c,
-                                name: comp?.company_name || 'Empresa Desconhecida'
-                            };
-                        }));
-                    }
-                }
+                // Process Messages -> Conversations (using get_chat_threads RPC)
+                const threads = messagesRes.data || [];
+                const conversations: Conversation[] = threads.map((t: any) => ({
+                    contactId: t.partner_id,
+                    lastMessage: t.last_message_content,
+                    date: t.last_message_time,
+                    unread: Number(t.unread_count) > 0,
+                    name: t.partner_name || 'Empresa Desconhecida',
+                    threadId: t.thread_id,
+                    jobTitle: t.job_title
+                }));
 
                 return {
                     profile,

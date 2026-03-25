@@ -26,7 +26,7 @@ const SEO: React.FC<SEOProps> = ({
     const fullUrl = cleanUrl.startsWith('http') ? cleanUrl : `${siteUrl}${cleanUrl}`;
 
     // Default keywords plus any specific ones
-    const defaultKeywords = 'Contratto, serviços, marketplace, profissionais, agendamento, orçamentos, segurança';
+    const defaultKeywords = 'Contratto, Contrato, Contrato Marketplace, Contratou, Contratu, Contrato Serviços, Con trato, Contratro, Contratta, Contratoo, Conttato, Marketplace Contratto, App Contratto, Contrato Empresas, Plataforma Contratto, serviços, marketplace, profissionais, agendamento, orçamentos, segurança';
     const fullKeywords = keywords ? `${keywords}, ${defaultKeywords}` : defaultKeywords;
 
     return (
