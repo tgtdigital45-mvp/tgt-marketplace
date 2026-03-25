@@ -2,6 +2,8 @@ import React, { createContext, useState, useContext, useEffect, ReactNode, useRe
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { User, supabase } from '@tgt/core';
+import type { Session } from '@supabase/supabase-js';
+import { devLog, devWarn, logError } from '@/utils/logger';
 
 // Extensão do tipo User para incluir dados do contexto
 interface UserContext extends User {
@@ -37,7 +39,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Descarta se uma chamada mais recente já foi iniciada
     if (callId < callCounter.current) return;
 
-    const appType = (globalThis as any).VITE_APP_TYPE || 'marketplace';
+    const appType = import.meta.env.VITE_APP_TYPE || 'marketplace';
 
     // Cache para carregamento instantâneo futuro
     if (userData.companySlug) {
@@ -46,13 +48,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Verificação de Segurança por App
     if (appType === 'marketplace' && userData.type === 'company' && !userData.role?.includes('admin')) {
-      console.warn('[AuthContext] Company user in marketplace. Redirecting...');
-      window.location.href = (globalThis as any).VITE_PORTAL_URL || '/';
+      devWarn('[AuthContext] Company user in marketplace. Redirecting...');
+      window.location.href = import.meta.env.VITE_PORTAL_URL || '/';
       return;
     }
     if (appType === 'portal' && userData.type === 'client') {
-      console.warn('[AuthContext] Client user in portal. Redirecting...');
-      window.location.href = (globalThis as any).VITE_LANDING_URL || '/';
+      devWarn('[AuthContext] Client user in portal. Redirecting...');
+      window.location.href = import.meta.env.VITE_LANDING_URL || '/';
       return;
     }
 
@@ -60,8 +62,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setLoading(false);
   };
 
+  // Narrow unknown metadata fields to string safely
+  const asString = (v: unknown, fallback = ''): string => (typeof v === 'string' ? v : fallback);
+
   // Busca perfil completo com Race Strategy (RPC vs Fallback)
-  const fetchUserProfile = async (userId: string, metadata: any = {}, callId: number): Promise<void> => {
+  const fetchUserProfile = async (userId: string, metadata: Record<string, unknown>, callId: number): Promise<void> => {
     try {
       // Race: RPC vs 3s Timeout
       const rpcPromise = supabase.rpc('get_user_session_context', { p_user_id: userId });
@@ -79,7 +84,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } catch (err: unknown) {
         const isTimeout = err instanceof Error && err.message === 'RPC_TIMEOUT';
         if (isTimeout) {
-          console.warn('[AuthContext] RPC timeout (3s), usando fallback...');
+          devWarn('[AuthContext] RPC timeout (3s), usando fallback...');
         }
         rpcError = { message: isTimeout ? 'Timeout' : 'Unknown' };
       }
@@ -88,11 +93,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const userData: UserContext = {
           id: userId,
           role: rpcData.role || 'user',
-          name: rpcData.full_name || metadata.full_name || metadata.name || 'User',
-          avatar: rpcData.avatar_url || metadata.avatar_url || '',
-          type: rpcData.user_type || metadata.type || 'client',
-          companySlug: rpcData.company_slug || metadata.slug,
-          email: metadata.email || ''
+          name: rpcData.full_name || asString(metadata.full_name) || asString(metadata.name) || 'User',
+          avatar: rpcData.avatar_url || asString(metadata.avatar_url),
+          type: rpcData.user_type || asString(metadata.type) || 'client',
+          companySlug: rpcData.company_slug || asString(metadata.slug),
+          email: asString(metadata.email)
         };
         commitUserState(userData, callId);
         return;
@@ -107,22 +112,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const finalUserData: UserContext = {
         id: userId,
         role: profileRes.data?.role || 'user',
-        name: profileRes.data?.full_name || metadata.full_name || metadata.name || 'User',
-        avatar: profileRes.data?.avatar_url || metadata.avatar_url || '',
-        type: companyRes.data ? 'company' : (profileRes.data?.user_type || metadata.type || 'client'),
-        companySlug: companyRes.data?.slug || metadata.slug,
-        email: metadata.email || ''
+        name: profileRes.data?.full_name || asString(metadata.full_name) || asString(metadata.name) || 'User',
+        avatar: profileRes.data?.avatar_url || asString(metadata.avatar_url),
+        type: companyRes.data ? 'company' : (profileRes.data?.user_type || asString(metadata.type) || 'client'),
+        companySlug: companyRes.data?.slug || asString(metadata.slug),
+        email: asString(metadata.email)
       };
 
       commitUserState(finalUserData, callId);
     } catch (error: unknown) {
-      console.error('[AuthContext] Erro fatal ao buscar perfil:', error);
+      logError('[AuthContext] Erro fatal ao buscar perfil:', error);
       if (mountedRef.current) setLoading(false);
     }
   };
 
   // Handler principal de mudança de estado de autenticação
-  const handleAuthStateChange = async (event: string, session: any) => {
+  const handleAuthStateChange = async (event: string, session: Session | null) => {
     if (!mountedRef.current) return;
 
     if (session?.user) {
@@ -138,7 +143,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const cachedSlug = metadata.company_slug || metadata.slug;
 
       if (cachedType || cachedSlug) {
-        console.log(`[AuthContext] Estado otimista aplicado para ${userId}`);
+        devLog(`[AuthContext] Estado otimista aplicado para ${userId}`);
         setUser({
           id: userId,
           role: metadata.role || 'user',
@@ -192,7 +197,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
          table: 'profiles', 
          filter: `id=eq.${user.id}` 
       }, (payload) => {
-        console.log('[AuthContext] Update via Realtime:', payload.new);
+        devLog('[AuthContext] Update via Realtime:', payload.new);
         setUser(prev => prev ? {
           ...prev,
           name: payload.new.full_name || prev.name,
@@ -205,7 +210,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => { channel.unsubscribe(); };
   }, [user?.id]);
 
-  // Metódos expositivos
+  // Métodos expostos
   const signInWithGoogle = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -218,7 +223,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null);
     await supabase.auth.signOut();
     queryClient.clear();
-    const isMarketplace = (globalThis as any).VITE_APP_TYPE === 'marketplace';
+    const isMarketplace = import.meta.env.VITE_APP_TYPE === 'marketplace';
     navigate(isMarketplace ? '/login/cliente' : '/login/empresa');
     setLoading(false);
   };

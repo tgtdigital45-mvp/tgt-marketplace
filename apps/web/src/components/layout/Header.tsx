@@ -43,9 +43,9 @@ const Header: React.FC = () => {
                                 <img
                                     src="/logo-contratto.png"
                                     alt="CONTRATTO"
-                                    className="h-10 sm:h-12 lg:h-14 w-auto object-contain transition-all duration-300 group-hover:opacity-80 block"
+                                    className="h-16 sm:h-12 lg:h-18 w-auto object-contain transition-all duration-300 group-hover:opacity-80 block"
                                     style={{
-                                        maxHeight: 'min(56px, 14vw)',
+                                        maxHeight: 'min(90px, 14vw)',
                                         height: 'auto'
                                     }}
                                 />

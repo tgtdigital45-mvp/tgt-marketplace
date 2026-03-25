@@ -86,7 +86,8 @@ export const getAvailableSlotsForDate = (
     dateString: string,
     availability: CompanyAvailability | null,
     durationMinutes: number = 30,
-    bookedBlocks: BookedBlock[] = []
+    bookedBlocks: BookedBlock[] = [],
+    travelBufferMinutes: number = 0
 ): string[] => {
     if (!availability) return [];
 
@@ -129,9 +130,13 @@ export const getAvailableSlotsForDate = (
             const blockStartMin = blockH * 60 + blockM;
             const blockEndMin = blockStartMin + (block.durationMinutes || 30); // Default 30 if null
 
+            // Add travel buffer before and after the block
+            const actualBlockStartMin = blockStartMin - travelBufferMinutes;
+            const actualBlockEndMin = blockEndMin + travelBufferMinutes;
+
             // Overlap condition: start1 < end2 AND start2 < end1
-            if (slotStartMin < blockEndMin && blockStartMin < slotEndMin) {
-                return false; // Slot overlaps with a booked block, remove it
+            if (slotStartMin < actualBlockEndMin && actualBlockStartMin < slotEndMin) {
+                return false; // Slot overlaps with a booked block (including buffer), remove it
             }
         }
         return true; // No overlap

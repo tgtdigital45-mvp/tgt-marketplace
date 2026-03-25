@@ -1,8 +1,9 @@
-﻿import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { Notification } from '@tgt/core';
 import { supabase } from '@tgt/core';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
+import { devLog, devWarn } from '@/utils/logger';
 
 interface NotificationContextType {
     notifications: Notification[];
@@ -62,8 +63,8 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
 
                 // Critical: Check for JWT expiration
                 if ((err as any)?.code === 'PGRST303' || error.message?.includes('JWT expired')) {
-                    console.warn("NotificationContext: JWT expired. Triggering logout.");
-                    logout(); // Trigger context logout
+                    devWarn("NotificationContext: JWT expired. Triggering logout.");
+                    logout();
                 }
             } finally {
                 if (isMounted.current) setLoading(false);
@@ -75,7 +76,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
 
         // Subscribe to realtime updates
         const channelName = `notifications:user:${user.id}`;
-        console.log(`Subscribing to channel: ${channelName}`);
+        devLog(`Subscribing to channel: ${channelName}`);
 
         const channel = supabase
             .channel(channelName)
@@ -89,7 +90,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
                 },
                 (payload) => {
                     if (!isMounted.current) return;
-                    console.log('Realtime notification received:', payload);
+                    devLog('Realtime notification received:', payload.eventType);
 
                     if (payload.eventType === 'INSERT') {
                         const newNotification = payload.new as Notification;
@@ -106,7 +107,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
             )
             .subscribe((status) => {
                 if (status === 'SUBSCRIBED') {
-                    console.log(`Successfully subscribed to ${channelName}`);
+                    devLog(`Successfully subscribed to ${channelName}`);
                 } else if (status === 'CHANNEL_ERROR') {
                     console.error(`Failed to subscribe to ${channelName}`);
                 } else if (status === 'TIMED_OUT') {
@@ -115,7 +116,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
             });
 
         return () => {
-            console.log(`Unsubscribing from channel: ${channelName}`);
+            devLog(`Unsubscribing from channel: ${channelName}`);
             supabase.removeChannel(channel);
         };
     }, [user]);

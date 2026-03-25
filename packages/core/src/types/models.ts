@@ -102,6 +102,7 @@ export interface Service {
   details?: Record<string, any>;
   faq?: { question: string; answer: string; }[];
   service_type?: 'remote_fixed' | 'local_client_fixed' | 'local_provider_fixed' | 'requires_quote' | string;
+  location_type?: 'in_store' | 'at_home' | 'remote' | 'hybrid' | string;
   allows_escrow?: boolean;
   is_single_package?: boolean;
   requires_quote?: boolean;
@@ -117,6 +118,10 @@ export interface Service {
   registration_state?: string;
   registration_image?: string;
   certification_id?: string;
+  meeting_url?: string;
+  travel_fee?: number;
+  radius_km?: number;
+  address_id?: string;
   company?: DbCompany;
 }
 
@@ -378,14 +383,26 @@ export interface DbOrder {
   service_title: string;
   package_tier: 'basic' | 'standard' | 'premium';
   price: number;
+  base_price?: number;
+  travel_fee?: number;
   payment_status?: string;
   status: OrderStatus;
   saga_status: SagaStatus;
+  escrow_status?: 'retained' | 'released' | 'refunded';
+  execution_status?: 'pending' | 'checked_in' | 'in_progress' | 'checked_out' | 'validated';
+  check_in_at?: string;
+  check_out_at?: string;
+  check_in_location?: { lat: number; lng: number };
+  check_out_location?: { lat: number; lng: number };
+  totp_secret?: string;
   delivery_deadline: string;
   hiring_responses?: Record<string, any>;
   package_snapshot?: any;
   revision_count?: number;
   quote_id?: string;
+  scheduled_for?: string;
+  notes?: string;
+  budget_expectation?: number;
   created_at: string;
   updated_at: string;
 }

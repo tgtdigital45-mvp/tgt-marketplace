@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@tgt/core';
 import { Service, useLock } from '@tgt/core';
@@ -7,6 +7,7 @@ import { LoadingSpinner, Button } from '@tgt/ui-web';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { useCheckout } from '@/hooks/useCheckout';
+import { devLog, logError } from '@/utils/logger';
 
 const CheckoutPage = () => {
     const { serviceId } = useParams();
@@ -57,7 +58,7 @@ const CheckoutPage = () => {
 
                 // 2. If orderId is present, fetch order to resume
                 if (orderIdParam) {
-                    console.log("[Checkout] Resuming order:", orderIdParam);
+                    devLog("[Checkout] Resuming order:", orderIdParam);
                     const { data: orderData, error: orderError } = await supabase
                         .from('orders')
                         .select('*')
@@ -99,10 +100,8 @@ const CheckoutPage = () => {
                 const price = selectedPackage?.price || service.price || 0;
 
                 // 1. Create SAGA Order (Atomic RPC)
-                console.log("Service Object for Payment:", service);
                 const companyData = (service as any).company || (service as any).companies;
                 const sellerId = companyData?.profile_id;
-                console.log("Extracted Seller ID:", sellerId, "From company data:", companyData);
 
                 if (!sellerId) throw new Error("ID do vendedor não encontrado. A empresa não possui um profile_id vinculado.");
 
@@ -117,10 +116,10 @@ const CheckoutPage = () => {
 
                 if (sagaError) throw new Error(`Erro ao criar pedido SAGA: ${sagaError.message}`);
 
-                console.log("SAGA Order Created:", sagaResult);
+                devLog("[Checkout] SAGA Order criado com sucesso.");
                 orderId = (sagaResult as any).order_id;
             } else {
-                console.log("[Checkout] Using existing order ID for payment:", orderId);
+                devLog("[Checkout] Retomando pedido existente:", orderId);
             }
 
             if (!orderId) throw new Error("ID do pedido não encontrado.");
@@ -129,7 +128,7 @@ const CheckoutPage = () => {
             await redirectToCheckout({ order_id: orderId });
 
         } catch (error: any) {
-            console.error("Payment initiation error:", error);
+            logError("[Checkout] Payment initiation error:", error);
             addToast(error.message || "Erro ao iniciar pagamento.", "error");
         } finally {
             setProcessing(false);

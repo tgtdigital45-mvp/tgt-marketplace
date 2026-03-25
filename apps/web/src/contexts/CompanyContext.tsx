@@ -1,7 +1,8 @@
-﻿import React, { createContext, useContext, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@tgt/core';
 import { useAuth } from '@/contexts/AuthContext';
+import { devLog, devWarn } from '@/utils/logger';
 
 interface Address {
     street: string;
@@ -92,7 +93,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
 
                     if (error) {
                         if (error.message?.includes('AbortError') && retryCount < 2) {
-                            console.log("[CompanyContext] Retrying aborted fetch...");
+                            devLog("[CompanyContext] Retrying aborted fetch...");
                             return fetchWithRetry(retryCount + 1);
                         }
                         throw error;
@@ -109,7 +110,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
             const data = await fetchWithRetry();
 
             if (!data || data.length === 0) {
-                console.warn("[CompanyContext] No results for profile_id:", profileId);
+                devWarn("[CompanyContext] No results for profile_id:", profileId);
                 return null;
             }
 
@@ -128,7 +129,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
                 lng: rawAddress?.lng
             };
 
-            console.log("[CompanyContext] Successfully loaded company for slug:", companyRecord.slug);
+            devLog("[CompanyContext] Successfully loaded company for slug:", companyRecord.slug);
 
             return {
                 ...companyRecord,
@@ -168,7 +169,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
     useEffect(() => {
         // Realtime subscription for company record
         if (profileId) {
-            console.log("[CompanyContext] Subscribing to Realtime for profile_id:", profileId);
+            devLog("[CompanyContext] Subscribing to Realtime for profile_id:", profileId);
             const subscription = supabase
                 .channel(`company-changes-${profileId}`)
                 .on(
@@ -180,7 +181,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
                         filter: `profile_id=eq.${profileId}`,
                     },
                     (payload) => {
-                        console.log('[CompanyContext] Realtime Update Detected:', payload.eventType, payload.new);
+                        devLog('[CompanyContext] Realtime Update Detected:', payload.eventType, payload.new);
 
                         // Invalidate query to force a refetch with full mapping logic
                         queryClient.invalidateQueries({ queryKey: ['company', profileId] });
@@ -192,11 +193,11 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
                     }
                 )
                 .subscribe((status) => {
-                    console.log(`[CompanyContext] Realtime subscription status: ${status}`);
+                    devLog(`[CompanyContext] Realtime subscription status: ${status}`);
                 });
 
             return () => {
-                console.log("[CompanyContext] Unsubscribing from Realtime");
+                devLog("[CompanyContext] Unsubscribing from Realtime");
                 subscription.unsubscribe();
             };
         }

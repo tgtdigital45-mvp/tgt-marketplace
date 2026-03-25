@@ -44,6 +44,11 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
 
     const resolvedCompanyId = service?.companyId || (service as any)?.company_id;
 
+    // Motor de Deslocamento (Fase 3)
+    const isAtHome = service?.location_type === 'at_home';
+    const travelBuffer = isAtHome ? 30 : 0; // Buffer de 30 min para deslocamento
+    const travelFee = isAtHome ? (service?.travel_fee || 0) : 0;
+
     // Availability Logic
     const {
         availability,
@@ -52,7 +57,7 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
         selectedDate: date,
         setSelectedDate,
         bookedSlots // For future use or consistency
-    } = useAvailability(resolvedCompanyId, service?.duration_minutes || 30);
+    } = useAvailability(resolvedCompanyId, service?.duration_minutes || 30, travelBuffer);
 
     const [formData, setFormData] = useState({
         date: '',
@@ -73,7 +78,8 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
             totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
         }
     }
-    const finalPrice = service ? (service.price || 0) * totalDays : 0;
+    const basePrice = service ? (service.price || 0) * totalDays : 0;
+    const finalPrice = basePrice + travelFee;
 
     // Sync formData.date com o hook de disponibilidade
     React.useEffect(() => {
@@ -211,7 +217,10 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
                     scheduled_for: scheduledFor, // Updated: booking_date/time -> scheduled_for
                     hiring_responses: formattedResponses,
                     status: 'pending',
-                    package_tier: 'basic' // Default tier for direct bookings
+                    escrow_status: 'retained', // Initial escrow status
+                    package_tier: 'basic', // Default tier for direct bookings
+                    travel_fee: travelFee,
+                    base_price: basePrice,
                 }).select().single();
 
                 if (error) throw error;

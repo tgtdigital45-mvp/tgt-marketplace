@@ -9,7 +9,7 @@ interface BookedOrder {
     services: { duration_minutes: number | null } | null;
 }
 
-export const useAvailability = (companyId?: string, serviceDurationMinutes: number = 30) => {
+export const useAvailability = (companyId?: string, serviceDurationMinutes: number = 30, travelBufferMinutes: number = 0) => {
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
     // 1. Fetch da disponibilidade da empresa (com cache React Query)
@@ -66,7 +66,7 @@ export const useAvailability = (companyId?: string, serviceDurationMinutes: numb
     // 3. Calcula os slots disponíveis a partir dos dados já buscados
     const availableSlots =
         selectedDate && availability
-            ? getAvailableSlotsForDate(selectedDate, availability, serviceDurationMinutes, bookedBlocks)
+            ? getAvailableSlotsForDate(selectedDate, availability, serviceDurationMinutes, bookedBlocks, travelBufferMinutes)
             : [];
 
     return {

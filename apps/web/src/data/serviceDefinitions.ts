@@ -10,6 +10,8 @@ export interface HiringQuestion {
 export interface ServiceSubcategory {
     id: string;
     label: string;
+    requiresProfessionalId?: boolean;
+    hideFixedPrice?: boolean;
     registrationRules?: string[];
     hiringQuestions?: HiringQuestion[];
     requiresBoard?: {
@@ -35,12 +37,13 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
         id: 'healthcare',
         label: 'Área da Saúde',
         subcategories: [
-            { id: 'general_doctor', label: 'Médico (clínico geral e especialistas)', requiresBoard: { name: 'CRM', mandatory: true, showUf: true } },
-            { id: 'dentist', label: 'Dentista (clínico geral e especialistas)', requiresBoard: { name: 'CRO', mandatory: true, showUf: true } },
-            { id: 'nurse', label: 'Enfermeiro', requiresBoard: { name: 'COREN', mandatory: true, showUf: true } },
-            { id: 'nursing_technician', label: 'Técnico de enfermagem', requiresBoard: { name: 'COREN', mandatory: true, showUf: true } },
+            { id: 'general_doctor', label: 'Médico (clínico geral e especialistas)', requiresProfessionalId: true, hideFixedPrice: true, requiresBoard: { name: 'CRM', mandatory: true, showUf: true } },
+            { id: 'dentist', label: 'Dentista (clínico geral e especialistas)', requiresProfessionalId: true, hideFixedPrice: true, requiresBoard: { name: 'CRO', mandatory: true, showUf: true } },
+            { id: 'nurse', label: 'Enfermeiro', requiresProfessionalId: true, requiresBoard: { name: 'COREN', mandatory: true, showUf: true } },
+            { id: 'nursing_technician', label: 'Técnico de enfermagem', requiresProfessionalId: true, requiresBoard: { name: 'COREN', mandatory: true, showUf: true } },
             {
                 id: 'psychologist', label: 'Psicólogo',
+                requiresProfessionalId: true,
                 requiresBoard: { name: 'CRP', mandatory: true, showUf: true },
                 registrationRules: [
                     'Modalidade: Online (Vídeochamada) ou Presencial (Endereço do consultório).',

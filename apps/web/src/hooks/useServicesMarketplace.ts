@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@tgt/core';
 import { DbService } from '@tgt/core';
 import { getH3SearchIndexes } from '@/utils/h3Utils';
+import { devLog, devWarn, logError } from '@/utils/logger';
 
-export type ServiceFilter = 'all' | 'remote' | 'presential' | 'hybrid';
+export type ServiceFilter = 'all' | 'remote' | 'presential';
 
 interface UseServicesMarketplaceOptions {
     category?: string;
@@ -116,7 +117,7 @@ export function useServicesMarketplace({
             company_rating: s.companies?.rating,
             company_slug: s.companies?.slug,
         }));
-    }, [category, searchQuery, serviceFilter, limit]);
+    }, [category, searchQuery, serviceFilter, limit, h3Indexes]); // h3Indexes incluído para evitar stale closure no filtro presencial
 
     const fetchServices = useCallback(async () => {
         setLoading(true);
@@ -127,7 +128,7 @@ export function useServicesMarketplace({
             let rpcWorked = false;
 
             const shouldFetchRemote =
-                serviceFilter === 'all' || serviceFilter === 'remote' || serviceFilter === 'hybrid';
+                serviceFilter === 'all' || serviceFilter === 'remote';
 
             const shouldFetchPresential =
                 (serviceFilter === 'all' || serviceFilter === 'presential') && h3Indexes !== null;
@@ -151,11 +152,11 @@ export function useServicesMarketplace({
                     ])) as any;
 
                     if (!rpcError && data && data.length > 0) {
-                        console.log(`[useServicesMarketplace] get_remote_services retornou ${data.length} resultados.`);
+                        devLog(`[useServicesMarketplace] get_remote_services retornou ${data.length} resultados.`);
                         results.push(...(data as DbService[]));
                         rpcWorked = true;
                     } else if (rpcError) {
-                        console.error('[useServicesMarketplace] Erro em get_remote_services:', rpcError);
+                        devWarn('[useServicesMarketplace] Erro em get_remote_services:', rpcError);
                     }
                 }
 
@@ -163,6 +164,7 @@ export function useServicesMarketplace({
                     const rpcPromise = supabase.rpc('get_nearby_services', {
                         p_h3_indexes: h3Indexes,
                         p_category: category || null,
+                        p_search: searchQuery || null,
                         p_limit: limit,
                         p_offset: 0,
                     });
@@ -177,21 +179,21 @@ export function useServicesMarketplace({
                     ])) as any;
 
                     if (!rpcError && data && data.length > 0) {
-                        console.log(`[useServicesMarketplace] get_nearby_services retornou ${data.length} resultados.`);
+                        devLog(`[useServicesMarketplace] get_nearby_services retornou ${data.length} resultados.`);
                         results.push(...(data as DbService[]));
                         rpcWorked = true;
                     } else if (rpcError) {
-                        console.error('[useServicesMarketplace] Erro em get_nearby_services:', rpcError);
+                        devWarn('[useServicesMarketplace] Erro em get_nearby_services:', rpcError);
                     }
                 }
             } catch {
                 // RPCs not available — will use fallback
-                console.warn('[useServicesMarketplace] RPCs unavailable, using direct query');
+                devWarn('[useServicesMarketplace] RPCs unavailable, using direct query');
             }
 
             // Fallback: if RPCs didn't work or returned few results, query directly
             if (!rpcWorked || results.length < 3) {
-                console.log('[useServicesMarketplace] Using direct table query fallback');
+                devLog('[useServicesMarketplace] Using direct table query fallback');
                 const directResults = await fetchDirectFromTable();
                 results.push(...directResults);
             }
@@ -221,7 +223,7 @@ export function useServicesMarketplace({
 
             setServices(unique);
         } catch (err: any) {
-            console.error('[useServicesMarketplace] Erro Crítico em fetchServices:', err);
+            logError('[useServicesMarketplace] Erro Crítico em fetchServices:', err);
             setError(err.message || 'Erro ao carregar serviços');
         } finally {
             setLoading(false);

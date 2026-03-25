@@ -1,26 +1,23 @@
-﻿import { supabase } from '@tgt/core';
+import { supabase } from '@tgt/core';
 
 interface AuditLogParams {
     action: string;
     entity: string;
     entityId?: string;
-    details?: any;
+    details?: Record<string, unknown>;
+    /** Pass the authenticated user's ID to avoid an extra round-trip to Supabase Auth. */
+    userId: string;
 }
 
 /**
  * Logs an administrative action to the audit_logs table.
- * @param params AuditLogParams
+ *
+ * @param params AuditLogParams — userId is required to avoid calling getSession() on every log entry.
  */
-export const logAdminAction = async ({ action, entity, entityId, details }: AuditLogParams) => {
+export const logAdminAction = async ({ action, entity, entityId, details, userId }: AuditLogParams) => {
     try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user) return;
-
-        // Optional: Fetch IP address if needed, but usually done server-side.
-        // We will just log the action.
-
         const { error } = await supabase.from('audit_logs').insert({
-            admin_id: session.user.id,
+            admin_id: userId,
             action,
             entity,
             entity_id: entityId,
@@ -29,10 +26,8 @@ export const logAdminAction = async ({ action, entity, entityId, details }: Audi
         });
 
         if (error) throw error;
-
     } catch (error) {
+        // Intentionally silent — logging failure must never block the main action flow
         console.error('[AuditLogger] Failed to log action:', error);
-        // We intentionally do not throw here to prevent blocking the main action flow
-        // if logging service is down, although for strict compliance this might change.
     }
 };
