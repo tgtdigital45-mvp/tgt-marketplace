@@ -1,8 +1,8 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '@tgt/core';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import LazyChart from '@/components/LazyChart';
 
 import { useCompany } from '@/contexts/CompanyContext';
 import { motion } from 'framer-motion';
@@ -495,24 +495,14 @@ const DashboardOverviewPage: React.FC = () => {
           </p>
           <div className="w-full h-[300px] relative">
             {filteredChart && filteredChart.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={filteredChart} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 11 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 11 }} />
-                  <Tooltip
-                    formatter={(value: any) => [`R$ ${Number(value).toLocaleString('pt-BR')}`, 'Vendas']}
-                    contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.06)', fontSize: '12px' }}
-                  />
-                  <Area type="monotone" dataKey="sales" stroke="#6366f1" strokeWidth={2.5} fillOpacity={1} fill="url(#colorSales)" />
-                </AreaChart>
-              </ResponsiveContainer>
+              <LazyChart 
+                type="area" 
+                data={filteredChart} 
+                dataKey="sales" 
+                color="#6366f1" 
+                gradientId="colorSales" 
+                height={300} 
+              />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 text-sm gap-2">
                 <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center">
@@ -535,16 +525,13 @@ const DashboardOverviewPage: React.FC = () => {
             <p className="text-white/60 text-[10px] sm:text-xs mb-4">Volume mensal</p>
             <div className="flex-1 w-full h-[220px] relative">
               {chartData && chartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 10, right: 5, left: -30, bottom: 0 }}>
-                    <Bar dataKey="orders_count" fill="rgba(255,255,255,0.8)" radius={[4, 4, 0, 0]} barSize={8} />
-                    <Tooltip
-                      cursor={{ fill: 'rgba(255,255,255,0.1)' }}
-                      contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '10px', color: '#fff', fontSize: '12px' }}
-                      formatter={(val: any) => [val, 'Pedidos']}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
+                <LazyChart 
+                  type="bar" 
+                  data={chartData} 
+                  dataKey="orders_count" 
+                  color="rgba(255,255,255,0.8)" 
+                  height={220} 
+                />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-white/40 text-xs italic">
                   Sem dados para o período

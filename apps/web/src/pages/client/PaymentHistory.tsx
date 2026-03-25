@@ -1,16 +1,8 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@tgt/core';
 import { LoadingSpinner, Badge, Button } from '@tgt/ui-web';
-import {
-    AreaChart,
-    Area,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer
-} from 'recharts';
+import LazyChart from '@/components/LazyChart';
 import {
     CreditCard,
     Receipt,
@@ -192,39 +184,14 @@ const PaymentHistory: React.FC<PaymentHistoryProps> = ({ isEmbedded = false }) =
                     </div>
                 </div>
                 <div className="h-[300px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={chartData}>
-                            <defs>
-                                <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#00b09b" stopOpacity={0.1} />
-                                    <stop offset="95%" stopColor="#00b09b" stopOpacity={0} />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                            <XAxis
-                                dataKey="name"
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }}
-                                dy={10}
-                            />
-                            <YAxis
-                                hide={true}
-                            />
-                            <Tooltip
-                                contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                                formatter={(value: number) => [formatCurrency(value), 'Investido']}
-                            />
-                            <Area
-                                type="monotone"
-                                dataKey="total"
-                                stroke="#00b09b"
-                                strokeWidth={3}
-                                fillOpacity={1}
-                                fill="url(#colorTotal)"
-                            />
-                        </AreaChart>
-                    </ResponsiveContainer>
+                    <LazyChart 
+                        type="area" 
+                        data={chartData} 
+                        dataKey="total" 
+                        color="#00b09b" 
+                        gradientId="colorTotal" 
+                        height={300} 
+                    />
                 </div>
             </div>
 

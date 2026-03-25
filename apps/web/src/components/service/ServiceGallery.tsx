@@ -22,6 +22,9 @@ const ServiceGallery: React.FC<ServiceGalleryProps> = ({ images, title }) => {
                 <OptimizedImage
                     src={displayImages[activeIndex]}
                     alt={`${title} - Imagem ${activeIndex + 1}`}
+                    aspectRatio="16/9"
+                    width={1200}
+                    height={675}
                     className="w-full h-full object-contain bg-gray-50"
                     optimizedWidth={1200}
                     priority={activeIndex === 0}
@@ -63,7 +66,7 @@ const ServiceGallery: React.FC<ServiceGalleryProps> = ({ images, title }) => {
                                     : 'border-transparent hover:border-gray-300 opacity-70 hover:opacity-100'
                                 }`}
                         >
-                            <OptimizedImage src={img} alt={`Thumb ${idx}`} width={100} className="w-full h-full object-cover" />
+                            <OptimizedImage src={img} alt={`Thumb ${idx}`} aspectRatio="1/1" width={100} height={100} className="w-full h-full object-cover" />
                         </button>
                     ))}
                 </div>

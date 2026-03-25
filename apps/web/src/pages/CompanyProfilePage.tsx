@@ -13,6 +13,7 @@ const MessageModal = lazy(() => import('../components/MessageModal'));
 const ServiceBookingModal = lazy(() => import('../components/ServiceBookingModal'));
 const ReviewModal = lazy(() => import('../components/ReviewModal'));
 const InquiryModal = lazy(() => import('../components/InquiryModal'));
+const CompanyMap = lazy(() => import('@/components/Map/CompanyMap'));
 import CompanyCard from '@/components/CompanyCard';
 import { Service } from '@tgt/core';
 import { supabase } from '@tgt/core';
@@ -24,23 +25,7 @@ import ReviewsList from '@/components/ReviewsList';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import PortfolioLightbox from '@/components/PortfolioLightbox';
 import { LayoutGrid, Info, Star, MapPin as MapPinIcon, Youtube } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
-
-// Fix for default marker icon in Leaflet
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import { LoadingSkeleton } from '@tgt/ui-web';
-
-
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: markerIcon2x,
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
-});
 
 const CompanyProfilePage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -170,6 +155,9 @@ const CompanyProfilePage: React.FC = () => {
         <OptimizedImage
           src={company.coverImage}
           alt={`Capa de ${company.companyName}`}
+          aspectRatio="16/9"
+          width={1920}
+          height={480}
           className="w-full h-full object-cover opacity-90 transition-opacity duration-700"
           fallbackSrc="https://placehold.co/1920x400/111827/374151?text=Cover"
           optimizedWidth={1440}
@@ -240,6 +228,9 @@ const CompanyProfilePage: React.FC = () => {
                           <OptimizedImage
                             src={item.image_url}
                             alt={item.title || 'Portfolio Item'}
+                            aspectRatio="1/1"
+                            width={400}
+                            height={400}
                             className="w-full h-full object-cover relative z-0 group-hover:scale-105 transition-transform duration-500"
                             optimizedWidth={400}
                           />
@@ -297,24 +288,13 @@ const CompanyProfilePage: React.FC = () => {
 
                       <div className="h-80 w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm relative z-0">
                         {company.address.lat && company.address.lng ? (
-                          <MapContainer
-                            center={[company.address.lat, company.address.lng]}
-                            zoom={15}
-                            scrollWheelZoom={false}
-                            className="h-full w-full"
-                          >
-                            <TileLayer
-                              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            />
-                            <Marker position={[company.address.lat, company.address.lng]}>
-                              <Popup>
-                                <div className="text-center font-semibold p-1">
-                                  {company.companyName}
-                                </div>
-                              </Popup>
-                            </Marker>
-                          </MapContainer>
+                          <Suspense fallback={<div className="h-full w-full bg-gray-100 animate-pulse flex items-center justify-center"><p className="text-gray-400 text-sm font-medium">Carregando mapa...</p></div>}>
+                             <CompanyMap 
+                                lat={company.address.lat} 
+                                lng={company.address.lng} 
+                                companyName={company.companyName} 
+                             />
+                          </Suspense>
                         ) : (
                           <div className="h-full w-full bg-gray-50 flex flex-col items-center justify-center text-gray-400 gap-2">
                             <MapPinIcon className="w-10 h-10 opacity-20" />

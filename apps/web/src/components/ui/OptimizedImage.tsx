@@ -75,6 +75,8 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
                 ref={imgRef}
                 src={imgSrc}
                 alt={alt}
+                width={props.width}
+                height={props.height}
                 className={`w-full h-full object-cover transition-opacity duration-300 ${isLoaded && !hasError ? 'opacity-100' : 'opacity-0'}`}
                 onLoad={() => setIsLoaded(true)}
                 onError={handleError}

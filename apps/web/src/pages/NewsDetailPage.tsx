@@ -1,15 +1,12 @@
 import React from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import SEO from '@/components/SEO';
 import { MOCK_NEWS } from '@/data/news';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import { Calendar, User, Clock, ArrowLeft, Share2, Facebook, Twitter, Linkedin } from 'lucide-react';
 import { Button } from '@tgt/ui-web';
-
-
+import LazyMarkdown from '@/components/ui/LazyMarkdown';
 
 const NewsDetailPage: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();
@@ -98,9 +95,7 @@ const NewsDetailPage: React.FC = () => {
                         prose-pre:bg-slate-900 prose-pre:text-slate-100
                         prose-blockquote:border-l-4 prose-blockquote:border-primary-600 prose-blockquote:pl-6 prose-blockquote:italic
                     ">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {post.content || post.excerpt}
-                        </ReactMarkdown>
+                        <LazyMarkdown content={post.content || post.excerpt} />
                     </article>
 
                     {/* Footer / Sharing */}

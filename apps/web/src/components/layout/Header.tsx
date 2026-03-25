@@ -41,9 +41,11 @@ const Header: React.FC = () => {
                         <div className="flex items-center gap-4 sm:gap-6 lg:gap-10 min-w-0">
                             <Link to="/" className="flex-shrink-0 flex items-center group">
                                 <img
-                                    src="/logo-contratto.png"
+                                    src="/contratto-logo.svg"
                                     alt="CONTRATTO"
-                                    className="h-16 sm:h-12 lg:h-18 w-auto object-contain transition-all duration-300 group-hover:opacity-80 block"
+                                    width={220}
+                                    height={80}
+                                    className="h-16 sm:h-12 lg:h-20 w-auto object-contain transition-all duration-300 group-hover:opacity-80 block"
                                     style={{
                                         maxHeight: 'min(90px, 14vw)',
                                         height: 'auto'

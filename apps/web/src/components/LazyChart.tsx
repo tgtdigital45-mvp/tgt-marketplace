@@ -19,13 +19,23 @@ interface LazyChartProps {
     dataKey: string;
     height?: number;
     className?: string;
+    color?: string;
+    gradientId?: string;
 }
 
 /**
  * Wrapper para Recharts com IntersectionObserver
  * O chunk JS dos gráficos só é baixado quando o usuário rolar até 200px de distância
  */
-const LazyChart: React.FC<LazyChartProps> = ({ type, data, dataKey, height = 300, className }) => {
+const LazyChart: React.FC<LazyChartProps> = ({ 
+    type, 
+    data, 
+    dataKey, 
+    height = 300, 
+    className,
+    color = "var(--color-brand-secondary)",
+    gradientId = "colorLazy"
+}) => {
     const [shouldLoad, setShouldLoad] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -67,20 +77,20 @@ const LazyChart: React.FC<LazyChartProps> = ({ type, data, dataKey, height = 300
                         {type === 'area' ? (
                             <AreaChart data={data}>
                                 <defs>
-                                    <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="var(--color-brand-secondary)" stopOpacity={0.8} />
-                                        <stop offset="95%" stopColor="var(--color-brand-secondary)" stopOpacity={0} />
+                                    <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor={color} stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor={color} stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#A0AEC0', fontSize: 12 }} />
                                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#A0AEC0', fontSize: 12 }} />
                                 <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
-                                <Area type="monotone" dataKey={dataKey} stroke="var(--color-brand-secondary)" strokeWidth={3} fillOpacity={1} fill="url(#colorViews)" />
+                                <Area type="monotone" dataKey={dataKey} stroke={color} strokeWidth={3} fillOpacity={1} fill={`url(#${gradientId})`} />
                             </AreaChart>
                         ) : (
                             <BarChart data={data}>
-                                <Bar dataKey={dataKey} fill="rgba(255,255,255,0.8)" radius={[4, 4, 0, 0]} barSize={8} />
+                                <Bar dataKey={dataKey} fill={color} radius={[4, 4, 0, 0]} barSize={8} />
                                 <Tooltip cursor={{ fill: 'rgba(255,255,255,0.1)' }} contentStyle={{ backgroundColor: '#333', border: 'none', borderRadius: '8px', color: '#fff' }} />
                             </BarChart>
                         )}

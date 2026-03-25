@@ -11,7 +11,7 @@ const Footer: React.FC = () => {
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-12 mb-12 pb-10 border-b border-slate-800">
           <div className="max-w-sm">
             <Link to="/" className="inline-block mb-4">
-              <img src="/logo-contratto.png" alt="CONTRATTO" className="h-10 sm:h-12 w-auto brightness-0 invert opacity-90" />
+              <img src="/contratto-logo.svg" alt="CONTRATTO" className="h-10 sm:h-12 w-auto brightness-0 invert opacity-90" />
             </Link>
             <p className="text-sm text-slate-400 leading-relaxed mb-6">
               A maior rede corporativa de serviços locais. Conectamos empresas e profissionais com segurança e qualidade.

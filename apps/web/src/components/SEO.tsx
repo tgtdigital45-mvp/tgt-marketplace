@@ -9,6 +9,7 @@ interface SEOProps {
     url?: string;
     type?: string;
     schema?: Record<string, any>;
+    preload?: { href: string; as: string; type?: string }[];
 }
 
 const SEO: React.FC<SEOProps> = ({
@@ -19,6 +20,7 @@ const SEO: React.FC<SEOProps> = ({
     url,
     type = 'website',
     schema,
+    preload,
 }) => {
     const siteUrl = 'https://www.contrattoex.com';
     // Remove query parameters from canonical URL to avoid duplicate indexing errors
@@ -35,7 +37,9 @@ const SEO: React.FC<SEOProps> = ({
             <title>{title}</title>
             <meta name="description" content={description} />
             <meta name="keywords" content={fullKeywords} />
-            <link rel="canonical" href={fullUrl} />
+            {preload && preload.map((item, idx) => (
+                <link key={idx} rel="preload" href={item.href} as={item.as} type={item.type} />
+            ))}
 
             {schema && (
                 <script type="application/ld+json">

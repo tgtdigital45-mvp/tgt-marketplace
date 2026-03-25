@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Service } from '@tgt/core';
 
@@ -29,6 +29,9 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, onRequestQuote }) =>
         <OptimizedImage
           src={service.gallery && service.gallery.length > 0 ? service.gallery[0] : undefined}
           alt={service.title}
+          aspectRatio="16/9"
+          width={800}
+          height={450}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           optimizedWidth={800}
         />
@@ -41,6 +44,9 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, onRequestQuote }) =>
                 <OptimizedImage
                   src={company.logo_url}
                   alt={company.company_name}
+                  aspectRatio="1/1"
+                  width={64}
+                  height={64}
                   className="w-full h-full object-cover"
                   optimizedWidth={64}
                 />

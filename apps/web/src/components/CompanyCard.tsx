@@ -34,6 +34,8 @@ const CompanyCard: React.FC<CompanyCardProps> = ({ company }) => {
                         src={company.coverImage || (company as any).cover_image_url}
                         alt={company.companyName}
                         aspectRatio="16/9"
+                        width={600}
+                        height={338}
                         optimizedWidth={600}
                         quality={80}
                         fallbackSrc="https://placehold.co/600x450/f1f5f9/94a3b8?text=CONTRATTO"
@@ -47,6 +49,8 @@ const CompanyCard: React.FC<CompanyCardProps> = ({ company }) => {
                             src={company.logo}
                             alt={`${company.companyName} logo`}
                             aspectRatio="1/1"
+                            width={100}
+                            height={100}
                             optimizedWidth={100}
                             quality={80}
                             fallbackSrc="https://placehold.co/100x100/f1f5f9/94a3b8?text=Logo"

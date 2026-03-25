@@ -57,6 +57,9 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                             <OptimizedImage
                                 src={avatarUrl}
                                 alt={displayName}
+                                aspectRatio="1/1"
+                                width={128}
+                                height={128}
                                 className="w-full h-full object-cover"
                                 optimizedWidth={128}
                                 fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random`}

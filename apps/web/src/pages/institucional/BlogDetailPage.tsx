@@ -1,12 +1,11 @@
 import React from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import SEO from '@/components/SEO';
 import { MOCK_BLOGS } from '@/data/blogs';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import { Calendar, Clock, ArrowLeft, Share2, Facebook, Twitter, Linkedin } from 'lucide-react';
 import { Button } from '@tgt/ui-web';
+import LazyMarkdown from '@/components/ui/LazyMarkdown';
 
 const BlogDetailPage: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();
@@ -93,15 +92,13 @@ const BlogDetailPage: React.FC = () => {
                     prose-a:text-primary-600 prose-a:no-underline hover:prose-a:text-primary-700 hover:prose-a:underline
                     prose-blockquote:border-l-4 prose-blockquote:border-primary-600 prose-blockquote:pl-6 prose-blockquote:italic prose-blockquote:text-slate-500
                 ">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {post.content || post.excerpt}
-                    </ReactMarkdown>
+                    <LazyMarkdown content={post.content || post.excerpt} />
                 </article>
 
                 {/* Footer Sharing */}
                 <footer className="pt-10 border-t border-slate-100 mb-16">
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-                        <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-12">
                             <span className="text-xs font-black uppercase tracking-widest text-slate-400">Gostou da leitura? Compartilhe:</span>
                             <div className="flex gap-4">
                                 <Facebook size={20} className="text-slate-400 hover:text-brand-accent cursor-pointer transition-colors" />

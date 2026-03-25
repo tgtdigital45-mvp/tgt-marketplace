@@ -321,7 +321,7 @@ const ServiceDetailsPage = () => {
                     <div className="flex flex-wrap items-center gap-4 text-sm">
                         <div className="flex items-center gap-2">
                             <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
-                                <OptimizedImage src={sellerAvatar} alt={sellerName} className="w-full h-full object-cover" />
+                                <OptimizedImage src={sellerAvatar} alt={sellerName} aspectRatio="1/1" width={32} height={32} className="w-full h-full object-cover" />
                             </div>
                             <Link to={`/empresa/${company?.slug}`} className="font-bold text-gray-900 hover:underline">{sellerName}</Link>
                             <SellerBadge level={sellerLevel as SellerLevel} />
@@ -454,7 +454,7 @@ const ServiceDetailsPage = () => {
                             <div className="flex flex-col md:flex-row gap-8">
                                 <div className="flex-shrink-0 text-center md:text-left">
                                     <div className="w-24 h-24 rounded-full bg-white mx-auto md:mx-0 overflow-hidden border border-gray-200 shadow-sm mb-3">
-                                        <OptimizedImage src={sellerAvatar} alt={sellerName} className="w-full h-full object-cover" />
+                                        <OptimizedImage src={sellerAvatar} alt={sellerName} aspectRatio="1/1" width={96} height={96} className="w-full h-full object-cover" />
                                     </div>
                                     <Button variant="outline" size="sm" onClick={() => navigate(`/empresa/${company?.slug}`)} className="w-full">
                                         Ver Perfil
@@ -521,10 +521,10 @@ const ServiceDetailsPage = () => {
                                     {relatedServices.map(rel => (
                                         <Link key={rel.id} to={`/servico/${rel.id}`} className="group block">
                                             <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden mb-3">
-                                                <OptimizedImage src={rel.image_url || rel.gallery?.[0]} alt={rel.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                <OptimizedImage src={rel.image_url || rel.gallery?.[0]} alt={rel.title} aspectRatio="16/9" width={400} height={225} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                             </div>
                                             <div className="flex items-center gap-2 mb-1">
-                                                <div className="w-6 h-6 rounded-full bg-gray-200 overflow-hidden"><OptimizedImage src={rel.company?.logo_url || "https://placehold.co/50"} alt="" className="w-full h-full object-cover" /></div>
+                                                <div className="w-6 h-6 rounded-full bg-gray-200 overflow-hidden"><OptimizedImage src={rel.company?.logo_url || "https://placehold.co/50"} alt="" aspectRatio="1/1" width={24} height={24} className="w-full h-full object-cover" /></div>
                                                 <span className="text-xs text-gray-500 truncate">{rel.company?.company_name}</span>
                                             </div>
                                             <h4 className="font-semibold text-gray-900 group-hover:text-brand-primary line-clamp-2 text-sm leading-snug mb-2">{rel.title}</h4>

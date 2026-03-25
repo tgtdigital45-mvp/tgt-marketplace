@@ -66,7 +66,7 @@ const MobileSheet: React.FC<MobileSheetProps> = ({ isOpen, onClose }) => {
                         <div className="p-4 sm:p-6 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
                             <Link to="/" onClick={handleLinkClick} className="flex items-center">
                                 <img
-                                    src="/logo-contratto.png"
+                                    src="/contratto-logo.svg"
                                     alt="CONTRATTO"
                                     className="h-10 sm:h-12 w-auto object-contain"
                                 />
