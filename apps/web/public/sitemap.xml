@@ -17,6 +17,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://www.contrattoex.com/servicos</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://www.contrattoex.com/sobre</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
