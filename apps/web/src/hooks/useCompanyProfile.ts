@@ -11,7 +11,7 @@ export const useCompanyProfile = (slug: string | undefined) => {
             // 1. Single Fetch with Joins from the Secure View
             // Note: Use public_companies view instead of companies table to avoid RLS restrictions on sensitive data
             const { data, error } = await supabase
-                .from('public_companies')
+                .from('companies')
                 .select(`
                   id, profile_id, company_name, slug, description, logo_url, cover_image_url, 
                   category, status, city, state, address, phone, email, website, social_links,
