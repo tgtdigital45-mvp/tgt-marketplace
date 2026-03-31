@@ -158,7 +158,6 @@ export default function ChatScreen() {
         return () => { supabase.removeChannel(orderChannel); };
     }, [orderId, session]);
 
-    // ---- Fetch Messages ----
     const fetchMessages = async (orderIdToFetch: string) => {
         setIsLoadingMessages(true);
         try {
@@ -168,7 +167,19 @@ export default function ChatScreen() {
                 .eq('order_id', orderIdToFetch)
                 .order('created_at', { ascending: true });
             if (error) throw error;
-            setMessages((data as unknown as Message[]) ?? []);
+
+            let fetchedMessages = (data as unknown as Message[]) ?? [];
+            
+            // Generate Signed URLs for private attachments
+            fetchedMessages = await Promise.all(fetchedMessages.map(async (msg) => {
+                if (msg.file_url && !msg.file_url.startsWith('http')) {
+                    const { data: signedData } = await supabase.storage.from('chat_media').createSignedUrl(msg.file_url, 60 * 60 * 24);
+                    if (signedData) return { ...msg, file_url: signedData.signedUrl };
+                }
+                return msg;
+            }));
+
+            setMessages(fetchedMessages);
             scrollToBottom(false);
         } catch (e) {
             logger.error('Error fetching messages:', e);
@@ -195,9 +206,15 @@ export default function ChatScreen() {
                         .eq('id', (payload.new as any).id)
                         .single();
                     if (data) {
+                        let newMsg = data as unknown as Message;
+                        if (newMsg.file_url && !newMsg.file_url.startsWith('http')) {
+                            const { data: signedData } = await supabase.storage.from('chat_media').createSignedUrl(newMsg.file_url, 60 * 60 * 24);
+                            if (signedData) newMsg.file_url = signedData.signedUrl;
+                        }
+
                         setMessages(prev => {
-                            if (prev.some(m => m.id === data.id)) return prev;
-                            return [...prev, data as unknown as Message];
+                            if (prev.some(m => m.id === newMsg.id)) return prev;
+                            return [...prev, newMsg];
                         });
                         scrollToBottom();
                     }
@@ -216,10 +233,10 @@ export default function ChatScreen() {
                 return;
             }
 
-            const { error } = await supabase
-                .from('bookings')
-                .update({ status: newStatus })
-                .eq('id', order.id);
+            const { error } = await supabase.rpc('update_order_state', {
+                p_order_id: order.id,
+                p_new_status: newStatus
+            });
 
             if (error) throw error;
 
@@ -391,24 +408,27 @@ export default function ChatScreen() {
             const blob = await response.blob();
 
             const { data, error } = await supabase.storage
-                .from('chat-attachments')
+                .from('chat_media')
                 .upload(fileName, blob, { contentType: `image/${fileExt}` });
 
             if (error) throw error;
 
-            const { data: urlData } = supabase.storage.from('chat-attachments').getPublicUrl(fileName);
-
-            // Send the message with the image
+            // Send the message with the image relative path instead of vulnerable public URL
             const { data: msgData, error: msgError } = await supabase
                 .from('messages')
-                .insert({ order_id: order.id, sender_id: session.user.id, content: '', file_url: urlData.publicUrl, file_type: `image/${fileExt}` })
+                .insert({ order_id: order.id, sender_id: session.user.id, content: '', file_url: fileName, file_type: `image/${fileExt}` })
                 .select('id, order_id, sender_id, content, file_url, file_type, proposal_id, is_system_message, created_at, profiles!messages_sender_id_fkey(first_name, last_name)')
                 .single();
 
             if (msgError) throw msgError;
 
             if (msgData) {
-                setMessages(prev => [...prev, msgData as unknown as Message]);
+                const { data: signedData } = await supabase.storage.from('chat_media').createSignedUrl(fileName, 60 * 60 * 24);
+                
+                setMessages(prev => [...prev, {
+                    ...(msgData as unknown as Message),
+                    file_url: signedData?.signedUrl || fileName
+                }]);
                 scrollToBottom();
             }
 

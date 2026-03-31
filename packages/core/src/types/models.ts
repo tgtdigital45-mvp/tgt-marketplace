@@ -50,6 +50,7 @@ export interface Company {
   services: Service[];
   reviews: Review[];
   portfolio: PortfolioItem[];
+  projects?: CompanyProject[];
   current_plan_tier?: 'basic' | 'pro' | 'agency';
   stripe_account_id?: string;
   stripe_charges_enabled?: boolean;
@@ -167,6 +168,9 @@ export interface DbCompany {
   coverage_radius_km?: number;
   coverage_neighborhoods?: string[];
   terms_and_policies?: string;
+  sales_count?: number;
+  response_time?: string;
+  h3_index?: string;
 }
 
 export interface DbProfile {
@@ -175,6 +179,12 @@ export interface DbProfile {
   avatar_url?: string;
   user_type?: 'client' | 'company' | 'admin';
   role?: string;
+  address?: Address;
+  status?: string;
+  email?: string;
+  phone?: string;
+  cpf?: string;
+  date_of_birth?: string;
 }
 
 export interface DbService {
@@ -230,6 +240,18 @@ export interface PortfolioItem {
   created_at?: string;
 }
 
+export interface CompanyProject {
+  id: string;
+  company_id: string;
+  title: string;
+  description?: string;
+  main_image_url: string;
+  gallery_urls: string[];
+  service_id?: string;
+  completion_date?: string;
+  created_at?: string;
+}
+
 export interface Review {
   id: string;
   author: string;
@@ -253,13 +275,7 @@ export interface UserProfile extends User {
   cpf?: string;
   date_of_birth?: string;
   phone?: string;
-  address_street?: string;
-  address_number?: string;
-  address_complement?: string;
-  address_neighborhood?: string;
-  address_city?: string;
-  address_state?: string;
-  address_zip?: string;
+  address?: Address;
 }
 
 export type BookingStatus =

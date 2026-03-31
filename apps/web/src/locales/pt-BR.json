@@ -4,13 +4,44 @@
     "save": "Salvar",
     "cancel": "Cancelar",
     "confirm": "Confirmar",
-    "error": "Ocorreu um erro inesperado."
+    "error": "Ocorreu um erro inesperado.",
+    "search": "Pesquisar",
+    "all": "Todos",
+    "back": "Voltar",
+    "next": "Próximo",
+    "view_all": "Ver todos"
   },
   "navigation": {
     "home": "Início",
     "services": "Serviços",
     "companies": "Empresas",
     "login": "Entrar",
-    "register": "Cadastrar"
+    "register": "Cadastrar",
+    "dashboard": "Dashboard",
+    "profile": "Perfil"
+  },
+  "marketplace": {
+    "search_placeholder": "O que você precisa hoje?",
+    "search_hint": "Ex: Design de Logo, Gestão de Tráfego...",
+    "results_found": "{{count}} serviço(s) encontrado(s)",
+    "not_found_title": "Não encontramos resultados para esta busca",
+    "not_found_desc": "Nossa rede está crescendo rápido! Tente outros termos ou entre em contato.",
+    "location_prompt": "Ative a localização para ver serviços próximos.",
+    "retry": "Tentar novamente"
+  },
+  "categories": {
+    "marketing": "Marketing",
+    "technology": "Tecnologia",
+    "design": "Design",
+    "consulting": "Consultoria",
+    "health": "Saúde",
+    "education": "Educação",
+    "legal": "Advocacia",
+    "accounting": "Contabilidade",
+    "architecture": "Arquitetura",
+    "photography": "Fotografia",
+    "events": "Eventos",
+    "domestic": "Serviços Domésticos"
   }
 }
+

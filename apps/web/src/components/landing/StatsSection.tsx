@@ -11,8 +11,8 @@ interface StatItem {
 
 const stats: StatItem[] = [
   { icon: Building2, value: 5000, suffix: '+', label: 'Prestadores Verificados' },
-  { icon: Briefcase, value: 12000, suffix: '+', label: 'Servicos Realizados' },
-  { icon: Star, value: 4.9, suffix: '/5', label: 'Avaliacao Media' },
+  { icon: Briefcase, value: 12000, suffix: '+', label: 'Serviços Realizados' },
+  { icon: Star, value: 4.9, suffix: '/5', label: 'Avaliação Média' },
   { icon: MapPin, value: 15, suffix: '+', label: 'Cidades Atendidas' },
 ];
 
@@ -97,10 +97,10 @@ const StatsSection: React.FC = () => {
           className="text-center mb-12 sm:mb-16"
         >
           <span className="text-primary-400 font-bold tracking-[0.2em] text-[10px] sm:text-xs uppercase mb-3 block">
-            Numeros que falam
+            Números que falam
           </span>
           <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
-            A CONTRATTO em <span className="text-primary-400">numeros</span>
+            A CONTRATTO em <span className="text-primary-400">números</span>
           </h2>
         </motion.div>
 

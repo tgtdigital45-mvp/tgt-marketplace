@@ -43,7 +43,7 @@ const LoginDropdown: React.FC = () => {
                             onClick={() => setIsOpen(false)}
                         >
                             <span className="font-semibold block text-brand-primary">Sou Cliente</span>
-                            <span className="text-xs text-slate-500">Acesse sua �rea de pedidos e agendamentos</span>
+                            <span className="text-xs text-slate-500">Acesse sua área de pedidos e agendamentos</span>
                         </Link>
                     </motion.div>
                 )}

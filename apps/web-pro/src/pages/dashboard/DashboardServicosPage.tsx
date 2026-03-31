@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import { useToast } from '@/contexts/ToastContext';
 import { Service } from '@tgt/core';
@@ -53,7 +53,7 @@ const DashboardServicosPage: React.FC = () => {
       }
     } catch (err) {
       console.error('Error fetching services:', err);
-      addToast('Erro ao carregar servicos.', 'error');
+      addToast('Erro ao carregar serviços.', 'error');
     } finally {
       setIsFetching(false);
     }
@@ -66,16 +66,16 @@ const DashboardServicosPage: React.FC = () => {
   const openModalToEdit = (service: Service) => { setEditingService(service); setIsWizardOpen(true); };
 
   const handleDelete = async (serviceId: string) => {
-    if (window.confirm('Tem certeza que deseja excluir este servico?')) {
+    if (window.confirm('Tem certeza que deseja excluir este serviço?')) {
       try {
         const { error } = await supabase.from('services')
           .update({ deleted_at: new Date().toISOString(), is_active: false }).eq('id', serviceId);
         if (error) throw error;
         setServices(prev => prev.filter(s => s.id !== serviceId));
-        addToast('Servico excluido.', 'info');
+        addToast('Serviço excluído.', 'info');
       } catch (err) {
         console.error('Error deleting service:', err);
-        addToast('Erro ao excluir servico.', 'error');
+        addToast('Erro ao excluir serviço.', 'error');
       }
     }
   };
@@ -85,10 +85,10 @@ const DashboardServicosPage: React.FC = () => {
       const { error } = await supabase.from('services').update({ is_active: !currentActive }).eq('id', id);
       if (error) throw error;
       setServices(prev => prev.map(s => s.id === id ? { ...s, is_active: !currentActive } as any : s));
-      addToast(!currentActive ? 'Servico ativado.' : 'Servico desativado.', 'info');
+      addToast(!currentActive ? 'Serviço ativado.' : 'Serviço desativado.', 'info');
     } catch (err) {
       console.error(err);
-      addToast('Erro ao atualizar servico.', 'error');
+      addToast('Erro ao atualizar serviço.', 'error');
     }
   };
 
@@ -98,11 +98,11 @@ const DashboardServicosPage: React.FC = () => {
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
           <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
             <span>Dashboard</span><ChevronRight size={12} />
-            <span>Servicos</span><ChevronRight size={12} />
+            <span>Serviços</span><ChevronRight size={12} />
             <span className="text-gray-600 font-medium">{editingService ? 'Editar' : 'Novo'}</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
-            {editingService ? 'Editar Servico' : 'Novo Servico'}
+            {editingService ? 'Editar Serviço' : 'Novo Serviço'}
           </h1>
         </motion.div>
         <ServiceWizard onCancel={closeWizard} initialData={editingService} onSuccess={closeWizard} />
@@ -123,20 +123,20 @@ const DashboardServicosPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
             <span>Dashboard</span><ChevronRight size={12} />
-            <span className="text-gray-600 font-medium">Servicos</span>
+            <span className="text-gray-600 font-medium">Serviços</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
-            Meus Servicos
+            Meus Serviços
           </h1>
           <p className="text-xs sm:text-sm text-gray-400 mt-0.5">
             {services.length > 0
-              ? `${services.length} servico${services.length > 1 ? 's' : ''} cadastrado${services.length > 1 ? 's' : ''}`
-              : 'Adicione seus servicos para comecar a receber pedidos'}
+              ? `${services.length} serviço${services.length > 1 ? 's' : ''} cadastrado${services.length > 1 ? 's' : ''}`
+              : 'Adicione seus serviços para começar a receber pedidos'}
           </p>
         </div>
         <Button onClick={openWizard} disabled={!company || isLimitReached} size="sm" className="!rounded-xl">
           <Plus size={14} className="mr-1.5" />
-          Adicionar Servico
+          Adicionar Serviço
         </Button>
       </motion.div>
 
@@ -150,9 +150,9 @@ const DashboardServicosPage: React.FC = () => {
         >
           <AlertTriangle size={16} className="text-amber-500 flex-shrink-0 mt-0.5" />
           <div className="text-xs text-amber-700 leading-relaxed">
-            <strong>Limite atingido.</strong> Seu plano Starter permite ate 3 servicos ativos.{' '}
+            <strong>Limite atingido.</strong> Seu plano Starter permite até 3 serviços ativos.{' '}
             <a href={`/dashboard/empresa/${company?.slug}/assinatura`} className="font-bold underline inline-flex items-center gap-1">
-              Faca upgrade para Ilimitado <ArrowUpRight size={10} />
+              Faça upgrade para Ilimitado <ArrowUpRight size={10} />
             </a>
           </div>
         </motion.div>
@@ -173,13 +173,13 @@ const DashboardServicosPage: React.FC = () => {
           <div className="w-14 h-14 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <Package size={24} className="text-primary-400" />
           </div>
-          <h3 className="text-sm sm:text-base font-bold text-gray-700 mb-1">Nenhum servico cadastrado</h3>
+          <h3 className="text-sm sm:text-base font-bold text-gray-700 mb-1">Nenhum serviço cadastrado</h3>
           <p className="text-xs text-gray-400 mb-5 max-w-sm mx-auto">
-            Empresas com servicos detalhados recebem ate 4x mais orcamentos. Adicione seu primeiro servico agora.
+            Empresas com serviços detalhados recebem até 4x mais orçamentos. Adicione seu primeiro serviço agora.
           </p>
           <Button onClick={openWizard} disabled={!company} size="sm" className="!rounded-xl">
             <Plus size={14} className="mr-1.5" />
-            Criar Primeiro Servico
+            Criar Primeiro Serviço
           </Button>
         </motion.div>
       ) : (
@@ -209,7 +209,7 @@ const DashboardServicosPage: React.FC = () => {
                         ? `A partir de R$ ${service.starting_price.toFixed(2).replace('.', ',')}`
                         : service.price
                           ? `R$ ${service.price.toFixed(2).replace('.', ',')}`
-                          : 'Preco sob consulta'}
+                          : 'Preço sob consulta'}
                     </p>
                   </div>
                 </div>

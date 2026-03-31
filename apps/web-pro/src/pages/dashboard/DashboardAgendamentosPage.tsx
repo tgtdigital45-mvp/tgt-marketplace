@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@tgt/core';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
@@ -11,6 +11,7 @@ import OrderVerificationModal from '@/components/dashboard/OrderVerificationModa
 import OrderDeliveryModal from '@/components/dashboard/OrderDeliveryModal';
 import { Play, CheckCircle2, Calendar, User, Clock, MoreHorizontal, LayoutGrid, List } from 'lucide-react';
 import { Badge, Button, LoadingSkeleton } from '@tgt/ui-web';
+import { formatOrderStatus, ORDER_STATUS_COLOR } from '@/utils/statusMapper';
 
 
 interface Order {
@@ -154,31 +155,9 @@ const DashboardAgendamentosPage: React.FC = () => {
         ? orders
         : orders.filter(o => o.status === filter);
 
-    const getStatusVariant = (status: string) => {
-        switch (status) {
-            case 'pending': return 'warning';
-            case 'pending_client_approval': return 'secondary';
-            case 'accepted': return 'info';
-            case 'in_progress': return 'primary';
-            case 'completed': return 'success';
-            case 'cancelled':
-            case 'canceled': return 'danger';
-            default: return 'info';
-        }
-    };
+    const getStatusVariant = (status: string) => ORDER_STATUS_COLOR[status] || 'info';
 
-    const getStatusLabel = (status: string) => {
-        const labels: Record<string, string> = {
-            pending: 'Pendente',
-            pending_client_approval: 'Aguardando Cliente',
-            accepted: 'Aguardando Início',
-            in_progress: 'Em Andamento',
-            completed: 'Concluído',
-            cancelled: 'Cancelado',
-            canceled: 'Cancelado'
-        };
-        return labels[status] || status;
-    };
+    const getStatusLabel = (status: string) => formatOrderStatus(status);
 
     const KANBAN_COLUMNS = [
         { key: 'pending', label: 'Pendentes', color: 'bg-amber-50/50 border-amber-100' },

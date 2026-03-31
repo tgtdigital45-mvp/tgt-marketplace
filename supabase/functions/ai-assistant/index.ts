@@ -34,23 +34,51 @@ serve(async (req) => {
     let prompt = '';
     
     if (action === 'refine_bio') {
-      prompt = `Você é um assistente de escrita profissional para a plataforma TGT, um marketplace de serviços.
-      Melhore o seguinte texto de apresentação de uma empresa/profissional, tornando-o mais persuasivo, profissional e claro em Português do Brasil.
-      Mantenha um tom confiável e focado em converter clientes.
+      prompt = `Você é um assistente de escrita amigável e entusiasmado para a plataforma TGT, um marketplace de serviços.
+      Melhore o seguinte texto de apresentação de uma empresa/profissional em Português do Brasil.
+      O objetivo é ser persuasivo, mas manter um tom caloroso e convidativo que conecte com humanos.
       
       Texto Original: ${content}
       ${context ? `Contexto adicional: ${context}` : ''}
       
       Retorne APENAS o texto aprimorado, sem introduções ou explicações.`;
     } else if (action === 'suggest_chat_reply') {
-      prompt = `Você é um assistente de vendas no chat da plataforma TGT.
-      Sugira uma resposta profissional e amigável para a última mensagem do cliente.
-      Mantenha o foco em agendar o serviço ou esclarecer dúvidas de forma eficiente.
+      prompt = `Você é um assistente de vendas amigável no chat da plataforma TGT.
+      Sugira uma resposta calorosa e profissional para a última mensagem do cliente.
+      Mantenha o foco em ser útil e facilitar o agendamento de forma leve.
       
       Histórico/Contexto: ${context || 'N/A'}
       Mensagem do Cliente: ${content}
       
       Retorne APENAS a sugestão de resposta.`;
+    } else if (action === 'generate_service_description') {
+      prompt = `Você é um especialista em marketing para prestadores de serviço na plataforma TGT.
+      Crie uma descrição atraente e amigável (em 2 ou 3 parágrafos) para o seguinte serviço:
+      
+      Título do Serviço: ${content}
+      Categoria: ${context || 'Geral'}
+      
+      Destaque os benefícios, use um tom proativo e termine com uma frase convidativa.
+      Retorne APENAS a descrição, sem títulos ou introduções.`;
+    } else if (action === 'suggest_tags') {
+      prompt = `Sugira entre 5 e 8 tags relevantes (palavras-chave curtas) para o seguinte serviço no marketplace TGT:
+      
+      Serviço: ${content}
+      Contexto: ${context || ''}
+      
+      Retorne as tags separadas por vírgula em uma única linha. Ex: tag1, tag2, tag3.
+      Não use hashtags.`;
+    } else if (action === 'audit_profile') {
+      prompt = `Você é um consultor de sucesso para empresas na plataforma TGT. Analise os seguintes dados de perfil e dê sugestões amigáveis de melhoria:
+      
+      Dados: ${content}
+      
+      Sua resposta deve ser estruturada em 3 partes:
+      1. Pontos Fortes (O que está legal).
+      2. Oportunidades (O que pode melhorar).
+      3. Dica de Ouro (Uma ação prática imediata).
+      
+      Mantenha o tom motivador e construtivo.`;
     } else {
       throw new Error('Invalid action');
     }

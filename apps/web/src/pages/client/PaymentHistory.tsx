@@ -330,7 +330,7 @@ const PaymentHistory: React.FC<PaymentHistoryProps> = ({ isEmbedded = false }) =
                                 <div className="flex justify-between items-end">
                                     <div>
                                         <p className="text-[8px] text-white/40 uppercase tracking-widest mb-1">Titular</p>
-                                        <p className="text-xs font-black uppercase tracking-widest">{user?.email?.split('@')[0] || 'VOCE'}</p>
+                                        <p className="text-xs font-black uppercase tracking-widest">{user?.email?.split('@')[0] || 'VOCÊ'}</p>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-[8px] text-white/40 uppercase tracking-widest mb-1">Validade</p>

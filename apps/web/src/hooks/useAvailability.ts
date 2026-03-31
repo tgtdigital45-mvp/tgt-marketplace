@@ -35,10 +35,7 @@ export const useAvailability = (companyId?: string, serviceDurationMinutes: numb
         queryFn: async () => {
             const { data, error } = await supabase
                 .from('orders')
-                .select(`
-                    scheduled_for,
-                    services ( duration_minutes )
-                `)
+                .select('scheduled_for, service_id')
                 .eq('seller_id', companyId!)
                 .gte('scheduled_for', `${selectedDate}T00:00:00`)
                 .lte('scheduled_for', `${selectedDate}T23:59:59`)
@@ -46,13 +43,30 @@ export const useAvailability = (companyId?: string, serviceDurationMinutes: numb
 
             if (error) throw new Error(`Erro ao buscar agendamentos: ${error.message}`);
 
-            const orders = (data ?? []) as unknown as BookedOrder[];
+            const orders = (data ?? []) as any[];
+            
+            // Get unique service IDs to fetch their durations
+            const serviceIds = [...new Set(orders.map(o => o.service_id).filter(Boolean))];
+            
+            let servicesDurationMap: Record<string, number> = {};
+            if (serviceIds.length > 0) {
+                const { data: servicesData } = await supabase
+                    .from('services')
+                    .select('id, duration_minutes')
+                    .in('id', serviceIds);
+                    
+                if (servicesData) {
+                    servicesData.forEach(s => {
+                        servicesDurationMap[s.id] = s.duration_minutes || 30;
+                    });
+                }
+            }
 
             return orders.map(b => ({
                 time: b.scheduled_for
                     ? b.scheduled_for.split('T')[1].substring(0, 5)
                     : '00:00',
-                durationMinutes: b.services?.duration_minutes ?? 30,
+                durationMinutes: servicesDurationMap[b.service_id] || 30,
             }));
         },
         enabled: !!companyId && !!selectedDate,

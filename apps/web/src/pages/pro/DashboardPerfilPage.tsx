@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useCompany, CompanyData } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
@@ -108,9 +108,9 @@ const calculateCompletion = (company: CompanyData | null, formData: FormState): 
 };
 
 const TABS: { key: TabKey; label: string; icon: React.ReactNode; description: string }[] = [
-  { key: 'dados', label: 'Dados Basicos', icon: <User size={16} />, description: 'Informacoes principais da empresa' },
-  { key: 'endereco', label: 'Endereco & Logistica', icon: <Truck size={16} />, description: 'Localizacao e area de atendimento' },
-  { key: 'termos', label: 'Termos & Politicas', icon: <FileText size={16} />, description: 'Regras e condicoes do servico' },
+  { key: 'dados', label: 'Dados Básicos', icon: <User size={16} />, description: 'Informações principais da empresa' },
+  { key: 'endereco', label: 'Endereço & Logística', icon: <Truck size={16} />, description: 'Localização e área de atendimento' },
+  { key: 'termos', label: 'Termos & Políticas', icon: <FileText size={16} />, description: 'Regras e condições do serviço' },
 ];
 
 const initialFormState: FormState = {
@@ -141,12 +141,12 @@ const CompletionBar = ({
   const [showDetails, setShowDetails] = useState(false);
   const color = percentage === 100 ? 'bg-emerald-500' : percentage >= 70 ? 'bg-primary-500' : percentage >= 40 ? 'bg-amber-500' : 'bg-red-400';
   const label = percentage === 100
-    ? 'Perfil completo! Voce esta pronto para receber clientes.'
+    ? 'Perfil completo! Você está pronto para receber clientes.'
     : percentage >= 70
-      ? 'Quase la! Complete os campos restantes para aumentar sua visibilidade.'
+      ? 'Quase lá! Complete os campos restantes para aumentar sua visibilidade.'
       : percentage >= 40
-        ? 'Bom comeco. Perfis completos recebem 3x mais contatos.'
-        : 'Seu perfil precisa de atencao. Preencha os campos para aparecer nas buscas.';
+        ? 'Bom começo. Perfis completos recebem 3x mais contatos.'
+        : 'Seu perfil precisa de atenção. Preencha os campos para aparecer nas buscas.';
 
   return (
     <motion.div
@@ -366,7 +366,7 @@ const ProfileHeaderCard = ({
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white text-xs font-bold rounded-xl hover:bg-gray-800 transition-all hover:shadow-lg hover:-translate-y-0.5 flex-shrink-0"
             >
               <Eye size={14} />
-              Ver Perfil Publico
+              Ver Perfil Público
               <ExternalLink size={12} />
             </Link>
           </div>
@@ -433,7 +433,7 @@ const StickySaveBar = ({
             <div className="flex items-center gap-2 min-w-0">
               <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse flex-shrink-0" />
               <span className="text-xs sm:text-sm font-medium text-gray-600 truncate">
-                Voce tem alteracoes nao salvas
+                Você tem alterações não salvas
               </span>
             </div>
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
@@ -651,7 +651,7 @@ const DashboardPerfilPage: React.FC = () => {
       img.src = URL.createObjectURL(file);
       await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; });
       if (img.width > 3000 || img.height > 1080) {
-        throw new Error(`Imagem muito grande (${img.width}x${img.height}). Maximo: 3000x1080px.`);
+        throw new Error(`Imagem muito grande (${img.width}x${img.height}). Máximo: 3000x1080px.`);
       }
       const path = `${company?.id}/cover-${Date.now()}`;
       const { error } = await supabase.storage.from('company-assets').upload(path, file, { upsert: true });
@@ -886,12 +886,12 @@ const DashboardPerfilPage: React.FC = () => {
           transition={{ duration: 0.25 }}
           className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6 lg:p-8"
         >
-          {/* ═══ Tab: Dados Basicos ═══ */}
+          {/* ═══ Tab: Dados Básicos ═══ */}
           {activeTab === 'dados' && (
             <div className="space-y-8">
               {/* Identity */}
               <FormSection
-                title="Identificacao da Empresa"
+                title="Identificação da Empresa"
                 subtitle="Como sua empresa aparece para os clientes"
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -903,7 +903,7 @@ const DashboardPerfilPage: React.FC = () => {
                     placeholder="Ex: Studio Digital Cascavel"
                   />
                   <Input
-                    label="Razao Social"
+                    label="Razão Social"
                     name="legalName"
                     value={formData.legalName || ''}
                     onChange={handleChange}
@@ -916,14 +916,14 @@ const DashboardPerfilPage: React.FC = () => {
                   value={formData.category || ''}
                   onChange={handleCategoryChange}
                   options={categoryOptions}
-                  placeholder="Selecione sua area de atuacao"
+                  placeholder="Selecione sua área de atuação"
                 />
               </FormSection>
 
               {/* Description */}
               <FormSection
-                title="Descricao do Negocio"
-                subtitle="Conte aos clientes o que torna sua empresa unica. Seja especifico e destaque seus diferenciais."
+                title="Descrição do Negócio"
+                subtitle="Conte aos clientes o que torna sua empresa única. Seja específico e destaque seus diferenciais."
               >
                 <div className="relative">
                   <div className="absolute right-0 -top-8">
@@ -947,7 +947,7 @@ const DashboardPerfilPage: React.FC = () => {
                     maxLength={1000}
                     value={formData.description || ''}
                     onChange={handleChange}
-                    placeholder="Descreva seus servicos, experiencia, diferenciais competitivos e por que clientes devem escolher sua empresa..."
+                    placeholder="Descreva seus serviços, experiência, diferenciais competitivos e por que clientes devem escolher sua empresa..."
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all resize-none"
                   />
                   <span className="absolute bottom-3 right-3 text-[10px] text-gray-300">
@@ -958,8 +958,8 @@ const DashboardPerfilPage: React.FC = () => {
 
               {/* Contact */}
               <FormSection
-                title="Informacoes de Contato"
-                subtitle="Como os clientes entram em contato com voce"
+                title="Informações de Contato"
+                subtitle="Como os clientes entram em contato com você"
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
@@ -990,7 +990,7 @@ const DashboardPerfilPage: React.FC = () => {
               {/* Social Links */}
               <FormSection
                 title="Redes Sociais"
-                subtitle="Ajudam a construir credibilidade e confianca"
+                subtitle="Ajudam a construir credibilidade e confiança"
               >
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
@@ -1031,13 +1031,13 @@ const DashboardPerfilPage: React.FC = () => {
             </div>
           )}
 
-          {/* ═══ Tab: Endereco & Logistica ═══ */}
+          {/* ═══ Tab: Endereço & Logística ═══ */}
           {activeTab === 'endereco' && (
             <div className="space-y-8">
               {/* Address */}
               <FormSection
-                title="Endereco Comercial"
-                subtitle="Usado para calcular distancia ate os clientes e exibir no mapa"
+                title="Endereço Comercial"
+                subtitle="Usado para calcular distância até os clientes e exibir no mapa"
               >
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <Input
@@ -1053,13 +1053,13 @@ const DashboardPerfilPage: React.FC = () => {
                       name="street"
                       value={formData.address.street || ''}
                       onChange={handleChange}
-                      placeholder="Rua Parana"
+                      placeholder="Rua Paraná"
                     />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   <Input
-                    label="Numero"
+                    label="Número"
                     name="number"
                     value={formData.address.number || ''}
                     onChange={handleChange}
@@ -1091,8 +1091,8 @@ const DashboardPerfilPage: React.FC = () => {
 
               {/* Coverage */}
               <FormSection
-                title="Area de Atendimento"
-                subtitle="Defina ate onde voce atende. Isso influencia em quais buscas sua empresa aparece."
+                title="Área de Atendimento"
+                subtitle="Defina até onde você atende. Isso influencia em quais buscas sua empresa aparece."
               >
                 <div className="max-w-xs">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1120,7 +1120,7 @@ const DashboardPerfilPage: React.FC = () => {
                     Bairros Atendidos
                   </label>
                   <p className="text-xs text-gray-400 mb-2">
-                    Opcional. Deixe em branco para atender toda a regiao.
+                    Opcional. Deixe em branco para atender toda a região.
                   </p>
                   <div className="flex gap-2">
                     <input
@@ -1169,12 +1169,12 @@ const DashboardPerfilPage: React.FC = () => {
             </div>
           )}
 
-          {/* ═══ Tab: Termos & Politicas ═══ */}
+          {/* ═══ Tab: Termos & Políticas ═══ */}
           {activeTab === 'termos' && (
             <div className="space-y-8">
               <FormSection
-                title="Termos e Politicas da Empresa"
-                subtitle="Informe suas regras de cancelamento, garantias e condicoes especiais. Isso gera transparencia e evita conflitos."
+                title="Termos e Políticas da Empresa"
+                subtitle="Informe suas regras de cancelamento, garantias e condições especiais. Isso gera transparência e evita conflitos."
               >
                 <div className="relative">
                   <textarea
@@ -1183,7 +1183,7 @@ const DashboardPerfilPage: React.FC = () => {
                     maxLength={3000}
                     value={formData.terms_and_policies || ''}
                     onChange={e => setFormData(prev => ({ ...prev, terms_and_policies: e.target.value }))}
-                    placeholder={`Exemplo:\n\n• Cancelamento: Ate 24h antes do servico, sem custo.\n• Garantia: 30 dias para revisoes.\n• Pagamento: 50% na aprovacao, 50% na entrega.\n• Prazos: Definidos em contrato individual.\n• Deslocamento: Incluso no raio de 30km.`}
+                    placeholder={`Exemplo:\n\n• Cancelamento: Até 24h antes do serviço, sem custo.\n• Garantia: 30 dias para revisões.\n• Pagamento: 50% na aprovação, 50% na entrega.\n• Prazos: Definidos em contrato individual.\n• Deslocamento: Incluso no raio de 30km.`}
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all resize-none leading-relaxed"
                   />
                   <span className="absolute bottom-3 right-3 text-[10px] text-gray-300">
@@ -1256,7 +1256,7 @@ const DashboardPerfilPage: React.FC = () => {
             </div>
             <h5 className="text-sm font-bold text-gray-700 mb-1">Sem projetos ainda</h5>
             <p className="text-xs text-gray-400 mb-4 max-w-xs mx-auto">
-              Empresas com portfolio recebem ate 5x mais orcamentos. Adicione seus melhores trabalhos.
+              Empresas com portfolio recebem até 5x mais orçamentos. Adicione seus melhores trabalhos.
             </p>
             <Link
               to={`/dashboard/empresa/${company.slug}/portfolio`}

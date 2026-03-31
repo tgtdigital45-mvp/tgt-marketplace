@@ -8,15 +8,15 @@ export const useCompanyProfile = (slug: string | undefined) => {
         queryFn: async (): Promise<Company | null> => {
             if (!slug) return null;
 
-            // 1. Single Fetch with Joins
-            // We explicitly select fields to ensure we get everything needed to construct the UI object.
-            // Note: We use !inner on companies to ensure it exists, but left joins for related data.
+            // 1. Single Fetch with Joins from the Secure View
+            // Note: Use public_companies view instead of companies table to avoid RLS restrictions on sensitive data
             const { data, error } = await supabase
-                .from('companies')
+                .from('public_companies')
                 .select(`
                   id, profile_id, company_name, slug, description, logo_url, cover_image_url, 
                   category, status, city, state, address, phone, email, website, social_links,
                   verified, rating, created_at, legal_name, cnpj,
+                  level, response_time, sales_count,
                   services (*),
                   reviews (
                     *,
@@ -25,7 +25,8 @@ export const useCompanyProfile = (slug: string | undefined) => {
                       avatar_url
                     )
                   ),
-                  portfolio_items (*)
+                  portfolio_items (*),
+                  company_projects (*)
                 `)
                 .eq('slug', slug)
                 .single();
@@ -39,6 +40,7 @@ export const useCompanyProfile = (slug: string | undefined) => {
                 services: any[];
                 reviews: (any & { profiles: DbProfile })[];
                 portfolio_items: any[];
+                company_projects: any[];
             };
 
             const raw = data as unknown as DbCompanyJoined;
@@ -90,30 +92,21 @@ export const useCompanyProfile = (slug: string | undefined) => {
                 description: p.description || ''
             }));
 
-            // Map Owner Profile & Fetch Stats
-            let owner = undefined;
-            let level: 'Iniciante' | 'Nível 1' | 'Pro' = 'Iniciante';
+            const projects = (raw.company_projects || []).map(p => ({
+                id: p.id,
+                company_id: p.company_id,
+                title: p.title,
+                description: p.description,
+                main_image_url: p.main_image_url,
+                gallery_urls: p.gallery_urls || [],
+                service_id: p.service_id,
+                completion_date: p.completion_date,
+                created_at: p.created_at
+            }));
 
-            if (raw.profile_id) {
-                // Como não podemos garantir a sintaxe exata do Join PostgREST entre Profiles e Seller_stats aqui sem a DDL,
-                // usamos o profile_id (que agora está corretamente tipado no objeto raw pela nossa interface)
-                const { data: stats, error: statsError } = await supabase
-                    .from('seller_stats')
-                    .select('current_level')
-                    .eq('seller_id', raw.profile_id)
-                    .maybeSingle();
-
-                if (!statsError && stats?.current_level) {
-                    // Map backend levels to UI levels
-                    const levelMap: Record<string, 'Iniciante' | 'Nível 1' | 'Pro'> = {
-                        'Beginner': 'Iniciante',
-                        'Level 1': 'Nível 1',
-                        'Level 2': 'Pro', // Mapping Level 2 to Pro for simpler UI
-                        'Pro': 'Pro'
-                    };
-                    level = levelMap[stats.current_level] || 'Iniciante';
-                }
-            }
+            // Use professional stats directly from company (migrated from profiles/seller_stats)
+            const level = (raw.level || 'Iniciante') as 'Iniciante' | 'Nível 1' | 'Pro';
+            const owner = undefined;
 
             // Construct Final Object
             const company: Company = {
@@ -126,7 +119,7 @@ export const useCompanyProfile = (slug: string | undefined) => {
                 logo: raw.logo_url || 'https://placehold.co/150',
                 coverImage: raw.cover_image_url || 'https://placehold.co/1200x400',
                 category: raw.category,
-                level: level as 'Iniciante' | 'Nível 1' | 'Pro',
+                level: (raw.level || 'Iniciante') as 'Iniciante' | 'Nível 1' | 'Pro',
 
                 rating: parseFloat(avgRating.toFixed(1)),
                 reviewCount: reviews.length,
@@ -134,7 +127,7 @@ export const useCompanyProfile = (slug: string | undefined) => {
                 verified: raw.verified || false,
                 location: raw.city && raw.state ? `${raw.city}, ${raw.state}` : '',
                 memberSince: raw.created_at ? new Date(raw.created_at).toLocaleDateString('pt-BR') : '',
-                responseTime: '1 hora', // Default value
+                responseTime: raw.response_time || '1 hora', 
 
                 address: {
                     street: raw.address?.street || '',
@@ -154,6 +147,7 @@ export const useCompanyProfile = (slug: string | undefined) => {
 
                 services: services,
                 portfolio: portfolio,
+                projects: projects,
                 reviews: reviews,
                 owner: owner
             };

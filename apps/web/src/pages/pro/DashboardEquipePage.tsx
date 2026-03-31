@@ -15,8 +15,8 @@ import {
 
 const ROADMAP = [
   { icon: <Mail size={14} />, label: 'Convite de novos membros por e-mail' },
-  { icon: <Shield size={14} />, label: 'Cargos e permissoes personalizadas' },
-  { icon: <BarChart3 size={14} />, label: 'Historico de atividades por membro' },
+  { icon: <Shield size={14} />, label: 'Cargos e permissões personalizadas' },
+  { icon: <BarChart3 size={14} />, label: 'Histórico de atividades por membro' },
   { icon: <Target size={14} />, label: 'Metas individuais e coletivas' },
 ];
 
@@ -35,7 +35,7 @@ const DashboardEquipePage: React.FC = () => {
           <span className="text-gray-600 font-medium">Equipe</span>
         </div>
         <div className="flex items-center gap-3">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Gestao de Equipe</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Gestão de Equipe</h1>
           <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full uppercase tracking-wider">
             Em breve
           </span>
@@ -58,7 +58,7 @@ const DashboardEquipePage: React.FC = () => {
             Estamos construindo algo especial
           </h2>
           <p className="text-sm text-white/60 leading-relaxed mb-6">
-            Em breve voce podera gerenciar seu time, definir permissoes e acompanhar o desempenho de cada membro — tudo dentro da CONTRATTO.
+            Em breve você poderá gerenciar seu time, definir permissões e acompanhar o desempenho de cada membro — tudo dentro da CONTRATTO.
           </p>
 
           <Button
@@ -84,7 +84,7 @@ const DashboardEquipePage: React.FC = () => {
         transition={{ delay: 0.25 }}
         className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6"
       >
-        <h3 className="text-sm font-bold text-gray-900 mb-4">O que vem por ai</h3>
+        <h3 className="text-sm font-bold text-gray-900 mb-4">O que vem por aí</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {ROADMAP.map((item, idx) => (
             <motion.div

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@tgt/core';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
@@ -20,7 +20,7 @@ interface Order {
     price: number;
     scheduled_for: string;
     notes?: string;
-    status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled' | 'canceled' | 'pending_client_approval' | 'awaiting_approval' | 'disputed';
+    status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled' | 'pending_client_approval' | 'awaiting_approval' | 'disputed';
     created_at: string;
     buyer_name?: string;
     buyer_email?: string;
@@ -162,7 +162,7 @@ const DashboardAgendamentosPage: React.FC = () => {
             case 'in_progress': return 'primary';
             case 'completed': return 'success';
             case 'cancelled':
-            case 'canceled': return 'danger';
+            case 'cancelled': return 'danger';
             default: return 'info';
         }
     };
@@ -314,7 +314,7 @@ const DashboardAgendamentosPage: React.FC = () => {
                                                                     <CheckCircle2 className="w-4 h-4 mr-2" /> Finalizar Serviço
                                                                 </Button>
                                                             )}
-                                                            {order.status !== 'completed' && order.status !== 'cancelled' && order.status !== 'canceled' && (
+                                                            {order.status !== 'completed' && order.status !== 'cancelled' && (
                                                                 <button className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
                                                                     <MoreHorizontal className="w-5 h-5 text-gray-400" />
                                                                 </button>

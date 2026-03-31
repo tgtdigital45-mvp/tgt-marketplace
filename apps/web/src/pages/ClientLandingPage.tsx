@@ -31,9 +31,9 @@ const ClientLandingPage: React.FC = () => {
   return (
     <div className="bg-white text-gray-800">
       <SEO
-        title="CONTRATTO | A Rede Verificada de Prestadores de Servico"
+        title="CONTRATTO | A Rede Verificada de Prestadores de Serviço"
         description="Encontre, compare e contrate os melhores prestadores verificados. Mais de 5.000 empresas avaliadas por clientes reais com garantia CONTRATTO."
-        keywords="prestadores verificados, servicos profissionais, marketplace b2b, contabilidade, engenharia, tecnologia, saude, brasil"
+        keywords="prestadores verificados, serviços profissionais, marketplace b2b, contabilidade, engenharia, tecnologia, saúde, brasil"
         preload={[
           { 
             href: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=1200", 

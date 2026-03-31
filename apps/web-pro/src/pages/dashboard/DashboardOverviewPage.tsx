@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '@tgt/core';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
@@ -7,6 +7,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useCompany } from '@/contexts/CompanyContext';
 import { motion } from 'framer-motion';
 import { LoadingSkeleton } from '@tgt/ui-web';
+import { formatOrderStatus } from '@/utils/statusMapper';
 
 import {
   Wallet,
@@ -72,13 +73,13 @@ const ActivityTable: React.FC<{ data: any[] }> = ({ data }) => {
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm sm:text-base font-bold text-gray-900">Atividade Recente</h3>
-        <span className="text-[10px] text-gray-400 font-medium">Ultimas transacoes</span>
+        <span className="text-[10px] text-gray-400 font-medium">Últimas transações</span>
       </div>
       <div className="overflow-x-auto -mx-5 sm:-mx-6 px-5 sm:px-6">
         <table className="w-full text-left">
           <thead>
             <tr>
-              <th className="text-gray-400 text-[10px] font-bold uppercase py-2.5 border-b border-gray-100 pr-4">Servico</th>
+              <th className="text-gray-400 text-[10px] font-bold uppercase py-2.5 border-b border-gray-100 pr-4">Serviço</th>
               <th className="text-gray-400 text-[10px] font-bold uppercase py-2.5 border-b border-gray-100 pr-4">Valor</th>
               <th className="text-gray-400 text-[10px] font-bold uppercase py-2.5 border-b border-gray-100">Status</th>
             </tr>
@@ -106,7 +107,7 @@ const ActivityTable: React.FC<{ data: any[] }> = ({ data }) => {
                         {item.service_title ? item.service_title.charAt(0).toUpperCase() : 'S'}
                       </div>
                       <span className="text-xs sm:text-sm font-medium text-gray-700 truncate max-w-[120px] sm:max-w-[200px] group-hover/row:text-primary-600 transition-colors">
-                        {item.service_title || 'Servico sem titulo'}
+                        {item.service_title || 'Serviço sem título'}
                       </span>
                     </div>
                   </td>
@@ -119,10 +120,7 @@ const ActivityTable: React.FC<{ data: any[] }> = ({ data }) => {
                         (item.status === 'canceled' || item.status === 'cancelled') ? 'bg-red-50 text-red-600' :
                           'bg-gray-50 text-gray-500'
                       }`}>
-                      {item.status === 'in_progress' ? 'Em Progresso' :
-                        item.status === 'completed' ? 'Concluido' :
-                          item.status === 'pending_payment' ? 'Aguardando Pgto' :
-                            item.status}
+                      {formatOrderStatus(item.status)}
                     </span>
                   </td>
                 </tr>
@@ -258,7 +256,7 @@ const DashboardOverviewPage: React.FC = () => {
         <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
           <span>Dashboard</span>
           <ChevronRight size={12} />
-          <span className="text-gray-600 font-medium">Visao Geral</span>
+          <span className="text-gray-600 font-medium">Visão Geral</span>
         </div>
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
           <div>
@@ -273,7 +271,7 @@ const DashboardOverviewPage: React.FC = () => {
             className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-gray-600 hover:text-gray-900 bg-white border border-gray-200 rounded-xl hover:shadow-sm transition-all"
           >
             <Eye size={14} />
-            Ver Perfil Publico
+            Ver Perfil Público
             <ArrowUpRight size={12} />
           </Link>
         </div>
@@ -301,13 +299,13 @@ const DashboardOverviewPage: React.FC = () => {
             {alerts.unreadMessages > 0 && (
               <Link to={`/dashboard/empresa/${company?.slug}/mensagens`} className="flex items-center gap-1.5 bg-white border border-blue-200 text-blue-800 text-[10px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full hover:bg-blue-50 transition-colors">
                 <MessageSquare size={12} />
-                {alerts.unreadMessages} mensagem{alerts.unreadMessages > 1 ? 'ns' : ''} nao lida{alerts.unreadMessages > 1 ? 's' : ''}
+                {alerts.unreadMessages} mensagem{alerts.unreadMessages > 1 ? 'ns' : ''} não lida{alerts.unreadMessages > 1 ? 's' : ''}
               </Link>
             )}
             {alerts.pendingQuotes > 0 && (
               <Link to={`/dashboard/empresa/${company?.slug}/mensagens`} className="flex items-center gap-1.5 bg-white border border-purple-200 text-purple-800 text-[10px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full hover:bg-purple-50 transition-colors">
                 <FileText size={12} />
-                {alerts.pendingQuotes} orcamento{alerts.pendingQuotes > 1 ? 's' : ''} pendente{alerts.pendingQuotes > 1 ? 's' : ''}
+                {alerts.pendingQuotes} orçamento{alerts.pendingQuotes > 1 ? 's' : ''} pendente{alerts.pendingQuotes > 1 ? 's' : ''}
               </Link>
             )}
           </div>
@@ -355,14 +353,14 @@ const DashboardOverviewPage: React.FC = () => {
           delay={0.35}
         />
         <StatCard
-          title="Servicos Concluidos"
+          title="Serviços Concluídos"
           value={stats.completedServices.toString()}
           icon={<BadgeCheck size={18} />}
           accent="bg-emerald-500"
           delay={0.4}
         />
         <StatCard
-          title="Ticket Medio"
+          title="Ticket Médio"
           value={`R$ ${stats.avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
           icon={<Ticket size={18} />}
           accent="bg-purple-500"
@@ -389,7 +387,7 @@ const DashboardOverviewPage: React.FC = () => {
               Acompanhe seus resultados
             </h3>
             <p className="text-xs sm:text-sm text-gray-500 max-w-sm leading-relaxed">
-              Monitore metricas, gerencie pedidos e faca seu negocio crescer dentro da CONTRATTO.
+              Monitore métricas, gerencie pedidos e faça seu negócio crescer dentro da CONTRATTO.
             </p>
           </div>
           <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-primary-50 rounded-full opacity-60" />
@@ -409,7 +407,7 @@ const DashboardOverviewPage: React.FC = () => {
             </div>
             <h3 className="text-base sm:text-lg font-bold text-white mb-2">Destaque seu perfil</h3>
             <p className="text-xs text-white/60 leading-relaxed">
-              Responda rapido, mantenha o portfolio atualizado e receba ate 3x mais contatos.
+              Responda rápido, mantenha o portfólio atualizado e receba até 3x mais contatos.
             </p>
           </div>
           <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-white/10 rounded-full" />
@@ -472,7 +470,7 @@ const DashboardOverviewPage: React.FC = () => {
           className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6"
         >
           <div className="flex items-center justify-between mb-1">
-            <h3 className="text-sm sm:text-base font-bold text-gray-900">Historico de Vendas</h3>
+            <h3 className="text-sm sm:text-base font-bold text-gray-900">Histórico de Vendas</h3>
             <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
               <button
                 onClick={() => setChartPeriod('7d')}
@@ -491,7 +489,7 @@ const DashboardOverviewPage: React.FC = () => {
             </div>
           </div>
           <p className="text-[10px] sm:text-xs text-gray-400 mb-4">
-            {chartPeriod === '7d' ? 'Ultimos 7 dias' : 'Ultimos 30 dias'}
+            {chartPeriod === '7d' ? 'Últimos 7 dias' : 'Últimos 30 dias'}
           </p>
           <div className="w-full h-[300px] min-h-[300px] relative overflow-hidden bg-gray-50/30 rounded-xl">
             {filteredChart.length > 0 ? (

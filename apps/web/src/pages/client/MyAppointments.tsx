@@ -13,6 +13,11 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@tgt/core';
 import { useToast } from '@/contexts/ToastContext';
 import { useQueryClient } from '@tanstack/react-query';
+import { 
+    formatOrderStatus, 
+    ORDER_STATUS_COLOR, 
+    ACTIVE_ORDER_STATUSES 
+} from '@/utils/statusMapper';
 
 
 interface MyAppointmentsProps {
@@ -28,8 +33,8 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({ isEmbedded = false }) =
     const queryClient = useQueryClient();
 
     const bookings = data?.bookings || [];
-    const activeBookings = bookings.filter(b => ['pending', 'accepted', 'pending_client_approval', 'on_the_way', 'in_progress', 'pending_quote', 'answered_quote'].includes(b.status));
-    const pastBookings = bookings.filter(b => ['completed', 'canceled', 'rejected', 'rejected_quote', 'accepted_quote'].includes(b.status));
+    const activeBookings = bookings.filter(b => ACTIVE_ORDER_STATUSES.includes(b.status));
+    const pastBookings = bookings.filter(b => !ACTIVE_ORDER_STATUSES.includes(b.status));
 
     const getStatusStep = (status: string) => {
         switch (status) {
@@ -40,6 +45,28 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({ isEmbedded = false }) =
             case 'completed': return 5;
             default: return 1;
         }
+    };
+
+    // Helper para evitar NaN em datas inválidas
+    const safeFormatDate = (dateStr: any, options?: Intl.DateTimeFormatOptions) => {
+        if (!dateStr) return '--';
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return '--';
+        return d.toLocaleDateString('pt-BR', options || { day: '2-digit', month: '2-digit', year: 'numeric' });
+    };
+
+    const getDayNumber = (dateStr: any) => {
+        if (!dateStr) return '?';
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return '?';
+        return d.getDate();
+    };
+
+    const getMonthShort = (dateStr: any) => {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return '';
+        return d.toLocaleDateString('pt-BR', { month: 'short' });
     };
 
     const handleAcceptProposal = async (booking: any) => {
@@ -64,7 +91,7 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({ isEmbedded = false }) =
         if (!confirm('Tem certeza que deseja recusar? A reserva será cancelada.')) return;
         try {
             const { error } = await supabase.from('orders').update({
-                status: 'canceled',
+                status: 'cancelled',
             }).eq('id', bookingId);
             if (error) throw error;
             addToast('Proposta recusada e reserva cancelada.', 'info');
@@ -79,7 +106,7 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({ isEmbedded = false }) =
         if (!confirm('Deseja realmente cancelar este agendamento? Esta ação não pode ser desfeita.')) return;
         try {
             const { error } = await supabase.from('orders').update({
-                status: 'canceled'
+                status: 'cancelled'
             }).eq('id', bookingId);
 
             if (error) throw error;
@@ -143,7 +170,7 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({ isEmbedded = false }) =
                                         <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-8">
                                             <div className="flex gap-4">
                                                 <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-brand-primary font-black text-2xl shadow-inner border border-slate-100 group-hover:scale-110 transition-transform">
-                                                    {new Date(booking.date + 'T00:00:00').getDate()}
+                                                    {getDayNumber(booking.date)}
                                                 </div>
                                                 <div>
                                                     <h3 className="font-black text-slate-800 text-xl tracking-tight group-hover:text-brand-primary transition-colors">{booking.serviceName}</h3>
@@ -151,16 +178,9 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({ isEmbedded = false }) =
                                                 </div>
                                             </div>
                                             <div className="flex flex-col items-end gap-2">
-                                                <Badge variant={
-                                                    booking.status === 'accepted' || booking.status === 'accepted_quote' ? 'success' :
-                                                        booking.status === 'pending_client_approval' || booking.status === 'answered_quote' ? 'warning' : 'info'
-                                                }>
-                                                    {booking.status === 'accepted' ? 'Confirmado' :
-                                                        booking.status === 'pending_client_approval' ? 'Aguardando sua Resposta' :
-                                                            booking.status === 'pending' ? 'Aguardando Empresa' :
-                                                                booking.status === 'pending_quote' ? 'Orçamento Pendente' :
-                                                                    booking.status === 'answered_quote' ? 'Orçamento Respondido' : booking.status}
-                                                </Badge>
+                                                 <Badge variant={ORDER_STATUS_COLOR[booking.status] || 'info'}>
+                                                     {formatOrderStatus(booking.status)}
+                                                 </Badge>
                                                 <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">ID: #{booking.id.slice(0, 8)}</span>
                                             </div>
                                         </div>
@@ -202,7 +222,7 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({ isEmbedded = false }) =
                                                 <div className="flex flex-col">
                                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Data</span>
                                                     <span className="text-slate-800 font-bold leading-tight">
-                                                        {new Date(booking.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
+                                                        {safeFormatDate(booking.date, { day: '2-digit', month: 'long' })}
                                                     </span>
                                                 </div>
                                             </div>
@@ -241,7 +261,7 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({ isEmbedded = false }) =
                                                 {booking.status === 'pending_client_approval' ? (
                                                     <div className="flex gap-2">
                                                         <Button variant="outline" size="sm" className="rounded-xl border-red-100 text-red-500" onClick={() => handleDeclineProposal(booking.id)}>Recusar</Button>
-                                                        <Button variant="primary" size="sm" className="rounded-xl shadow-lg shadow-brand-primary/20" onClick={() => handleAcceptProposal(booking)}>Aceitar Próposta</Button>
+                                                        <Button variant="primary" size="sm" className="rounded-xl shadow-lg shadow-brand-primary/20" onClick={() => handleAcceptProposal(booking)}>Aceitar Proposta</Button>
                                                     </div>
                                                 ) : (
                                                     <>
@@ -290,10 +310,10 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({ isEmbedded = false }) =
                                 <div className="flex items-center gap-6 flex-grow">
                                     <div className="text-center w-16">
                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                                            {new Date(booking.date + 'T00:00:00').toLocaleDateString('pt-BR', { month: 'short' })}
+                                            {getMonthShort(booking.date)}
                                         </p>
                                         <p className="text-2xl font-black text-slate-300 leading-none">
-                                            {new Date(booking.date + 'T00:00:00').getDate()}
+                                            {getDayNumber(booking.date)}
                                         </p>
                                     </div>
                                     <div className="w-px h-10 bg-slate-100 hidden sm:block"></div>
@@ -303,8 +323,8 @@ const MyAppointments: React.FC<MyAppointmentsProps> = ({ isEmbedded = false }) =
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4 w-full sm:w-auto">
-                                    <Badge variant={booking.status === 'completed' ? 'success' : 'danger'} className="text-[9px] px-2 py-0.5 opacity-60">
-                                        {booking.status === 'completed' ? 'Concluído' : 'Cancelado'}
+                                    <Badge variant={ORDER_STATUS_COLOR[booking.status] || 'danger'} className="text-[9px] px-2 py-0.5 opacity-60">
+                                        {formatOrderStatus(booking.status)}
                                     </Badge>
                                     <div className="flex gap-2 ml-auto">
                                         <Button variant="outline" size="sm" className="h-9 px-4 rounded-xl text-xs font-bold border-slate-200">Avaliar</Button>

@@ -4,28 +4,28 @@ import { ChevronDown } from 'lucide-react';
 
 const faqs = [
   {
-    question: 'Como funciona a verificacao de prestadores?',
-    answer: 'Cada empresa passa por analise documental, checagem de CNPJ ativo e validacao de portfolio antes de ser aprovada na plataforma. Monitoramos continuamente a reputacao de todos os parceiros.',
+    question: 'Como funciona a verificação de prestadores?',
+    answer: 'Cada empresa passa por análise documental, checagem de CNPJ ativo e validação de portfólio antes de ser aprovada na plataforma. Monitoramos continuamente a reputação de todos os parceiros.',
   },
   {
     question: 'Quanto custa para clientes?',
-    answer: 'A busca e 100% gratuita. Voce navega, compara e so paga pelo servico contratado diretamente com o prestador. Sem taxas ocultas, sem surpresas.',
+    answer: 'A busca é 100% gratuita. Você navega, compara e só paga pelo serviço contratado diretamente com o prestador. Sem taxas ocultas, sem surpresas.',
   },
   {
     question: 'Como cadastro minha empresa?',
-    answer: 'O cadastro leva menos de 5 minutos. Preencha o formulario com os dados da empresa, envie os documentos necessarios e nossa equipe realiza a verificacao em ate 24 horas.',
+    answer: 'O cadastro leva menos de 5 minutos. Preencha o formulário com os dados da empresa, envie os documentos necessários e nossa equipe realiza a verificação em até 24 horas.',
   },
   {
     question: 'A plataforma oferece garantia?',
-    answer: 'Sim. Se o servico nao for entregue conforme o acordado, a CONTRATTO intermedia a resolucao entre as partes. Nossa prioridade e garantir uma experiencia segura para todos.',
+    answer: 'Sim. Se o serviço não for entregue conforme o acordado, a CONTRATTO intermedia a resolução entre as partes. Nossa prioridade é garantir uma experiência segura para todos.',
   },
   {
-    question: 'Quais categorias de servicos estao disponiveis?',
-    answer: 'Contabilidade, Engenharia, Tecnologia, Saude, Beleza e Estetica, Eventos, Fotografia, Varejo, Consultoria, Advocacia, Arquitetura, Educacao e muito mais. Novas categorias sao adicionadas frequentemente.',
+    question: 'Quais categorias de serviços estão disponíveis?',
+    answer: 'Contabilidade, Engenharia, Tecnologia, Saúde, Beleza e Estética, Eventos, Fotografia, Varejo, Consultoria, Advocacia, Arquitetura, Educação e muito mais. Novas categorias são adicionadas frequentemente.',
   },
   {
-    question: 'Como funciona o sistema de avaliacoes?',
-    answer: 'Apenas clientes que efetivamente contrataram um servico podem deixar uma avaliacao. Todas as notas sao publicas, verificadas e nao podem ser editadas pelo prestador.',
+    question: 'Como funciona o sistema de avaliações?',
+    answer: 'Apenas clientes que efetivamente contrataram um serviço podem deixar uma avaliação. Todas as notas são públicas, verificadas e não podem ser editadas pelo prestador.',
   },
 ];
 
@@ -90,7 +90,7 @@ const FAQ: React.FC = () => {
             className="text-center mb-10 sm:mb-14"
           >
             <span className="text-primary-600 font-bold tracking-[0.2em] text-[10px] sm:text-xs uppercase mb-3 sm:mb-4 block">
-              Duvidas
+              Dúvidas
             </span>
             <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">
               Perguntas <span className="text-slate-400">Frequentes</span>

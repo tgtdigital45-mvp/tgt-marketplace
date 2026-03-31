@@ -16,6 +16,40 @@ export interface NewsPost {
 
 export const MOCK_NEWS: NewsPost[] = [
     {
+        slug: 'como-funciona-contratto-dia-20',
+        image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=2000&h=1400',
+        category: 'Produto',
+        date: '2026-03-27T18:00:00Z',
+        readTime: '3 min',
+        title: 'Building in Public: O que esperar para o dia 20',
+        excerpt: 'Confira como preparamos a jornada da Contratto para ser a mais simples e segura do mercado. Simplicidade e transparência em cada etapa.',
+        content: `
+# Building in Public: O que esperar para o dia 20
+
+Estamos construindo a Contratto com um objetivo claro: remover a fricção do mercado de serviços. No dia 20, daremos um passo fundamental nessa jornada.
+
+Nossa equipe tem trabalhado incansavelmente para criar um fluxo que seja, acima de tudo, **Simples e Rápido**.
+
+## Os 4 Pilares do Nosso Funcionamento
+
+Para garantir a melhor experiência, dividimos a jornada em quatro etapas essenciais:
+
+1. **Procura**: Encontre o especialista ideal sem perda de tempo.
+2. **Contrata**: Negocie e pague com total segurança.
+3. **QR Code**: Valide o serviço presencial de forma instantânea.
+4. **Concluído**: Avalie e libere o pagamento após a satisfação.
+
+[Confira o post completo com visual interativo aqui](/bip/como-funciona)
+
+Acompanhe nossas atualizações diárias enquanto preparamos o lançamento mais transparente do ano.
+        `,
+        author: {
+            name: 'Celso',
+            role: 'Product Lead',
+            avatar: 'https://i.pravatar.cc/150?u=celso'
+        }
+    },
+    {
         slug: 'tendencias-mercado-servicos-2024',
         image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=2426&h=1600',
         category: 'Mercado',

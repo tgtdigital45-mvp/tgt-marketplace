@@ -23,20 +23,20 @@ const SpecialistCTA: React.FC = () => {
                 <Sparkles size={16} className="sm:w-5 sm:h-5" />
               </div>
               <span className="text-primary-100 font-bold tracking-[0.15em] text-[9px] sm:text-[10px] uppercase">
-                Para Prestadores de Servico
+                Para Prestadores de Serviço
               </span>
             </div>
 
             <h2 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4 sm:mb-6 tracking-tight leading-tight">
-              Faca parte da maior rede de prestadores do <span className="text-primary-200">Parana</span>
+              Faça parte da maior rede de prestadores do <span className="text-primary-200">Paraná</span>
             </h2>
 
             <p className="text-sm sm:text-base lg:text-lg text-primary-100 mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed">
-              Cadastro gratuito. Verificacao em ate 24h. Comece a receber orcamentos e novos clientes ainda esta semana.
+              Cadastro gratuito. Verificação em até 24h. Comece a receber orçamentos e novos clientes ainda esta semana.
             </p>
 
             <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mb-8 sm:mb-10 text-primary-100 text-xs sm:text-sm font-medium">
-              {['Sem mensalidade para comecar', 'Perfil verificado', 'Suporte dedicado'].map((item, i) => (
+              {['Sem mensalidade para começar', 'Perfil verificado', 'Suporte dedicado'].map((item, i) => (
                 <span key={i} className="flex items-center gap-1.5">
                   <CheckCircle2 size={14} className="text-primary-200" />
                   {item}

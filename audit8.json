@@ -1,0 +1,22 @@
+﻿{
+  "actions": [
+    {
+      "action": "update",
+      "resolves": [
+        {
+          "id": 1114200,
+          "path": "apps__mobile-client>expo>@expo/cli>tar",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        },
+        {
+          "id": 1114302,
+          "path": "apps__mobile-client>expo>@expo/cli>tar",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "module": "tar",
+      "target": "7.5.13",

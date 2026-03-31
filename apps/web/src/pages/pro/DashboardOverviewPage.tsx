@@ -116,7 +116,7 @@ const ActivityTable: React.FC<{ data: any[] }> = ({ data }) => {
                   <td className="py-3 border-b border-gray-50">
                     <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${item.status === 'in_progress' ? 'bg-blue-50 text-blue-600' :
                       item.status === 'completed' ? 'bg-emerald-50 text-emerald-600' :
-                        (item.status === 'canceled' || item.status === 'cancelled') ? 'bg-red-50 text-red-600' :
+                        (item.status === 'cancelled') ? 'bg-red-50 text-red-600' :
                           'bg-gray-50 text-gray-500'
                       }`}>
                       {item.status === 'in_progress' ? 'Em Progresso' :

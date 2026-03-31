@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@tgt/core';
 
@@ -19,7 +19,7 @@ interface Order {
     service_title: string;
     price: number;
     scheduled_for: string;
-    status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'canceled' | 'pending_client_approval';
+    status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled' | 'pending_client_approval';
     created_at: string;
 }
 
@@ -354,7 +354,7 @@ const DashboardAgendaPage = () => {
                                                             <Check size={16} />
                                                         </button>
                                                         <button
-                                                            onClick={() => handleUpdateBookingStatus(booking.id, 'canceled')}
+                                                            onClick={() => handleUpdateBookingStatus(booking.id, 'cancelled')}
                                                             className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors shadow-sm"
                                                             title="Recusar"
                                                         >

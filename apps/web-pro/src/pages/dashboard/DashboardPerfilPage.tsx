@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useCompany, CompanyData } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
@@ -128,6 +128,13 @@ const initialFormState: FormState = {
   coverage_neighborhoods: [],
   terms_and_policies: '',
   slug: '',
+};
+
+const normalizeUrl = (url: string | null | undefined): string => {
+  if (!url || url.trim() === '') return '';
+  const trimmed = url.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
 };
 
 // ─── Completion Progress Bar ────────────────────────────────────────────────────
@@ -763,17 +770,24 @@ const DashboardPerfilPage: React.FC = () => {
         console.error('Geocoding failed:', err);
       }
 
+      const normalizedSocialLinks = {
+        facebook: normalizeUrl(formData.socialLinks.facebook),
+        instagram: normalizeUrl(formData.socialLinks.instagram),
+        linkedin: normalizeUrl(formData.socialLinks.linkedin),
+      };
+      const normalizedWebsite = normalizeUrl(formData.website);
+
       const { error } = await supabase.from('companies').update({
         company_name: formData.companyName,
         legal_name: formData.legalName,
         phone: formData.phone,
-        website: formData.website,
+        website: normalizedWebsite,
         category: formData.category,
         description: formData.description,
         email: formData.email,
         address: { ...formData.address, lat, lng },
         h3_index: h3Index,
-        social_links: formData.socialLinks,
+        social_links: normalizedSocialLinks,
         coverage_radius_km: formData.coverage_radius_km,
         coverage_neighborhoods: formData.coverage_neighborhoods,
         terms_and_policies: formData.terms_and_policies,
@@ -784,7 +798,14 @@ const DashboardPerfilPage: React.FC = () => {
       if (error) throw error;
       await supabase.auth.updateUser({ data: { name: formData.companyName } });
       refreshCompany();
-      setInitialSnapshot(JSON.stringify(formData));
+      
+      // Update local state with normalized values
+      setFormData(prev => ({
+        ...prev,
+        website: normalizedWebsite,
+        socialLinks: normalizedSocialLinks
+      }));
+      
       addToast('Perfil salvo com sucesso!', 'success');
     } catch (err) {
       console.error(err);

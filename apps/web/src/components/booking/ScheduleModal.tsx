@@ -62,10 +62,13 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({ isOpen, onClose, o
         setSubmitting(true);
         setError('');
         try {
+            // Combinar date e time em uma string ISO ('YYYY-MM-DDTHH:mm:00')
+            const scheduledFor = new Date(`${date}T${time}:00`).toISOString();
+
             // Update the order in supabase
             const { error: updateError } = await supabase
                 .from('orders')
-                .update({ date, time, status: 'confirmed' })
+                .update({ scheduled_for: scheduledFor })
                 .eq('id', order.id);
 
             if (updateError) throw updateError;

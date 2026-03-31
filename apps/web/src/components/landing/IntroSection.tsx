@@ -30,7 +30,7 @@ const IntroSection: React.FC = () => {
                                 </div>
                                 <div className="pr-2 sm:pr-4">
                                     <p className="font-bold text-slate-900 leading-none text-sm sm:text-base">Anos de Mercado</p>
-                                    <p className="text-slate-400 text-[10px] sm:text-xs mt-1">Liderando Conexoes</p>
+                                    <p className="text-slate-400 text-[10px] sm:text-xs mt-1">Liderando Conexões</p>
                                 </div>
                             </div>
                         </div>
@@ -41,21 +41,21 @@ const IntroSection: React.FC = () => {
 
                     {/* Content Column */}
                     <div className="w-full lg:w-1/2">
-                        <span className="text-primary-600 font-bold tracking-widest text-[10px] uppercase mb-4 sm:mb-6 block">Nossa Essencia</span>
+                        <span className="text-primary-600 font-bold tracking-widest text-[10px] uppercase mb-4 sm:mb-6 block">Nossa Essência</span>
                         <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-slate-900 mb-5 sm:mb-8 tracking-tight leading-tight">
-                            Fortalecendo o <span className="text-slate-400">Ecossistema</span> de Negocios Locais
+                            Fortalecendo o <span className="text-slate-400">Ecossistema</span> de Negócios Locais
                         </h2>
 
                         <p className="text-base sm:text-lg text-slate-500 mb-6 sm:mb-10 leading-relaxed">
-                            A CONTRATTO nasceu da necessidade de conectar profissionais qualificados a clientes que buscam excelencia. Somos mais que um marketplace, somos o motor de crescimento para a economia da sua regiao.
+                            A CONTRATTO nasceu da necessidade de conectar profissionais qualificados a clientes que buscam excelência. Somos mais que um marketplace, somos o motor de crescimento para a economia da sua região.
                         </p>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-8 sm:mb-12">
                             {[
-                                { title: 'Curadoria Rigorosa', desc: 'Apenas empresas com reputacao comprovada.' },
-                                { title: 'Seguranca de Dados', desc: 'Protecao total em todas as transacoes.' },
+                                { title: 'Curadoria Rigorosa', desc: 'Apenas empresas com reputação comprovada.' },
+                                { title: 'Segurança de Dados', desc: 'Proteção total em todas as transações.' },
                                 { title: 'Foco no Resultado', desc: 'Facilitamos parcerias que geram valor real.' },
-                                { title: 'Suporte Local', desc: 'Atendimento humanizado e proximo de voce.' },
+                                { title: 'Suporte Local', desc: 'Atendimento humanizado e próximo de você.' },
                             ].map((item, i) => (
                                 <div key={i} className="flex items-start gap-3">
                                     <CheckCircle2 size={20} className="text-primary-600 shrink-0 mt-0.5" />
@@ -69,7 +69,7 @@ const IntroSection: React.FC = () => {
 
                         <Link to="/sobre">
                             <Button variant="outline" className="h-12 sm:h-14 px-6 sm:px-10 rounded-xl sm:rounded-2xl border-2 font-bold hover:bg-slate-50">
-                                Conhecer nossa Historia <ArrowRight size={18} className="ml-2" />
+                                Conhecer nossa História <ArrowRight size={18} className="ml-2" />
                             </Button>
                         </Link>
                     </div>

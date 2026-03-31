@@ -11,6 +11,37 @@ const DashboardLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(256);
+  const [isResizing, setIsResizing] = useState(false);
+
+  // Resize handler
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      const newWidth = e.clientX;
+      if (newWidth >= 200 && newWidth <= 450) {
+        setSidebarWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizing]);
 
   const handleLogout = async () => {
     try {
@@ -72,6 +103,7 @@ const DashboardLayout: React.FC = () => {
     { name: 'Agenda', href: `${base}/agenda`, icon: <CalendarIcon /> },
     { name: 'Mensagens', href: `${base}/mensagens`, icon: <ChatBubbleIcon /> },
     { name: 'Portfólio', href: `${base}/portfolio`, icon: <PhotoIcon /> },
+    { name: 'Projetos', href: `${base}/projects`, icon: <BriefcaseIcon /> },
     { name: 'Avaliações', href: `${base}/avaliacoes`, icon: <StarIcon /> },
     { name: 'Financeiro', href: `${base}/faturamento`, icon: <WalletIcon /> },
     { name: 'Assinatura', href: `${base}/assinatura`, icon: <StarIcon /> },
@@ -86,7 +118,7 @@ const DashboardLayout: React.FC = () => {
   ];
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-slate-900 text-slate-300 p-4">
+    <div className="flex flex-col h-full text-slate-300 p-4">
       <div className="mb-8 flex items-center gap-3 px-2">
         <img
           src="/logo-contratto.png"
@@ -151,8 +183,17 @@ const DashboardLayout: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex overflow-hidden">
       {/* Sidebar Desktop */}
-      <aside className="hidden lg:flex flex-col w-64 border-r border-slate-200 sticky top-0 h-screen shrink-0">
+      <aside 
+        style={{ width: sidebarWidth }}
+        className={`hidden lg:flex flex-col border-r border-slate-800 sticky top-0 h-screen shrink-0 bg-slate-900 group/sidebar ${isResizing ? 'transition-none' : 'transition-[width] duration-300'}`}
+      >
         <SidebarContent />
+        
+        {/* Resize Handle */}
+        <div
+          onMouseDown={() => setIsResizing(true)}
+          className={`absolute top-0 -right-1 w-2 h-full cursor-col-resize z-50 hover:bg-indigo-500/30 transition-colors ${isResizing ? 'bg-indigo-500/50' : ''}`}
+        />
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -182,7 +223,7 @@ const DashboardLayout: React.FC = () => {
       {mobileSidebarOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setMobileSidebarOpen(false)} />
-          <div className="relative w-72 max-w-[80vw] h-full bg-slate-900 shadow-xl transition-transform duration-300">
+          <div className="relative w-72 max-w-[80vw] h-full bg-slate-900 shadow-xl transition-transform duration-300 overflow-y-auto">
              <button
               onClick={() => setMobileSidebarOpen(false)}
               className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white"
@@ -214,6 +255,7 @@ function StarIcon() { return <svg className="w-5 h-5" fill="none" viewBox="0 0 2
 function UsersIcon() { return <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>; }
 function BadgeCheckIcon() { return <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>; }
 function KanbanIcon() { return <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2m0 10V7a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>; }
+function BriefcaseIcon() { return <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745V6a2 2 0 012-2h14a2 2 0 012 2v7.255zM12 8a1 1 0 100-2 1 1 0 000 2z" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 11a1 1 0 100-2 1 1 0 000 2zM12 14a1 1 0 100-2 1 1 0 000 2z" /></svg>; }
 function TrendingUpIcon() { return <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>; }
 function BarChartIcon() { return <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2" /></svg>; }
 function LogOutIcon() { return <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>; }

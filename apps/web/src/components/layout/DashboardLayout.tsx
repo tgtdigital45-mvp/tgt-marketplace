@@ -10,6 +10,37 @@ const DashboardLayout: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(256);
+  const [isResizing, setIsResizing] = useState(false);
+
+  // Resize handler
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      const newWidth = e.clientX;
+      if (newWidth >= 200 && newWidth <= 450) {
+        setSidebarWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizing]);
 
   // Redirect if slug mismatch
   useEffect(() => {
@@ -183,7 +214,7 @@ const DashboardLayout: React.FC = () => {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setMobileSidebarOpen(false)}
           />
-          <div className="absolute left-0 top-0 h-full w-[280px] max-w-[85vw] bg-gray-50 p-4 overflow-y-auto shadow-2xl">
+          <div className="absolute left-0 top-0 h-full w-[280px] max-w-[85vw] bg-slate-900 p-4 overflow-y-auto shadow-2xl text-slate-300">
             <div className="flex justify-end mb-2">
               <button
                 onClick={() => setMobileSidebarOpen(false)}
@@ -202,12 +233,26 @@ const DashboardLayout: React.FC = () => {
 
       <div className="flex">
         {/* Desktop Sidebar - Adjusted to start below Global Header */}
-        <aside className="hidden lg:block w-64 xl:w-72 bg-gray-50 p-4 fixed top-[4.5rem] h-[calc(100vh-4.5rem)] overflow-y-auto">
-          <SidebarContent />
+        <aside 
+          style={{ width: sidebarWidth }}
+          className={`hidden lg:block bg-slate-900 p-4 fixed top-[4.5rem] h-[calc(100vh-4.5rem)] overflow-y-auto border-r border-slate-800 z-10 ${isResizing ? 'transition-none' : 'transition-[width] duration-300'}`}
+        >
+          <div className="text-slate-300">
+            <SidebarContent />
+          </div>
+
+          {/* Resize Handle */}
+          <div
+            onMouseDown={() => setIsResizing(true)}
+            className={`absolute top-0 -right-1 w-2 h-full cursor-col-resize z-50 hover:bg-brand-primary/30 transition-colors ${isResizing ? 'bg-brand-primary/50' : ''}`}
+          />
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 lg:ml-64 xl:ml-72 p-3 sm:p-4 lg:p-8 relative z-0 min-w-0">
+        <main 
+          style={{ marginLeft: sidebarWidth }}
+          className="flex-1 p-3 sm:p-4 lg:p-8 relative z-0 min-w-0 transition-[margin] duration-300"
+        >
           <Outlet />
         </main>
       </div>

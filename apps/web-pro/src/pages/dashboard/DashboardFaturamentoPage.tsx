@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@tgt/core';
 import { SellerStats } from '@tgt/core';
 import { LoadingSpinner, Button } from '@tgt/ui-web';
@@ -179,7 +179,7 @@ const DashboardFaturamentoPage: React.FC = () => {
                     </div>
                     <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Faturamento & Carteira</h1>
                     <p className="text-xs sm:text-sm text-gray-400 mt-0.5">
-                        Gerencie seus ganhos, transacoes e saques
+                        Gerencie seus ganhos, transações e saques
                     </p>
                 </div>
 
@@ -232,7 +232,7 @@ const DashboardFaturamentoPage: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Available Balance */}
                 <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Saldo Disponivel</h3>
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Saldo Disponível</h3>
                     <div className="text-3xl font-bold text-gray-900">
                         {formatCurrency(availableAmount, currency)}
                     </div>
@@ -303,7 +303,7 @@ const DashboardFaturamentoPage: React.FC = () => {
                             <Lightbulb size={18} />
                         </div>
                         <div>
-                            <h3 className="font-bold text-gray-900">Insights com Inteligencia Artificial</h3>
+                            <h3 className="font-bold text-gray-900">Insights com Inteligência Artificial</h3>
                             <p className="text-xs text-gray-500">Dicas personalizadas para aumentar seu faturamento</p>
                         </div>
                     </div>
@@ -339,7 +339,7 @@ const DashboardFaturamentoPage: React.FC = () => {
                     </div>
                 ) : (
                     <div className="py-4 text-center">
-                        <p className="text-sm text-gray-400 italic">Clique no botao acima para analisar seu desempenho e receber dicas.</p>
+                        <p className="text-sm text-gray-400 italic">Clique no botão acima para analisar seu desempenho e receber dicas.</p>
                     </div>
                 )}
             </div>

@@ -11,6 +11,7 @@ interface UseServicesMarketplaceOptions {
     searchQuery?: string;
     serviceFilter?: ServiceFilter;
     limit?: number;
+    useAI?: boolean; // Opção para forçar busca semântica
 }
 
 interface UseServicesMarketplaceReturn {
@@ -20,22 +21,24 @@ interface UseServicesMarketplaceReturn {
     hasLocation: boolean;
     locationLoading: boolean;
     totalCount: number;
+    isAIPowered: boolean; // Indica se os resultados vieram de busca semântica
     refetch: () => void;
 }
 
 /**
  * Hook for the Service-First marketplace vitrine.
  *
- * Strategy (with fallback):
- * 1. Try RPCs (get_remote_services / get_nearby_services)
- * 2. If RPCs fail or return empty → fallback to direct table query
- * 3. Merge, deduplicate, sort by rating
+ * Strategy (AI-Powered):
+ * 1. If searchQuery exists, try Semantic Search (pgvector) first.
+ * 2. Fallback/Combine with standard RPCs (get_remote_services / get_nearby_services)
+ * 3. Final fallback to direct table query
  */
 export function useServicesMarketplace({
     category,
     searchQuery,
     serviceFilter = 'all',
     limit = 50,
+    useAI = true,
 }: UseServicesMarketplaceOptions = {}): UseServicesMarketplaceReturn {
     const [services, setServices] = useState<DbService[]>([]);
     const [loading, setLoading] = useState(true);
@@ -44,6 +47,7 @@ export function useServicesMarketplace({
     const [locationLoading, setLocationLoading] = useState(false);
     const [h3Indexes, setH3Indexes] = useState<string[] | null>(null);
     const [totalCount, setTotalCount] = useState(0);
+    const [isAIPowered, setIsAIPowered] = useState(false);
 
     // Fetch user's H3 indexes once on mount
     useEffect(() => {
@@ -56,6 +60,23 @@ export function useServicesMarketplace({
         };
         fetchLocation();
     }, []);
+
+    /**
+     * Helper: Generate embedding for search query
+     */
+    const getQueryEmbedding = async (query: string): Promise<number[] | null> => {
+        try {
+            const { data, error: rpcError } = await supabase.functions.invoke('generate-embeddings', {
+                body: { input: query }
+            });
+
+            if (rpcError) throw rpcError;
+            return data.embedding;
+        } catch (err) {
+            devWarn('[useServicesMarketplace] Failed to generate query embedding:', err);
+            return null;
+        }
+    };
 
     /**
      * Fallback: direct table query when RPCs fail or return empty
@@ -76,25 +97,21 @@ export function useServicesMarketplace({
             `, { count: 'exact' })
             .eq('is_active', true)
             .in('companies.status', ['approved', 'active'])
-            .is('deleted_at', null); // Soft Delete Filter
+            .is('deleted_at', null);
 
-        // Service type filter
         if (serviceFilter === 'remote') {
             query = query.in('location_type', ['remote', 'hybrid']);
         } else if (serviceFilter === 'presential') {
             query = query.in('location_type', ['in_store', 'at_home', 'hybrid']);
-            // Apply H3 location filter if available
             if (h3Indexes && h3Indexes.length > 0) {
                 query = query.in('h3_index', h3Indexes);
             }
         }
 
-        // Category filter
         if (category) {
             query = query.eq('category_tag', category);
         }
 
-        // Search filter
         if (searchQuery) {
             query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,category_tag.ilike.%${searchQuery}%`);
         }
@@ -117,82 +134,82 @@ export function useServicesMarketplace({
             company_rating: s.companies?.rating,
             company_slug: s.companies?.slug,
         }));
-    }, [category, searchQuery, serviceFilter, limit, h3Indexes]); // h3Indexes incluído para evitar stale closure no filtro presencial
+    }, [category, searchQuery, serviceFilter, limit, h3Indexes]);
 
     const fetchServices = useCallback(async () => {
         setLoading(true);
         setError(null);
+        setIsAIPowered(false);
 
         try {
             let results: DbService[] = [];
-            let rpcWorked = false;
+            let semanticResultsFound = false;
 
-            const shouldFetchRemote =
-                serviceFilter === 'all' || serviceFilter === 'remote';
-
-            const shouldFetchPresential =
-                (serviceFilter === 'all' || serviceFilter === 'presential') && h3Indexes !== null;
-
-            try {
-                if (shouldFetchRemote) {
-                    const rpcPromise = supabase.rpc('get_remote_services', {
-                        p_category: category || null,
-                        p_search: searchQuery || null,
-                        p_limit: limit,
-                        p_offset: 0,
+            // 1. TRY SEMANTIC SEARCH (AI) if query is long enough
+            if (useAI && searchQuery && searchQuery.trim().length > 3) {
+                devLog('[useServicesMarketplace] Attemting Semantic Search...');
+                const queryEmbedding = await getQueryEmbedding(searchQuery);
+                
+                if (queryEmbedding) {
+                    const { data:语义Data, error: semanticError } = await supabase.rpc('match_services', {
+                        query_embedding: queryEmbedding,
+                        match_threshold: 0.35, // Ajustável
+                        match_count: limit,
+                        filter_category: category || null,
+                        filter_type: serviceFilter
                     });
-                    
-                    const timeoutPromise = new Promise((_, reject) => 
-                        setTimeout(() => reject(new Error('RPC Timeout')), 8000)
-                    );
 
-                    const { data, error: rpcError } = (await Promise.race([
-                        rpcPromise,
-                        timeoutPromise
-                    ])) as any;
-
-                    if (!rpcError && data && data.length > 0) {
-                        devLog(`[useServicesMarketplace] get_remote_services retornou ${data.length} resultados.`);
-                        results.push(...(data as DbService[]));
-                        rpcWorked = true;
-                    } else if (rpcError) {
-                        devWarn('[useServicesMarketplace] Erro em get_remote_services:', rpcError);
+                    if (!semanticError && 语义Data && 语义Data.length > 0) {
+                        devLog(`[useServicesMarketplace] Semantic Search found ${语义Data.length} results.`);
+                        results.push(...语义Data);
+                        semanticResultsFound = true;
+                        setIsAIPowered(true);
+                    } else if (semanticError) {
+                        devWarn('[useServicesMarketplace] Semantic Search error:', semanticError);
                     }
                 }
-
-                if (shouldFetchPresential && h3Indexes) {
-                    const rpcPromise = supabase.rpc('get_nearby_services', {
-                        p_h3_indexes: h3Indexes,
-                        p_category: category || null,
-                        p_search: searchQuery || null,
-                        p_limit: limit,
-                        p_offset: 0,
-                    });
-                    
-                    const timeoutPromise = new Promise((_, reject) => 
-                        setTimeout(() => reject(new Error('RPC Timeout')), 8000)
-                    );
-
-                    const { data, error: rpcError } = (await Promise.race([
-                        rpcPromise,
-                        timeoutPromise
-                    ])) as any;
-
-                    if (!rpcError && data && data.length > 0) {
-                        devLog(`[useServicesMarketplace] get_nearby_services retornou ${data.length} resultados.`);
-                        results.push(...(data as DbService[]));
-                        rpcWorked = true;
-                    } else if (rpcError) {
-                        devWarn('[useServicesMarketplace] Erro em get_nearby_services:', rpcError);
-                    }
-                }
-            } catch {
-                // RPCs not available — will use fallback
-                devWarn('[useServicesMarketplace] RPCs unavailable, using direct query');
             }
 
-            // Fallback: if RPCs didn't work or returned few results, query directly
-            if (!rpcWorked || results.length < 3) {
+            // 2. STANDARD RPCS (Fallback or Combine)
+            let rpcWorked = false;
+            if (results.length < limit) {
+                const shouldFetchRemote = serviceFilter === 'all' || serviceFilter === 'remote';
+                const shouldFetchPresential = (serviceFilter === 'all' || serviceFilter === 'presential') && h3Indexes !== null;
+
+                try {
+                    if (shouldFetchRemote) {
+                        const { data, error: rpcError } = await supabase.rpc('get_remote_services', {
+                            p_category: category || null,
+                            p_search: searchQuery || null,
+                            p_limit: limit,
+                            p_offset: 0,
+                        });
+                        if (!rpcError && data && data.length > 0) {
+                            results.push(...(data as DbService[]));
+                            rpcWorked = true;
+                        }
+                    }
+
+                    if (shouldFetchPresential && h3Indexes) {
+                        const { data, error: rpcError } = await supabase.rpc('get_nearby_services', {
+                            p_h3_indexes: h3Indexes,
+                            p_category: category || null,
+                            p_search: searchQuery || null,
+                            p_limit: limit,
+                            p_offset: 0,
+                        });
+                        if (!rpcError && data && data.length > 0) {
+                            results.push(...(data as DbService[]));
+                            rpcWorked = true;
+                        }
+                    }
+                } catch (e) {
+                    devWarn('[useServicesMarketplace] Standard RPCs failed:', e);
+                }
+            }
+
+            // 3. DIRECT TABLE FALLBACK
+            if (!semanticResultsFound && !rpcWorked && results.length === 0) {
                 devLog('[useServicesMarketplace] Using direct table query fallback');
                 const directResults = await fetchDirectFromTable();
                 results.push(...directResults);
@@ -206,16 +223,16 @@ export function useServicesMarketplace({
                 return true;
             });
 
-            // Sort: by company rating desc, then by created_at desc
-            unique.sort((a, b) => {
-                const ratingDiff = (b.company_rating ?? 0) - (a.company_rating ?? 0);
-                if (ratingDiff !== 0) return ratingDiff;
-                
-                // Tie-breaker: newest first (with null safety)
-                const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
-                const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
-                return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
-            });
+            // If not purely semantic, sort by rating
+            if (!semanticResultsFound) {
+                unique.sort((a, b) => {
+                    const ratingDiff = (b.company_rating ?? 0) - (a.company_rating ?? 0);
+                    if (ratingDiff !== 0) return ratingDiff;
+                    const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+                    const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+                    return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
+                });
+            }
 
             if (totalCount === 0 || unique.length > totalCount) {
                 setTotalCount(unique.length);
@@ -228,7 +245,7 @@ export function useServicesMarketplace({
         } finally {
             setLoading(false);
         }
-    }, [category, searchQuery, serviceFilter, h3Indexes, limit, fetchDirectFromTable]);
+    }, [category, searchQuery, serviceFilter, h3Indexes, limit, fetchDirectFromTable, useAI]);
 
     // Refetch when filters or location changes
     useEffect(() => {
@@ -243,6 +260,7 @@ export function useServicesMarketplace({
         hasLocation,
         locationLoading,
         totalCount,
+        isAIPowered,
         refetch: fetchServices,
     };
 }

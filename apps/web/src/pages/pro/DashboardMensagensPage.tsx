@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -325,7 +325,7 @@ const DashboardMensagensPage: React.FC = () => {
                                         className={`w-full p-3.5 flex gap-3 hover:bg-gray-50 text-left border-b border-gray-50 transition-colors ${activeThread?.threadId === t.threadId ? 'bg-primary-50 border-r-2 border-r-primary-500' : ''}`}
                                     >
                                         <div className="w-10 h-10 bg-gray-200 rounded-full shrink-0 flex items-center justify-center font-bold text-gray-500 overflow-hidden">
-                                            {t.partnerAvatar ? <img src={t.partnerAvatar} className="w-full h-full object-cover" alt="" /> : t.partnerName.charAt(0).toUpperCase()}
+                                            {t.partnerAvatar ? <img src={t.partnerAvatar} className="w-full h-full object-cover" alt="" /> : (t.partnerName || 'P').charAt(0).toUpperCase()}
                                         </div>
                                         <div className="flex-grow min-w-0">
                                             <div className="flex justify-between items-baseline mb-0.5">
@@ -360,7 +360,7 @@ const DashboardMensagensPage: React.FC = () => {
                                 <div className="w-9 h-9 bg-primary-500 rounded-full flex items-center justify-center text-white font-bold overflow-hidden shrink-0">
                                     {activeThread.partnerAvatar
                                         ? <img src={activeThread.partnerAvatar} className="w-full h-full object-cover" alt="" />
-                                        : activeThread.partnerName.charAt(0).toUpperCase()}
+                                        : (activeThread.partnerName || 'P').charAt(0).toUpperCase()}
                                 </div>
                                 <div className="flex-grow min-w-0">
                                     <h3 className="font-bold text-gray-800 truncate text-sm">{activeThread.partnerName}</h3>
@@ -426,10 +426,11 @@ const DashboardMensagensPage: React.FC = () => {
                                         );
                                     }
 
-                                    const isQuoteRequest = msg.type === 'quote_request' && msg.metadata;
+                                    const isBriefingRequest = (msg.type === 'quote_request' || msg.type === 'booking_request') && msg.metadata;
                                     const isProposal = msg.type === 'proposal' && msg.metadata;
 
-                                    if (isQuoteRequest) {
+                                    if (isBriefingRequest) {
+                                        const isBooking = msg.type === 'booking_request';
                                         return (
                                             <div key={msg.id} className="flex justify-start my-4">
                                                 <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 w-full max-w-lg">
@@ -438,10 +439,36 @@ const DashboardMensagensPage: React.FC = () => {
                                                             <MessagesSquare size={16} className="text-primary-600" />
                                                         </div>
                                                         <div>
-                                                            <h4 className="font-bold text-gray-900 text-sm">Briefing Recebido</h4>
-                                                            <p className="text-[10px] text-gray-500">O cliente respondeu ao questionário</p>
+                                                            <h4 className="font-bold text-gray-900 text-sm">
+                                                                {isBooking ? 'Novo Pedido de Agendamento' : 'Solicitação de Orçamento'}
+                                                            </h4>
+                                                            <p className="text-[10px] text-gray-500">
+                                                                {isBooking ? 'O cliente já realizou o agendamento direto' : 'O cliente respondeu ao questionário'}
+                                                            </p>
                                                         </div>
                                                     </div>
+
+                                                    {/* Informações de Agendamento (se for booking) */}
+                                                    {isBooking && (
+                                                        <div className="grid grid-cols-2 gap-3 mb-4">
+                                                            <div className="bg-primary-50 rounded-xl p-3 border border-primary-100">
+                                                                <p className="text-[10px] font-bold text-primary-600 uppercase mb-1">Data e Hora</p>
+                                                                <div className="flex items-center gap-1.5 text-primary-900 font-bold text-sm">
+                                                                    <Clock size={14} />
+                                                                    {msg.metadata.scheduledFor 
+                                                                        ? new Date(msg.metadata.scheduledFor).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+                                                                        : 'A definir'}
+                                                                </div>
+                                                            </div>
+                                                            <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-100">
+                                                                <p className="text-[10px] font-bold text-emerald-600 uppercase mb-1">Valor do Pedido</p>
+                                                                <div className="flex items-center gap-1.5 text-emerald-900 font-bold text-sm">
+                                                                    <CreditCard size={14} />
+                                                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(msg.metadata.price || 0)}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                     <div className="space-y-4">
                                                         {/* responses pode ser array [{question,answer}] ou objeto {pergunta: resposta} */}
                                                         {Array.isArray(msg.metadata.responses)
@@ -477,7 +504,8 @@ const DashboardMensagensPage: React.FC = () => {
                                                         <p className="text-[10px] text-gray-400">
                                                             Recebido às {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                         </p>
-                                                        <Button size="sm" onClick={handleSendQuoteProposal}>Responder com Proposta</Button>
+                                                        {!isBooking && <Button size="sm" onClick={handleSendQuoteProposal}>Responder com Proposta</Button>}
+                                                        {isBooking && <Button size="sm" variant="secondary" onClick={() => addToast("Briefing visualizado. Pronto para o serviço!", "info")}>Briefing OK</Button>}
                                                     </div>
                                                 </div>
                                             </div>
@@ -700,7 +728,7 @@ const InfoPanel: React.FC<{
                 <div className="w-16 h-16 bg-primary-100 rounded-full mx-auto flex items-center justify-center font-bold text-primary-600 text-xl overflow-hidden mb-3">
                     {thread.partnerAvatar
                         ? <img src={thread.partnerAvatar} className="w-full h-full object-cover" alt="" />
-                        : thread.partnerName.charAt(0).toUpperCase()}
+                        : (thread.partnerName || 'P').charAt(0).toUpperCase()}
                 </div>
                 <h3 className="font-bold text-gray-900 text-sm">{thread.partnerName}</h3>
                 <p className="text-xs text-primary-500 font-medium mt-0.5 truncate px-2">{thread.jobTitle}</p>
@@ -760,14 +788,19 @@ const InfoPanel: React.FC<{
                                             Enviar Proposta de Orçamento
                                         </Button>
                                     )}
-                                    {order.saga_status === 'WAITING_ACCEPTANCE' && !order.services?.requires_quote && (
+                                    {/* Botão Aceitar: Agora aparece para WAITING_ACCEPTANCE ou PENDING (bookings diretos) */}
+                                    {(order.saga_status === 'WAITING_ACCEPTANCE' || order.saga_status === 'PENDING') && !order.services?.requires_quote && (
                                         <Button size="sm" className="w-full text-xs" onClick={async () => {
                                             await supabase.rpc('transition_saga_status', { p_order_id: thread.orderId, p_new_status: 'ORDER_ACTIVE' });
+                                            // Também garante que o status principal mude para accepted/active
+                                            await supabase.from('orders').update({ status: 'accepted' }).eq('id', thread.orderId);
                                             addToast("Pedido aceito!", "success");
                                             fetchOrder();
                                         }}>Aceitar Pedido</Button>
                                     )}
-                                    {(order.status === 'active' || order.status === 'in_progress') && order.saga_status === 'ORDER_ACTIVE' && (
+
+                                    {/* Botão Entregar: Mais permissivo com status de transição */}
+                                    {(order.status === 'accepted' || order.status === 'active' || order.status === 'in_progress') && (
                                         <Button size="sm" className="w-full text-xs bg-emerald-600 hover:bg-emerald-700" onClick={() => setIsDeliveryModalOpen(true)}>
                                             {order.status === 'in_progress' ? 'Enviar Nova Versão' : 'Entregar Trabalho'}
                                         </Button>

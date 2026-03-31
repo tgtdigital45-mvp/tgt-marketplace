@@ -17,12 +17,12 @@ import {
 } from 'lucide-react';
 
 const FAQS = [
-  { q: 'Como altero minha senha?', a: 'Voce pode alterar sua senha na aba "Configuracoes" > "Seguranca". Basta digitar a nova senha e confirmar.' },
-  { q: 'Como recebo pelos meus servicos?', a: 'Os pagamentos sao processados via Stripe e transferidos para sua conta cadastrada apos a conclusao do servico (D+2). Acompanhe tudo na aba "Faturamento".' },
-  { q: 'Posso cancelar minha assinatura?', a: 'Sim, voce pode gerenciar sua assinatura na aba "Assinatura" a qualquer momento. Nao ha fidelidade.' },
-  { q: 'Como editar meu perfil publico?', a: 'Va ate a aba "Perfil" para editar suas informacoes, foto de capa, logo, descricao e redes sociais.' },
-  { q: 'Como adicionar servicos ao meu catalogo?', a: 'Na aba "Servicos", clique em "Adicionar Servico" e siga o assistente passo a passo para configurar preco, descricao e pacotes.' },
-  { q: 'Quanto tempo leva para meu perfil aparecer nas buscas?', a: 'Apos completar seu perfil (100%), ele aparece nas buscas em ate 24 horas. Perfis completos tem prioridade no ranking.' },
+  { q: 'Como altero minha senha?', a: 'Você pode alterar sua senha na aba "Configurações" > "Segurança". Basta digitar a nova senha e confirmar.' },
+  { q: 'Como recebo pelos meus serviços?', a: 'Os pagamentos são processados via Stripe e transferidos para sua conta cadastrada após a conclusão do serviço (D+2). Acompanhe tudo na aba "Faturamento".' },
+  { q: 'Posso cancelar minha assinatura?', a: 'Sim, você pode gerenciar sua assinatura na aba "Assinatura" a qualquer momento. Não há fidelidade.' },
+  { q: 'Como editar meu perfil público?', a: 'Vá até a aba "Perfil" para editar suas informações, foto de capa, logo, descrição e redes sociais.' },
+  { q: 'Como adicionar serviços ao meu catálogo?', a: 'Na aba "Serviços", clique em "Adicionar Serviço" e siga o assistente passo a passo para configurar preço, descrição e pacotes.' },
+  { q: 'Quanto tempo leva para meu perfil aparecer nas buscas?', a: 'Após completar seu perfil (100%), ele aparece nas buscas em até 24 horas. Perfis completos têm prioridade no ranking.' },
 ];
 
 const DashboardSupportPage: React.FC = () => {
@@ -67,7 +67,7 @@ const DashboardSupportPage: React.FC = () => {
         className="grid grid-cols-1 sm:grid-cols-3 gap-3"
       >
         {[
-          { icon: <Phone size={18} />, label: 'WhatsApp', desc: 'Resposta em ate 2h', color: 'bg-emerald-50 text-emerald-600 border-emerald-100', href: 'https://wa.me/5545999999999' },
+          { icon: <Phone size={18} />, label: 'WhatsApp', desc: 'Resposta em até 2h', color: 'bg-emerald-50 text-emerald-600 border-emerald-100', href: 'https://wa.me/5545999999999' },
           { icon: <Mail size={18} />, label: 'E-mail', desc: 'suporte@contratto.com', color: 'bg-blue-50 text-blue-600 border-blue-100', href: 'mailto:suporte@contratto.com' },
           { icon: <BookOpen size={18} />, label: 'Central de Ajuda', desc: 'Guias e tutoriais', color: 'bg-purple-50 text-purple-600 border-purple-100', href: '/ajuda' },
         ].map((item, idx) => (
@@ -151,7 +151,7 @@ const DashboardSupportPage: React.FC = () => {
             <Input
               label="Assunto"
               name="subject"
-              placeholder="Sobre o que voce quer falar?"
+              placeholder="Sobre o que você quer falar?"
               required
             />
             <div>
@@ -159,7 +159,7 @@ const DashboardSupportPage: React.FC = () => {
               <textarea
                 rows={5}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all resize-none"
-                placeholder="Descreva seu problema ou duvida com o maximo de detalhes..."
+                placeholder="Descreva seu problema ou dúvida com o máximo de detalhes..."
                 required
               />
             </div>

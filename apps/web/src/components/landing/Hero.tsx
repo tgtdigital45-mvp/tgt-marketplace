@@ -26,10 +26,10 @@ const Hero: React.FC = () => {
                         </span>
                         <h1 className="font-display text-fluid-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-slate-900 leading-[1.1] mb-6 sm:mb-8 tracking-tight px-2 sm:px-0">
                             A forma mais inteligente de{' '}
-                            <span className="text-brand-primary">contratar servicos locais.</span>
+                            <span className="text-brand-primary">contratar serviços locais.</span>
                         </h1>
                         <p className="text-base sm:text-lg lg:text-xl text-slate-500 mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed px-2 sm:px-0">
-                            Conecte-se com os melhores profissionais da sua regiao. Seguranca, agilidade e a garantia CONTRATTO para o seu negocio ou residencia.
+                            Conecte-se com os melhores profissionais da sua região. Segurança, agilidade e a garantia CONTRATTO para o seu negócio ou residência.
                         </p>
                     </motion.div>
 

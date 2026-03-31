@@ -1,4 +1,4 @@
-﻿import React, { lazy } from 'react';
+import React, { lazy } from 'react';
 import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,6 +25,7 @@ const DashboardPerfilPage = lazy(() => import('@/pages/pro/DashboardPerfilPage')
 const DashboardAdministradoresPage = lazy(() => import('@/pages/pro/DashboardAdministradoresPage'));
 const DashboardServicosPage = lazy(() => import('@/pages/pro/DashboardServicosPage'));
 const DashboardPortfolioPage = lazy(() => import('@/pages/pro/DashboardPortfolioPage'));
+const DashboardProjectsPage = lazy(() => import('@/pages/pro/DashboardProjectsPage'));
 const DashboardAvaliacoesPage = lazy(() => import('@/pages/pro/DashboardAvaliacoesPage'));
 const DashboardAgendamentosPage = lazy(() => import('@/pages/pro/DashboardAgendamentosPage'));
 const DashboardAgendaPage = lazy(() => import('@/pages/pro/DashboardAgendaPage'));
@@ -105,6 +106,7 @@ const PortalRoutes = () => {
                 <Route path="administradores" element={<AnimatedElement><DashboardAdministradoresPage /></AnimatedElement>} />
                 <Route path="servicos" element={<AnimatedElement><DashboardServicosPage /></AnimatedElement>} />
                 <Route path="portfolio" element={<AnimatedElement><DashboardPortfolioPage /></AnimatedElement>} />
+                <Route path="projects" element={<AnimatedElement><DashboardProjectsPage /></AnimatedElement>} />
                 <Route path="avaliacoes" element={<AnimatedElement><DashboardAvaliacoesPage /></AnimatedElement>} />
                 <Route path="agenda" element={<AnimatedElement><DashboardAgendaPage /></AnimatedElement>} />
                 <Route path="agendamentos" element={<AnimatedElement><DashboardAgendamentosPage /></AnimatedElement>} />

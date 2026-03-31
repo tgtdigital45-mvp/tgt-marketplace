@@ -99,6 +99,26 @@ Deno.serve(async (req: Request) => {
             });
         }
 
+        // 1. Atomic marker to prevent double cancellation
+        const preUpdateRes = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${order_id}&status=in.(pending,accepted)`, {
+            method: "PATCH",
+            headers: {
+                apikey: supabaseKey,
+                Authorization: `Bearer ${supabaseKey}`,
+                "Content-Type": "application/json",
+                "Prefer": "return=representation"
+            },
+            body: JSON.stringify({ status: "canceling" }),
+        });
+
+        const preUpdateBody = await preUpdateRes.json();
+        if (!preUpdateRes.ok || !preUpdateBody || preUpdateBody.length === 0) {
+            return new Response(JSON.stringify({ error: "O pedido já está sendo cancelado, atualizado ou o status atual não permite." }), {
+                status: 409,
+                headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+        }
+
         // Executar Reembolso se houver Payment Intent
         if (order.stripe_payment_intent_id) {
             try {
@@ -109,13 +129,28 @@ Deno.serve(async (req: Request) => {
                 if (paymentIntent.status === "succeeded") {
                     await stripe.refunds.create({
                         payment_intent: order.stripe_payment_intent_id,
-                    });
+                    }, { idempotencyKey: `cancel_order_refund_${order_id}` });
                 } else if (paymentIntent.status === "requires_capture") {
                     // Se estiver apenas reservado, cancela a captura
-                    await stripe.paymentIntents.cancel(order.stripe_payment_intent_id);
+                    await stripe.paymentIntents.cancel(
+                        order.stripe_payment_intent_id,
+                        { idempotencyKey: `cancel_order_intent_${order_id}` }
+                    );
                 }
             } catch (stripeError: any) {
                 console.error("Erro no Stripe:", stripeError);
+
+                // Revert to original status if stripe fails
+                await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${order_id}`, {
+                    method: "PATCH",
+                    headers: {
+                        apikey: supabaseKey,
+                        Authorization: `Bearer ${supabaseKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ status: order.status }),
+                });
+
                 return new Response(JSON.stringify({ error: `Falha ao estornar: ${stripeError.message}` }), {
                     status: 500,
                     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },

@@ -6,7 +6,7 @@ const benefits = [
   {
     icon: Search,
     title: 'Busca Inteligente',
-    description: 'Filtros por categoria, cidade e avaliacao para encontrar exatamente o que voce precisa.',
+    description: 'Filtros por categoria, cidade e avaliação para encontrar exatamente o que você precisa.',
     gradient: 'from-primary-500/10 to-primary-600/5',
     iconBg: 'bg-primary-50',
     iconColor: 'text-primary-600',
@@ -14,23 +14,23 @@ const benefits = [
   {
     icon: ShieldCheck,
     title: 'Prestadores Verificados',
-    description: 'Analise documental, checagem de CNPJ e validacao de portfolio em cada cadastro.',
+    description: 'Análise documental, checagem de CNPJ e validação de portfólio em cada cadastro.',
     gradient: 'from-brand-secondary/10 to-blue-600/5',
     iconBg: 'bg-blue-50',
     iconColor: 'text-brand-secondary',
   },
   {
     icon: FileCheck,
-    title: 'Contratacao Segura',
-    description: 'Orcamentos transparentes, escopo definido e garantia de entrega pela CONTRATTO.',
+    title: 'Contratação Segura',
+    description: 'Orçamentos transparentes, escopo definido e garantia de entrega pela CONTRATTO.',
     gradient: 'from-emerald-500/10 to-emerald-600/5',
     iconBg: 'bg-emerald-50',
     iconColor: 'text-emerald-600',
   },
   {
     icon: Star,
-    title: 'Avaliacoes Reais',
-    description: 'Notas e feedbacks de clientes verificados. Sem avaliacoes falsas, sem surpresas.',
+    title: 'Avaliações Reais',
+    description: 'Notas e feedbacks de clientes verificados. Sem avaliações falsas, sem surpresas.',
     gradient: 'from-amber-500/10 to-amber-600/5',
     iconBg: 'bg-amber-50',
     iconColor: 'text-amber-600',
@@ -52,7 +52,7 @@ const BenefitsBar: React.FC = () => {
             Por que a CONTRATTO
           </span>
           <h2 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 tracking-tight">
-            Tudo que voce precisa em <span className="text-slate-400">um so lugar</span>
+            Tudo que você precisa em <span className="text-slate-400">um só lugar</span>
           </h2>
         </motion.div>
 

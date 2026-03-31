@@ -16,10 +16,10 @@ import { Link } from 'react-router-dom';
 const categories = [
   { name: 'Contabilidade', icon: Calculator, color: 'bg-blue-50 text-blue-600 group-hover:bg-blue-100', count: '124 empresas' },
   { name: 'Engenharia', icon: HardHat, color: 'bg-orange-50 text-orange-600 group-hover:bg-orange-100', count: '89 empresas' },
-  { name: 'Beleza e Estetica', icon: Scissors, color: 'bg-pink-50 text-pink-600 group-hover:bg-pink-100', count: '210 empresas' },
+  { name: 'Beleza e Estética', icon: Scissors, color: 'bg-pink-50 text-pink-600 group-hover:bg-pink-100', count: '210 empresas' },
   { name: 'Tecnologia', icon: Laptop, color: 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100', count: '156 empresas' },
   { name: 'Fotografia', icon: Camera, color: 'bg-purple-50 text-purple-600 group-hover:bg-purple-100', count: '45 empresas' },
-  { name: 'Saude', icon: HeartPulse, color: 'bg-red-50 text-red-600 group-hover:bg-red-100', count: '112 empresas' },
+  { name: 'Saúde', icon: HeartPulse, color: 'bg-red-50 text-red-600 group-hover:bg-red-100', count: '112 empresas' },
   { name: 'Eventos', icon: Music, color: 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100', count: '78 empresas' },
   { name: 'Varejo', icon: ShoppingBag, color: 'bg-slate-100 text-slate-600 group-hover:bg-slate-200', count: '340 empresas' },
 ];
@@ -43,7 +43,7 @@ const CategoriesSection: React.FC = () => {
               Explore por <span className="text-slate-400">Categoria</span>
             </h2>
             <p className="mt-3 sm:mt-4 text-slate-500 text-sm sm:text-base max-w-lg">
-              De contabilidade a tecnologia, encontre o profissional ideal para cada necessidade do seu negocio.
+              De contabilidade a tecnologia, encontre o profissional ideal para cada necessidade do seu negócio.
             </p>
           </motion.div>
           <Link

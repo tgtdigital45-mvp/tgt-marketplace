@@ -1,8 +1,9 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@tgt/core';
 import { useAuth } from '@/contexts/AuthContext';
 import { FileText, MessageSquare, Clock, ChevronRight, CheckCircle2, XCircle } from 'lucide-react';
 import { Badge, Button } from '@tgt/ui-web';
+import { formatOrderStatus, ORDER_STATUS_COLOR } from '@/utils/statusMapper';
 
 
 
@@ -93,8 +94,8 @@ const ClientBudgets: React.FC = () => {
                                             <span className="text-xs font-bold text-slate-400 flex items-center gap-1">
                                                 <Clock size={12} /> {new Date(job.created_at).toLocaleDateString()}
                                             </span>
-                                            <Badge variant={job.status === 'open' ? 'warning' : 'success'}>
-                                                {job.status === 'open' ? 'Aguardando Propostas' : job.status}
+                                            <Badge variant={ORDER_STATUS_COLOR[job.status] || (job.status === 'open' ? 'warning' : 'success')}>
+                                                {formatOrderStatus(job.status)}
                                             </Badge>
                                         </div>
                                     </div>

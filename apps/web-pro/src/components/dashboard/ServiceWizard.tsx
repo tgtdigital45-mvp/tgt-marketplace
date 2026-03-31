@@ -1,36 +1,51 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ImageCropModal from '@/components/ImageCropModal';
-
-
-
-import { ServicePackages } from '@tgt/core';
+import { ServicePackages, supabase } from '@tgt/core';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@tgt/core';
 import { SERVICE_CATEGORIES } from '@/data/serviceDefinitions';
 import { Input, Select, Button } from '@tgt/ui-web';
+import { Sparkles, Loader2, Tags as TagIcon } from 'lucide-react';
 
-
-// Step Components (Placeholders for now)
+// Subcomponents
 const StepOverview = ({ data, updateData, errors }: any) => {
-    const { user } = useAuth();
     const { addToast } = useToast();
-    const [uploading, setUploading] = useState(false);
+    const [isGeneratingTags, setIsGeneratingTags] = useState(false);
+    const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
 
-    const categoryOptions = SERVICE_CATEGORIES.map(cat => ({
-        label: cat.label,
-        value: cat.id
-    }));
+    const handleGenerateTags = async () => {
+        if (!data.title) return addToast("Preencha o título primeiro", "error");
+        setIsGeneratingTags(true);
+        try {
+            const { data: response, error } = await supabase.functions.invoke('ai-assistant', { 
+                body: { action: 'suggest_tags', title: data.title, category: data.category } 
+            });
+            if (error) throw error;
+            updateData({ tags: response.tags.join(', ') });
+            addToast("Tags sugeridas com sucesso!", "success");
+        } catch (e) { addToast("Erro ao gerar tags", "error"); }
+        finally { setIsGeneratingTags(false); }
+    };
 
+    const handleGenerateDescription = async () => {
+        if (!data.title) return addToast("Preencha o título primeiro", "error");
+        setIsGeneratingDescription(true);
+        try {
+            const { data: response, error } = await supabase.functions.invoke('ai-assistant', { 
+                body: { action: 'generate_service_description', title: data.title, category: data.category } 
+            });
+            if (error) throw error;
+            updateData({ description: response.description });
+            addToast("Descrição gerada com IA!", "success");
+        } catch (e) { addToast("Erro ao gerar descrição", "error"); }
+        finally { setIsGeneratingDescription(false); }
+    };
+
+    const categoryOptions = SERVICE_CATEGORIES.map(cat => ({ label: cat.label, value: cat.id }));
     const selectedCategory = SERVICE_CATEGORIES.find(cat => cat.id === data.category);
-    const subcategoryOptions = selectedCategory?.subcategories.map(sub => ({
-        label: sub.label,
-        value: sub.id
-    })) || [];
-
-    const selectedSubcategory = selectedCategory?.subcategories.find(sub => sub.id === data.subcategory);
+    const subcategoryOptions = selectedCategory?.subcategories.map(sub => ({ label: sub.label, value: sub.id })) || [];
 
     const serviceTypeOptions = [
         { label: 'Fixo', value: 'fixed', description: 'Preço definido e agendamento direto.', icon: 'Zap' },
@@ -52,7 +67,6 @@ const StepOverview = ({ data, updateData, errors }: any) => {
             </div>
 
             <div className="space-y-8 max-w-3xl mx-auto">
-                {/* Título */}
                 <motion.div animate={errors?.title ? { x: [-10, 10, -10, 10, 0] } : {}} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
                     <label className="block text-sm font-bold text-gray-700 mb-3 ml-1 uppercase tracking-wider">Nome do Serviço</label>
                     <Input
@@ -61,178 +75,106 @@ const StepOverview = ({ data, updateData, errors }: any) => {
                         onChange={(e) => updateData({ title: e.target.value })}
                         className={`!text-lg !py-4 ${errors?.title ? "border-red-500 focus:ring-red-500" : ""}`}
                     />
-                    <p className="text-xs text-gray-400 mt-2 ml-1">Um nome claro e objetivo facilita a busca.</p>
                 </motion.div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Categoria */}
                     <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-5">
                         <label className="block text-sm font-bold text-gray-700 uppercase tracking-wider ml-1">Onde ele se encaixa?</label>
-                        <Select
-                            label="Categoria Principal"
-                            value={data.category}
-                            onChange={(value) => updateData({ category: value, subcategory: '' })}
-                            options={categoryOptions}
-                            placeholder="Selecione..."
-                        />
-                        <Select
-                            label="Subcategoria"
-                            value={data.subcategory}
-                            onChange={(value) => updateData({ subcategory: value })}
-                            options={subcategoryOptions}
-                            placeholder="Aguardando categoria..."
-                            disabled={!data.category}
-                        />
+                        <Select label="Categoria Principal" value={data.category} onChange={(value) => updateData({ category: value, subcategory: '' })} options={categoryOptions} placeholder="Selecione..." />
+                        <Select label="Subcategoria" value={data.subcategory} onChange={(value) => updateData({ subcategory: value })} options={subcategoryOptions} placeholder="Aguardando categoria..." disabled={!data.category} />
                     </div>
 
-                    {/* Localização */}
                     <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
                         <label className="block text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider ml-1">Onde é feito?</label>
                         <div className="grid grid-cols-1 gap-3">
                             {locationOptions.map((opt) => (
-                                <button
-                                    key={opt.value}
-                                    onClick={() => updateData({ locationType: opt.value })}
-                                    className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left ${
-                                        data.locationType === opt.value
-                                        ? 'border-primary-500 bg-primary-50/30'
-                                        : 'border-gray-50 bg-gray-50/50 hover:bg-gray-100'
-                                    }`}
-                                >
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                                        data.locationType === opt.value ? 'bg-primary-500 text-white' : 'bg-white text-gray-400'
-                                    }`}>
-                                        {/* Lucide Icons map locally if needed, using placeholders for clarity */}
+                                <button key={opt.value} onClick={() => updateData({ locationType: opt.value })} className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left ${data.locationType === opt.value ? 'border-primary-500 bg-primary-50/30' : 'border-gray-50 bg-gray-50/50 hover:bg-gray-100'}`}>
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${data.locationType === opt.value ? 'bg-primary-500 text-white' : 'bg-white text-gray-400'}`}>
                                         <div className="w-5 h-5 flex items-center justify-center">
                                             {opt.value === 'in_store' && <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>}
                                             {opt.value === 'at_home' && <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>}
                                             {opt.value === 'remote' && <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>}
                                         </div>
                                     </div>
-                                    <div>
-                                        <p className={`font-bold text-sm ${data.locationType === opt.value ? 'text-primary-900' : 'text-gray-700'}`}>{opt.label}</p>
-                                    </div>
+                                    <p className={`font-bold text-sm ${data.locationType === opt.value ? 'text-primary-900' : 'text-gray-700'}`}>{opt.label}</p>
                                 </button>
                             ))}
                         </div>
                     </div>
                 </div>
 
-                {/* Tipo de Preço / Modelo de Negócio */}
                 <div className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-sm space-y-6">
                     <label className="block text-sm font-black text-gray-900 uppercase tracking-widest text-center mb-2">Formato Comercial</label>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {serviceTypeOptions.map((opt) => (
-                            <button
-                                key={opt.value}
-                                onClick={() => {
-                                    updateData({ 
-                                        priceType: opt.value, 
-                                        isSinglePackage: opt.value === 'fixed',
-                                        requiresQuote: opt.value === 'budget'
-                                    });
-                                }}
-                                className={`relative p-5 rounded-3xl border-2 transition-all flex flex-col items-center text-center gap-3 group ${
-                                    data.priceType === opt.value
-                                    ? 'border-primary-500 bg-primary-50/20 ring-4 ring-primary-500/10'
-                                    : 'border-gray-50 bg-gray-50/50 hover:border-gray-200 hover:bg-white'
-                                }`}
-                            >
-                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${
-                                    data.priceType === opt.value ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30' : 'bg-white text-gray-400 border border-gray-100'
-                                }`}>
+                            <button key={opt.value} onClick={() => updateData({ priceType: opt.value, isSinglePackage: opt.value === 'fixed', requiresQuote: opt.value === 'budget' })} className={`relative p-5 rounded-3xl border-2 transition-all flex flex-col items-center text-center gap-3 group ${data.priceType === opt.value ? 'border-primary-500 bg-primary-50/20 ring-4 ring-primary-500/10' : 'border-gray-50 bg-gray-50/50 hover:border-gray-200 hover:bg-white'}`}>
+                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${data.priceType === opt.value ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30' : 'bg-white text-gray-400 border border-gray-100'}`}>
                                     {opt.value === 'fixed' && <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>}
                                     {opt.value === 'packages' && <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>}
                                     {opt.value === 'budget' && <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>}
                                 </div>
-                                <div>
-                                    <p className="font-bold text-gray-900">{opt.label}</p>
-                                    <p className="text-[10px] text-gray-400 mt-1 leading-tight">{opt.description}</p>
-                                </div>
-                                {data.priceType === opt.value && (
-                                    <motion.div layoutId="active-tip" className="absolute -top-2 -right-2 bg-primary-500 text-white p-1 rounded-full shadow-lg">
-                                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
-                                    </motion.div>
-                                )}
+                                <p className="font-bold text-gray-900">{opt.label}</p>
                             </button>
                         ))}
                     </div>
                 </div>
 
-                {/* Pergunta do Orçamento (Apenas se format for budget) */}
+                {/* Description with IA */}
+                <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative pt-12">
+                    <label className="block text-sm font-bold text-gray-700 mb-3 ml-1 uppercase tracking-wider">Descrição do Serviço</label>
+                    <textarea
+                        value={data.description}
+                        onChange={(e) => updateData({ description: e.target.value })}
+                        className="w-full p-4 bg-gray-50 rounded-2xl border-none focus:ring-2 focus:ring-primary-500 min-h-[150px] text-sm"
+                        placeholder="Descreva seu serviço com detalhes..."
+                    />
+                    <button type="button" onClick={handleGenerateDescription} disabled={isGeneratingDescription} className="absolute right-6 top-6 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary-600 to-indigo-600 text-white rounded-xl text-xs font-bold hover:opacity-90 transition-all disabled:opacity-50">
+                        {isGeneratingDescription ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                        {isGeneratingDescription ? 'Gerando...' : '✨ Gerar com IA'}
+                    </button>
+                </div>
+
+                {/* Tags with IA */}
+                <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative">
+                    <Input label="Tags (Separadas por vírgula)" placeholder="Ex: logo, branding, design" value={data.tags} onChange={(e) => updateData({ tags: e.target.value })} />
+                    <button type="button" onClick={handleGenerateTags} disabled={isGeneratingTags} className="absolute right-3 top-8 flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-xl text-[10px] font-bold hover:bg-amber-100 transition-all disabled:opacity-50 border border-amber-100">
+                        {isGeneratingTags ? <Loader2 size={12} className="animate-spin" /> : <TagIcon size={12} />}
+                        {isGeneratingTags ? 'Sugerindo...' : 'Sugerir Tags'}
+                    </button>
+                </div>
+
+                {/* Questionário (Budget only) */}
                 <AnimatePresence>
                     {(data.priceType === 'budget' || data.requiresQuote) && (
-                        <motion.div 
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="bg-amber-50 p-8 rounded-[40px] border border-amber-100 shadow-inner"
-                        >
+                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-amber-50 p-8 rounded-[40px] border border-amber-100 shadow-inner">
                             <div className="flex items-center gap-3 mb-6">
-                                <div className="p-2 bg-amber-500 rounded-xl text-white">
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-amber-900">Perguntas do Orçamento</h4>
-                                    <p className="text-xs text-amber-700">O que o cliente precisa te informar para você dar o preço?</p>
-                                </div>
+                                <h4 className="font-bold text-amber-900">Perguntas do Orçamento</h4>
                             </div>
-
                             <div className="space-y-3">
                                 {data.questions?.map((q: string, idx: number) => (
                                     <div key={idx} className="flex gap-2">
-                                        <input
-                                            className="flex-1 bg-white border border-amber-200 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-amber-500 outline-none"
-                                            placeholder={`Ex: Qual o tamanho da área? (Pergunta ${idx+1})`}
-                                            value={q}
-                                            onChange={(e) => {
-                                                const newQ = [...data.questions];
-                                                newQ[idx] = e.target.value;
-                                                updateData({ questions: newQ });
-                                            }}
-                                        />
-                                        <button 
-                                            onClick={() => updateData({ questions: data.questions.filter((_: any, i: number) => i !== idx) })}
-                                            className="p-3 text-amber-400 hover:text-red-500 transition-colors"
-                                        >
+                                        <input className="flex-1 bg-white border border-amber-200 rounded-2xl px-4 py-3 text-sm" placeholder={`Pergunta ${idx+1}`} value={q} onChange={(e) => { const newQ = [...data.questions]; newQ[idx] = e.target.value; updateData({ questions: newQ }); }} />
+                                        <button onClick={() => updateData({ questions: data.questions.filter((_: any, i: number) => i !== idx) })} className="p-3 text-amber-400 hover:text-red-500">
                                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>
                                         </button>
                                     </div>
                                 ))}
-                                <button 
-                                    onClick={() => updateData({ questions: [...(data.questions || []), ''] })}
-                                    className="w-full py-4 border-2 border-dashed border-amber-200 rounded-2xl text-amber-600 font-bold hover:bg-amber-100/50 transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 6v6m0 0v6m0-6h6m-6 0H6" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>
-                                    Adicionar Pergunta
-                                </button>
+                                <button onClick={() => updateData({ questions: [...(data.questions || []), ''] })} className="w-full py-4 border-2 border-dashed border-amber-200 rounded-2xl text-amber-600 font-bold">Adicionar Pergunta</button>
                             </div>
                         </motion.div>
                     )}
                 </AnimatePresence>
 
-                <div className="grid grid-cols-1 gap-6">
-                    <Input
-                        label="Tags (Separadas por vírgula)"
-                        placeholder="Ex: logo, branding, design"
-                        value={data.tags}
-                        onChange={(e) => updateData({ tags: e.target.value })}
-                    />
-                </div>
-
-                {/* Ficha Técnica (Atributos) */}
+                {/* Technical Specs */}
                 <div className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-sm space-y-6">
-                    <div className="flex items-center justify-between mb-2">
-                        <label className="block text-sm font-black text-gray-900 uppercase tracking-widest text-center">Ficha Técnica</label>
-                        <p className="text-[10px] text-gray-400 font-bold">Características específicas (Chave: Valor)</p>
-                    </div>
-
+                    <label className="block text-sm font-black text-gray-900 uppercase tracking-widest text-center">Ficha Técnica</label>
                     <div className="space-y-4">
                         {Object.entries(data.attributes || {}).map(([key, value], idx) => (
-                            <div key={idx} className="flex gap-4 items-center">
-                                <div className="flex-1">
-                                    <Input
-                                        placeholder="Ex: Formato"
+                            <div key={idx} className="flex gap-4 items-center animate-in zoom-in-95 duration-300">
+                                <div className="flex-1 space-y-1">
+                                    <input
+                                        className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 text-sm font-bold text-gray-900 focus:ring-2 focus:ring-primary-500 placeholder:text-gray-300"
+                                        placeholder="Nome da Característica (ex: Material, Voltagem)"
                                         value={key}
                                         onChange={(e) => {
                                             const newAttrs = { ...data.attributes };
@@ -241,219 +183,50 @@ const StepOverview = ({ data, updateData, errors }: any) => {
                                             newAttrs[e.target.value] = val;
                                             updateData({ attributes: newAttrs });
                                         }}
-                                        className="!py-3"
                                     />
                                 </div>
-                                <div className="flex-1">
-                                    <Input
-                                        placeholder="Ex: Digital (.pdf)"
+                                <div className="flex-[1.5] space-y-1">
+                                    <input
+                                        className="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 text-sm font-medium text-gray-600 focus:ring-2 focus:ring-primary-500 placeholder:text-gray-300 shadow-inner"
+                                        placeholder="Valor (ex: Aço Carbono, 220v, Sim)"
                                         value={value as string}
                                         onChange={(e) => {
-                                            const newAttrs = { ...data.attributes };
-                                            newAttrs[key] = e.target.value;
-                                            updateData({ attributes: newAttrs });
+                                            updateData({
+                                                attributes: {
+                                                    ...data.attributes,
+                                                    [key]: e.target.value
+                                                }
+                                            });
                                         }}
-                                        className="!py-3"
                                     />
                                 </div>
                                 <button 
-                                    type="button"
                                     onClick={() => {
                                         const newAttrs = { ...data.attributes };
                                         delete newAttrs[key];
                                         updateData({ attributes: newAttrs });
-                                    }}
-                                    className="p-3 text-gray-300 hover:text-red-500 transition-colors"
+                                    }} 
+                                    className="p-4 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all"
                                 >
                                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>
                                 </button>
                             </div>
                         ))}
-
                         <button 
-                            type="button"
-                            onClick={() => {
-                                const index = Object.keys(data.attributes || {}).length + 1;
-                                updateData({ 
-                                    attributes: { 
-                                        ...(data.attributes || {}), 
-                                        [`Característica ${index}`]: '' 
-                                    } 
-                                });
-                            }}
-                            className="w-full py-4 border-2 border-dashed border-gray-100 rounded-2xl text-gray-400 font-bold hover:bg-gray-50 hover:border-primary-200 hover:text-primary-500 transition-all flex items-center justify-center gap-2"
+                            onClick={() => updateData({ attributes: { ...data.attributes, '': '' } })} 
+                            className="w-full py-5 border-2 border-dashed border-gray-100 rounded-3xl text-gray-400 font-bold hover:border-primary-200 hover:text-primary-500 hover:bg-primary-50/10 transition-all flex items-center justify-center gap-2 group"
                         >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 6v6m0 0v6m0-6h6m-6 0H6" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>
+                            <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 4v16m8-8H4" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"/></svg>
                             Adicionar Atributo
                         </button>
                     </div>
-                </div>
-
-                {/* Professional Registration Fields */}
-                <AnimatePresence>
-                    {(selectedSubcategory?.requiresBoard || selectedSubcategory?.requiresCertification) && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="p-6 bg-purple-50/50 rounded-2xl border border-purple-100 space-y-6 overflow-hidden"
-                        >
-                            <div className="flex items-center gap-2 text-purple-900 font-bold">
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-                                <span>Validação Profissional {(selectedSubcategory.requiresBoard?.name || selectedSubcategory.requiresCertification?.name)}</span>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {selectedSubcategory.requiresBoard && (
-                                    <>
-                                        <Input
-                                            label={`Número do Registro (${selectedSubcategory.requiresBoard.name})`}
-                                            placeholder="Ex: 123456"
-                                            value={data.registrationNumber || ''}
-                                            onChange={(e) => updateData({ registrationNumber: e.target.value })}
-                                            className={errors?.registrationNumber ? "border-red-500" : ""}
-                                        />
-                                        {selectedSubcategory.requiresBoard.showUf && (
-                                            <Select
-                                                label="Estado (UF)"
-                                                value={data.registrationState || ''}
-                                                onChange={(value) => updateData({ registrationState: value })}
-                                                options={[
-                                                    { label: 'Acre (AC)', value: 'AC' },
-                                                    { label: 'Alagoas (AL)', value: 'AL' },
-                                                    { label: 'Amapá (AP)', value: 'AP' },
-                                                    { label: 'Amazonas (AM)', value: 'AM' },
-                                                    { label: 'Bahia (BA)', value: 'BA' },
-                                                    { label: 'Ceará (CE)', value: 'CE' },
-                                                    { label: 'Distrito Federal (DF)', value: 'DF' },
-                                                    { label: 'Espírito Santo (ES)', value: 'ES' },
-                                                    { label: 'Goiás (GO)', value: 'GO' },
-                                                    { label: 'Maranhão (MA)', value: 'MA' },
-                                                    { label: 'Mato Grosso (MT)', value: 'MT' },
-                                                    { label: 'Mato Grosso do Sul (MS)', value: 'MS' },
-                                                    { label: 'Minas Gerais (MG)', value: 'MG' },
-                                                    { label: 'Pará (PA)', value: 'PA' },
-                                                    { label: 'Paraíba (PB)', value: 'PB' },
-                                                    { label: 'Paraná (PR)', value: 'PR' },
-                                                    { label: 'Pernambuco (PE)', value: 'PE' },
-                                                    { label: 'Piauí (PI)', value: 'PI' },
-                                                    { label: 'Rio de Janeiro (RJ)', value: 'RJ' },
-                                                    { label: 'Rio Grande do Norte (RN)', value: 'RN' },
-                                                    { label: 'Rio Grande do Sul (RS)', value: 'RS' },
-                                                    { label: 'Rondônia (RO)', value: 'RO' },
-                                                    { label: 'Roraima (RR)', value: 'RR' },
-                                                    { label: 'Santa Catarina (SC)', value: 'SC' },
-                                                    { label: 'São Paulo (SP)', value: 'SP' },
-                                                    { label: 'Sergipe (SE)', value: 'SE' },
-                                                    { label: 'Tocantins (TO)', value: 'TO' },
-                                                ]}
-                                                placeholder="Selecione..."
-                                            />
-                                        )}
-                                    </>
-                                )}
-
-                                {selectedSubcategory.requiresCertification && !selectedSubcategory.requiresBoard && (
-                                    <Input
-                                        label={`Identificação da Certificação (${selectedSubcategory.requiresCertification.name})`}
-                                        placeholder="Ex: CNH, Registro, etc."
-                                        value={data.certificationId || ''}
-                                        onChange={(e) => updateData({ certificationId: e.target.value })}
-                                        className={errors?.certificationId ? "border-red-500" : ""}
-                                    />
-                                )}
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Upload do Documento (Frente e Verso)
-                                </label>
-                                <div
-                                    className={`border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-colors ${data.registrationImage ? 'border-green-200 bg-green-50' : 'border-purple-200 hover:bg-purple-50'
-                                        }`}
-                                    onClick={() => document.getElementById('reg-image-upload')?.click()}
-                                >
-                                    <input
-                                        type="file"
-                                        id="reg-image-upload"
-                                        className="hidden"
-                                        accept="image/*"
-                                        onChange={async (e) => {
-                                            if (e.target.files && e.target.files[0] && user) {
-                                                setUploading(true);
-                                                try {
-                                                    const file = e.target.files[0];
-                                                    const fileExt = file.name.split('.').pop();
-                                                    const fileName = `${user.id}/${Math.random()}.${fileExt}`;
-                                                    const filePath = `verifications/${fileName}`;
-
-                                                    const { error: uploadError } = await supabase.storage
-                                                        .from('portfolio') // Reuse existing bucket
-                                                        .upload(filePath, file);
-
-                                                    if (uploadError) throw uploadError;
-
-                                                    const { data: { publicUrl } } = supabase.storage
-                                                        .from('portfolio')
-                                                        .getPublicUrl(filePath);
-
-                                                    updateData({ registrationImage: publicUrl });
-                                                    addToast("Documento anexado!", "success");
-                                                } catch (err: any) {
-                                                    addToast("Erro ao subir documento.", "error");
-                                                } finally {
-                                                    setUploading(false);
-                                                }
-                                            }
-                                        }}
-                                    />
-                                    {uploading ? (
-                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600" />
-                                    ) : data.registrationImage ? (
-                                        <div className="flex items-center gap-2 text-green-700 font-medium">
-                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
-                                            Documento Carregado
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <svg className="w-8 h-8 text-purple-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                            <span className="text-xs text-purple-600">Clique para anexar foto da carteirinha ou certificado</span>
-                                        </>
-                                    )}
-                                </div>
-                                {errors?.registrationImage && <p className="text-red-500 text-xs text-center">O upload do documento é obrigatório.</p>}
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Descrição Curta
-                    </label>
-                    <textarea
-                        value={data.description}
-                        onChange={e => updateData({ description: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-[var(--radius-box)] shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm resize-none h-32"
-                        placeholder="Descreva brevemente o que você oferece..."
-                        maxLength={2000}
-                    />
                 </div>
             </div>
         </div>
     );
 };
 
-// ... (StepPricing and StepGallery remain largely unchanged unless we add validation there too)
-// Skipping large blocks of unchanged code for brevity in tool call, relying on target matching.
-// But I need to update the calls to CurrentComponent to pass errors.
-
-/* ... StepPricing ... */
-/* ... StepGallery ...) */
-
-
-
-const StepPricing = ({ data, updateData }: any) => {
+const StepPricing = ({ data, updateData, errors }: any) => {
     // Initialize packages if empty
     React.useEffect(() => {
         if (!data.packages || Object.keys(data.packages).length === 0) {
@@ -927,7 +700,6 @@ const ServiceWizard = ({ onCancel, initialData, onSuccess }: { onCancel?: () => 
             };
 
             let serviceId = initialData?.id;
-            let newlyCreatedServiceId = null;
 
             if (isEditing) {
                 const { error } = await supabase

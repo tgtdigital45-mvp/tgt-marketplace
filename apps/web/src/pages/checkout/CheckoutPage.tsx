@@ -118,6 +118,20 @@ const CheckoutPage = () => {
 
                 devLog("[Checkout] SAGA Order criado com sucesso.");
                 orderId = (sagaResult as any).order_id;
+
+                // 1.1 Create initial chat message for direct booking to ensure it shows up in chat threads
+                await supabase.from('messages').insert({
+                    order_id: orderId,
+                    sender_id: user.id,
+                    receiver_id: sellerId,
+                    content: 'Novo pedido de agendamento.',
+                    type: 'booking_request',
+                    metadata: {
+                        scheduledFor: bookingDate && bookingTime ? `${bookingDate}T${bookingTime}:00` : null,
+                        price: (sagaResult as any).price,
+                        responses: hiringResponses
+                    }
+                });
             } else {
                 devLog("[Checkout] Retomando pedido existente:", orderId);
             }

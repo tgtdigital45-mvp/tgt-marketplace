@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useClientProfileData } from '@/hooks/useClientProfileData';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import { Button } from '@tgt/ui-web';
+import { formatOrderStatus, ACTIVE_ORDER_STATUSES } from '@/utils/statusMapper';
 
 
 const categories = [
@@ -21,7 +22,7 @@ const ClientHome: React.FC = () => {
     const { user } = useAuth();
     const { data } = useClientProfileData(user?.id);
 
-    const activeOrders = data?.orders?.filter(o => o.status === 'active' || o.status === 'in_progress').length || 0;
+    const activeOrders = data?.orders?.filter(o => ACTIVE_ORDER_STATUSES.includes(o.status)).length || 0;
     const pendingQuotes = data?.quotes?.filter(q => q.status === 'pending').length || 0;
     const unreadMessages = data?.conversations?.filter(c => c.unread).length || 0;
     const totalSpent = data?.totalSpent || 0;
@@ -194,7 +195,7 @@ const ClientHome: React.FC = () => {
                                             </div>
                                             <div>
                                                 <h4 className="text-sm font-black text-slate-800">{(item as any).service_title || (item as any).description?.substring(0, 20)}...</h4>
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{(item as any).status}</p>
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{formatOrderStatus((item as any).status)}</p>
                                             </div>
                                         </div>
                                         <ChevronRight size={14} className="text-slate-300" />

@@ -69,7 +69,19 @@ export const useClientProfileData = (userId: string | undefined) => {
 
 
                 // Process Profile
-                const profile = profileRes.data as UserProfile | null;
+                const rawProfile = profileRes.data;
+                const profile: UserProfile | null = rawProfile ? {
+                    id: rawProfile.id,
+                    name: rawProfile.full_name,
+                    email: rawProfile.email,
+                    type: rawProfile.user_type === 'company' ? 'company' : 'client',
+                    avatar: rawProfile.avatar_url,
+                    role: rawProfile.role,
+                    cpf: rawProfile.cpf,
+                    phone: rawProfile.phone,
+                    date_of_birth: rawProfile.date_of_birth,
+                    address: rawProfile.address // Novo objeto JSONB
+                } : null;
 
                 // Process Bookings
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -83,7 +95,14 @@ export const useClientProfileData = (userId: string | undefined) => {
                 // Process Orders & Total Spent
                 const orders = (ordersRes.data || []) as DbOrder[];
                 const totalSpent = orders
-                    .filter(o => o.payment_status === 'paid' || o.status === 'completed' || o.saga_status === 'COMPLETED')
+                    .filter(o => 
+                        o.payment_status === 'paid' || 
+                        o.saga_status === 'COMPLETED' ||
+                        o.saga_status === 'ORDER_ACTIVE' ||
+                        o.saga_status === 'WAITING_ACCEPTANCE' || // SagaStatus version
+                        (o as any).status === 'completed' ||
+                        (o as any).status === 'in_progress'
+                    )
                     .reduce((acc, curr) => acc + (Number(curr.price) || 0), 0);
 
                 // Process Quotes

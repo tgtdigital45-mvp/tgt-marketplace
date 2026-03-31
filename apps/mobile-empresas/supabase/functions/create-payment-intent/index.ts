@@ -63,6 +63,7 @@ Deno.serve(async (req: Request) => {
             .select(`
                 id, 
                 price, 
+                status,
                 seller_id, 
                 buyer_id, 
                 companies:seller_id (

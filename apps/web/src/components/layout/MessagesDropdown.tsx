@@ -127,9 +127,9 @@ const MessagesDropdown: React.FC = () => {
                                             >
                                                 <div className="mt-1 flex-shrink-0 w-10 h-10 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center font-bold text-gray-500 shadow-sm border border-gray-200">
                                                     {thread.partnerAvatar ? (
-                                                        <img src={thread.partnerAvatar} alt={thread.partnerName} className="w-full h-full object-cover" />
+                                                        <img src={thread.partnerAvatar} alt={thread.partnerName || 'Usuário'} className="w-full h-full object-cover" />
                                                     ) : (
-                                                        thread.partnerName.charAt(0).toUpperCase()
+                                                        (thread.partnerName || 'P').charAt(0).toUpperCase()
                                                     )}
                                                 </div>
                                                 <div className="flex-1 min-w-0">

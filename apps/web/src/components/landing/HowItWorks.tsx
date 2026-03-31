@@ -1,31 +1,40 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Search, BarChart3, Handshake } from 'lucide-react';
+import { Search, Handshake, QrCode, CheckCircle } from 'lucide-react';
 
 const steps = [
   {
     number: '01',
     icon: Search,
-    title: 'Pesquise',
-    description: 'Busque por categoria, especialidade ou localizacao entre milhares de prestadores verificados.',
+    title: 'Procura',
+    description: 'Encontre o especialista ideal para o seu projeto entre milhares de prestadores verificados.',
     accent: 'from-primary-500 to-primary-600',
     bg: 'bg-primary-50',
     iconColor: 'text-primary-600',
   },
   {
     number: '02',
-    icon: BarChart3,
-    title: 'Compare',
-    description: 'Analise portfolios, avaliacoes reais e orcamentos transparentes lado a lado.',
-    accent: 'from-brand-secondary to-blue-700',
+    icon: Handshake,
+    title: 'Contrata',
+    description: 'Pague com segurança pela plataforma e combine os detalhes diretamente com o profissional.',
+    accent: 'from-blue-500 to-blue-600',
     bg: 'bg-blue-50',
-    iconColor: 'text-brand-secondary',
+    iconColor: 'text-blue-600',
   },
   {
     number: '03',
-    icon: Handshake,
-    title: 'Contrate',
-    description: 'Feche o negocio com seguranca, garantia de entrega e suporte dedicado da CONTRATTO.',
+    icon: QrCode,
+    title: 'QR Code',
+    description: 'Para serviços presenciais, valide o início do atendimento escaneando o código via app.',
+    accent: 'from-amber-500 to-amber-600',
+    bg: 'bg-amber-50',
+    iconColor: 'text-amber-600',
+  },
+  {
+    number: '04',
+    icon: CheckCircle,
+    title: 'Concluído',
+    description: 'Após a entrega, o valor é liberado ao profissional e você avalia a experiência.',
     accent: 'from-emerald-500 to-emerald-600',
     bg: 'bg-emerald-50',
     iconColor: 'text-emerald-600',
@@ -47,14 +56,14 @@ const HowItWorks: React.FC = () => {
           className="text-center mb-12 sm:mb-16 lg:mb-20"
         >
           <span className="text-brand-secondary font-bold tracking-[0.2em] text-[10px] sm:text-xs uppercase mb-3 sm:mb-4 block">
-            Simples e Rapido
+            Simples e Rápido
           </span>
           <h2 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 tracking-tight">
             Como <span className="text-brand-secondary">Funciona</span>
           </h2>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 lg:gap-12 relative">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 lg:gap-12 relative">
           {/* Connecting line - desktop only */}
           <div className="hidden md:block absolute top-[72px] left-[16%] right-[16%] h-[2px] bg-gradient-to-r from-primary-200 via-blue-200 to-emerald-200 z-0" />
 

@@ -36,8 +36,8 @@ const ClientOrdersPage: React.FC = () => {
         window.location.reload(); // Temporary simple refresh until mutation hook added
     };
 
-    const activeBookings = bookings.filter(o => ['pending', 'pending_quote', 'answered_quote', 'confirmed', 'in_progress', 'ongoing', 'active', 'awaiting_approval', 'disputed'].includes(o.status));
-    const historyBookings = bookings.filter(o => ['completed', 'cancelled', 'canceled', 'rejected'].includes(o.status));
+    const activeBookings = bookings.filter(o => ['pending', 'pending_quote', 'answered_quote', 'confirmed', 'in_progress', 'ongoing', 'active', 'delivered', 'awaiting_approval', 'disputed'].includes(o.status));
+    const historyBookings = bookings.filter(o => ['completed', 'cancelled', 'rejected'].includes(o.status));
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -55,7 +55,7 @@ const ClientOrdersPage: React.FC = () => {
                     className={`pb-4 px-6 font-medium text-sm transition-colors whitespace-nowrap relative ${activeTab === 'requests' ? 'text-brand-primary' : 'text-gray-500 hover:text-gray-700'
                         }`}
                 >
-                    Orçamentos Abertos ({jobs.filter(j => j.status === 'open').length})
+                    OrÃ§amentos Abertos ({jobs.filter(j => j.status === 'open').length})
                     {activeTab === 'requests' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-brand-primary rounded-t-full"></span>}
                 </button>
                 <button
@@ -71,7 +71,7 @@ const ClientOrdersPage: React.FC = () => {
                     className={`pb-4 px-6 font-medium text-sm transition-colors whitespace-nowrap relative ${activeTab === 'history' ? 'text-brand-primary' : 'text-gray-500 hover:text-gray-700'
                         }`}
                 >
-                    Histórico
+                    HistÃ³rico
                     {activeTab === 'history' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-brand-primary rounded-t-full"></span>}
                 </button>
             </div>
@@ -93,9 +93,9 @@ const ClientOrdersPage: React.FC = () => {
                         {activeTab === 'requests' && (
                             jobs.length === 0 ? (
                                 <div className="text-center py-16 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-                                    <h3 className="text-lg font-medium text-gray-900">Você ainda não pediu nenhum orçamento.</h3>
+                                    <h3 className="text-lg font-medium text-gray-900">VocÃª ainda nÃ£o pediu nenhum orÃ§amento.</h3>
                                     <p className="text-gray-500 mb-4">Publique sua primeira necessidade agora.</p>
-                                    <Button onClick={() => navigate('/cliente/novo-pedido')}>Solicitar Orçamento</Button>
+                                    <Button onClick={() => navigate('/cliente/novo-pedido')}>Solicitar OrÃ§amento</Button>
                                 </div>
                             ) : (
                                 jobs.map(job => (
@@ -140,7 +140,7 @@ const ClientOrdersPage: React.FC = () => {
                         {/* ACTIVE TAB (BOOKINGS) */}
                         {activeTab === 'active' && (
                             activeBookings.length === 0 ? (
-                                <div className="text-center py-10 bg-gray-50 rounded-lg text-gray-500">Nenhum serviço agendado no momento.</div>
+                                <div className="text-center py-10 bg-gray-50 rounded-lg text-gray-500">Nenhum serviÃ§o agendado no momento.</div>
                             ) : (
                                 activeBookings.map(order => (
                                     <BookingCard 
@@ -155,7 +155,7 @@ const ClientOrdersPage: React.FC = () => {
                         {/* HISTORY TAB */}
                         {activeTab === 'history' && (
                             historyBookings.length === 0 ? (
-                                <div className="text-center py-10 bg-gray-50 rounded-lg text-gray-500">Histórico vazio.</div>
+                                <div className="text-center py-10 bg-gray-50 rounded-lg text-gray-500">HistÃ³rico vazio.</div>
                             ) : (
                                 historyBookings.map(order => <BookingCard key={order.id} order={order} />)
                             )
@@ -170,7 +170,7 @@ const ClientOrdersPage: React.FC = () => {
                 order={reviewModal.order}
                 onSuccess={() => {
                     fetchOrders();
-                    addToast('Avaliação enviada com sucesso!', 'success');
+                    addToast('AvaliaÃ§Ã£o enviada com sucesso!', 'success');
                 }}
             />
         </div>
@@ -193,10 +193,11 @@ const BookingCard: React.FC<{ order: any, onReview?: () => void }> = ({ order, o
                 }`}>
                     {order.status === 'confirmed' ? 'Agendado' : 
                      order.status === 'pending' ? 'Pendente' : 
-                     order.status === 'pending_quote' ? 'Aguardando Orçamento' :
-                     order.status === 'answered_quote' ? 'Orçamento Respondido' :
+                     order.status === 'pending_quote' ? 'Aguardando OrÃ§amento' :
+                     order.status === 'answered_quote' ? 'OrÃ§amento Respondido' :
                      order.status === 'active' || order.status === 'in_progress' ? 'Em Andamento' : 
-                     order.status === 'awaiting_approval' ? 'Aguardando Aprovação' :
+                     order.status === 'delivered' || order.status === 'awaiting_approval' ? 'Aguardando AprovaÃ§Ã£o' :
+                     order.status === 'cancelled' ? 'Cancelado' :
                      order.status === 'disputed' ? 'Em Disputa' :
                      order.status}
                 </span>

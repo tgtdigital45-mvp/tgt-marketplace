@@ -140,7 +140,7 @@ export const useClientOrders = (userId: string | undefined) => {
                         companyName: sellerCompany?.company_name || b.seller?.full_name || 'Empresa',
                         serviceName: b.service_title || b.service?.title || 'Serviço',
                         price: b.price || b.budget_expectation || 0,
-                        date: b.scheduled_for || b.created_at,
+                        date: b.scheduled_for || b.created_at || new Date().toISOString(),
                         time: b.scheduled_for 
                             ? new Date(b.scheduled_for).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
                             : 'A Combinar',

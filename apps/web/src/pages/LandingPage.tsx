@@ -19,18 +19,18 @@ const CATEGORY_OPTIONS = [
   { label: 'Advocacia', value: 'Advocacia' },
   { label: 'Arquitetura', value: 'Arquitetura' },
   { label: 'Fotografia', value: 'Fotografia' },
-  { label: 'Educacao', value: 'Educação' },
-  { label: 'Saude', value: 'Saúde' },
+  { label: 'Educação', value: 'Educação' },
+  { label: 'Saúde', value: 'Saúde' },
 ];
 
 const CITY_OPTIONS = [
   { label: 'Todas as Cidades', value: '' },
   { label: 'Curitiba', value: 'Curitiba' },
   { label: 'Londrina', value: 'Londrina' },
-  { label: 'Maringa', value: 'Maringá' },
+  { label: 'Maringá', value: 'Maringá' },
   { label: 'Cascavel', value: 'Cascavel' },
   { label: 'Ponta Grossa', value: 'Ponta Grossa' },
-  { label: 'Foz do Iguacu', value: 'Foz do Iguaçu' },
+  { label: 'Foz do Iguaçu', value: 'Foz do Iguaçu' },
   { label: 'Guarapuava', value: 'Guarapuava' },
   { label: 'Paranagua', value: 'Paranaguá' },
   { label: 'Toledo', value: 'Toledo' },
@@ -44,22 +44,22 @@ const CITY_OPTIONS = [
 ];
 
 const PRICE_OPTIONS = [
-  { label: 'Todos os Precos', value: 'all' },
-  { label: 'Ate R$ 100', value: 'low' },
+  { label: 'Todos os Preços', value: 'all' },
+  { label: 'Até R$ 100', value: 'low' },
   { label: 'R$ 100 - R$ 300', value: 'mid' },
   { label: 'Acima de R$ 300', value: 'high' },
 ];
 
 const SORT_OPTIONS = [
-  { label: 'Melhor Avaliacao', value: 'rating' },
+  { label: 'Melhor Avaliação', value: 'rating' },
   { label: 'Nome (A-Z)', value: 'name' },
 ];
 
 const ITEMS_PER_PAGE_OPTIONS = [
-  { label: '8 por pagina', value: '8' },
-  { label: '16 por pagina', value: '16' },
-  { label: '24 por pagina', value: '24' },
-  { label: '48 por pagina', value: '48' },
+  { label: '8 por página', value: '8' },
+  { label: '16 por página', value: '16' },
+  { label: '24 por página', value: '24' },
+  { label: '48 por página', value: '48' },
 ];
 
 const CompaniesListPage: React.FC = () => {
@@ -109,7 +109,7 @@ const CompaniesListPage: React.FC = () => {
 
 
   const getDynamicTitle = () => {
-    let title = 'Guia de Empresas e Servicos';
+    let title = 'Guia de Empresas e Serviços';
     if (searchTerm) title = `${searchTerm}`;
     else if (selectedCategory !== 'all') title = `${selectedCategory}`;
     if (locationTerm) title += ` em ${locationTerm}`;
@@ -246,7 +246,7 @@ const CompaniesListPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4 sm:mb-6 tracking-tight px-2 sm:px-0"
             >
-              Encontre <span className="text-primary-400 italic">Excelencia</span> em cada servico
+              Encontre <span className="text-primary-400 italic">Excelência</span> em cada serviço
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 10 }}
@@ -274,7 +274,7 @@ const CompaniesListPage: React.FC = () => {
                 type="text"
                 value={internalSearch}
                 onChange={(e) => setInternalSearch(e.target.value)}
-                placeholder="O que voce precisa hoje?"
+                placeholder="O que você precisa hoje?"
                 className="w-full pl-10 sm:pl-14 pr-3 sm:pr-4 py-3 sm:py-4 bg-transparent border-none outline-none text-slate-900 placeholder:text-slate-400 font-medium text-sm sm:text-base"
               />
             </div>
@@ -285,7 +285,7 @@ const CompaniesListPage: React.FC = () => {
               <input
                 value={internalLocation}
                 onChange={(e) => setInternalLocation(e.target.value)}
-                placeholder="Localizacao"
+                placeholder="Localização"
                 className="w-full pl-10 sm:pl-14 pr-3 sm:pr-4 py-3 sm:py-4 bg-transparent border-none outline-none text-slate-900 placeholder:text-slate-400 font-medium text-sm sm:text-base"
               />
             </div>
@@ -329,7 +329,7 @@ const CompaniesListPage: React.FC = () => {
             <div className="bg-white p-6 xl:p-8 rounded-2xl xl:rounded-[32px] border border-slate-200 shadow-sm sticky top-20">
               <div className="flex items-center gap-2 mb-6 xl:mb-8 pb-3 xl:pb-4 border-b border-slate-100">
                 <SlidersHorizontal size={16} className="text-primary-600" />
-                <h2 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Filtros Avancados</h2>
+                <h2 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Filtros Avançados</h2>
               </div>
               <FiltersContent />
             </div>
@@ -344,7 +344,7 @@ const CompaniesListPage: React.FC = () => {
               </p>
               {totalPages > 1 && (
                 <p className="text-xs text-slate-400">
-                  Pagina {currentPage} de {totalPages}
+                  Página {currentPage} de {totalPages}
                 </p>
               )}
             </div>
@@ -360,7 +360,7 @@ const CompaniesListPage: React.FC = () => {
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
                   className="h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center border border-slate-200 rounded-full disabled:opacity-30 hover:bg-white transition-colors bg-slate-50"
-                  aria-label="Pagina Anterior"
+                  aria-label="Página Anterior"
                 >
                   <ChevronLeft className="text-slate-500" size={16} />
                 </button>
@@ -388,7 +388,7 @@ const CompaniesListPage: React.FC = () => {
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
                   className="h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center border border-slate-200 rounded-full disabled:opacity-30 hover:bg-white transition-colors bg-slate-50"
-                  aria-label="Proxima Pagina"
+                  aria-label="Próxima Página"
                 >
                   <ChevronRight className="text-slate-500" size={16} />
                 </button>

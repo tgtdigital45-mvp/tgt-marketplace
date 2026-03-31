@@ -9,22 +9,22 @@ const plans = [
   {
     name: 'Essencial',
     price: '49',
-    description: 'Para profissionais que querem marcar presenca e comecar a receber orcamentos.',
-    features: ['Perfil profissional completo', 'Ate 5 fotos na galeria', 'Receber avaliacoes de clientes', 'Suporte por email'],
+    description: 'Para profissionais que querem marcar presença e começar a receber orçamentos.',
+    features: ['Perfil profissional completo', 'Até 5 fotos na galeria', 'Receber avaliações de clientes', 'Suporte por e-mail'],
     isPopular: false,
   },
   {
     name: 'Crescimento',
     price: '129',
     description: 'O plano mais escolhido por empresas que querem escalar sua visibilidade.',
-    features: ['Tudo do Essencial', 'Galeria ilimitada de fotos', 'Destaque nos resultados de busca', 'Dashboard com metricas', 'Suporte prioritario'],
+    features: ['Tudo do Essencial', 'Galeria ilimitada de fotos', 'Destaque nos resultados de busca', 'Dashboard com métricas', 'Suporte prioritário'],
     isPopular: true,
   },
   {
     name: 'Enterprise',
     price: '299',
-    description: 'Para empresas que exigem maxima visibilidade, dados e gestao dedicada.',
-    features: ['Tudo do Crescimento', 'Gerente de conta exclusivo', 'Relatorios customizados', 'API de integracao', 'Auditoria de reputacao'],
+    description: 'Para empresas que exigem máxima visibilidade, dados e gestão dedicada.',
+    features: ['Tudo do Crescimento', 'Gerente de conta exclusivo', 'Relatórios customizados', 'API de integração', 'Auditoria de reputação'],
     isPopular: false,
   },
 ];
@@ -49,7 +49,7 @@ const PricingSection: React.FC = () => {
             Investimento
           </span>
           <h2 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-5 tracking-tight px-2 sm:px-0">
-            Invista no crescimento do seu <span className="text-primary-400">negocio</span>
+            Invista no crescimento do seu <span className="text-primary-400">negócio</span>
           </h2>
           <p className="text-slate-400 max-w-2xl mx-auto text-sm sm:text-base lg:text-lg px-2 sm:px-0">
             Escolha o plano certo para o momento da sua empresa. Sem fidelidade, cancele quando quiser.
@@ -85,7 +85,7 @@ const PricingSection: React.FC = () => {
                 </p>
                 <div className="flex items-baseline gap-1 mb-6 sm:mb-8">
                   <span className="font-display text-3xl sm:text-4xl font-black tracking-tight">R$ {plan.price}</span>
-                  <span className={`text-xs sm:text-sm font-medium ${plan.isPopular ? 'text-slate-400' : 'text-slate-500'}`}>/mes</span>
+                  <span className={`text-xs sm:text-sm font-medium ${plan.isPopular ? 'text-slate-400' : 'text-slate-500'}`}>/mês</span>
                 </div>
 
                 <ul className="space-y-3 sm:space-y-4 mb-8 sm:mb-10">
@@ -112,7 +112,7 @@ const PricingSection: React.FC = () => {
                     : 'border-white/20 text-white hover:bg-white/10 transition-colors'
                 }`}
               >
-                Comecar agora <ArrowRight size={16} className="ml-2" />
+                Começar agora <ArrowRight size={16} className="ml-2" />
               </Button>
             </motion.div>
           ))}

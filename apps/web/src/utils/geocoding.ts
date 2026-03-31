@@ -14,27 +14,48 @@ export async function getCoordinatesFromAddress(
     country: string = 'Brasil'
 ): Promise<{ lat: number; lng: number } | null> {
     try {
-        const query = `${street}, ${number} - ${district}, ${city} - ${state}, ${country}`;
-        const encodedQuery = encodeURIComponent(query);
+        // Query 1: Mais específica (Rua, Número, Bairro, Cidade)
+        const query1 = `${street}, ${number} - ${district}, ${city} - ${state}, ${country}`;
+        const encodedQuery1 = encodeURIComponent(query1);
 
         // Using Nominatim (OSM)
-        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodedQuery}&limit=1`;
+        const url1 = `https://nominatim.openstreetmap.org/search?format=json&q=${encodedQuery1}&limit=1`;
 
-        const response = await fetch(url, {
+        const response1 = await fetch(url1, {
             headers: {
-                'User-Agent': 'CONTRATTO/1.0' // Nominatim requires User-Agent
+                'User-Agent': 'CONTRATTO/1.0'
             }
         });
 
-        if (!response.ok) return null;
+        if (response1.ok) {
+            const data1 = await response1.json();
+            if (data1 && data1.length > 0) {
+                return {
+                    lat: parseFloat(data1[0].lat),
+                    lng: parseFloat(data1[0].lon)
+                };
+            }
+        }
 
-        const data = await response.json();
+        // Query 2: Menos específica se a primeira falhar (Sem bairro, as vezes Nominatim se perde no bairro)
+        const query2 = `${street}, ${number}, ${city} - ${state}, ${country}`;
+        const encodedQuery2 = encodeURIComponent(query2);
+        const url2 = `https://nominatim.openstreetmap.org/search?format=json&q=${encodedQuery2}&limit=1`;
 
-        if (data && data.length > 0) {
-            return {
-                lat: parseFloat(data[0].lat),
-                lng: parseFloat(data[0].lon)
-            };
+        const response2 = await fetch(url2, {
+            headers: {
+                'User-Agent': 'CONTRATTO/1.0'
+            }
+        });
+
+        if (response2.ok) {
+            const data2 = await response2.json();
+            if (data2 && data2.length > 0) {
+                return {
+                    lat: parseFloat(data2[0].lat),
+                    lng: parseFloat(data2[0].lon)
+                };
+            }
         }
 
         return null;

@@ -22,9 +22,12 @@ import { useSimilarCompanies } from '@/hooks/useSimilarCompanies';
 
 import ProfileSidebar from '@/components/ProfileSidebar';
 import ReviewsList from '@/components/ReviewsList';
+import ProjectCard from '@/components/profile/ProjectCard';
+import ProjectDetailModal from '@/components/profile/ProjectDetailModal';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import PortfolioLightbox from '@/components/PortfolioLightbox';
-import { LayoutGrid, Info, Star, MapPin as MapPinIcon, Youtube } from 'lucide-react';
+import { LayoutGrid, Info, Star, MapPin as MapPinIcon, Youtube, Briefcase } from 'lucide-react';
+import { CompanyProject } from '@tgt/core';
 import { LoadingSkeleton } from '@tgt/ui-web';
 
 const CompanyProfilePage: React.FC = () => {
@@ -41,6 +44,7 @@ const CompanyProfilePage: React.FC = () => {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedProject, setSelectedProject] = useState<CompanyProject | null>(null);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [lightboxState, setLightboxState] = useState<{ isOpen: boolean; index: number }>({ isOpen: false, index: 0 });
 
@@ -247,6 +251,31 @@ const CompanyProfilePage: React.FC = () => {
                   </div>
                 )}
 
+                {/* 3.5. Projetos (Cases de Sucesso) */}
+                {company.projects && company.projects.length > 0 && (
+                   <div className="mb-14">
+                      <div className="flex items-center justify-between gap-3 mb-6">
+                        <h3 className="font-display text-xl font-bold text-gray-900 flex items-center gap-2">
+                          <Briefcase className="w-6 h-6 text-brand-primary" />
+                          Projetos
+                        </h3>
+                        <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
+                          {company.projects.length} Case{company.projects.length > 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {company.projects.slice(0, 5).map((project) => (
+                          <ProjectCard 
+                            key={project.id} 
+                            project={project} 
+                            onClick={() => setSelectedProject(project)} 
+                          />
+                        ))}
+                      </div>
+                   </div>
+                )}
+
                 {/* 4. Avaliações */}
                 <div className="mb-14">
                   <div className="flex items-center justify-between gap-3 mb-8">
@@ -351,6 +380,13 @@ const CompanyProfilePage: React.FC = () => {
           initialIndex={lightboxState.index}
           isOpen={lightboxState.isOpen}
           onClose={() => setLightboxState({ isOpen: false, index: 0 })}
+        />
+
+        <ProjectDetailModal 
+          project={selectedProject}
+          isOpen={!!selectedProject}
+          onClose={() => setSelectedProject(null)}
+          services={company.services}
         />
       </Suspense>
     </main>

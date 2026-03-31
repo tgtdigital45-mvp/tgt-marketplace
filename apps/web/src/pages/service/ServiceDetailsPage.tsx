@@ -376,7 +376,35 @@ const ServiceDetailsPage = () => {
                             </div>
                         </div>
 
-                        {/* 4. About Service */}
+                        {/* 3.5 Delivery Information */}
+                        <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 flex items-start gap-4 mt-8 group hover:border-blue-100 transition-colors">
+                            <div className="bg-white p-3 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
+                                {service.location_type === 'in_store' ? (
+                                    <MapPinIcon className="w-6 h-6 text-blue-600" />
+                                ) : service.location_type === 'at_home' ? (
+                                    <UserGroupIcon className="w-6 h-6 text-emerald-600" />
+                                ) : service.location_type === 'hybrid' ? (
+                                    <GlobeAmericasIcon className="w-6 h-6 text-amber-600" />
+                                ) : (
+                                    <GlobeAmericasIcon className="w-6 h-6 text-indigo-600" />
+                                )}
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-slate-900 mb-1">Dinâmica de Atendimento</h3>
+                                <p className="text-sm text-slate-600 leading-relaxed">
+                                    {service.location_type === 'in_store' ? (
+                                        <><strong>Presencial na Empresa:</strong> O cliente deve se deslocar até o estabelecimento do profissional após a confirmação do agendamento.</>
+                                    ) : service.location_type === 'at_home' ? (
+                                        <><strong>Presencial no Cliente:</strong> O profissional irá até o seu endereço para realizar o atendimento no horário agendado.</>
+                                    ) : service.location_type === 'hybrid' ? (
+                                        <><strong>Híbrido / Flexível:</strong> O atendimento pode ser presencial ou online, dependendo da necessidade e combinação direta.</>
+                                    ) : (
+                                        <><strong>Atendimento Remoto:</strong> Este é um serviço digital. Toda a entrega e suporte serão realizados de forma 100% online.</>
+                                    )}
+                                </p>
+                            </div>
+                        </div>
+
                         <div className="space-y-6 mt-8">
                             <h2 className="font-display text-2xl font-bold text-gray-900">Sobre este serviço</h2>
                             <div className="prose prose-purple max-w-none text-gray-600 whitespace-pre-wrap">

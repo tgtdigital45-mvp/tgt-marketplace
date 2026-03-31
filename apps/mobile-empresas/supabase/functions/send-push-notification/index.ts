@@ -44,6 +44,32 @@ Deno.serve(async (req: Request) => {
     }
 
     try {
+        // Require Authentication
+        const authHeader = req.headers.get("Authorization");
+        if (!authHeader) {
+            return new Response(JSON.stringify({ error: "Unauthorized: Missing Authorization header" }), {
+                status: 401,
+                headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+        }
+
+        const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+            headers: {
+                Authorization: authHeader,
+                apikey: Deno.env.get("SUPABASE_ANON_KEY") || supabaseKey, 
+                // Fallback to service key if no ANON_KEY set
+            },
+        });
+
+        if (!userRes.ok) {
+            return new Response(JSON.stringify({ error: "Unauthorized: Invalid token" }), {
+                status: 401,
+                headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+        }
+
+        const user = await userRes.json();
+        
         const reqJson = await req.json();
         let payload: NotificationPayload;
 

@@ -61,6 +61,7 @@ const NewsPage = lazy(() => import('@/pages/institucional/NewsPage'));
 const BlogPage = lazy(() => import('@/pages/institucional/BlogPage'));
 const BlogDetailPage = lazy(() => import('@/pages/institucional/BlogDetailPage'));
 const NewsDetailPage = lazy(() => import('@/pages/NewsDetailPage'));
+const BipPostPage = lazy(() => import('@/pages/info/BipPostPage'));
 
 // Animated route wrapper
 const AnimatedElement = ({ children }: { children: React.ReactElement }) => (
@@ -175,6 +176,7 @@ const MainRoutes = () => {
                         <Route path="/sobre" element={<Navigate to="/institucional/sobre" replace />} />
                         <Route path="/noticias" element={<Navigate to="/institucional/noticias" replace />} />
                         <Route path="/noticias/:slug" element={<AnimatedElement><NewsDetailPage /></AnimatedElement>} />
+                        <Route path="/bip/como-funciona" element={<AnimatedElement><BipPostPage /></AnimatedElement>} />
                         <Route path="/blog" element={<Navigate to="/institucional/blog" replace />} />
                         <Route path="/institucional/blog/:slug" element={<AnimatedElement><BlogDetailPage /></AnimatedElement>} />
 

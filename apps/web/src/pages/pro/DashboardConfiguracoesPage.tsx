@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 
 
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,9 +24,9 @@ type TabKey = 'geral' | 'notificacoes' | 'seguranca' | 'horarios' | 'danger';
 
 const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: 'geral', label: 'Geral', icon: <Settings size={14} /> },
-  { key: 'notificacoes', label: 'Notificacoes', icon: <Bell size={14} /> },
-  { key: 'seguranca', label: 'Seguranca', icon: <Lock size={14} /> },
-  { key: 'horarios', label: 'Horarios', icon: <Clock size={14} /> },
+  { key: 'notificacoes', label: 'Notificações', icon: <Bell size={14} /> },
+  { key: 'seguranca', label: 'Segurança', icon: <Lock size={14} /> },
+  { key: 'horarios', label: 'Horários', icon: <Clock size={14} /> },
   { key: 'danger', label: 'Perigo', icon: <AlertTriangle size={14} /> },
 ];
 
@@ -69,19 +69,19 @@ const DashboardConfiguracoesPage: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
     setTimeout(() => {
-      addToast('Configuracoes gerais salvas com sucesso!', 'success');
+      addToast('Configurações gerais salvas com sucesso!', 'success');
       setIsLoading(false);
     }, 1000);
   };
 
   const handleSaveNotifications = () => {
-    addToast('Preferencias de notificacao atualizadas.', 'success');
+    addToast('Preferências de notificação atualizadas.', 'success');
   };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     if (passwordData.new !== passwordData.confirm) {
-      addToast('As senhas nao coincidem.', 'error');
+      addToast('As senhas não coincidem.', 'error');
       return;
     }
     setIsLoading(true);
@@ -108,11 +108,11 @@ const DashboardConfiguracoesPage: React.FC = () => {
       >
         <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
           <span>Dashboard</span><ChevronRight size={12} />
-          <span className="text-gray-600 font-medium">Configuracoes</span>
+          <span className="text-gray-600 font-medium">Configurações</span>
         </div>
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Configuracoes</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Configurações</h1>
         <p className="text-xs sm:text-sm text-gray-400 mt-0.5">
-          Gerencie as preferencias da sua conta e empresa
+          Gerencie as preferências da sua conta e empresa
         </p>
       </motion.div>
 
@@ -156,8 +156,8 @@ const DashboardConfiguracoesPage: React.FC = () => {
           {activeTab === 'geral' && (
             <form onSubmit={handleSaveGeneral} className="space-y-6 max-w-2xl">
               <div>
-                <h3 className="text-sm font-bold text-gray-800">Informacoes da Conta</h3>
-                <p className="text-xs text-gray-400 mt-0.5">Dados basicos da sua empresa na plataforma</p>
+                <h3 className="text-sm font-bold text-gray-800">Informações da Conta</h3>
+                <p className="text-xs text-gray-400 mt-0.5">Dados básicos da sua empresa na plataforma</p>
               </div>
 
               <div className="space-y-4">
@@ -166,7 +166,7 @@ const DashboardConfiguracoesPage: React.FC = () => {
                   <div className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-500">
                     {company?.company_name || '—'}
                   </div>
-                  <p className="mt-1 text-[10px] text-gray-400">Altere o nome via pagina de Perfil.</p>
+                  <p className="mt-1 text-[10px] text-gray-400">Altere o nome via página de Perfil.</p>
                 </div>
 
                 <div>
@@ -182,7 +182,7 @@ const DashboardConfiguracoesPage: React.FC = () => {
 
               <div className="pt-4 border-t border-gray-100">
                 <Button type="submit" isLoading={isLoading} size="sm" className="!rounded-xl">
-                  Salvar Alteracoes
+                  Salvar Alterações
                 </Button>
               </div>
             </form>
@@ -192,8 +192,8 @@ const DashboardConfiguracoesPage: React.FC = () => {
           {activeTab === 'notificacoes' && (
             <div className="space-y-6 max-w-2xl">
               <div>
-                <h3 className="text-sm font-bold text-gray-800">Preferencias de Notificacao</h3>
-                <p className="text-xs text-gray-400 mt-0.5">Controle como e quando voce recebe alertas</p>
+                <h3 className="text-sm font-bold text-gray-800">Preferências de Notificação</h3>
+                <p className="text-xs text-gray-400 mt-0.5">Controle como e quando você recebe alertas</p>
               </div>
 
               <div className="divide-y divide-gray-50">
@@ -205,19 +205,19 @@ const DashboardConfiguracoesPage: React.FC = () => {
                 />
                 <ToggleRow
                   label="Mensagens"
-                  description="Notificacoes de novas mensagens no chat"
+                  description="Notificações de novas mensagens no chat"
                   enabled={notifications.email_messages}
                   onChange={v => setNotifications(s => ({ ...s, email_messages: v }))}
                 />
                 <ToggleRow
                   label="Marketing"
-                  description="Dicas, promocoes e novidades da plataforma"
+                  description="Dicas, promoções e novidades da plataforma"
                   enabled={notifications.email_marketing}
                   onChange={v => setNotifications(s => ({ ...s, email_marketing: v }))}
                 />
                 <ToggleRow
                   label="Alertas SMS"
-                  description="Receba notificacoes urgentes via SMS"
+                  description="Receba notificações urgentes via SMS"
                   enabled={notifications.sms_alerts}
                   onChange={v => setNotifications(s => ({ ...s, sms_alerts: v }))}
                 />
@@ -225,7 +225,7 @@ const DashboardConfiguracoesPage: React.FC = () => {
 
               <div className="pt-4 border-t border-gray-100">
                 <Button onClick={handleSaveNotifications} size="sm" className="!rounded-xl">
-                  Salvar Preferencias
+                  Salvar Preferências
                 </Button>
               </div>
             </div>
@@ -246,7 +246,7 @@ const DashboardConfiguracoesPage: React.FC = () => {
                 onChange={e => setPasswordData(s => ({ ...s, new: e.target.value }))}
                 required
                 minLength={6}
-                placeholder="Minimo 6 caracteres"
+                placeholder="Mínimo 6 caracteres"
               />
               <Input
                 label="Confirmar Nova Senha"
@@ -270,15 +270,15 @@ const DashboardConfiguracoesPage: React.FC = () => {
           {activeTab === 'horarios' && (
             <div className="space-y-6 max-w-2xl">
               <div>
-                <h3 className="text-sm font-bold text-gray-800">Horarios de Atendimento</h3>
-                <p className="text-xs text-gray-400 mt-0.5">Configure sua disponibilidade na pagina de Agenda</p>
+                <h3 className="text-sm font-bold text-gray-800">Horários de Atendimento</h3>
+                <p className="text-xs text-gray-400 mt-0.5">Configure sua disponibilidade na página de Agenda</p>
               </div>
 
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3">
                 <Calendar size={16} className="text-blue-500 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-xs text-blue-700 leading-relaxed">
-                    A edicao completa de horarios foi movida para a pagina <strong>Agenda</strong>, onde voce pode definir horarios por dia da semana, intervalos e feriados.
+                    A edição completa de horários foi movida para a página <strong>Agenda</strong>, onde você pode definir horários por dia da semana, intervalos e feriados.
                   </p>
                   <a
                     href={`/dashboard/empresa/${company?.slug}/agenda`}
@@ -307,13 +307,13 @@ const DashboardConfiguracoesPage: React.FC = () => {
             <div className="space-y-6 max-w-2xl">
               <div>
                 <h3 className="text-sm font-bold text-red-700">Zona de Perigo</h3>
-                <p className="text-xs text-gray-400 mt-0.5">Acoes irreversiveis que afetam permanentemente sua conta</p>
+                <p className="text-xs text-gray-400 mt-0.5">Ações irreversíveis que afetam permanentemente sua conta</p>
               </div>
 
               <div className="bg-red-50 border border-red-100 rounded-2xl p-5 sm:p-6">
                 <h4 className="text-sm font-bold text-red-800 mb-2">Excluir Conta</h4>
                 <p className="text-xs text-red-600 leading-relaxed mb-4 max-w-lg">
-                  Ao excluir sua conta, todos os seus dados, historico de servicos e informacoes da empresa serao permanentemente removidos. Esta acao nao pode ser desfeita.
+                  Ao excluir sua conta, todos os seus dados, histórico de serviços e informações da empresa serão permanentemente removidos. Esta ação não pode ser desfeita.
                 </p>
                 <button
                   type="button"

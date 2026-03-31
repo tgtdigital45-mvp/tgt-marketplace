@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
@@ -71,6 +72,7 @@ const ClientMessagesPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { addToast } = useToast();
   const { redirectToCheckout } = useCheckout();
+  const queryClient = useQueryClient();
   
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeThread, setActiveThread] = useState<Thread | null>(null);
@@ -202,6 +204,9 @@ const ClientMessagesPage: React.FC = () => {
       searchParams.delete('success');
       setSearchParams(searchParams);
       
+      // Force refresh of financial metrics and status in other parts of the dashboard
+      queryClient.invalidateQueries({ queryKey: ['client-profile-data', user.id] });
+
       supabase.from('orders').select('*').eq('id', activeThread.orderId).single().then(({ data }) => {
           if (data) {
               setOrderForSchedule(data);
@@ -427,16 +432,25 @@ const ClientMessagesPage: React.FC = () => {
                         className={`w-full p-4 flex gap-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-50 last:border-0 ${activeThread?.threadId === t.threadId ? 'bg-blue-50 border-l-[3px] border-l-brand-primary' : ''}`}
                       >
                         <div className="w-11 h-11 bg-gray-200 rounded-full shrink-0 flex items-center justify-center font-bold text-gray-500 overflow-hidden shadow-sm">
-                          {t.partnerAvatar ? <img src={t.partnerAvatar} className="w-full h-full object-cover" alt="" /> : t.partnerName.charAt(0).toUpperCase()}
+                          {t.partnerAvatar ? <img src={t.partnerAvatar} className="w-full h-full object-cover" alt="" /> : (t.partnerName || 'P').charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-grow min-w-0">
                           <div className="flex justify-between items-baseline mb-0.5">
-                            <span className="font-bold text-sm text-gray-900 truncate">{t.partnerName}</span>
+                            <span className="font-bold text-sm text-gray-900 truncate">
+                              {t.partnerName}
+                              <span className="mx-1.5 text-gray-300 font-normal">•</span>
+                              <span className="text-brand-primary text-[11px] uppercase font-bold">{t.jobTitle}</span>
+                            </span>
                             <span className="text-[10px] text-gray-400 ml-1 shrink-0">{new Date(t.lastMessageTime).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
                           </div>
-                          <p className="text-[10px] text-brand-primary uppercase font-bold truncate mb-0.5">{t.jobTitle}</p>
                           <div className="flex items-center gap-1">
-                            <p className="text-xs text-gray-400 truncate flex-grow">{t.lastMessage}</p>
+                            <p className="text-xs text-gray-400 truncate flex-grow">
+                              {t.lastMessage === 'Envie a primeira mensagem!' 
+                                ? t.lastMessage 
+                                : t.lastMessage.startsWith('{') 
+                                  ? '📎 Solicitação de pagamento'
+                                  : t.lastMessage}
+                            </p>
                             {t.unreadCount > 0 && (
                               <span className="shrink-0 bg-brand-primary text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
                                 {t.unreadCount > 9 ? '9+' : t.unreadCount}
@@ -458,11 +472,14 @@ const ClientMessagesPage: React.FC = () => {
                     <div className="flex items-center gap-3">
                       <button onClick={() => setActiveThread(null)} className="md:hidden text-gray-500 p-1"><ArrowLeft size={18} /></button>
                       <div className="w-10 h-10 bg-brand-primary rounded-full flex items-center justify-center text-white font-bold overflow-hidden shadow-sm shrink-0">
-                        {activeThread.partnerAvatar ? <img src={activeThread.partnerAvatar} className="w-full h-full object-cover" alt="" /> : activeThread.partnerName.charAt(0).toUpperCase()}
+                        {activeThread.partnerAvatar ? <img src={activeThread.partnerAvatar} className="w-full h-full object-cover" alt="" /> : (activeThread.partnerName || 'P').charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-grow min-w-0">
-                        <h3 className="font-bold text-gray-800 truncate text-sm">{activeThread.partnerName}</h3>
-                        <p className="text-[10px] text-brand-primary font-bold uppercase truncate">{activeThread.jobTitle}</p>
+                        <h3 className="font-bold text-gray-800 truncate text-sm">
+                          {activeThread.partnerName}
+                          <span className="mx-2 text-gray-300 font-normal">•</span>
+                          <span className="text-brand-primary font-bold uppercase">{activeThread.jobTitle}</span>
+                        </h3>
                       </div>
                     </div>
                     
@@ -676,7 +693,7 @@ const ClientMessagesPage: React.FC = () => {
                                   <div className={`p-3 space-y-3 ${isMe ? 'text-blue-50' : 'text-gray-600'}`}>
                                       <div className={`p-3 rounded-lg flex flex-col gap-2 ${isMe ? 'bg-black/10 text-white' : 'bg-gray-50 text-gray-800'}`}>
                                           <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-2">
-                                              <span className="font-bold text-xs uppercase opacity-80">Valor Total Booking:</span>
+                                              <span className="font-bold text-xs uppercase opacity-80">Valor Total:</span>
                                               <span className="font-black">R$ {msg.metadata.price.toFixed(2)}</span>
                                           </div>
                                           {msg.metadata.scheduledFor && (
@@ -687,6 +704,23 @@ const ClientMessagesPage: React.FC = () => {
                                               </div>
                                           )}
                                       </div>
+
+                                      {/* Briefing Responses */}
+                                      {msg.metadata.responses && (
+                                          <div className="space-y-2 mt-3">
+                                              <p className={`text-[10px] font-bold uppercase tracking-wider ${isMe ? 'text-white/60' : 'text-gray-400'}`}>
+                                                  Suas Respostas ao Profissional:
+                                              </p>
+                                              <div className="space-y-2">
+                                                  {Object.entries(msg.metadata.responses).map(([question, answer], idx) => (
+                                                      <div key={idx} className={`p-2 rounded-lg text-xs ${isMe ? 'bg-white/10' : 'bg-gray-50'}`}>
+                                                          <p className="font-bold mb-1 opacity-80">{question}</p>
+                                                          <p className="opacity-100 italic">"{String(answer)}"</p>
+                                                      </div>
+                                                  ))}
+                                              </div>
+                                          </div>
+                                      )}
                                   </div>
                               </div>
                             )}
@@ -962,7 +996,7 @@ const ClientInfoPanel: React.FC<{ thread: Thread }> = ({ thread }) => {
                 )}
 
                 <div className="space-y-2 pt-1">
-                  {order.status === 'delivered' && (
+                  {(order.status === 'delivered' || order.status === 'awaiting_approval') && (
                     <>
                       <Button size="sm" className="w-full bg-green-600 hover:bg-green-700 text-white text-xs" onClick={() => setIsReviewModalOpen(true)}>
                         <CheckCircle size={13} className="mr-1.5" />Aprovar e Finalizar
@@ -988,7 +1022,7 @@ const ClientInfoPanel: React.FC<{ thread: Thread }> = ({ thread }) => {
                       >Solicitar Revisão ({order.revision_count || 0}/3)</Button>
                     </>
                   )}
-                  {['active', 'in_progress', 'delivered'].includes(order.status) && (
+                  {['active', 'in_progress', 'delivered', 'awaiting_approval'].includes(order.status) && (
                     <Button size="sm" variant="secondary" className="w-full bg-white text-red-500 hover:bg-red-50 border border-red-200 text-xs" onClick={() => setIsDisputeModalOpen(true)}>
                       <AlertCircle size={13} className="mr-1.5" />Abrir Disputa
                     </Button>
