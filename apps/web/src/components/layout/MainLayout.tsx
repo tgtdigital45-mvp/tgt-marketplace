@@ -16,7 +16,7 @@ const MainLayout: React.FC = () => {
         <div className="flex flex-col min-h-screen bg-brand-background dark:bg-[#0B1120] transition-colors duration-300">
             <Header />
             <main
-                className="flex-grow"
+                className={`flex-grow ${!isTransparentPage ? 'pt-28 sm:pt-32' : ''}`}
                 style={{ minHeight: 'calc(100vh - 80px - 200px)' }}
             >
                 <MainRoutes />

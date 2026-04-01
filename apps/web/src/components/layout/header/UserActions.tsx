@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-
+import { HeadphonesIcon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import NotificationsDropdown from '@/components/layout/NotificationsDropdown';
 import MessagesDropdown from '@/components/layout/MessagesDropdown';
@@ -22,17 +22,29 @@ const UserActions: React.FC = () => {
     }
 
     return (
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-2 lg:gap-4 font-semibold text-[13px]">
             {!user && (
                 <>
+                    <Link to="/ajuda" className="flex items-center gap-2 text-slate-500 hover:text-brand-primary transition-all pr-1">
+                        <HeadphonesIcon className="w-4 h-4" />
+                        <span>Suporte</span>
+                    </Link>
+
+                    <div className="h-5 w-[1px] bg-slate-200/60 mx-1" />
+
                     <LoginDropdown />
 
                     <Link to="/cadastro/cliente">
                         <Button
-                            variant="primary"
-                            className="rounded-[var(--radius-box)]"
+                            className="rounded-full px-7 h-10 text-[11px] font-black uppercase tracking-wider shadow-sm transition-all hover:scale-[1.03] bg-[#04B4E0] hover:bg-[#039BBF] text-white border-none"
                         >
-                            Começar Grátis
+                            Cadastrar
+                        </Button>
+                    </Link>
+
+                    <Link to="/waitlist" className="hidden lg:block">
+                        <Button variant="outline" className="rounded-full px-7 h-10 text-[11px] font-black uppercase tracking-wider border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 hover:border-slate-300">
+                            Waitlist
                         </Button>
                     </Link>
                 </>

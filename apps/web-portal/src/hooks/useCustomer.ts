@@ -1,4 +1,4 @@
-﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@tgt/core';
 import { useCompany } from '@/contexts/CompanyContext';
 import { toast } from 'react-hot-toast';
@@ -134,6 +134,31 @@ export const useCustomer = (customerId: string | undefined) => {
       toast.success('Nota removida');
     }
   });
+
+  // 5. Subscribe to Realtime Updates
+  React.useEffect(() => {
+    if (!company?.id || !customerId) return;
+
+    const channel = supabase
+      .channel(`crm_interactions_${customerId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'crm_customer_interactions',
+          filter: `customer_id=eq.${customerId}`
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['customer_interactions', company.id, customerId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [company?.id, customerId, queryClient]);
 
   return {
     profile,

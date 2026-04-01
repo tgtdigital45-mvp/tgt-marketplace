@@ -79,10 +79,10 @@ const LazyChart: React.FC<LazyChartProps> = ({
     }, [type]);
 
     return (
-        <div ref={containerRef} className={className} style={{ height: `${height}px` }}>
+        <div ref={containerRef} className={className} style={{ height: `${height}px`, width: '100%' }}>
             {shouldLoad ? (
                 <Suspense fallback={<SkeletonChart height={height} className={className} />}>
-                    <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={height}>
+                    <ResponsiveContainer width="100%" height={height} minWidth={100} minHeight={height} debounce={50}>
                         {type === 'area' ? (
                             <AreaChart data={data}>
                                 <defs>

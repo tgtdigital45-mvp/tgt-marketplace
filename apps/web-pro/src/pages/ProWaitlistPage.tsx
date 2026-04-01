@@ -138,8 +138,8 @@ const ProWaitlistPage: React.FC = () => {
 
                     {/* Description */}
                     <p className="text-base md:text-lg text-slate-600 max-w-xl mx-auto leading-relaxed mb-12 font-medium">
-                        Gaste menos tempo gerenciando marketing e mais tempo melhorando seu produto. 
-                        Nós cuidamos do resto com IA e tecnologia de ponta para a CONTRATTO.
+                        Gaste menos tempo com tarefas manuais e mais tempo fechando novos negócios. 
+                        Tenha em mãos o Dashboard oficial que as melhores empresas da CONTRATTO já utilizam.
                     </p>
 
                     {/* Waitlist Form */}
@@ -154,7 +154,7 @@ const ProWaitlistPage: React.FC = () => {
                             </div>
                             <div>
                                 <h3 className="font-bold text-slate-900 leading-tight">Você está na lista!</h3>
-                                <p className="text-sm text-slate-500">Prepare-se para o futuro da gestão pro.</p>
+                                <p className="text-sm text-slate-500">Prepare-se para transformar a gestão comercial da sua empresa.</p>
                             </div>
                         </motion.div>
                     ) : (
@@ -236,11 +236,11 @@ const ProWaitlistPage: React.FC = () => {
                         <div className="relative z-10 flex flex-col md:flex-row items-end justify-between gap-12">
                             <div className="max-w-md">
                                 <h2 className="text-3xl md:text-5xl font-display font-extrabold mb-6 leading-tight text-slate-900">
-                                    Grandes ideias precisam <br />
-                                    de automação.
+                                    Grandes empresas precisam <br />
+                                    de precisão.
                                 </h2>
                                 <p className="text-slate-600 font-medium mb-0">
-                                    Junte-se à nossa newsletter para insights semanais sobre IA e gestão operacional.
+                                    Junte-se à nossa newsletter para insights semanais sobre vendas e inteligência de mercado.
                                 </p>
                             </div>
                             <div className="w-full md:w-auto flex flex-col gap-4">

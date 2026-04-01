@@ -75,7 +75,7 @@ export default function DiscoverCategoriesPage() {
                 description="Descubra e explore as diversas categorias de serviços profissionais disponíveis na Contratto." 
             />
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-16">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-16 pb-10">
                 
                 {loading && (
                     <div className="flex flex-col items-center justify-center py-24 gap-3">

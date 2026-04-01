@@ -68,6 +68,8 @@ const MobileSheet: React.FC<MobileSheetProps> = ({ isOpen, onClose }) => {
                                 <img
                                     src="/contratto-logo.svg"
                                     alt="CONTRATTO"
+                                    width={182}
+                                    height={40}
                                     className="h-10 sm:h-12 w-auto object-contain"
                                 />
                             </Link>

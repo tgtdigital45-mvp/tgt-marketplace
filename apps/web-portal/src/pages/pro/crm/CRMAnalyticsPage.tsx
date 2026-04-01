@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { PageTransition } from '@tgt/ui-web';
 import { useCRMAnalytics } from '@portal/hooks/useCRMAnalytics';
 import { 
@@ -30,7 +30,16 @@ import {
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 const CRMAnalyticsPage: React.FC = () => {
-  const { data: stats, isLoading, isError } = useCRMAnalytics();
+  const [days, setDays] = React.useState(30);
+  const { data: stats, isLoading, isError } = useCRMAnalytics(days);
+
+  const periods = [
+    { label: 'Hoje', value: 1 },
+    { label: '7 dias', value: 7 },
+    { label: '30 dias', value: 30 },
+    { label: '12 meses', value: 365 },
+    { label: 'Tudo', value: 3650 },
+  ];
 
   if (isLoading) {
     return (
@@ -61,9 +70,16 @@ const CRMAnalyticsPage: React.FC = () => {
             </h1>
             <p className="text-slate-500 text-sm">Visão inteligente da sua performance de vendas e prospecção.</p>
           </div>
-          <div className="bg-white px-4 py-2 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
-             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-             <span className="text-xs font-bold text-slate-600">Dados em Tempo Real</span>
+          <div className="flex bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100 items-center gap-1">
+             {periods.map(p => (
+               <button
+                 key={p.value}
+                 onClick={() => setDays(p.value)}
+                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${days === p.value ? 'bg-brand-primary text-white shadow-md shadow-brand-primary/20 scale-105' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+               >
+                 {p.label}
+               </button>
+             ))}
           </div>
         </header>
 

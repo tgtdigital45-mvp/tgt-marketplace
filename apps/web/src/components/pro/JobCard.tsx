@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 
 export interface Job {
     id: string;
+    user_id: string;
     title: string;
     description: string;
     city: string;

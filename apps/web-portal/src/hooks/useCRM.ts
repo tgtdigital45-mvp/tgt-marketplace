@@ -1,4 +1,4 @@
-﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@tgt/core';
 import { useCompany } from '@/contexts/CompanyContext';
 import { toast } from 'react-hot-toast';
@@ -219,6 +219,63 @@ export const useCRM = () => {
     }
   });
 
+  // Add Stage
+  const addStageMutation = useMutation({
+    mutationFn: async (newStage: { name: string, color: string, order_index: number }) => {
+      if (!activePipeline?.id) return;
+      const { error } = await supabase
+        .from('crm_stages')
+        .insert({ ...newStage, pipeline_id: activePipeline.id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm_stages'] });
+      toast.success('Etapa adicionada');
+    }
+  });
+
+  // Update Stage
+  const updateStageMutation = useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<CRMStage> & { id: string }) => {
+      const { error } = await supabase
+        .from('crm_stages')
+        .update(updates)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm_stages'] });
+    }
+  });
+
+  // Delete Stage
+  const deleteStageMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('crm_stages')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm_stages'] });
+      toast.success('Etapa removida');
+    }
+  });
+
+  // Reorder Stages (Bulk Update)
+  const reorderStagesMutation = useMutation({
+    mutationFn: async (reorderedStages: { id: string, order_index: number }[]) => {
+      const { error } = await supabase
+        .from('crm_stages')
+        .upsert(reorderedStages);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm_stages'] });
+    }
+  });
+
   return {
     pipelines,
     activePipeline,
@@ -227,6 +284,10 @@ export const useCRM = () => {
     isLoading: isLoadingPipelines || isLoadingStages || isLoadingItems,
     initialize: initializeMutation.mutate,
     isInitializing: initializeMutation.isPending,
-    moveItem: moveItemMutation.mutate
+    moveItem: moveItemMutation.mutate,
+    addStage: addStageMutation.mutate,
+    updateStage: updateStageMutation.mutate,
+    deleteStage: deleteStageMutation.mutate,
+    reorderStages: reorderStagesMutation.mutate
   };
 };

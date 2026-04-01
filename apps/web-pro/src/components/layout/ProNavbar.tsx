@@ -11,11 +11,12 @@ const ProNavbar: React.FC = () => {
       <div className="glass-light rounded-full px-5 py-2 flex items-center justify-between border border-white/20 shadow-soft backdrop-blur-md">
         <div className="flex items-center gap-6">
           <Link to="/" className="flex items-center gap-2 group shrink-0 min-w-[120px]">
-            <div className="h-8 flex items-center">
+            <div className="h-9 flex items-center shrink-0">
               <img
-                src="/contratto-logo.svg"
+                src="/logo-contratto.png"
                 alt="CONTRATTO"
-                className="h-8 w-[146px] block transition-opacity group-hover:opacity-80"
+                style={{ height: '28px' }}
+                className="w-auto block transition-opacity group-hover:opacity-80 object-contain"
               />
             </div>
             <span className="hidden xl:inline-flex items-center px-2 py-0.5 rounded-full bg-primary-100/50 text-[#04B4E0] text-[8px] font-bold tracking-widest uppercase border border-[#04B4E0]/10 ml-1">

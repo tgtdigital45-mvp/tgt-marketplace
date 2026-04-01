@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
   DndContext, 
@@ -24,6 +24,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { PageTransition } from '@tgt/ui-web';
 import { useCRM, CRMStage, CRMItem } from '@portal/hooks/useCRM';
+import CRMStageConfigModal from '@portal/components/dashboard/crm/CRMStageConfigModal';
 import { 
   LayoutDashboard, 
   Loader2, 
@@ -32,7 +33,8 @@ import {
   Calendar, 
   DollarSign, 
   User as UserIcon,
-  Tag
+  Tag,
+  Settings2
 } from 'lucide-react';
 
 // --- Kanban Card Component ---
@@ -169,8 +171,19 @@ const KanbanColumn: React.FC<ColumnProps> = ({ stage, items, slug }) => {
 // --- Main Page Component ---
 const SalesPipeline: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { stages, items, isLoading, initialize, moveItem } = useCRM();
+  const { 
+    stages, 
+    items, 
+    isLoading, 
+    initialize, 
+    moveItem,
+    addStage,
+    deleteStage,
+    updateStage,
+    reorderStages
+  } = useCRM();
   const [activeId, setActiveId] = React.useState<string | null>(null);
+  const [isConfigModalOpen, setIsConfigModalOpen] = React.useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -278,7 +291,11 @@ const SalesPipeline: React.FC = () => {
             <p className="text-slate-500 text-sm">Acompanhe e mova seus atendimentos entre as etapas clicando e arrastando.</p>
           </div>
           <div className="flex gap-2">
-            <button className="text-sm font-bold text-slate-600 px-4 py-2 rounded-lg border border-slate-200 hover:bg-white transition-all shadow-xs">
+            <button 
+              onClick={() => setIsConfigModalOpen(true)}
+              className="text-sm font-bold text-slate-600 px-4 py-2 rounded-lg border border-slate-200 hover:bg-white transition-all shadow-xs flex items-center gap-2"
+            >
+              <Settings2 className="w-4 h-4 opacity-70" />
               Configurar etapas
             </button>
           </div>
@@ -307,6 +324,19 @@ const SalesPipeline: React.FC = () => {
             </DragOverlay>
           </DndContext>
         </div>
+
+        <CRMStageConfigModal 
+          isOpen={isConfigModalOpen}
+          onClose={() => setIsConfigModalOpen(false)}
+          stages={stages || []}
+          onAdd={(name, color) => addStage({ name, color, order_index: (stages?.length || 0) })}
+          onDelete={deleteStage}
+          onUpdate={(id, name, color) => updateStage({ id, name, color })}
+          onReorder={(reordered) => {
+            const updates = reordered.map((s, idx) => ({ id: s.id, order_index: idx }));
+            reorderStages(updates);
+          }}
+        />
       </div>
     </PageTransition>
   );

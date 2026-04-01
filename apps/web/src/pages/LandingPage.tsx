@@ -238,7 +238,7 @@ const CompaniesListPage: React.FC = () => {
       />
 
       {/* Hero Header Section */}
-      <section className="bg-slate-900 pt-20 sm:pt-28 lg:pt-32 pb-16 sm:pb-20 lg:pb-24 text-white relative overflow-hidden">
+      <section className="bg-slate-900 pt-12 sm:pt-16 lg:pt-20 pb-8 sm:pb-12 lg:pb-16 text-white relative overflow-hidden">
         <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <motion.h1

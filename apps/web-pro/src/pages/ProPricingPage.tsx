@@ -39,7 +39,7 @@ const ProPricingPage: React.FC = () => {
               <div className="mb-8">
                 <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-2">Iniciante</h3>
                 <h2 className="text-4xl font-display font-black text-slate-950">Grátis</h2>
-                <p className="text-slate-500 mt-4 text-sm font-medium">Para profissionais que estão começando sua jornada digital.</p>
+                <p className="text-slate-500 mt-4 text-sm font-medium">Para empresas e profissionais que estão iniciando sua jornada comercial digital.</p>
               </div>
               
               <ul className="space-y-4 mb-10 flex-1">
@@ -77,7 +77,7 @@ const ProPricingPage: React.FC = () => {
                     <span className="text-4xl font-display font-black">R$ 59</span>
                     <span className="text-slate-400 font-bold text-sm">/mês</span>
                 </div>
-                <p className="text-slate-400 mt-4 text-sm font-medium leading-relaxed">O motor completo para quem busca autoridade e fechar mais contratos.</p>
+                <p className="text-slate-400 mt-4 text-sm font-medium leading-relaxed">A solução definitiva para quem busca construir autoridade e fechar orçamentos de alto valor.</p>
               </div>
               
               <ul className="space-y-4 mb-10 flex-1">

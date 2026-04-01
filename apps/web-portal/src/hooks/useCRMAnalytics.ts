@@ -1,4 +1,4 @@
-﻿import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@tgt/core';
 import { useCompany } from '@/contexts/CompanyContext';
 
@@ -23,16 +23,17 @@ export interface CRMStats {
   period: string;
 }
 
-export function useCRMAnalytics() {
+export function useCRMAnalytics(days: number = 30) {
   const { company } = useCompany();
 
   return useQuery({
-    queryKey: ['crm-analytics', company?.id],
+    queryKey: ['crm-analytics', company?.id, days],
     queryFn: async () => {
       if (!company?.id) return null;
 
       const { data, error } = await supabase.rpc('get_crm_dashboard_stats', {
-        p_company_id: company.id
+        p_company_id: company.id,
+        p_days: days
       });
 
       if (error) throw error;

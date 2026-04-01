@@ -24,7 +24,7 @@ const cases = [
   {
     company: 'Sip & Savor Eventos',
     tag: 'BUFFET & GASTRONOMIA',
-    description: 'Otimização de agenda e reservas para uma das maiores empresas de buffet de São Paulo usando o Piloto Automático.',
+    description: 'Otimização de agenda e reservas para uma das maiores empresas de buffet de São Paulo com nosso Dashboard Inteligente.',
     metric: '-25hs',
     metricLabel: 'ECONOMIZADAS/SEMANA',
     color: 'bg-amber-50',
@@ -60,7 +60,7 @@ const ProCasesPage: React.FC = () => {
               <span className="text-gradient-primary">falarem por você.</span>
            </h1>
            <p className="text-xl text-slate-500 max-w-2xl leading-relaxed">
-              Veja como empresas de diversos setores estão usando o CONTRATTO Pro para automatizar, escalar e dominar seus nichos de mercado.
+              Veja como empresas de diversos setores estão usando o CONTRATTO Pro para gerenciar, escalar e dominar seus nichos de mercado.
            </p>
         </div>
       </section>

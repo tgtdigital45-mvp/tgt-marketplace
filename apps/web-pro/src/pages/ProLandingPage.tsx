@@ -45,12 +45,12 @@ const ProLandingPage: React.FC = () => {
             </div>
 
             <h1 className="text-5xl md:text-8xl font-display font-extrabold text-slate-950 leading-[1.05] mb-8 tracking-tighter max-w-5xl mx-auto">
-              Sua operação profissional <br />
-              <span className="text-gradient-primary">no Piloto Automático.</span>
+              O Dashboard Inteligente <br />
+              <span className="text-gradient-primary">para Escalar suas Vendas.</span>
             </h1>
             
             <p className="text-xl md:text-2xl text-slate-600 mb-10 max-w-3xl mx-auto leading-relaxed">
-              Deixe a IA e a nossa tecnologia cuidarem da gestão, enquanto você foca no crescimento operacional e na qualidade do serviço.
+              Gerencie sua operação com dados precisos e transforme leads em clientes com a plataforma oficial da CONTRATTO para empresas.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
@@ -111,8 +111,8 @@ const ProLandingPage: React.FC = () => {
                     <Zap size={20} />
                   </div>
                   <div>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase">Automação Ativa</p>
-                    <p className="text-lg font-bold text-slate-900">IA-Ready</p>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase">Gestão Ativa</p>
+                    <p className="text-lg font-bold text-slate-900">Analytics Pro</p>
                   </div>
                 </motion.div>
               </div>
@@ -148,9 +148,9 @@ const ProLandingPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
             <div className="md:col-span-8 bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-soft overflow-hidden relative group">
               <div className="relative z-10 max-w-sm mb-12">
-                <h3 className="text-2xl font-bold mb-4 text-slate-900 group-hover:text-primary-600 transition-colors">Deploy de Campanhas com IA</h3>
+                <h3 className="text-2xl font-bold mb-4 text-slate-900 group-hover:text-primary-600 transition-colors">Estratégias de Venda com Inteligência</h3>
                 <p className="text-slate-500 leading-relaxed">
-                  Automatize a entrega e otimização das suas ofertas com tecnologia revolucionária de IA treinada para o mercado regional.
+                  Utilize dados demográficos e comportamentais para otimizar suas ofertas com tecnologia treinada para o mercado regional.
                 </p>
               </div>
               <div className="h-64 bg-slate-50 rounded-2xl border border-slate-100 relative group-hover:border-primary-100 transition-colors">
@@ -194,15 +194,15 @@ const ProLandingPage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
              <div className="order-2 lg:order-1">
                 <div className="inline-block py-1.5 px-4 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-[0.2em] mb-6">
-                   Automação de Conteúdo
+                   Inteligência de Mercado
                 </div>
                 <h2 className="text-4xl md:text-6xl font-display font-extrabold mb-8 tracking-tighter leading-[1.1]">
-                   Transforme briefings em autoridade absoluta.
+                   Estratégias que constroem autoridade absoluta.
                 </h2>
                 <div className="space-y-8">
                    {[
-                     { title: 'Autenticidade que converte', icon: <ShieldCheck className="text-primary-600" /> },
-                     { title: 'Escalabilidade Sem Atrito', icon: <Zap className="text-primary-600" /> },
+                     { title: 'Autoridade que converte', icon: <ShieldCheck className="text-primary-600" /> },
+                     { title: 'Crescimento Sustentável', icon: <Zap className="text-primary-600" /> },
                      { title: 'Confiança na Marca', icon: <Check className="text-primary-600" /> }
                    ].map((item, idx) => (
                       <div key={idx} className="flex gap-4 group">
@@ -225,7 +225,7 @@ const ProLandingPage: React.FC = () => {
                       <div className="h-48 bg-primary-600 rounded-[2rem] shadow-lg flex items-center justify-center text-white">
                          <div>
                             <Plus size={32} className="mx-auto mb-2 opacity-50" />
-                            <p className="font-bold">Gerar Conteúdo com IA</p>
+                            <p className="font-bold">Gerar Insights de Mercado</p>
                          </div>
                       </div>
                    </div>
@@ -260,13 +260,18 @@ const ProLandingPage: React.FC = () => {
              <h2 className="text-4xl font-display font-extrabold mb-4 tracking-tight">Dúvidas Frequentes</h2>
           </div>
           <div className="space-y-4">
-            {[1, 2, 3, 4].map((i) => (
+            {[
+              { q: "Como o Web Pro ajuda minha empresa a vender mais?", a: "O Web Pro fornece um Dashboard completo com Analytics em tempo real, permitindo identificar gargalos no funil de vendas e otimizar a conversão de leads." },
+              { q: "O Dashboard é fácil de configurar?", a: "Sim, nossa interface foi desenhada para ser intuitiva. Em poucos minutos você tem uma visão clara de toda a sua operação comercial." },
+              { q: "Quais empresas podem utilizar o Web Pro?", a: "O Web Pro é ideal para empresas de serviços, consultorias e profissionais que buscam profissionalizar sua presença digital e escalar resultados." },
+              { q: "Como funciona o suporte para parceiros Pro?", a: "Parceiros Pro têm acesso a suporte prioritário e consultoria estratégica para maximizar o uso das ferramentas de inteligência de mercado." }
+            ].map((faq, i) => (
                <details key={i} className="group bg-slate-50 border border-slate-100 rounded-3xl overflow-hidden [&_summary::-webkit-details-marker]:hidden">
                   <summary className="flex items-center justify-between p-8 cursor-pointer select-none">
-                     <h3 className="font-bold text-slate-900">Pergunta frequente sobre o Pro #{i}?</h3>
+                     <h3 className="font-bold text-slate-900">{faq.q}</h3>
                      <Plus size={18} className="text-slate-400 group-open:rotate-45 transition-transform" />
                   </summary>
-                  <div className="px-8 pb-8 text-slate-600 text-sm font-medium">Resposta detalhada para o parceiro CONTRATTO Pro.</div>
+                  <div className="px-8 pb-8 text-slate-600 text-sm font-medium">{faq.a}</div>
                </details>
             ))}
           </div>

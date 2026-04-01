@@ -493,7 +493,7 @@ const DashboardOverviewPage: React.FC = () => {
           </p>
           <div className="w-full h-[300px] min-h-[300px] relative overflow-hidden bg-gray-50/30 rounded-xl">
             {filteredChart.length > 0 ? (
-              <ResponsiveContainer width="99%" height="99%">
+              <ResponsiveContainer width="100%" height={300} minHeight={300} debounce={50}>
                 <AreaChart data={filteredChart} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
@@ -530,7 +530,7 @@ const DashboardOverviewPage: React.FC = () => {
             <p className="text-white/60 text-[10px] sm:text-xs mb-4">Volume mensal</p>
             <div className="flex-1 w-full h-[220px] min-h-[220px] relative overflow-hidden">
               {chartData.length > 0 ? (
-                <ResponsiveContainer width="99.9%" height="99.9%">
+                <ResponsiveContainer width="100%" height={220} minHeight={220} debounce={50}>
                   <BarChart data={chartData} margin={{ top: 10, right: 5, left: -30, bottom: 0 }}>
                     <Bar dataKey="orders_count" fill="rgba(255,255,255,0.8)" radius={[4, 4, 0, 0]} barSize={8} />
                     <Tooltip

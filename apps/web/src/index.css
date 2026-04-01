@@ -4,3 +4,9 @@
 
 /* Define as fontes de scan para o Marketplace */
 @source "./src/**/*.{js,ts,jsx,tsx}";
+
+@layer utilities {
+  .glass-light {
+    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)];
+  }
+}

@@ -16,7 +16,7 @@ const updates = [
     date: 'Março 2024',
     title: 'Integração Google Calendar Pro',
     description: 'Sincronização bidirecional avançada. Seus orçamentos fechados via CONTRATTO agora bloqueiam horários automaticamente na sua agenda pessoal e da sua equipe.',
-    category: 'Automação',
+    category: 'Produtividade',
     icon: <Sparkles size={20} className="text-amber-500" />
   },
   {

@@ -41,6 +41,7 @@ const FavoritesPage = lazy(() => import('@/pages/client/FavoritesPage'));
 const ClientPostJobPage = lazy(() => import('@/pages/client/ClientPostJobPage'));
 const MyAppointments = lazy(() => import('@/pages/client/MyAppointments'));
 const PaymentHistory = lazy(() => import('@/pages/client/PaymentHistory'));
+const MyJobsPage = lazy(() => import('@/pages/client/MyJobsPage'));
 
 // Service / Booking / Checkout
 const ServiceDetailsPage = lazy(() => import('@/pages/service/ServiceDetailsPage'));
@@ -132,6 +133,7 @@ const MainRoutes = () => {
                         {/* Public / Marketplace */}
                         <Route path="/" element={<AnimatedElement><ClientLandingPage /></AnimatedElement>} />
                         <Route path="/empresas" element={<AnimatedElement><CompaniesListPage /></AnimatedElement>} />
+                        <Route path="/para-empresas" element={<AnimatedElement><ForCompaniesPage /></AnimatedElement>} />
                         <Route path="/servicos" element={<AnimatedElement><DiscoverCategoriesPage /></AnimatedElement>} />
                         <Route path="/servicos/busca" element={<AnimatedElement><ServicesMarketplacePage /></AnimatedElement>} />
                         <Route path="/empresa/:slug" element={<AnimatedElement><CompanyProfilePage /></AnimatedElement>} />
@@ -158,6 +160,7 @@ const MainRoutes = () => {
                         <Route path="/perfil/pedidos" element={<ProtectedRoute userType="client" element={<AnimatedElement><ClientOrdersPage /></AnimatedElement>} />} />
                         <Route path="/perfil/agendamentos" element={<ProtectedRoute userType="client" element={<AnimatedElement><MyAppointments /></AnimatedElement>} />} />
                         <Route path="/perfil/pagamentos" element={<ProtectedRoute userType="client" element={<AnimatedElement><PaymentHistory /></AnimatedElement>} />} />
+                        <Route path="/perfil/vagas" element={<ProtectedRoute userType="client" element={<AnimatedElement><MyJobsPage /></AnimatedElement>} />} />
                         <Route path="/minhas-mensagens" element={<ProtectedRoute userType="client" element={<AnimatedElement><ClientMessagesPage /></AnimatedElement>} />} />
                         <Route path="/favoritos" element={<ProtectedRoute userType="client" element={<AnimatedElement><FavoritesPage /></AnimatedElement>} />} />
                         <Route path="/cliente/novo-pedido" element={<ProtectedRoute userType="client" element={<AnimatedElement><ClientPostJobPage /></AnimatedElement>} />} />

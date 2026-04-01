@@ -6,11 +6,13 @@ const NavLinks: React.FC = () => {
 
     const getLinkClass = (path: string) => {
         const isActive = path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
-        return `${isActive ? 'text-brand-primary font-bold' : 'text-gray-600 hover:text-brand-primary'} text-sm font-medium transition-colors duration-200`;
+        return `${isActive 
+            ? 'text-brand-primary bg-white/40 shadow-sm' 
+            : 'text-slate-600/80 hover:text-brand-primary hover:bg-white/30'} text-sm font-medium transition-all duration-200 py-1.5 px-4 rounded-full`;
     };
 
     return (
-        <nav className="hidden lg:flex items-center gap-8">
+        <nav className="hidden lg:flex items-center gap-2">
             <Link to="/servicos" className={getLinkClass('/servicos')}>
                 Serviços
             </Link>

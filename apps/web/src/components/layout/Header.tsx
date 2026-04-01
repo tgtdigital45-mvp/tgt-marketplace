@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import NavLinks from '@/components/layout/header/NavLinks';
 import UserActions from '@/components/layout/header/UserActions';
-import SearchBar from '@/components/layout/header/SearchBar';
 import MobileSheet from '@/components/layout/header/MobileSheet';
 import NotificationsDropdown from '@/components/layout/NotificationsDropdown';
 import MessagesDropdown from '@/components/layout/MessagesDropdown';
@@ -26,45 +25,30 @@ const Header: React.FC = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    usePrefetchCriticalRoutes(['/empresas', '/login/cliente', '/cadastro/cliente'], 2000);
+    usePrefetchCriticalRoutes(['/servicos', '/empresas', '/para-empresas'], 2000);
 
     return (
         <>
-            <header
-                className={`sticky top-0 left-0 w-full z-50 transition-all duration-300 ${scrolled
-                    ? 'bg-white/90 dark:bg-[#0B1120]/90 backdrop-blur-xl border-b border-gray-200/60 dark:border-white/10 shadow-[0_1px_3px_rgba(0,0,0,0.04)]'
-                    : 'bg-white/95 dark:bg-[#0B1120]/95 backdrop-blur-sm border-b border-transparent'
-                    }`}
-            >
-                <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-14 sm:h-16 lg:h-[4.5rem]">
+            <nav className="fixed top-7 left-1/2 -translate-x-1/2 z-50 w-full sm:w-[95%] max-w-7xl pointer-events-auto">
+                <div className={`glass-light rounded-full px-4 sm:px-6 lg:px-10 transition-all duration-300 ${scrolled
+                    ? 'py-2 shadow-lg border-white/40'
+                    : 'py-3 shadow-soft border-white/20'
+                    }`}>
+                    <div className="flex items-center justify-between h-10 sm:h-11 lg:h-12 flex-nowrap">
                         {/* Left: Logo & Nav */}
-                        <div className="flex items-center gap-4 sm:gap-6 lg:gap-10 min-w-0">
-                            <Link to="/" className="flex-shrink-0 flex items-center group">
+                        <div className="flex items-center gap-4 lg:gap-10 items-center flex-nowrap flex-shrink-0">
+                            <Link to="/" className="flex-shrink-0 flex items-center h-full gap-3 group">
                                 <img
-                                    src="/contratto-logo.svg"
+                                    src="/logo-contratto.png"
                                     alt="CONTRATTO"
-                                    width={220}
-                                    height={80}
-                                    className="h-16 sm:h-12 lg:h-20 w-auto object-contain transition-all duration-300 group-hover:opacity-80 block"
-                                    style={{
-                                        maxHeight: 'min(90px, 14vw)',
-                                        height: 'auto'
-                                    }}
+                                    className="h-20 sm:h-21 lg:h-22 w-auto max-h-22 object-contain transition-all duration-300 group-hover:opacity-80"
                                 />
                             </Link>
                             <NavLinks />
                         </div>
 
-                        {/* Center: Search Bar (Desativado para deixar o layout mais leve) */}
-                        {/* 
-                        <div className="hidden lg:flex flex-1 justify-center px-4 xl:px-6 max-w-md xl:max-w-xl">
-                            <SearchBar />
-                        </div> 
-                        */}
-
                         {/* Right: User Actions */}
-                        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+                        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 ml-4">
                             <div className="hidden sm:block">
                                 <ThemeToggle />
                             </div>
@@ -73,13 +57,13 @@ const Header: React.FC = () => {
                             {/* Mobile Menu Button */}
                             <div className="lg:hidden flex items-center gap-1.5 sm:gap-2">
                                 <div className="sm:hidden">
-                                     <ThemeToggle />
+                                    <ThemeToggle />
                                 </div>
                                 {user && <MessagesDropdown />}
                                 {user && <NotificationsDropdown />}
                                 <button
                                     onClick={() => setIsMobileMenuOpen(true)}
-                                    className="p-2 sm:p-2.5 rounded-xl focus:outline-none transition-all text-gray-500 hover:bg-gray-100 hover:text-brand-primary active:scale-95"
+                                    className="p-2 sm:p-2.5 rounded-full focus:outline-none transition-all text-gray-500 hover:bg-white/50 hover:text-brand-primary active:scale-95"
                                     aria-label="Menu"
                                 >
                                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -90,7 +74,7 @@ const Header: React.FC = () => {
                         </div>
                     </div>
                 </div>
-            </header>
+            </nav>
 
             <MobileSheet isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
         </>

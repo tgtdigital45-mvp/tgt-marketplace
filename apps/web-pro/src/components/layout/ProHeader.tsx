@@ -41,19 +41,14 @@ const ProHeader: React.FC = () => {
           }`}
       >
         <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14 sm:h-16">
-
+          <div className="flex items-center justify-between h-10 sm:h-11 lg:h-12">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 group flex-shrink-0">
               <img
                 src="/logo-contratto.png"
                 alt="CONTRATTO"
-                style={{ height: scrolled ? '58px' : '70px', width: 'auto' }}
-                className="object-contain transition-opacity group-hover:opacity-80"
+                className="h-4 sm:h-5 lg:h-6 w-auto object-contain transition-all duration-300 group-hover:opacity-80"
               />
-              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-brand-primary/10 text-brand-primary text-[11px] font-semibold tracking-wide uppercase">
-                Parceiros
-              </span>
             </Link>
 
             {/* Desktop Nav */}
