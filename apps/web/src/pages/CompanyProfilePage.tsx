@@ -52,9 +52,9 @@ const CompanyProfilePage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="bg-gray-50 min-h-screen">
+      <div className="bg-gray-50 dark:bg-[#0B1120] min-h-screen transition-colors duration-300">
         {/* Full width banner skeleton */}
-        <div className="w-full h-64 md:h-80 bg-gray-200 animate-pulse" />
+        <div className="w-full h-64 md:h-80 bg-gray-200 dark:bg-slate-800 animate-pulse" />
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 -mt-20 md:-mt-8 relative z-10 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -64,11 +64,11 @@ const CompanyProfilePage: React.FC = () => {
             </div>
             {/* Main content skeleton */}
             <div className="lg:col-span-8 order-1 lg:order-2 space-y-6">
-              <LoadingSkeleton className="h-16 w-full rounded-xl shadow-sm" />
-              <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+              <LoadingSkeleton className="h-16 w-full rounded-xl shadow-sm dark:bg-slate-800" />
+              <div className="bg-white dark:bg-slate-900 rounded-xl p-8 shadow-sm border border-gray-100 dark:border-white/5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <LoadingSkeleton className="aspect-video w-full rounded-xl" />
-                  <LoadingSkeleton className="aspect-video w-full rounded-xl" />
+                  <LoadingSkeleton className="aspect-video w-full rounded-xl dark:bg-slate-800" />
+                  <LoadingSkeleton className="aspect-video w-full rounded-xl dark:bg-slate-800" />
                 </div>
               </div>
             </div>
@@ -151,7 +151,7 @@ const CompanyProfilePage: React.FC = () => {
   } : undefined;
 
   return (
-    <main className="bg-gray-50 min-h-screen pb-12">
+    <main className="bg-gray-50 dark:bg-[#0B1120] min-h-screen pb-12 transition-colors duration-300">
       <SEO title={`${company.companyName} | CONTRATTO`} description={`Confira os serviços de ${company.companyName}.`} url={`/empresa/${company.slug}`} image={company.coverImage} schema={organizationSchema} />
 
       {/* FULL WIDTH HERO BANNER */}
@@ -194,12 +194,12 @@ const CompanyProfilePage: React.FC = () => {
           {/* RIGHT MAIN CONTENT */}
           <div className="lg:col-span-8">
             {/* MAIN CONTENT START */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-white/5 mb-6 overflow-hidden">
               <div className="p-6 md:p-8">
 
                 {/* 2. Serviços */}
                 <div className="mb-14">
-                  <h3 className="font-display text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                  <h3 className="font-display text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
                     <LayoutGrid className="w-6 h-6 text-brand-primary" />
                     Serviços
                   </h3>
@@ -210,15 +210,15 @@ const CompanyProfilePage: React.FC = () => {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                      <p className="text-gray-500">Nenhum serviço disponível.</p>
+                    <div className="text-center py-12 bg-gray-50 dark:bg-brand-dark/20 rounded-xl border border-dashed border-gray-200 dark:border-white/5">
+                      <p className="text-gray-500 dark:text-gray-400">Nenhum serviço disponível.</p>
                     </div>
                   )}
                 </div>
                 {/* 3. Portfólio */}
                 {company.portfolio.length > 0 && (
                   <div className="mb-14">
-                    <h3 className="font-display text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                    <h3 className="font-display text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
                       <LayoutGrid className="w-6 h-6 text-brand-primary" />
                       Portfólio
                     </h3>
@@ -227,7 +227,7 @@ const CompanyProfilePage: React.FC = () => {
                         <button 
                           key={item.id || idx} 
                           onClick={() => setLightboxState({ isOpen: true, index: idx })}
-                          className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100 hover:opacity-90 transition-opacity shadow-sm border border-gray-200"
+                          className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100 dark:bg-slate-800 hover:opacity-90 transition-opacity shadow-sm border border-gray-200 dark:border-white/5"
                         >
                           <OptimizedImage
                             src={item.image_url}
@@ -255,11 +255,11 @@ const CompanyProfilePage: React.FC = () => {
                 {company.projects && company.projects.length > 0 && (
                    <div className="mb-14">
                       <div className="flex items-center justify-between gap-3 mb-6">
-                        <h3 className="font-display text-xl font-bold text-gray-900 flex items-center gap-2">
+                        <h3 className="font-display text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                           <Briefcase className="w-6 h-6 text-brand-primary" />
                           Projetos
                         </h3>
-                        <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
+                        <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-brand-dark/30 px-2 py-1 rounded-md border border-gray-100 dark:border-white/5">
                           {company.projects.length} Case{company.projects.length > 1 ? 's' : ''}
                         </span>
                       </div>
@@ -281,10 +281,10 @@ const CompanyProfilePage: React.FC = () => {
                   <div className="flex items-center justify-between gap-3 mb-8">
                     <div className="flex items-center gap-3">
                       <Star className="w-6 h-6 text-brand-primary" />
-                      <h3 className="font-display text-xl font-bold text-gray-900">
+                      <h3 className="font-display text-xl font-bold text-gray-900 dark:text-white">
                         Avaliações
                       </h3>
-                      <span className="px-3 py-1 rounded-full bg-gray-100 text-sm font-bold text-gray-700">
+                      <span className="px-3 py-1 rounded-full bg-gray-100 dark:bg-brand-dark/40 text-sm font-bold text-gray-700 dark:text-gray-300">
                         {company.reviewCount || 0}
                       </span>
                     </div>
@@ -304,20 +304,20 @@ const CompanyProfilePage: React.FC = () => {
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-6">
                     <MapPinIcon className="w-6 h-6 text-brand-primary" />
-                    <h3 className="font-display text-xl font-bold text-gray-900">Localização</h3>
+                    <h3 className="font-display text-xl font-bold text-gray-900 dark:text-white">Localização</h3>
                   </div>
 
                   {company.address ? (
                     <div className="space-y-4">
-                      <p className="text-base text-gray-700 bg-gray-50/80 p-5 rounded-xl border border-gray-100 shadow-sm">
+                      <p className="text-base text-gray-700 dark:text-gray-300 bg-gray-50/80 dark:bg-brand-dark/30 p-5 rounded-xl border border-gray-100 dark:border-white/5 shadow-sm">
                         <span className="font-medium">{company.address.street}, {company.address.number}</span> - {company.address.district}
                         <br />
-                        <span className="text-gray-500 mt-1 block text-sm">{company.address.city}, {company.address.state} - CEP: {company.address.cep}</span>
+                        <span className="text-gray-500 dark:text-gray-400 mt-1 block text-sm">{company.address.city}, {company.address.state} - CEP: {company.address.cep}</span>
                       </p>
 
-                      <div className="h-80 w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm relative z-0">
+                      <div className="h-80 w-full rounded-xl overflow-hidden border border-gray-200 dark:border-white/5 shadow-sm relative z-0">
                         {company.address.lat && company.address.lng ? (
-                          <Suspense fallback={<div className="h-full w-full bg-gray-100 animate-pulse flex items-center justify-center"><p className="text-gray-400 text-sm font-medium">Carregando mapa...</p></div>}>
+                          <Suspense fallback={<div className="h-full w-full bg-gray-100 dark:bg-slate-800 animate-pulse flex items-center justify-center"><p className="text-gray-400 text-sm font-medium">Carregando mapa...</p></div>}>
                              <CompanyMap 
                                 lat={company.address.lat} 
                                 lng={company.address.lng} 
@@ -342,7 +342,7 @@ const CompanyProfilePage: React.FC = () => {
             {/* Similar Companies */}
             {similarCompanies.length > 0 && (
               <div className="mt-12">
-                <h2 className="font-display text-xl font-bold text-gray-900 mb-6">Também em {company.category}</h2>
+                <h2 className="font-display text-xl font-bold text-gray-900 dark:text-white mb-6">Também em {company.category}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {deduplicateCompanies(similarCompanies).slice(0, 2).map(comp => (
                     <CompanyCard key={comp.id} company={comp} />

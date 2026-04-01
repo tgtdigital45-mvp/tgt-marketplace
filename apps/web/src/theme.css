@@ -1,0 +1,59 @@
+@theme {
+
+  /* ============================================
+     CONTRATTO Design System v2.0 - Refined Tokens
+     ============================================ */
+
+  /* Brand Colors - Azul Petroleo */
+  --color-brand-primary: #04B4E0;
+  --color-brand-primary-hover: #039BBF;
+  --color-brand-primary-light: #f0fbfd;
+  --color-brand-secondary: #004E89;
+  --color-brand-secondary-hover: #003B66;
+  --color-brand-accent: #F7B801;
+  --color-brand-success: #10b981;
+  --color-brand-background: #FAFBFC;
+  --color-brand-dark: #0B1120;
+
+  /* Primary Palette (Azul Petroleo-based) */
+  --color-primary-50: #f0fbfd;
+  --color-primary-100: #daf5fb;
+  --color-primary-200: #bdedf6;
+  --color-primary-300: #8ee2f0;
+  --color-primary-400: #57d0e7;
+  --color-primary-500: #04B4E0;
+  --color-primary-600: #039BBF;
+  --color-primary-700: #25859d;
+  --color-primary-800: #256a7f;
+  --color-primary-900: #22596b;
+  --color-primary-950: #133a48;
+
+  /* Typography */
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-display: 'Outfit', 'DM Sans', system-ui, sans-serif;
+  --text-massive: 12rem;
+  --text-10xl: 10rem;
+  --text-11xl: 11rem;
+
+  /* Standardized Border Radius */
+  --radius-box: 0.75rem;
+  --radius-sm: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+  --radius-pill: 9999px;
+
+  /* Standardized Shadows */
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+  --shadow-card-hover: 0 12px 28px -6px rgb(0 0 0 / 0.08), 0 4px 12px -4px rgb(0 0 0 / 0.03);
+  --shadow-elevated: 0 24px 48px -12px rgb(0 0 0 / 0.12), 0 8px 16px -4px rgb(0 0 0 / 0.06);
+  --shadow-soft: 0 2px 8px -2px rgb(0 0 0 / 0.06), 0 4px 16px -4px rgb(0 0 0 / 0.04);
+
+  /* Section Spacing Scale */
+  --space-section-sm: 3rem;
+  --space-section: 5rem;
+  --space-section-lg: 7rem;
+
+}
+
+@variant dark (&:where(.dark, .dark *));

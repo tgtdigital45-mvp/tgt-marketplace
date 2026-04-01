@@ -3,6 +3,8 @@ import { NavLink, Outlet, Navigate, useParams, useNavigate } from 'react-router-
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import StoreStatusToggle from '@/components/dashboard/StoreStatusToggle';
+import ThemeToggle from '@/components/layout/header/ThemeToggle';
+import { Home, ShoppingBag, MessageSquare, Quote, Calendar, Layout, Wallet, Image, Users, User, ShieldCheck, Star, Settings, LifeBuoy, Menu, X } from 'lucide-react';
 
 const DashboardLayout: React.FC = () => {
   const { user, loading } = useAuth();
@@ -99,35 +101,38 @@ const DashboardLayout: React.FC = () => {
   }
 
   const navigation = [
-    { name: 'Dashboard', href: `/dashboard/empresa/${company.slug}`, icon: <HomeIcon /> },
-    { name: 'Pedidos', href: `/dashboard/empresa/${company.slug}/orcamentos`, icon: <ShoppingBagIcon /> },
-    { name: 'Mensagens', href: `/dashboard/empresa/${company.slug}/mensagens`, icon: <ChatBubbleIcon /> },
-    { name: 'Orcamentos', href: `/dashboard/empresa/${company.slug}/orcamentos`, icon: <QuoteIcon /> },
-    { name: 'Agenda', href: `/dashboard/empresa/${company.slug}/agenda`, icon: <CalendarIcon /> },
-    { name: 'Servicos', href: `/dashboard/empresa/${company.slug}/servicos`, icon: <SupportIcon /> },
-    { name: 'Faturamento', href: `/dashboard/empresa/${company.slug}/faturamento`, icon: <WalletIcon /> },
-    { name: 'Portfolio', href: `/dashboard/empresa/${company.slug}/portfolio`, icon: <PhotoIcon /> },
-    { name: 'Equipe', href: `/dashboard/empresa/${company.slug}/equipe`, icon: <PersonIcon /> },
+    { name: 'Dashboard', href: `/dashboard/empresa/${company.slug}`, icon: <Home size={16} /> },
+    { name: 'Pedidos', href: `/dashboard/empresa/${company.slug}/orcamentos`, icon: <ShoppingBag size={16} /> },
+    { name: 'Mensagens', href: `/dashboard/empresa/${company.slug}/mensagens`, icon: <MessageSquare size={16} /> },
+    { name: 'Orcamentos', href: `/dashboard/empresa/${company.slug}/orcamentos`, icon: <Quote size={16} /> },
+    { name: 'Agenda', href: `/dashboard/empresa/${company.slug}/agenda`, icon: <Calendar size={16} /> },
+    { name: 'Servicos', href: `/dashboard/empresa/${company.slug}/servicos`, icon: <Layout size={16} /> },
+    { name: 'Faturamento', href: `/dashboard/empresa/${company.slug}/faturamento`, icon: <Wallet size={16} /> },
+    { name: 'Portfolio', href: `/dashboard/empresa/${company.slug}/portfolio`, icon: <Image size={16} /> },
+    { name: 'Equipe', href: `/dashboard/empresa/${company.slug}/equipe`, icon: <Users size={16} /> },
   ];
 
   const accountPages = [
-    { name: 'Perfil', href: `/dashboard/empresa/${company.slug}/perfil`, icon: <PersonIcon /> },
-    { name: 'Verificação', href: `/dashboard/empresa/${company.slug}/verificacao`, icon: <ShieldCheckIcon /> },
-    { name: 'Assinatura', href: `/dashboard/empresa/${company.slug}/assinatura`, icon: <StarIcon /> },
-    { name: 'Configuracoes', href: `/dashboard/empresa/${company.slug}/configuracoes`, icon: <SettingsIcon /> },
-    { name: 'Suporte', href: `/dashboard/empresa/${company.slug}/suporte`, icon: <LifeBuoyIcon /> },
+    { name: 'Perfil', href: `/dashboard/empresa/${company.slug}/perfil`, icon: <User size={16} /> },
+    { name: 'Verificação', href: `/dashboard/empresa/${company.slug}/verificacao`, icon: <ShieldCheck size={16} /> },
+    { name: 'Assinatura', href: `/dashboard/empresa/${company.slug}/assinatura`, icon: <Star size={16} /> },
+    { name: 'Configuracoes', href: `/dashboard/empresa/${company.slug}/configuracoes`, icon: <Settings size={16} /> },
+    { name: 'Suporte', href: `/dashboard/empresa/${company.slug}/suporte`, icon: <LifeBuoy size={16} /> },
   ];
 
   const SidebarContent = () => (
     <>
-      <div className="mb-4 sm:mb-6 px-3 sm:px-4 flex items-center gap-3">
-        <div className="w-7 h-7 sm:w-8 sm:h-8 bg-brand-primary rounded-lg flex items-center justify-center text-white flex-shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 sm:w-5 sm:h-5"><path d="M11.7 2.805a.75.75 0 01.6 0A60.65 60.65 0 0122.83 8.72a.75.75 0 01-.231 1.337 49.949 49.949 0 00-9.902 3.912l-.003.002-.34.18a.75.75 0 01-.707 0A50.009 50.009 0 002.1 9.763.75.75 0 011.7 8.72c2.787-1.31 5.952-2.3 9.38-2.922 1.341-2.43 3.65-4.436 6.366-5.466z" fillRule="evenodd" clipRule="evenodd" /></svg>
+      <div className="mb-4 sm:mb-6 px-3 sm:px-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-brand-primary rounded-lg flex items-center justify-center text-white flex-shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 sm:w-5 sm:h-5"><path d="M11.7 2.805a.75.75 0 01.6 0A60.65 60.65 0 0122.83 8.72a.75.75 0 01-.231 1.337 49.949 49.949 0 00-9.902 3.912l-.003.002-.34.18a.75.75 0 01-.707 0A50.009 50.009 0 002.1 9.763.75.75 0 011.7 8.72c2.787-1.31 5.952-2.3 9.38-2.922 1.341-2.43 3.65-4.436 6.366-5.466z" fillRule="evenodd" clipRule="evenodd" /></svg>
+          </div>
+          <span className="font-display text-gray-900 dark:text-white font-bold text-[10px] sm:text-xs tracking-wide uppercase truncate">DASHBOARD</span>
         </div>
-        <span className="font-display text-gray-900 font-bold text-[10px] sm:text-xs tracking-wide uppercase truncate">CONTRATTO DASHBOARD</span>
+        <ThemeToggle />
       </div>
 
-      <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent mb-4 sm:mb-6"></div>
+      <div className="h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-white/5 to-transparent mb-4 sm:mb-6"></div>
 
       <nav className="space-y-0.5 sm:space-y-1">
         {navigation.map((item) => (
@@ -138,14 +143,14 @@ const DashboardLayout: React.FC = () => {
             onClick={() => setMobileSidebarOpen(false)}
             className={({ isActive }) =>
               `group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-[11px] sm:text-xs font-bold rounded-lg sm:rounded-xl transition-all ${isActive
-                ? 'bg-white text-gray-800 shadow-md'
-                : 'text-gray-500 hover:text-gray-800'
+                ? 'bg-white dark:bg-brand-primary/10 text-gray-800 dark:text-white shadow-md dark:shadow-indigo-500/10'
+                : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white'
               }`
             }
           >
             {({ isActive }) => (
               <>
-                <div className={`p-1.5 sm:p-2 rounded-lg mr-2 sm:mr-3 transition-colors flex-shrink-0 ${isActive ? 'bg-brand-primary text-white shadow-sm' : 'bg-white text-brand-primary shadow-xs'}`}>
+                <div className={`p-1.5 sm:p-2 rounded-lg mr-2 sm:mr-3 transition-colors flex-shrink-0 ${isActive ? 'bg-brand-primary text-white shadow-sm' : 'bg-white dark:bg-slate-800 text-brand-primary dark:text-slate-300 shadow-xs'}`}>
                   {item.icon}
                 </div>
                 <span className="truncate">{item.name}</span>
@@ -154,7 +159,7 @@ const DashboardLayout: React.FC = () => {
           </NavLink>
         ))}
 
-        <div className="mt-4 sm:mt-6 mb-1.5 sm:mb-2 px-3 sm:px-4 text-[10px] sm:text-xs font-display font-bold text-gray-900 uppercase">Paginas da Conta</div>
+        <div className="mt-4 sm:mt-6 mb-1.5 sm:mb-2 px-3 sm:px-4 text-[10px] sm:text-xs font-display font-bold text-gray-900 dark:text-slate-500 uppercase tracking-wider">Conta</div>
 
         {accountPages.map((item) => (
           <NavLink
@@ -187,24 +192,25 @@ const DashboardLayout: React.FC = () => {
   );
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] lg:min-h-[calc(100vh-4.5rem)] bg-gray-50 flex flex-col">
-      {/* Mobile Top Bar - Adjusted for Global Header height (h-14 sm:h-16 lg:h-18) */}
-      <div className="lg:hidden sticky top-14 sm:top-16 z-40 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+    <div className="min-h-[calc(100vh-4rem)] lg:min-h-[calc(100vh-4.5rem)] bg-gray-50 dark:bg-slate-950 flex flex-col transition-colors duration-500">
+      {/* Mobile Top Bar */}
+      <div className="lg:hidden sticky top-14 sm:top-16 z-40 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-white/5 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 bg-brand-primary rounded-lg flex items-center justify-center text-white">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M11.7 2.805a.75.75 0 01.6 0A60.65 60.65 0 0122.83 8.72a.75.75 0 01-.231 1.337 49.949 49.949 0 00-9.902 3.912l-.003.002-.34.18a.75.75 0 01-.707 0A50.009 50.009 0 002.1 9.763.75.75 0 011.7 8.72c2.787-1.31 5.952-2.3 9.38-2.922 1.341-2.43 3.65-4.436 6.366-5.466z" fillRule="evenodd" clipRule="evenodd" /></svg>
           </div>
-          <span className="font-display text-gray-900 font-bold text-xs tracking-wide uppercase">Dashboard</span>
+          <span className="font-display text-gray-900 dark:text-white font-bold text-xs tracking-wide uppercase">Dashboard</span>
         </div>
-        <button
-          onClick={() => setMobileSidebarOpen(true)}
-          className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
-          aria-label="Abrir menu"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <button
+            onClick={() => setMobileSidebarOpen(true)}
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 dark:text-slate-400 transition-colors"
+            aria-label="Abrir menu"
+          >
+            <Menu size={20} />
+          </button>
+        </div>
       </div>
 
       {/* Mobile Sidebar Overlay */}
@@ -218,12 +224,10 @@ const DashboardLayout: React.FC = () => {
             <div className="flex justify-end mb-2">
               <button
                 onClick={() => setMobileSidebarOpen(false)}
-                className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"
+                className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 font-bold"
                 aria-label="Fechar menu"
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X size={20} />
               </button>
             </div>
             <SidebarContent />

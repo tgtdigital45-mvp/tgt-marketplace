@@ -13,7 +13,7 @@ const MainLayout: React.FC = () => {
     const isTransparentPage = transparentHeaderPages.includes(location.pathname);
 
     return (
-        <div className="flex flex-col min-h-screen">
+        <div className="flex flex-col min-h-screen bg-brand-background dark:bg-[#0B1120] transition-colors duration-300">
             <Header />
             <main
                 className="flex-grow"

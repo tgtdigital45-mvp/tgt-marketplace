@@ -1,171 +1,108 @@
-import React, { useState } from 'react';
-import InfoPageLayout from '@/components/layout/InfoPageLayout';
-import {
-  ChevronDown,
-  Search,
-  ShieldCheck,
-  Users,
-  Building2,
-  MessageCircle
+import React from 'react';
+import { Helmet } from 'react-helmet-async';
+import { 
+  Search, Book, Zap, Shield, 
+  HelpCircle, MessageSquare, ArrowRight 
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@tgt/ui-web';
-
-
-
-interface FAQItem {
-  question: string;
-  answer: string;
-}
-
-interface FAQCategory {
-  title: string;
-  icon: React.ReactNode;
-  items: FAQItem[];
-}
-
-const faqs: FAQCategory[] = [
-  {
-    title: "Para Clientes",
-    icon: <Users size={20} />,
-    items: [
-      {
-        question: "Como encontro um profissional na CONTRATTO?",
-        answer: "Basta utilizar a barra de busca na home ou navegar pela página de empresas. Você pode filtrar por categoria, localização e avaliações."
-      },
-      {
-        question: "É gratuito para clientes?",
-        answer: "Sim, a busca e a solicitação de orçamentos são totalmente gratuitas para os clientes."
-      },
-      {
-        question: "Como o pagamento é processado?",
-        answer: "Os pagamentos são feitos via nossa plataforma segura. O valor só é liberado para o profissional após a confirmação de que o serviço foi entregue."
-      }
-    ]
-  },
-  {
-    title: "Para Empresas",
-    icon: <Building2 size={20} />,
-    items: [
-      {
-        question: "Como cadastro minha empresa?",
-        answer: "Acesse a página 'Para Empresas' e clique em 'Cadastrar agora'. Siga os passos de preenchimento do perfil e verificação."
-      },
-      {
-        question: "Quais são as taxas de venda?",
-        answer: "O cadastro básico é gratuito. Cobramos uma pequena porcentagem sobre os serviços fechados através da plataforma para garantir a manutenção da infraestrutura e segurança."
-      },
-      {
-        question: "Como recebo meus pagamentos?",
-        answer: "Após a conclusão do serviço e aprovação do cliente, o valor fica disponível em sua carteira digital CONTRATTO e pode ser transferido para sua conta bancária."
-      }
-    ]
-  },
-  {
-    title: "Segurança e Suporte",
-    icon: <ShieldCheck size={20} />,
-    items: [
-      {
-        question: "A CONTRATTO é segura?",
-        answer: "Sim, utilizamos criptografia de ponta a ponta e auditoria de empresas para garantir um ecossistema confiável."
-      },
-      {
-        question: "Como falo com o suporte?",
-        answer: "Você pode abrir um ticket diretamente no seu dashboard ou nos enviar uma mensagem através da página de contato."
-      }
-    ]
-  }
-];
+import { motion } from 'framer-motion';
 
 const HelpPage: React.FC = () => {
-  const [openIndex, setOpenIndex] = useState<string | null>(null);
-
-  const toggleFAQ = (id: string) => {
-    setOpenIndex(openIndex === id ? null : id);
-  };
+  const categories = [
+    { 
+      title: 'Primeiros Passos', 
+      icon: <Zap size={24} className="text-emerald-500" />,
+      articles: ['Como criar conta', 'Como buscar especialistas', 'Segurança do agendamento']
+    },
+    { 
+      title: 'Pagamentos & Planos', 
+      icon: <Book size={24} className="text-blue-500" />,
+      articles: ['Métodos de pagamento', 'Como cancelar assinatura', 'Nota fiscal e recibos']
+    },
+    { 
+      title: 'Segurança & Privacidade', 
+      icon: <Shield size={24} className="text-purple-500" />,
+      articles: ['Proteção de dados', 'Verificação de identidade', 'Termos de uso']
+    }
+  ];
 
   return (
-    <InfoPageLayout
-      title="Central de Ajuda"
-      subtitle="Encontre respostas rápidas para as dúvidas mais comuns sobre o ecossistema CONTRATTO."
-    >
-      <div className="max-w-4xl mx-auto mb-24">
-        {/* Search Bar Placeholder */}
-        <div className="relative mb-16">
-          <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-slate-400">
-            <Search size={20} />
-          </div>
-          <input
-            type="text"
-            placeholder="Qual sua dúvida hoje?"
-            className="w-full pl-14 pr-6 py-5 bg-white border border-slate-200 rounded-3xl shadow-soft focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all placeholder:text-slate-400"
-          />
-        </div>
+    <div className="bg-[#050505] min-h-screen pt-44 pb-32">
+       <Helmet>
+          <title>Central de Ajuda | CONTRATTO</title>
+          <meta name="description" content="Tudo o que você precisa saber para aproveitar ao máximo a rede CONTRATTO." />
+       </Helmet>
 
-        <div className="space-y-12">
-          {faqs.map((category, catIdx) => (
-            <div key={catIdx}>
-              <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3 tracking-tight">
-                <div className="w-8 h-8 bg-primary-50 text-primary-600 rounded-lg flex items-center justify-center">
-                  {category.icon}
-                </div>
-                {category.title}
-              </h2>
-              <div className="space-y-4">
-                {category.items.map((faq, itemIdx) => {
-                  const id = `${catIdx} -${itemIdx} `;
-                  const isOpen = openIndex === id;
-                  return (
-                    <div key={id} className="border border-slate-200 rounded-2xl overflow-hidden bg-white hover:border-slate-300 transition-colors">
-                      <button
-                        onClick={() => toggleFAQ(id)}
-                        className="w-full flex items-center justify-between p-6 text-left focus:outline-none"
-                      >
-                        <span className="font-bold text-slate-700 tracking-tight">{faq.question}</span>
-                        <div className={`text - slate - 400 transition - transform duration - 300 ${isOpen ? 'rotate-180' : ''} `}>
-                          <ChevronDown size={20} />
-                        </div>
-                      </button>
-                      <AnimatePresence>
-                        {isOpen && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <div className="px-6 pb-6 text-slate-500 text-sm leading-relaxed border-t border-slate-50 pt-4">
-                              {faq.answer}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Still need help */}
-        <div className="mt-20 bg-primary-600 rounded-[32px] p-10 text-white text-center shadow-xl relative overflow-hidden">
-          <div className="relative z-10">
-            <h3 className="text-2xl font-bold mb-4 tracking-tight">Ainda precisa de ajuda?</h3>
-            <p className="text-primary-100 mb-8 max-w-md mx-auto">Nossa equipe de suporte corporativo está pronta para te atender.</p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button variant="outline" className="bg-white text-primary-600 border-none px-8 font-bold">
-                Abrir Ticket
-              </Button>
-              <Button variant="ghost" className="text-white hover:bg-white/10 px-8 font-bold flex items-center gap-2">
-                <MessageCircle size={18} /> Falar no Chat
-              </Button>
-            </div>
+       <div className="container mx-auto px-6">
+          <div className="max-w-4xl mx-auto mb-24 text-center">
+             <motion.p
+               initial={{ opacity: 0 }}
+               animate={{ opacity: 1 }}
+               className="text-emerald-500 font-black uppercase tracking-[0.3em] text-[10px] mb-8"
+             >
+               Help Center
+             </motion.p>
+             <h1 className="text-5xl md:text-7xl font-display font-extrabold text-white tracking-tighter mb-12 leading-tight">
+                Como podemos <br />
+                <span className="text-emerald-500 italic">ajudar você?</span>
+             </h1>
+             
+             <div className="relative max-w-2xl mx-auto group">
+                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-500 group-hover:text-emerald-500 transition-colors" size={20} />
+                <input 
+                  type="text" 
+                  placeholder="Busque por artigos, termos ou dúvidas..." 
+                  className="w-full h-16 pl-16 pr-6 bg-white/5 border border-white/10 rounded-2xl text-white outline-none focus:border-emerald-500 transition-all font-medium text-lg placeholder:text-slate-600"
+                />
+             </div>
           </div>
-          <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/5 rounded-full blur-2xl" />
-        </div>
-      </div>
-    </InfoPageLayout>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto mb-32">
+             {categories.map((cat, idx) => (
+                <motion.div 
+                   key={idx}
+                   initial={{ opacity: 0, y: 20 }}
+                   whileInView={{ opacity: 1, y: 0 }}
+                   viewport={{ once: true }}
+                   transition={{ delay: idx * 0.1 }}
+                   className="bg-white/5 border border-white/5 p-10 rounded-[3rem] hover:border-emerald-500/30 transition-all duration-500 group"
+                >
+                   <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center mb-10 group-hover:bg-emerald-500 group-hover:text-black transition-all">
+                      {cat.icon}
+                   </div>
+                   <h3 className="text-2xl font-bold text-white mb-8 tracking-tight">{cat.title}</h3>
+                   <ul className="space-y-4">
+                      {cat.articles.map((art, aIdx) => (
+                         <li key={aIdx} className="flex items-center justify-between text-slate-500 hover:text-white transition-colors cursor-pointer text-sm font-medium group/item">
+                            {art}
+                            <ArrowRight size={14} className="opacity-0 group-hover/item:opacity-100 group-hover/item:translate-x-1 transition-all text-emerald-500" />
+                         </li>
+                      ))}
+                   </ul>
+                </motion.div>
+             ))}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+             <div className="bg-emerald-500 p-12 rounded-[3rem] flex flex-col items-center text-center">
+                <MessageSquare size={40} className="text-black mb-6" />
+                <h4 className="text-2xl font-display font-black text-black mb-4 tracking-tighter">Chat ao Vivo</h4>
+                <p className="text-emerald-950 font-medium mb-8">Fale com um de nossos consultores agora mesmo para suporte técnico imediato.</p>
+                <button className="h-14 px-10 rounded-2xl bg-black text-white font-black hover:scale-105 transition-all">
+                   Abrir Chat
+                </button>
+             </div>
+
+             <div className="bg-white/5 border border-white/10 p-12 rounded-[3rem] flex flex-col items-center text-center">
+                <HelpCircle size={40} className="text-white mb-6" />
+                <h4 className="text-2xl font-display font-black text-white mb-4 tracking-tighter">Comunidade</h4>
+                <p className="text-slate-500 font-medium mb-8">Explore discussões, dicas de especialistas e aprenda com outros profissionais da rede.</p>
+                <button className="h-14 px-10 rounded-2xl bg-white text-black font-black hover:scale-105 transition-all">
+                   Ver Fórum
+                </button>
+             </div>
+          </div>
+       </div>
+    </div>
   );
 };
 

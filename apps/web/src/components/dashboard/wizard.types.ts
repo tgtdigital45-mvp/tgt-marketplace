@@ -41,6 +41,7 @@ export interface WizardFormData {
   addressId?: string;
   radiusKm?: number;
   travelFee?: number;
+  promotionalPrice?: number;
 }
 
 // ─── Validation ──────────────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Search, MapPin, Wifi, Layers, Star, ArrowRight, AlertCircle, Loader2, Sparkles } from 'lucide-react';
 import { useServicesMarketplace, ServiceFilter } from '@/hooks/useServicesMarketplace';
 import OptimizedImage from '@/components/ui/OptimizedImage';
@@ -58,7 +58,7 @@ const ServiceCard: React.FC<{ service: DbService }> = ({ service }) => {
     return (
         <Link 
             to={`/empresa/${service.company_slug}`} 
-            className="group block bg-white rounded-2xl border border-gray-100/80 shadow-sm hover:shadow-xl hover:shadow-blue-900/5 hover:-translate-y-1.5 transition-all duration-500 overflow-hidden h-full flex flex-col"
+            className="group block bg-white dark:bg-slate-900 rounded-2xl border border-gray-100/80 dark:border-white/5 shadow-sm hover:shadow-xl hover:shadow-blue-900/5 dark:hover:shadow-indigo-500/10 hover:-translate-y-1.5 transition-all duration-500 overflow-hidden h-full flex flex-col"
         >
             <div className="relative aspect-[4/3] overflow-hidden">
                 <OptimizedImage
@@ -69,14 +69,20 @@ const ServiceCard: React.FC<{ service: DbService }> = ({ service }) => {
                 />
                 
                 <div className="absolute top-3 left-3 flex flex-col gap-2">
-                    <span className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/95 backdrop-blur-sm shadow-sm rounded-lg text-[10px] font-bold text-slate-800 uppercase tracking-wider border border-white/20">
-                        {isPresential ? <MapPin size={10} className="text-blue-600" /> : <Wifi size={10} className="text-blue-600" />}
+                    <span className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shadow-sm rounded-lg text-[10px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider border border-white/20 dark:border-white/5 w-fit">
+                        {isPresential ? <MapPin size={10} className="text-blue-600 dark:text-blue-400" /> : <Wifi size={10} className="text-blue-600 dark:text-blue-400" />}
                         {lType === 'in_store' ? 'Presencial' : lType === 'at_home' ? 'No Cliente' : '100% Remoto'}
                     </span>
                     
-                    <span className="px-2.5 py-1 bg-slate-900/80 backdrop-blur-sm shadow-sm rounded-lg text-[10px] font-bold text-white uppercase tracking-wider border border-white/10">
+                    <span className="px-2.5 py-1 bg-slate-900/80 dark:bg-indigo-500/20 backdrop-blur-sm shadow-sm rounded-lg text-[10px] font-bold text-white dark:text-indigo-300 uppercase tracking-wider border border-white/10 dark:border-indigo-500/20 w-fit">
                         {service.category_tag}
                     </span>
+
+                    {(service.is_sponsored || service.company_is_sponsored) && (
+                        <span className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-sm rounded-lg text-[10px] font-black uppercase tracking-wider w-fit">
+                             <Sparkles size={10} fill="currentColor" /> Patrocinado
+                        </span>
+                    )}
                 </div>
             </div>
 
@@ -84,7 +90,7 @@ const ServiceCard: React.FC<{ service: DbService }> = ({ service }) => {
             <div className="p-5 flex-grow flex flex-col">
                 {/* Company info */}
                 <div className="flex items-center gap-2 mb-3">
-                    <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-100 ring-2 ring-gray-100">
+                    <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 ring-2 ring-gray-100 dark:ring-white/5">
                         <OptimizedImage
                             src={service.company_logo}
                             alt={service.company_name}
@@ -92,9 +98,9 @@ const ServiceCard: React.FC<{ service: DbService }> = ({ service }) => {
                             optimizedWidth={64}
                         />
                     </div>
-                    <span className="text-xs font-medium text-slate-500 truncate max-w-[120px]">{service.company_name}</span>
+                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate max-w-[120px]">{service.company_name}</span>
                     {service.company_rating && service.company_rating > 0 && (
-                        <div className="ml-auto flex items-center gap-1 px-1.5 py-0.5 bg-amber-50 rounded-md border border-amber-100 text-[10px] text-amber-700 font-bold">
+                        <div className="ml-auto flex items-center gap-1 px-1.5 py-0.5 bg-amber-50 dark:bg-amber-500/10 rounded-md border border-amber-100 dark:border-amber-500/20 text-[10px] text-amber-700 dark:text-amber-400 font-bold">
                             <Star size={10} fill="currentColor" />
                             {service.company_rating.toFixed(1)}
                         </div>
@@ -102,7 +108,7 @@ const ServiceCard: React.FC<{ service: DbService }> = ({ service }) => {
                 </div>
 
                 {/* Title */}
-                <h3 className="font-bold text-slate-800 text-sm leading-snug line-clamp-2 h-10 mb-4 group-hover:text-blue-600 transition-colors">
+                <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm leading-snug line-clamp-2 h-10 mb-4 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                     {service.title}
                 </h3>
 
@@ -110,17 +116,28 @@ const ServiceCard: React.FC<{ service: DbService }> = ({ service }) => {
                     <div>
                         {price ? (
                             <>
-                                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">Investimento</span>
-                                <p className="text-lg font-black text-slate-900 leading-none">
-                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price)}
-                                </p>
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-bold tracking-tighter">Investimento</span>
+                                {service.promotional_price ? (
+                                    <div className="flex flex-col">
+                                        <span className="text-xs text-slate-400 line-through">
+                                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price)}
+                                        </span>
+                                        <p className="text-lg font-black text-blue-600 dark:text-blue-400 leading-none">
+                                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(service.promotional_price)}
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <p className="text-lg font-black text-slate-900 dark:text-white leading-none">
+                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price)}
+                                    </p>
+                                )}
                             </>
                         ) : (
                             <p className="text-xs font-bold text-slate-500 uppercase italic">Sob Consulta</p>
                         )}
                     </div>
                     
-                    <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                    <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
                         <ArrowRight size={16} />
                     </div>
                 </div>
@@ -131,10 +148,29 @@ const ServiceCard: React.FC<{ service: DbService }> = ({ service }) => {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ServicesMarketplacePage({ hideHeader = false }: { hideHeader?: boolean }) {
+    const [searchParams, setSearchParams] = useSearchParams();
+    const initialCategory = searchParams.get('category') || '';
+    
     const [searchQuery, setSearchQuery] = useState('');
-    const [activeCategory, setActiveCategory] = useState('');
+    const [activeCategory, setActiveCategory] = useState(initialCategory);
     const [activeFilter, setActiveFilter] = useState<ServiceFilter>('all');
     const [debouncedSearch, setDebouncedSearch] = useState('');
+
+    useEffect(() => {
+        const cat = searchParams.get('category');
+        if (cat && cat !== activeCategory) {
+            setActiveCategory(cat);
+        }
+    }, [searchParams]);
+
+    const handleCategoryClick = (cat: string) => {
+        setActiveCategory(cat);
+        if (cat) {
+            setSearchParams({ category: cat });
+        } else {
+            setSearchParams({});
+        }
+    };
 
     const seoTitle = searchQuery 
         ? `${searchQuery} | Marketplace Contratto` 
@@ -171,7 +207,7 @@ export default function ServicesMarketplacePage({ hideHeader = false }: { hideHe
     }, [services, activeCategory, debouncedSearch]);
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-500">
             <SEO 
                 title={seoTitle}
                 description="Encontre e contrate os melhores serviços profissionais certificados. Especialistas em marketing, tecnologia, design e muito mais."
@@ -179,7 +215,7 @@ export default function ServicesMarketplacePage({ hideHeader = false }: { hideHe
             />
             {/* ── Search Header ── */}
             {!hideHeader && (
-                <div className="bg-white border-b border-gray-100 sticky top-0 z-10 shadow-sm">
+                <div className="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-white/5 sticky top-0 z-20 shadow-sm transition-colors duration-500">
                     <div className="max-w-6xl mx-auto px-4 py-4">
                         {/* Search bar */}
                         <div className="relative mb-4">
@@ -189,7 +225,7 @@ export default function ServicesMarketplacePage({ hideHeader = false }: { hideHe
                                 placeholder="O que você busca? Ex: Design de Logo, Marketing, Limpeza..."
                                 value={searchQuery}
                                 onChange={handleSearchChange}
-                                className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50/50 outline-none text-base transition-all duration-300 placeholder:text-slate-400 shadow-inner"
+                                className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-slate-950/50 focus:bg-white dark:focus:bg-slate-950 focus:border-blue-500 focus:ring-4 focus:ring-blue-50/50 dark:focus:ring-blue-900/20 outline-none text-base transition-all duration-300 placeholder:text-slate-400 dark:placeholder:text-slate-600 dark:text-white shadow-inner"
                             />
                         </div>
 
@@ -201,7 +237,7 @@ export default function ServicesMarketplacePage({ hideHeader = false }: { hideHe
                                     onClick={() => setActiveFilter(f.value)}
                                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${activeFilter === f.value
                                         ? 'bg-blue-600 text-white shadow-sm'
-                                        : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
+                                        : 'bg-gray-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700'
                                         }`}
                                 >
                                     {f.icon}
@@ -209,16 +245,16 @@ export default function ServicesMarketplacePage({ hideHeader = false }: { hideHe
                                 </button>
                             ))}
 
-                            <div className="w-px h-4 bg-gray-200 mx-1" />
+                            <div className="w-px h-4 bg-gray-200 dark:bg-slate-800 mx-1" />
 
                             {/* Category pills */}
                             {CATEGORIES.map((cat) => (
                                 <button
                                     key={cat.value}
-                                    onClick={() => setActiveCategory(cat.value)}
+                                    onClick={() => handleCategoryClick(cat.value)}
                                     className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${activeCategory === cat.value
-                                        ? 'bg-slate-800 text-white'
-                                        : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
+                                        ? 'bg-slate-800 dark:bg-indigo-600 text-white'
+                                        : 'bg-gray-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700'
                                         }`}
                                 >
                                     {cat.label}
@@ -233,13 +269,13 @@ export default function ServicesMarketplacePage({ hideHeader = false }: { hideHe
 
             {!locationLoading && !hasLocation && activeFilter !== 'remote' && (
                 <div className="max-w-6xl mx-auto px-4 pt-4">
-                    <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-700">
+                    <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/20 rounded-xl px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
                         <MapPin size={16} className="shrink-0" />
                         <span>
                             Ative a localização para ver serviços presenciais próximos a você.{' '}
                             <button
                                 onClick={() => window.location.reload()}
-                                className="underline font-medium"
+                                className="underline font-medium hover:text-amber-800 dark:hover:text-amber-300"
                             >
                                 Tentar novamente
                             </button>
@@ -264,8 +300,8 @@ export default function ServicesMarketplacePage({ hideHeader = false }: { hideHe
                         {!loading && error && (
                             <div className="flex flex-col items-center justify-center py-24 gap-3">
                                 <AlertCircle size={32} className="text-red-400" />
-                                <p className="text-slate-600 font-medium">Erro ao carregar serviços</p>
-                                <p className="text-slate-400 text-sm">{error}</p>
+                                <p className="text-slate-600 dark:text-slate-300 font-medium">Erro ao carregar serviços</p>
+                                <p className="text-slate-400 dark:text-slate-500 text-sm">{error}</p>
                             </div>
                         )}
 
@@ -275,9 +311,9 @@ export default function ServicesMarketplacePage({ hideHeader = false }: { hideHe
                                 {Array.from(grouped.entries()).map(([category, items]) => (
                                     <section key={category}>
                                         <div className="flex items-center justify-between mb-4">
-                                            <h2 className="font-display text-lg font-bold text-slate-800">{category}</h2>
+                                            <h2 className="font-display text-lg font-bold text-slate-800 dark:text-white">{category}</h2>
                                             <button
-                                                onClick={() => setActiveCategory(category)}
+                                                onClick={() => handleCategoryClick(category)}
                                                 className="text-sm text-blue-600 hover:underline flex items-center gap-1"
                                             >
                                                 Ver todos <ArrowRight size={14} />
@@ -297,7 +333,7 @@ export default function ServicesMarketplacePage({ hideHeader = false }: { hideHe
                         {!loading && !error && !grouped && services.length > 0 && (
                             <>
                                 <div className="flex items-center justify-between mb-4">
-                                    <p className="text-sm text-slate-500">
+                                    <p className="text-sm text-slate-500 dark:text-slate-400">
                                         {services.length} serviço{services.length !== 1 ? 's' : ''} encontrado{services.length !== 1 ? 's' : ''}
                                     </p>
                                     
@@ -321,22 +357,22 @@ export default function ServicesMarketplacePage({ hideHeader = false }: { hideHe
                 {/* ── Empty State Profissional ── */}
                 {!loading && !error && services.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-24 text-center px-4 max-w-2xl mx-auto">
-                        <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-6">
+                        <div className="w-20 h-20 bg-blue-50 dark:bg-blue-500/10 rounded-full flex items-center justify-center mb-6">
                             <Search className="text-blue-500 w-10 h-10" />
                         </div>
-                        <h3 className="font-display text-2xl font-bold text-slate-800 mb-3">
+                        <h3 className="font-display text-2xl font-bold text-slate-800 dark:text-white mb-3">
                             Não encontramos prestadores para "{searchQuery || activeCategory || 'esta busca'}"
                         </h3>
-                        <p className="text-slate-500 mb-8 max-w-md">
+                        <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-md">
                             Nossa rede está crescendo rápido! Deixe seu contato e o serviço que precisa, e nós buscaremos um profissional qualificado para você em até 24h.
                         </p>
 
-                        <div className="w-full max-w-md bg-white p-2 border border-gray-200 rounded-2xl shadow-sm flex flex-col sm:flex-row gap-2">
-                            <input
-                                type="email"
-                                placeholder="Seu melhor e-mail"
-                                className="flex-1 px-4 py-3 bg-transparent outline-none text-sm"
-                            />
+                        <div className="w-full max-w-md bg-white dark:bg-slate-900 p-2 border border-gray-200 dark:border-white/5 rounded-2xl shadow-sm flex flex-col sm:flex-row gap-2">
+                             <input
+                                 type="email"
+                                 placeholder="Seu melhor e-mail"
+                                 className="flex-1 px-4 py-3 bg-transparent outline-none text-sm dark:text-white"
+                             />
                             <button
                                 className="bg-brand-primary text-white font-semibold px-6 py-3 rounded-xl hover:bg-brand-primary-hover transition-colors whitespace-nowrap"
                                 onClick={() => alert("Interesse registrado! Entraremos em contato em breve.")}

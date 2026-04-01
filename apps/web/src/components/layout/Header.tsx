@@ -7,6 +7,7 @@ import SearchBar from '@/components/layout/header/SearchBar';
 import MobileSheet from '@/components/layout/header/MobileSheet';
 import NotificationsDropdown from '@/components/layout/NotificationsDropdown';
 import MessagesDropdown from '@/components/layout/MessagesDropdown';
+import ThemeToggle from '@/components/layout/header/ThemeToggle';
 import { usePrefetchCriticalRoutes } from '@/hooks/usePrefetch';
 
 const Header: React.FC = () => {
@@ -31,8 +32,8 @@ const Header: React.FC = () => {
         <>
             <header
                 className={`sticky top-0 left-0 w-full z-50 transition-all duration-300 ${scrolled
-                    ? 'bg-white/90 backdrop-blur-xl border-b border-gray-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)]'
-                    : 'bg-white/95 backdrop-blur-sm border-b border-transparent'
+                    ? 'bg-white/90 dark:bg-[#0B1120]/90 backdrop-blur-xl border-b border-gray-200/60 dark:border-white/10 shadow-[0_1px_3px_rgba(0,0,0,0.04)]'
+                    : 'bg-white/95 dark:bg-[#0B1120]/95 backdrop-blur-sm border-b border-transparent'
                     }`}
             >
                 <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -55,17 +56,25 @@ const Header: React.FC = () => {
                             <NavLinks />
                         </div>
 
-                        {/* Center: Search Bar */}
+                        {/* Center: Search Bar (Desativado para deixar o layout mais leve) */}
+                        {/* 
                         <div className="hidden lg:flex flex-1 justify-center px-4 xl:px-6 max-w-md xl:max-w-xl">
                             <SearchBar />
-                        </div>
+                        </div> 
+                        */}
 
                         {/* Right: User Actions */}
-                        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+                            <div className="hidden sm:block">
+                                <ThemeToggle />
+                            </div>
                             <UserActions />
 
                             {/* Mobile Menu Button */}
                             <div className="lg:hidden flex items-center gap-1.5 sm:gap-2">
+                                <div className="sm:hidden">
+                                     <ThemeToggle />
+                                </div>
                                 {user && <MessagesDropdown />}
                                 {user && <NotificationsDropdown />}
                                 <button

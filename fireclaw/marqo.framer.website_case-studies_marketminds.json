@@ -1,0 +1,39 @@
+{
+  "metadata": {
+    "og:title": "MarketMinds - Marqo",
+    "og:type": "website",
+    "og:description": "A sleek, conversion-focused Framer template built for SaaS, agencies, and marketing teams. Showcase products, services, and case studies with bold visuals, clean typography, and fluid animations.",
+    "description": "A sleek, conversion-focused Framer template built for SaaS, agencies, and marketing teams. Showcase products, services, and case studies with bold visuals, clean typography, and fluid animations.",
+    "twitter:title": "MarketMinds - Marqo",
+    "ogDescription": "A sleek, conversion-focused Framer template built for SaaS, agencies, and marketing teams. Showcase products, services, and case studies with bold visuals, clean typography, and fluid animations.",
+    "title": "MarketMinds - Marqo",
+    "twitter:description": "A sleek, conversion-focused Framer template built for SaaS, agencies, and marketing teams. Showcase products, services, and case studies with bold visuals, clean typography, and fluid animations.",
+    "twitter:image": "https://framerusercontent.com/images/KMkpP7fKtD9CVKwA7y8lucF4sIQ.png?width=1232&height=928",
+    "robots": "max-image-preview:large",
+    "og:url": "https://marqo.framer.website/case-studies/marketminds",
+    "ogImage": "https://framerusercontent.com/images/KMkpP7fKtD9CVKwA7y8lucF4sIQ.png?width=1232&height=928",
+    "twitter:card": "summary_large_image",
+    "generator": "Framer cc3b8f8",
+    "framer-search-index-fallback": "https://framerusercontent.com/sites/2YZN9jGo5kqlZQzt1baBcL/searchIndex-1GOn1J4ZbkJc.json",
+    "og:image": "https://framerusercontent.com/images/KMkpP7fKtD9CVKwA7y8lucF4sIQ.png?width=1232&height=928",
+    "language": "en",
+    "framer-search-index": "https://framerusercontent.com/sites/2YZN9jGo5kqlZQzt1baBcL/searchIndex-FA5ey2J17DRD.json",
+    "ogUrl": "https://marqo.framer.website/case-studies/marketminds",
+    "ogTitle": "MarketMinds - Marqo",
+    "viewport": "width=device-width",
+    "favicon": "https://framerusercontent.com/images/PHG5GhD2y2XWdaz5MQVDhMzWS0.png",
+    "scrapeId": "019d4719-9ada-7319-a224-4996ad2e86f3",
+    "sourceURL": "https://marqo.framer.website/case-studies/marketminds",
+    "url": "https://marqo.framer.website/case-studies/marketminds",
+    "statusCode": 200,
+    "contentType": "text/html",
+    "proxyUsed": "basic",
+    "cacheState": "hit",
+    "cachedAt": "2026-04-01T03:13:35.069Z",
+    "creditsUsed": 5
+  },
+  "json": {
+    "company_name": "MarketMinds",
+    "company_description": "MarketMinds, a digital marketing agency, needed to improve campaign efficiency and client reporting. They integrated AI-powered analytics and reporting tools to automate data collection, identify trends, and generate real-time insights."
+  }
+}

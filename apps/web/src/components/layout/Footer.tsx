@@ -4,7 +4,7 @@ import { WaitlistForm } from '../landing/WaitlistForm';
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-slate-900 text-slate-300">
+    <footer className="bg-slate-900 dark:bg-[#060a14] text-slate-300 border-t border-slate-800/50 dark:border-white/5">
       {/* Main Footer */}
       <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 pb-8">
         {/* Top Row: Brand + Waitlist */}

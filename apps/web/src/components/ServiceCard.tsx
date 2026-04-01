@@ -20,12 +20,12 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, onRequestQuote }) =>
 
   return (
     <div
-      className="group relative bg-white border border-gray-100 rounded-[var(--radius-box)] p-0 flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1 overflow-hidden h-full"
+      className="group relative bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 rounded-[var(--radius-box)] p-0 flex flex-col transition-all duration-300 hover:shadow-lg dark:hover:shadow-indigo-500/10 hover:-translate-y-1 overflow-hidden h-full"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Service Image */}
-      <div className="relative aspect-video w-full overflow-hidden bg-gray-100">
+      <div className="relative aspect-video w-full overflow-hidden bg-gray-100 dark:bg-slate-800">
         <OptimizedImage
           src={service.gallery && service.gallery.length > 0 ? service.gallery[0] : undefined}
           alt={service.title}
@@ -38,8 +38,8 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, onRequestQuote }) =>
 
         {/* Company Logo Overlay (Bottom Left of Image) */}
         {company && (
-          <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-white/95 backdrop-blur-sm p-1.5 rounded-lg shadow-sm">
-            <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-100">
+          <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm p-1.5 rounded-lg shadow-sm border border-transparent dark:border-white/5">
+            <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-100 dark:bg-slate-800">
               {company.logo_url && (
                 <OptimizedImage
                   src={company.logo_url}
@@ -52,29 +52,29 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, onRequestQuote }) =>
                 />
               )}
             </div>
-            <span className="text-[10px] font-bold text-brand-primary line-clamp-1 max-w-[100px]">{company.company_name}</span>
+            <span className="text-[10px] font-bold text-brand-primary dark:text-slate-200 line-clamp-1 max-w-[100px]">{company.company_name}</span>
           </div>
         )}
       </div>
 
       <div className="flex flex-col flex-grow p-5">
         {/* Title */}
-        <h3 className="font-display text-base font-bold text-brand-primary leading-tight group-hover:text-brand-accent transition-colors duration-300 line-clamp-2 mb-2 min-h-[2.5em]">
+        <h3 className="font-display text-base font-bold text-brand-primary dark:text-white leading-tight group-hover:text-brand-accent dark:group-hover:text-indigo-400 transition-colors duration-300 line-clamp-2 mb-2 min-h-[2.5em]">
           {service.title}
         </h3>
 
         {/* Description */}
-        <p className="text-xs text-brand-secondary line-clamp-2 mb-4 flex-grow">
+        <p className="text-xs text-brand-secondary dark:text-slate-400 line-clamp-2 mb-4 flex-grow">
           {service.description}
         </p>
 
         {/* Footer: Price & Action */}
-        <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
+        <div className="mt-auto pt-4 border-t border-gray-50 dark:border-white/5 flex items-center justify-between">
           <div className="flex flex-col">
-            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+            <span className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
               A partir de
             </span>
-            <span className="text-lg font-extrabold text-brand-success tracking-tight">
+            <span className="text-lg font-extrabold text-brand-success dark:text-emerald-400 tracking-tight">
               R$ {(service.price || service.starting_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </span>
           </div>

@@ -40,14 +40,14 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, change, icon, accent 
     initial={{ opacity: 0, y: 12 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.4, delay }}
-    className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5 flex items-center justify-between hover:shadow-md hover:-translate-y-0.5 transition-all group"
+    className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm p-4 sm:p-5 flex items-center justify-between hover:shadow-md hover:-translate-y-0.5 transition-all group"
   >
     <div className="min-w-0">
-      <p className="text-gray-400 text-[11px] sm:text-xs font-semibold uppercase tracking-wide mb-1 truncate">{title}</p>
+      <p className="text-gray-400 dark:text-slate-500 text-[11px] sm:text-xs font-semibold uppercase tracking-wide mb-1 truncate">{title}</p>
       <div className="flex items-center gap-2">
-        <h3 className="text-gray-900 text-lg sm:text-xl font-bold truncate">{value}</h3>
+        <h3 className="text-gray-900 dark:text-white text-lg sm:text-xl font-bold truncate">{value}</h3>
         {change && (
-          <span className={`text-[10px] sm:text-xs font-bold px-1.5 py-0.5 rounded-md ${change.startsWith('+') ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-50 text-gray-500'
+          <span className={`text-[10px] sm:text-xs font-bold px-1.5 py-0.5 rounded-md ${change.startsWith('+') ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-slate-400'
             }`}>
             {change}
           </span>
@@ -61,26 +61,26 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, change, icon, accent 
 );
 
 // ─── Activity Table ─────────────────────────────────────────────────────────────
-const ActivityTable: React.FC<{ data: any[] }> = ({ data }) => {
+const ActivityTable: React.FC<{ data: any[]; companySlug?: string }> = ({ data, companySlug }) => {
   const navigate = useNavigate();
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.6 }}
-      className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6"
+      className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm p-5 sm:p-6"
     >
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm sm:text-base font-bold text-gray-900">Atividade Recente</h3>
-        <span className="text-[10px] text-gray-400 font-medium">Ultimas transacoes</span>
+        <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white">Atividade Recente</h3>
+        <span className="text-[10px] text-gray-400 dark:text-slate-500 font-medium">Últimas transações</span>
       </div>
       <div className="overflow-x-auto -mx-5 sm:-mx-6 px-5 sm:px-6">
         <table className="w-full text-left">
           <thead>
             <tr>
-              <th className="text-gray-400 text-[10px] font-bold uppercase py-2.5 border-b border-gray-100 pr-4">Servico</th>
-              <th className="text-gray-400 text-[10px] font-bold uppercase py-2.5 border-b border-gray-100 pr-4">Valor</th>
-              <th className="text-gray-400 text-[10px] font-bold uppercase py-2.5 border-b border-gray-100">Status</th>
+              <th className="text-gray-400 dark:text-slate-500 text-[10px] font-bold uppercase py-2.5 border-b border-gray-100 dark:border-white/5 pr-4">Serviço</th>
+              <th className="text-gray-400 dark:text-slate-500 text-[10px] font-bold uppercase py-2.5 border-b border-gray-100 dark:border-white/5 pr-4">Valor</th>
+              <th className="text-gray-400 dark:text-slate-500 text-[10px] font-bold uppercase py-2.5 border-b border-gray-100 dark:border-white/5">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -94,33 +94,33 @@ const ActivityTable: React.FC<{ data: any[] }> = ({ data }) => {
               data.map((item, idx) => (
                 <tr
                   key={item.id || item.order_id || idx}
-                  className="hover:bg-gray-50/50 transition-colors cursor-pointer group/row"
+                  className="hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors cursor-pointer group/row"
                   onClick={() => {
                     const orderId = item.id || item.order_id;
-                    if (orderId) navigate(`/orders/${orderId}`);
+                    if (orderId && companySlug) navigate(`/dashboard/empresa/${companySlug}/orcamentos/${orderId}`);
                   }}
                 >
-                  <td className="py-3 pr-4 border-b border-gray-50">
+                  <td className="py-3 pr-4 border-b border-gray-50 dark:border-white/5">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-secondary-50 flex items-center justify-center text-[10px] font-bold text-secondary-600 flex-shrink-0 group-hover/row:bg-secondary-100 transition-colors">
+                      <div className="w-7 h-7 rounded-lg bg-secondary-50 dark:bg-secondary-500/10 flex items-center justify-center text-[10px] font-bold text-secondary-600 dark:text-secondary-400 flex-shrink-0 group-hover/row:bg-secondary-100 transition-colors">
                         {item.service_title ? item.service_title.charAt(0).toUpperCase() : 'S'}
                       </div>
-                      <span className="text-xs sm:text-sm font-medium text-gray-700 truncate max-w-[120px] sm:max-w-[200px] group-hover/row:text-primary-600 transition-colors">
-                        {item.service_title || 'Servico sem titulo'}
+                      <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-slate-300 truncate max-w-[120px] sm:max-w-[200px] group-hover/row:text-primary-600 dark:group-hover/row:text-primary-400 transition-colors">
+                        {item.service_title || 'Serviço sem título'}
                       </span>
                     </div>
                   </td>
-                  <td className="py-3 pr-4 border-b border-gray-50 text-xs sm:text-sm text-gray-600 font-semibold whitespace-nowrap">
-                    R$ {item.agreed_price?.toFixed(2)}
+                  <td className="py-3 pr-4 border-b border-gray-50 dark:border-white/5 text-xs sm:text-sm text-gray-600 dark:text-slate-400 font-semibold whitespace-nowrap">
+                    R$ {item.agreed_price?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </td>
-                  <td className="py-3 border-b border-gray-50">
-                    <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${item.status === 'in_progress' ? 'bg-blue-50 text-blue-600' :
-                      item.status === 'completed' ? 'bg-emerald-50 text-emerald-600' :
-                        (item.status === 'cancelled') ? 'bg-red-50 text-red-600' :
-                          'bg-gray-50 text-gray-500'
+                  <td className="py-3 border-b border-gray-50 dark:border-white/5">
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${item.status === 'in_progress' ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' :
+                        item.status === 'completed' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
+                          (item.status === 'cancelled') ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400' :
+                            'bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-slate-400'
                       }`}>
                       {item.status === 'in_progress' ? 'Em Progresso' :
-                        item.status === 'completed' ? 'Concluido' :
+                        item.status === 'completed' ? 'Concluído' :
                           item.status === 'pending_payment' ? 'Aguardando Pgto' :
                             item.status}
                     </span>
@@ -236,7 +236,7 @@ const DashboardOverviewPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-5xl mx-auto space-y-4">
+      <div className="w-full space-y-4">
         <LoadingSkeleton className="h-12 w-72 rounded-xl" />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map(i => <LoadingSkeleton key={i} className="h-24 rounded-2xl" />)}
@@ -247,7 +247,7 @@ const DashboardOverviewPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6">
+    <div className="w-full space-y-5 sm:space-y-6">
 
       {/* ─── Page Header ─────────────────────────────────────────────── */}
       <motion.div
@@ -255,25 +255,25 @@ const DashboardOverviewPage: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
+        <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-slate-500 mb-1">
           <span>Dashboard</span>
           <ChevronRight size={12} />
-          <span className="text-gray-600 font-medium">Visao Geral</span>
+          <span className="text-gray-600 dark:text-slate-400 font-medium">Visão Geral</span>
         </div>
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
               {getGreeting()}, {company?.company_name || 'Empresa'}
             </h1>
-            <p className="text-xs sm:text-sm text-gray-400 mt-0.5 capitalize">{formatDate()}</p>
+            <p className="text-xs sm:text-sm text-gray-400 dark:text-slate-500 mt-0.5 capitalize">{formatDate()}</p>
           </div>
           <Link
             to={`/empresa/${company?.slug}`}
             target="_blank"
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-gray-600 hover:text-gray-900 bg-white border border-gray-200 rounded-xl hover:shadow-sm transition-all"
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/5 rounded-xl hover:shadow-sm transition-all"
           >
             <Eye size={14} />
-            Ver Perfil Publico
+            Ver Perfil Público
             <ArrowUpRight size={12} />
           </Link>
         </div>
@@ -285,29 +285,29 @@ const DashboardOverviewPage: React.FC = () => {
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
-          className="bg-amber-50 border border-amber-100 rounded-2xl p-3 sm:p-4 flex flex-wrap gap-2 sm:gap-3 items-center"
+          className="bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/20 rounded-2xl p-3 sm:p-4 flex flex-wrap gap-2 sm:gap-3 items-center"
         >
-          <div className="flex items-center gap-2 text-amber-700 font-bold text-xs">
+          <div className="flex items-center gap-2 text-amber-700 dark:text-amber-500 font-bold text-xs">
             <Bell size={14} />
             Alertas
           </div>
           <div className="flex flex-wrap gap-2">
             {alerts.todayBookings > 0 && (
-              <Link to={`/dashboard/empresa/${company?.slug}/agenda`} className="flex items-center gap-1.5 bg-white border border-amber-200 text-amber-800 text-[10px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full hover:bg-amber-100 transition-colors">
+              <Link to={`/dashboard/empresa/${company?.slug}/agenda`} className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-900/30 text-amber-800 dark:text-amber-400 text-[10px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full hover:bg-amber-100 dark:hover:bg-amber-900/20 transition-colors">
                 <Calendar size={12} />
                 {alerts.todayBookings} agendamento{alerts.todayBookings > 1 ? 's' : ''} hoje
               </Link>
             )}
             {alerts.unreadMessages > 0 && (
-              <Link to={`/dashboard/empresa/${company?.slug}/mensagens`} className="flex items-center gap-1.5 bg-white border border-blue-200 text-blue-800 text-[10px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full hover:bg-blue-50 transition-colors">
+              <Link to={`/dashboard/empresa/${company?.slug}/mensagens`} className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-900/30 text-blue-800 dark:text-blue-400 text-[10px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
                 <MessageSquare size={12} />
-                {alerts.unreadMessages} mensagem{alerts.unreadMessages > 1 ? 'ns' : ''} nao lida{alerts.unreadMessages > 1 ? 's' : ''}
+                {alerts.unreadMessages} mensagem{alerts.unreadMessages > 1 ? 's' : ''} não lida{alerts.unreadMessages > 1 ? 's' : ''}
               </Link>
             )}
             {alerts.pendingQuotes > 0 && (
-              <Link to={`/dashboard/empresa/${company?.slug}/orcamentos`} className="flex items-center gap-1.5 bg-white border border-purple-200 text-purple-800 text-[10px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full hover:bg-purple-50 transition-colors">
+              <Link to={`/dashboard/empresa/${company?.slug}/orcamentos`} className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-900/30 text-purple-800 dark:text-purple-400 text-[10px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors">
                 <FileText size={12} />
-                {alerts.pendingQuotes} orcamento{alerts.pendingQuotes > 1 ? 's' : ''} pendente{alerts.pendingQuotes > 1 ? 's' : ''}
+                {alerts.pendingQuotes} orçamento{alerts.pendingQuotes > 1 ? 's' : ''} pendente{alerts.pendingQuotes > 1 ? 's' : ''}
               </Link>
             )}
           </div>
@@ -355,14 +355,14 @@ const DashboardOverviewPage: React.FC = () => {
           delay={0.35}
         />
         <StatCard
-          title="Servicos Concluidos"
+          title="Serviços Concluídos"
           value={stats.completedServices.toString()}
           icon={<BadgeCheck size={18} />}
           accent="bg-emerald-500"
           delay={0.4}
         />
         <StatCard
-          title="Ticket Medio"
+          title="Ticket Médio"
           value={`R$ ${stats.avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
           icon={<Ticket size={18} />}
           accent="bg-purple-500"
@@ -376,24 +376,24 @@ const DashboardOverviewPage: React.FC = () => {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.3 }}
-          className="lg:col-span-3 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6 relative overflow-hidden"
+          className="lg:col-span-3 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm p-5 sm:p-6 relative overflow-hidden"
         >
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center text-white">
                 <TrendingUp size={16} />
               </div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Painel do Profissional</span>
+              <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Painel do Profissional</span>
             </div>
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-2">
               Acompanhe seus resultados
             </h3>
-            <p className="text-xs sm:text-sm text-gray-500 max-w-sm leading-relaxed">
-              Monitore metricas, gerencie pedidos e faca seu negocio crescer dentro da CONTRATTO.
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-slate-400 max-w-sm leading-relaxed">
+              Monitore métricas, gerencie pedidos e faça seu negócio crescer dentro da CONTRATTO.
             </p>
           </div>
-          <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-primary-50 rounded-full opacity-60" />
-          <div className="absolute -right-2 -bottom-2 w-20 h-20 bg-primary-100 rounded-full opacity-40" />
+          <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-primary-50 dark:bg-primary-500/10 rounded-full opacity-60" />
+          <div className="absolute -right-2 -bottom-2 w-20 h-20 bg-primary-100 dark:bg-primary-500/20 rounded-full opacity-40" />
         </motion.div>
 
         <motion.div
@@ -409,7 +409,7 @@ const DashboardOverviewPage: React.FC = () => {
             </div>
             <h3 className="text-base sm:text-lg font-bold text-white mb-2">Destaque seu perfil</h3>
             <p className="text-xs text-white/60 leading-relaxed">
-              Responda rapido, mantenha o portfolio atualizado e receba ate 3x mais contatos.
+              Responda rápido, mantenha o portfólio atualizado e receba até 3x mais contatos.
             </p>
           </div>
           <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-white/10 rounded-full" />
@@ -421,12 +421,12 @@ const DashboardOverviewPage: React.FC = () => {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.45 }}
-        className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6"
+        className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm p-5 sm:p-6"
       >
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-sm sm:text-base font-bold text-gray-900">Melhores Serviços</h3>
-            <p className="text-[10px] sm:text-xs text-gray-400">Baseado no volume de pedidos concluídos</p>
+            <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white">Melhores Serviços</h3>
+            <p className="text-[10px] sm:text-xs text-gray-400 dark:text-slate-500">Baseado no volume de pedidos concluídos</p>
           </div>
           <TrendingUp size={18} className="text-emerald-500" />
         </div>
@@ -444,13 +444,13 @@ const DashboardOverviewPage: React.FC = () => {
           .sort((a, b) => b.count - a.count)
           .slice(0, 3)
           .map((service, idx) => (
-            <div key={idx} className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50/50 border border-gray-100 group hover:bg-white hover:shadow-sm transition-all">
-              <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-sm font-black text-gray-400 group-hover:text-primary-600 transition-colors">
+            <div key={idx} className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 group hover:bg-white dark:hover:bg-white/10 hover:shadow-sm transition-all">
+              <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border border-gray-100 dark:border-white/5 flex items-center justify-center text-sm font-black text-gray-400 dark:text-slate-500 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
                 {idx + 1}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-gray-800 truncate">{service.name}</p>
-                <p className="text-xs text-gray-400 font-medium">{service.count} pedidos realizados</p>
+                <p className="text-sm font-bold text-gray-800 dark:text-slate-200 truncate">{service.name}</p>
+                <p className="text-xs text-gray-400 dark:text-slate-400 font-medium">{service.count} pedidos realizados</p>
               </div>
               <ArrowUpRight size={14} className="text-gray-300 group-hover:text-emerald-500 transition-colors" />
             </div>
@@ -469,29 +469,29 @@ const DashboardOverviewPage: React.FC = () => {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.5 }}
-          className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6"
+          className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm p-5 sm:p-6"
         >
           <div className="flex items-center justify-between mb-1">
-            <h3 className="text-sm sm:text-base font-bold text-gray-900">Historico de Vendas</h3>
-            <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+            <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white">Histórico de Vendas</h3>
+            <div className="flex gap-1 bg-gray-100 dark:bg-slate-800 p-1 rounded-lg">
               <button
                 onClick={() => setChartPeriod('7d')}
-                className={`px-2.5 py-1 text-[10px] sm:text-xs font-bold rounded-md transition-all ${chartPeriod === '7d' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                className={`px-2.5 py-1 text-[10px] sm:text-xs font-bold rounded-md transition-all ${chartPeriod === '7d' ? 'bg-white dark:bg-slate-700 text-gray-800 dark:text-white shadow-sm' : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'
                   }`}
               >
                 7 dias
               </button>
               <button
                 onClick={() => setChartPeriod('30d')}
-                className={`px-2.5 py-1 text-[10px] sm:text-xs font-bold rounded-md transition-all ${chartPeriod === '30d' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                className={`px-2.5 py-1 text-[10px] sm:text-xs font-bold rounded-md transition-all ${chartPeriod === '30d' ? 'bg-white dark:bg-slate-700 text-gray-800 dark:text-white shadow-sm' : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'
                   }`}
               >
                 30 dias
               </button>
             </div>
           </div>
-          <p className="text-[10px] sm:text-xs text-gray-400 mb-4">
-            {chartPeriod === '7d' ? 'Ultimos 7 dias' : 'Ultimos 30 dias'}
+          <p className="text-[10px] sm:text-xs text-gray-400 dark:text-slate-500 mb-4">
+            {chartPeriod === '7d' ? 'Últimos 7 dias' : 'Últimos 30 dias'}
           </p>
           <div className="w-full h-[300px] relative">
             {filteredChart && filteredChart.length > 0 ? (
@@ -544,7 +544,7 @@ const DashboardOverviewPage: React.FC = () => {
       </div>
 
       {/* ─── Recent Activity ─────────────────────────────────────────── */}
-      <ActivityTable data={recentActivity} />
+      <ActivityTable data={recentActivity} companySlug={company?.slug} />
     </div>
   );
 };

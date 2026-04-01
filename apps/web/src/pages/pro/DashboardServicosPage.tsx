@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import { useToast } from '@/contexts/ToastContext';
 import { Service } from '@tgt/core';
@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import ServiceWizard from '@/components/dashboard/ServiceWizard';
 import { motion } from 'framer-motion';
 import { Button, LoadingSkeleton } from '@tgt/ui-web';
+import BoostModal from '@/components/dashboard/BoostModal';
 
 import {
   ChevronRight,
@@ -18,14 +19,18 @@ import {
   AlertTriangle,
   ArrowUpRight,
   Zap,
+  Sparkles,
+  Tag
 } from 'lucide-react';
 
 const DashboardServicosPage: React.FC = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
+  const [isBoostModalOpen, setIsBoostModalOpen] = useState(false);
+  const [serviceToBoost, setServiceToBoost] = useState<Service | null>(null);
   const [isFetching, setIsFetching] = useState(true);
-  const [company, setCompany] = useState<{ id: string; current_plan_tier: string; slug: string } | null>(null);
+  const [company, setCompany] = useState<{ id: string; current_plan_tier: string; slug: string; is_sponsored?: boolean } | null>(null);
   const { addToast } = useToast();
   const { user } = useAuth();
 
@@ -35,7 +40,7 @@ const DashboardServicosPage: React.FC = () => {
     if (!user) return;
     try {
       const { data: companyData, error: companyError } = await supabase
-        .from('companies').select('id, current_plan_tier, slug').eq('profile_id', user.id).single();
+        .from('companies').select('id, current_plan_tier, slug, is_sponsored').eq('profile_id', user.id).single();
 
       if (companyError) {
         if (companyError.code === 'PGRST116') console.warn('Company profile not found.');
@@ -59,11 +64,56 @@ const DashboardServicosPage: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('boost_success')) {
+      addToast('Pagamento em processamento! O impulsionamento será ativado em instantes.', 'success');
+      // Remover param da URL sem recarregar
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (params.get('boost_cancel')) {
+      addToast('O processo de impulsionamento foi cancelado.', 'info');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [addToast]);
+
   useEffect(() => { fetchServices(); }, [user, addToast]);
 
   const closeWizard = () => { setIsWizardOpen(false); setEditingService(null); fetchServices(); };
   const openWizard = () => { setEditingService(null); setIsWizardOpen(true); };
   const openModalToEdit = (service: Service) => { setEditingService(service); setIsWizardOpen(true); };
+  const openBoostModal = (service: Service) => { setServiceToBoost(service); setIsBoostModalOpen(true); };
+
+  const handleBoostConfirm = async (type: 'service' | 'company') => {
+    if (!user || !company) return;
+    
+    try {
+      // IDs de preços criados no Stripe para a Fase 4
+      const PRICE_IDS = {
+        service: 'price_1THED6E72T1QHvIbOHzxbLQg', // R$ 19,90 /mês
+        company: 'price_1THEDJE72T1QHvIbeUa6wHvf'  // R$ 49,90 /mês
+      };
+
+      const { data, error } = await supabase.functions.invoke('create-boost-checkout', {
+        body: {
+          price_id: PRICE_IDS[type],
+          boost_type: type,
+          service_id: type === 'service' ? serviceToBoost?.id : null,
+          success_url: `${window.location.origin}/dashboard/servicos?boost_success=true`,
+          cancel_url: `${window.location.origin}/dashboard/servicos?boost_cancel=true`,
+        }
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('URL de checkout não retornada.');
+      }
+    } catch (err) {
+      console.error('Erro ao iniciar checkout de boost:', err);
+      addToast('Erro ao iniciar pagamento. Tente novamente.', 'error');
+    }
+  };
 
   const handleDelete = async (serviceId: string) => {
     if (window.confirm('Tem certeza que deseja excluir este servico?')) {
@@ -94,7 +144,7 @@ const DashboardServicosPage: React.FC = () => {
 
   if (isWizardOpen) {
     return (
-      <div className="max-w-5xl mx-auto space-y-5">
+      <div className="w-full space-y-5">
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
           <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
             <span>Dashboard</span><ChevronRight size={12} />
@@ -105,13 +155,13 @@ const DashboardServicosPage: React.FC = () => {
             {editingService ? 'Editar Servico' : 'Novo Servico'}
           </h1>
         </motion.div>
-        <ServiceWizard onCancel={closeWizard} initialData={editingService} onSuccess={closeWizard} />
+        <ServiceWizard onCancel={closeWizard} initialData={editingService as any} onSuccess={closeWizard} />
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6">
+    <div className="w-full space-y-5 sm:space-y-6">
 
       {/* ─── Page Header ─────────────────────────────────────────────── */}
       <motion.div
@@ -186,6 +236,9 @@ const DashboardServicosPage: React.FC = () => {
         <div className="space-y-3">
           {services.map((service, idx) => {
             const isActive = (service as any).is_active !== false;
+            const isSponsored = (service as any).is_sponsored || company?.is_sponsored;
+            const isPromo = !!(service as any).promotional_price;
+
             return (
               <motion.div
                 key={service.id}
@@ -205,15 +258,39 @@ const DashboardServicosPage: React.FC = () => {
                   <div className="min-w-0">
                     <h3 className="text-sm font-bold text-gray-900 truncate">{service.title}</h3>
                     <p className="text-xs text-gray-400">
-                      {service.starting_price
-                        ? `A partir de R$ ${service.starting_price.toFixed(2).replace('.', ',')}`
-                        : service.price
-                          ? `R$ ${service.price.toFixed(2).replace('.', ',')}`
-                          : 'Preco sob consulta'}
+                      {(service as any).promotional_price 
+                        ? `A partir de R$ ${(service as any).promotional_price.toFixed(2).replace('.', ',')}`
+                        : service.starting_price
+                          ? `A partir de R$ ${service.starting_price.toFixed(2).replace('.', ',')}`
+                          : service.price
+                            ? `R$ ${service.price.toFixed(2).replace('.', ',')}`
+                            : 'Preco sob consulta'}
                     </p>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                      {isPromo && (
+                        <span className="flex items-center gap-1 px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-md text-[9px] font-black uppercase tracking-tighter">
+                          <Tag size={10} /> Oferta
+                        </span>
+                      )}
+                      {isSponsored && (
+                        <span className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-md text-[9px] font-black uppercase tracking-tighter">
+                          <Sparkles size={10} /> Patrocinado
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                  {/* Boost */}
+                  <button
+                    onClick={() => openBoostModal(service)}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 dark:from-blue-500/10 dark:to-indigo-500/10 text-blue-600 dark:text-blue-400 rounded-xl text-xs font-bold transition-all border border-blue-100/50 dark:border-blue-500/20 group"
+                    title="Impulsionar"
+                  >
+                    <Sparkles size={14} className="group-hover:scale-110 transition-transform" fill="currentColor" />
+                    <span className="hidden sm:inline">Impulsionar</span>
+                  </button>
+
                   {/* Toggle */}
                   <button
                     onClick={() => handleToggleService(service.id, isActive)}
@@ -248,6 +325,13 @@ const DashboardServicosPage: React.FC = () => {
           })}
         </div>
       )}
+
+      <BoostModal 
+        isOpen={isBoostModalOpen}
+        onClose={() => setIsBoostModalOpen(false)}
+        serviceTitle={serviceToBoost?.title}
+        onConfirm={handleBoostConfirm}
+      />
     </div>
   );
 };

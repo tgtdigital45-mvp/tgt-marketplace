@@ -43,7 +43,7 @@ const DashboardSubscriptionPage: React.FC = () => {
 
   if (isCompanyLoading) {
     return (
-      <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6">
+      <div className="w-full space-y-5 sm:space-y-6">
         <LoadingSkeleton className="h-10 w-64 rounded-xl" />
         <LoadingSkeleton className="h-32 rounded-2xl" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -70,7 +70,7 @@ const DashboardSubscriptionPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6">
+    <div className="w-full space-y-5 sm:space-y-6">
       {/* ─── Page Header ─────────────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}

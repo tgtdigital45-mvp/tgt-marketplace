@@ -6,6 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { CompanyProvider } from '@/contexts/CompanyContext';
 import { ToastProvider } from '@/contexts/ToastContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import ScrollToTop from '@/components/ScrollToTop';
 import PortalRoutes from './routes';
 
@@ -23,25 +24,27 @@ const queryClient = new QueryClient({
 const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <HelmetProvider>
-        <BrowserRouter
-          future={{
-            v7_startTransition: true,
-            v7_relativeSplatPath: true,
-          }}
-        >
-          <AuthProvider>
-            <ToastProvider>
-              <NotificationProvider>
-                <CompanyProvider>
-                  <ScrollToTop />
-                  <PortalRoutes />
-                </CompanyProvider>
-              </NotificationProvider>
-            </ToastProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </HelmetProvider>
+      <ThemeProvider>
+        <HelmetProvider>
+          <BrowserRouter
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true,
+            }}
+          >
+            <AuthProvider>
+              <ToastProvider>
+                <NotificationProvider>
+                  <CompanyProvider>
+                    <ScrollToTop />
+                    <PortalRoutes />
+                  </CompanyProvider>
+                </NotificationProvider>
+              </ToastProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </HelmetProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 };

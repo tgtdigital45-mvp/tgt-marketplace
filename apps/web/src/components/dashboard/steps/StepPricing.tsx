@@ -33,6 +33,26 @@ const StepPricing = ({ data, updateData, errors }: StepProps) => {
                         />
                         {errors?.packages && <p className="text-red-500 text-sm mt-1">{errors.packages}</p>}
                     </div>
+
+                    <div className="space-y-4">
+                        <label className="block text-sm font-black text-amber-600 uppercase tracking-widest">Preço Promocional (Opcional)</label>
+                        <div className="relative">
+                            <input
+                                type="number"
+                                min={0}
+                                value={data.promotionalPrice || ''}
+                                onChange={e => updateData({ promotionalPrice: e.target.value ? Number(e.target.value) : undefined })}
+                                placeholder="Ex: 197"
+                                className="w-full p-5 bg-amber-50/50 border-2 border-amber-100 rounded-3xl text-2xl font-bold text-amber-700 focus:border-amber-400 focus:bg-amber-50 outline-none transition-all"
+                            />
+                            {data.promotionalPrice && data.packages?.basic?.price && data.packages.basic.price > data.promotionalPrice && (
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 bg-amber-500 text-white px-3 py-1 rounded-full text-xs font-black">
+                                    -{Math.round((1 - data.promotionalPrice / data.packages.basic.price) * 100)}% OFF
+                                </div>
+                            )}
+                        </div>
+                        <p className="text-[10px] text-slate-400 font-medium">Deixe em branco para valor normal. O marketplace exibirá o preço riscado.</p>
+                    </div>
                     <div className="grid grid-cols-2 gap-6">
                         <div className="space-y-4">
                             <label className="block text-sm font-black">Prazo</label>
@@ -94,6 +114,30 @@ const StepPricing = ({ data, updateData, errors }: StepProps) => {
                         />
                     </div>
                 ))}
+            </div>
+
+            <div className="mt-8 bg-amber-50/30 border border-amber-100 rounded-[40px] p-8 space-y-6">
+                <div>
+                    <h4 className="text-sm font-black text-amber-600 uppercase tracking-widest mb-2">Preço Promocional do Serviço</h4>
+                    <p className="text-xs text-slate-500 mb-4">Este valor será exibido como preço principal em destaque, mantendo os pacotes como opções.</p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-4 items-center">
+                    <div className="relative flex-1 w-full">
+                        <input
+                            type="number"
+                            min={0}
+                            value={data.promotionalPrice || ''}
+                            onChange={e => updateData({ promotionalPrice: e.target.value ? Number(e.target.value) : undefined })}
+                            placeholder="Valor Promocional (R$)"
+                            className="w-full p-4 bg-white border-2 border-amber-100 rounded-3xl font-bold text-amber-700 focus:border-amber-400 outline-none transition-all"
+                        />
+                        {data.promotionalPrice && data.packages?.basic?.price && data.packages.basic.price > data.promotionalPrice && (
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 bg-amber-500 text-white px-2.5 py-0.5 rounded-full text-[10px] font-black">
+                                -{Math.round((1 - data.promotionalPrice / data.packages.basic.price) * 100)}%
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     );

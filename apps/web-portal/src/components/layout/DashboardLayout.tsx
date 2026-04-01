@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { NavLink, Outlet, Navigate, useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import StoreStatusToggle from '@/components/dashboard/StoreStatusToggle';
+import ThemeToggle from '@portal/components/layout/ThemeToggle';
 
 const DashboardLayout: React.FC = () => {
   const { user, loading, logout } = useAuth();
@@ -175,13 +177,17 @@ const DashboardLayout: React.FC = () => {
       </nav>
 
       <div className="mt-auto pt-4 border-t border-slate-800">
+        <div className="flex items-center justify-between p-2 mb-2">
+          <span className="text-xs font-medium text-slate-400">Tema do Painel</span>
+          <ThemeToggle />
+        </div>
         <StoreStatusToggle />
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 flex overflow-hidden">
+    <div className="min-h-screen bg-slate-50 dark:bg-brand-dark flex overflow-hidden transition-colors duration-300">
       {/* Sidebar Desktop */}
       <aside 
         style={{ width: sidebarWidth }}
@@ -198,17 +204,19 @@ const DashboardLayout: React.FC = () => {
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Topbar Mobile */}
-        <header className="lg:hidden flex items-center justify-between h-14 bg-slate-900 px-4 shrink-0">
+        <header className="lg:hidden flex items-center justify-between h-14 bg-slate-900 border-b border-slate-800 px-4 shrink-0">
           <div className="flex items-center gap-2">
             <img src="/logo-contratto.png" alt="CONTRATTO" className="h-6 w-auto brightness-0 invert" />
             <span className="text-white font-bold text-sm">Portal</span>
           </div>
-          <button
-            onClick={() => setMobileSidebarOpen(true)}
-            className="p-2 text-slate-400 hover:text-white transition-colors"
-          >
-            <MenuIcon />
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setMobileSidebarOpen(true)}
+              className="p-2 text-slate-400 hover:text-white transition-colors"
+            >
+              <MenuIcon />
+            </button>
+          </div>
         </header>
 
         {/* Main Area */}

@@ -22,6 +22,8 @@ const queryClient = new QueryClient({
   },
 });
 
+import { Toaster } from 'react-hot-toast';
+
 const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
@@ -37,6 +39,21 @@ const App: React.FC = () => {
               <NotificationProvider>
                 <CompanyProvider>
                   <ScrollToTop />
+                  <Toaster 
+                    position="top-right"
+                    toastOptions={{
+                      duration: 4000,
+                      style: {
+                        background: '#fff',
+                        color: '#0f172a',
+                        borderRadius: '16px',
+                        border: '1px solid #e2e8f0',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        padding: '12px 16px',
+                      },
+                    }}
+                  />
                   <ProLayout />
                 </CompanyProvider>
               </NotificationProvider>

@@ -145,6 +145,7 @@ export interface DbCompany {
   stripe_account_id?: string;
   stripe_charges_enabled?: boolean;
   is_active?: boolean;
+  is_sponsored?: boolean;
   social_links?: {
     facebook?: string;
     instagram?: string;
@@ -169,7 +170,6 @@ export interface DbCompany {
   coverage_neighborhoods?: string[];
   terms_and_policies?: string;
   sales_count?: number;
-  response_time?: string;
   h3_index?: string;
 }
 
@@ -194,6 +194,8 @@ export interface DbService {
   description: string;
   price: number;
   starting_price?: number;
+  promotional_price?: number;
+  is_sponsored?: boolean;
   duration?: string;
   duration_minutes?: number; // New field for precise scheduling
   packages?: ServicePackages;
@@ -225,6 +227,7 @@ export interface DbService {
   company_rating?: number;
   company_slug?: string;
   company_cover_url?: string;
+  company_is_sponsored?: boolean;
   company?: DbCompany;
   service_forms?: { id: string; questions: string[] }[];
   created_at?: string;

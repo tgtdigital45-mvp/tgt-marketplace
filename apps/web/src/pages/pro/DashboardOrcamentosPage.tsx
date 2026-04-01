@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@tgt/core';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
@@ -149,7 +149,7 @@ const DashboardOrcamentosPage: React.FC = () => {
   const sentCount = quotes.filter(q => q.status === 'in_review').length;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6">
+    <div className="w-full space-y-5 sm:space-y-6">
       {/* ─── Page Header ─────────────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}

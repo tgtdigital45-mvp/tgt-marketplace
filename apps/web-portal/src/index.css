@@ -1,9 +1,13 @@
 @import "tailwindcss";
 
-/* Importa as definições globais do monorepo (que já contêm o @theme) */
-@import "../../web/src/index.css";
+/* 
+   IMPORTANTE: Importamos apenas as definições (theme) e a base (estilos globais) 
+   sem redeclarar a diretiva "@import tailwindcss" que já está acima. 
+*/
+@import "../../web/src/theme.css";
+@import "../../web/src/base.css";
 
-/* Define as fontes de scan para o Tailwind v4 compilar as classes */
+/* Define as fontes de scan para o Portal */
 @source "./src/**/*.{js,ts,jsx,tsx}";
 @source "../../web/src/components/**/*.{js,ts,jsx,tsx}";
 @source "../../web/src/pages/**/*.{js,ts,jsx,tsx}";

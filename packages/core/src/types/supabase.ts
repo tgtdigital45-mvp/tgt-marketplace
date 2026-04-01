@@ -48,10 +48,12 @@ function buildLockFn(): ((name: string, timeout: number, fn: () => Promise<unkno
 
             if (acquired) return result;
         } catch (e) {
-            console.warn('[Supabase] Navigator lock error, running without lock:', e);
+            // Em desenvolvimento, avisa se houver erro real no lock
+            if (process.env.NODE_ENV === 'development') {
+                console.debug('[Supabase] Navigator lock error, running without lock:', e);
+            }
         }
 
-        console.log('[Supabase] Lock not available or failed, running function directly');
         return fn();
     };
 }

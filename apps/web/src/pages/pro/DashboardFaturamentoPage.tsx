@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@tgt/core';
 import { SellerStats } from '@tgt/core';
 import { LoadingSpinner, Button } from '@tgt/ui-web';
@@ -164,7 +164,7 @@ const DashboardFaturamentoPage: React.FC = () => {
     };
 
     return (
-        <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6">
+        <div className="w-full space-y-5 sm:space-y-6">
             {/* ─── Page Header ─────────────────────────────────────────────── */}
             <motion.div
                 initial={{ opacity: 0, y: -8 }}

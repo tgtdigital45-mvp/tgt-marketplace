@@ -429,7 +429,7 @@ const StickySaveBar = ({
         className="fixed bottom-0 left-0 right-0 z-50 lg:left-64 xl:left-72"
       >
         <div className="bg-white/95 backdrop-blur-xl border-t border-gray-200 shadow-[0_-8px_32px_rgba(0,0,0,0.08)] px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
-          <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
+          <div className="w-full flex items-center justify-between gap-4">
             <div className="flex items-center gap-2 min-w-0">
               <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse flex-shrink-0" />
               <span className="text-xs sm:text-sm font-medium text-gray-600 truncate">
@@ -781,7 +781,7 @@ const DashboardPerfilPage: React.FC = () => {
   // ─── Loading State ─────────────────────────────────────────────────────────
   if (companyLoading || !company) {
     return (
-      <div className="space-y-4 max-w-5xl mx-auto">
+      <div className="space-y-4 w-full">
         <LoadingSkeleton className="h-10 w-64 rounded-xl" />
         <LoadingSkeleton className="h-16 rounded-2xl" />
         <LoadingSkeleton className="h-64 rounded-2xl" />
@@ -791,7 +791,7 @@ const DashboardPerfilPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto pb-28 space-y-5 sm:space-y-6">
+    <div className="w-full pb-28 space-y-5 sm:space-y-6">
 
       {/* ─── Page Header ─────────────────────────────────────────────────────── */}
       <motion.div

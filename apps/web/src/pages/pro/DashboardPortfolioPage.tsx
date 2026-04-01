@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import FileUpload from '@/components/FileUpload';
 import { supabase } from '@tgt/core';
 import { useAuth } from '@/contexts/AuthContext';
@@ -133,7 +133,7 @@ const DashboardPortfolioPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6">
+    <div className="w-full space-y-5 sm:space-y-6">
 
       {/* ─── Page Header ─────────────────────────────────────────────── */}
       <motion.div

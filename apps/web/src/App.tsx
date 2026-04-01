@@ -6,6 +6,7 @@ import { NotificationProvider } from '@/contexts/NotificationContext';
 import { CompanyProvider } from '@/contexts/CompanyContext';
 import { ToastProvider } from '@/contexts/ToastContext';
 import { FavoritesProvider } from '@/contexts/FavoritesContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import ScrollToTop from '@/components/ScrollToTop';
 import MainLayout from '@/components/layout/MainLayout';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -32,16 +33,18 @@ const App: React.FC = () => {
           }}
         >
           <AuthProvider>
-            <ToastProvider>
-              <NotificationProvider>
-                <CompanyProvider>
-                  <FavoritesProvider>
-                    <ScrollToTop />
-                    <MainLayout />
-                  </FavoritesProvider>
-                </CompanyProvider>
-              </NotificationProvider>
-            </ToastProvider>
+            <ThemeProvider>
+              <ToastProvider>
+                <NotificationProvider>
+                  <CompanyProvider>
+                    <FavoritesProvider>
+                      <ScrollToTop />
+                      <MainLayout />
+                    </FavoritesProvider>
+                  </CompanyProvider>
+                </NotificationProvider>
+              </ToastProvider>
+            </ThemeProvider>
           </AuthProvider>
         </BrowserRouter>
       </HelmetProvider>

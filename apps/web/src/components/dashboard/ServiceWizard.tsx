@@ -73,6 +73,7 @@ const ServiceWizard = ({ onCancel, initialData, onSuccess }: ServiceWizardProps)
         addressId: (initialData?.address_id as string) || '',
         radiusKm: (initialData?.radius_km as number) || 0,
         travelFee: (initialData?.travel_fee as number) || 0,
+        promotionalPrice: (initialData?.promotional_price as number) || undefined,
     });
 
     const isEditing = !!initialData;
@@ -100,8 +101,8 @@ const ServiceWizard = ({ onCancel, initialData, onSuccess }: ServiceWizardProps)
                 company_id: company.id,
                 title: formData.title,
                 description: formData.description,
-                price: formData.packages?.basic?.price || 0,
-                starting_price: formData.packages?.basic?.price || 0,
+                price: Number(formData.packages?.basic?.price || 0),
+                starting_price: Number(formData.packages?.basic?.price || 0),
                 packages: formData.priceType === 'fixed' ? { basic: formData.packages.basic } : formData.packages,
                 gallery: formData.gallery,
                 service_type: resolveServiceType(formData.priceType, formData.locationType),
@@ -116,9 +117,10 @@ const ServiceWizard = ({ onCancel, initialData, onSuccess }: ServiceWizardProps)
                 registration_number: formData.registrationNumber,
                 registration_state: formData.registrationState,
                 meeting_url: formData.meetingUrl,
-                address_id: formData.addressId,
-                radius_km: formData.radiusKm,
-                travel_fee: formData.travelFee,
+                address_id: formData.addressId || null,
+                radius_km: Number(formData.radiusKm || 0),
+                travel_fee: Number(formData.travelFee || 0),
+                promotional_price: formData.promotionalPrice ? Number(formData.promotionalPrice) : null,
             };
 
             devLog('[ServiceWizard] service_type:', servicePayload.service_type, '| location_type:', servicePayload.location_type);

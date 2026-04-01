@@ -1,0 +1,404 @@
+/* ============================================
+   Base Styles - Responsive Foundation
+   ============================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #1a1a2e;
+  background: var(--color-brand-background);
+  overflow-x: hidden;
+  min-width: 320px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark body {
+  color: #f8fafc;
+  background-color: #0B1120;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+::selection {
+  background: var(--color-brand-primary);
+  color: white;
+}
+
+/* ============================================
+   Responsive Container Override
+   ============================================ */
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4vw, 2rem);
+}
+
+/* ============================================
+   Accessibility: Respect reduced motion
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================
+   Custom Utilities
+   ============================================ */
+@layer utilities {
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* Fluid Typography - responsive scaling */
+  .text-fluid-sm {
+    font-size: clamp(0.8125rem, 0.75rem + 0.25vw, 1rem);
+  }
+
+  .text-fluid-base {
+    font-size: clamp(0.9375rem, 0.875rem + 0.3125vw, 1.125rem);
+  }
+
+  .text-fluid-lg {
+    font-size: clamp(1.0625rem, 0.9375rem + 0.625vw, 1.375rem);
+  }
+
+  .text-fluid-xl {
+    font-size: clamp(1.1875rem, 1rem + 0.9375vw, 1.5rem);
+  }
+
+  .text-fluid-2xl {
+    font-size: clamp(1.375rem, 1.125rem + 1.25vw, 2.25rem);
+  }
+
+  .text-fluid-3xl {
+    font-size: clamp(1.625rem, 1.25rem + 1.875vw, 3rem);
+  }
+
+  .text-fluid-4xl {
+    font-size: clamp(1.875rem, 1.25rem + 3.125vw, 3.75rem);
+  }
+
+  .text-fluid-5xl {
+    font-size: clamp(2.25rem, 1.5rem + 3.75vw, 4.5rem);
+  }
+
+  /* Readability */
+  .prose-readable {
+    max-width: 65ch;
+    line-height: 1.7;
+  }
+
+  /* Heading Line Heights */
+  .heading-tight {
+    line-height: 1.08;
+  }
+
+  .heading-normal {
+    line-height: 1.25;
+  }
+
+  /* Section Spacing - Responsive */
+  .section-py {
+    padding-top: clamp(2.5rem, 4vw, 5rem);
+    padding-bottom: clamp(2.5rem, 4vw, 5rem);
+  }
+
+  .section-py-lg {
+    padding-top: clamp(3rem, 5vw, 7rem);
+    padding-bottom: clamp(3rem, 5vw, 7rem);
+  }
+
+  .section-py-sm {
+    padding-top: clamp(1.5rem, 3vw, 3rem);
+    padding-bottom: clamp(1.5rem, 3vw, 3rem);
+  }
+
+  /* Glass Morphism */
+  .glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .glass-dark {
+    background: rgba(11, 17, 32, 0.75);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  /* Gradient text */
+  .text-gradient {
+    background: linear-gradient(135deg, var(--color-brand-primary) 0%, var(--color-brand-accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Glow effect for CTAs */
+  .glow-primary {
+    box-shadow: 0 0 20px rgba(4, 180, 224, 0.3), 0 0 60px rgba(4, 180, 224, 0.1);
+  }
+
+  /* Smooth card hover */
+  .card-hover {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+  }
+
+  .card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  /* Responsive padding helpers */
+  .px-responsive {
+    padding-inline: clamp(1rem, 4vw, 2rem);
+  }
+
+  /* Prevent text overflow globally */
+  .break-safe {
+    overflow-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+  }
+}
+
+/* ============================================
+   Scroll Animations (CSS-only for performance)
+   ============================================ */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Infinite scroll marquee for LogoBar */
+.animate-marquee {
+  display: flex;
+  animation: marquee 35s linear infinite;
+  width: max-content;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* ============================================
+   Components
+   ============================================ */
+.grain-texture {
+  position: relative;
+}
+
+.grain-texture::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* Gradient mesh background */
+.mesh-gradient {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(4, 180, 224, 0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 80% 20%, rgba(0, 78, 137, 0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 60% at 50% 80%, rgba(247, 184, 1, 0.04) 0%, transparent 70%);
+}
+
+/* Dot pattern overlay */
+.dot-pattern::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+}
+
+/* ============================================
+   Responsive Image Safety
+   ============================================ */
+img,
+video,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ============================================
+   Scrollbar Styling
+   ============================================ */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* ============================================
+   Focus Visible Styles
+   ============================================ */
+:focus-visible {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ============================================
+   Responsive Breakpoint Helpers
+   ============================================ */
+@media (max-width: 374px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 375px) and (max-width: 639px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+@media (min-width: 640px) {
+  html {
+    font-size: 16px;
+  }
+}

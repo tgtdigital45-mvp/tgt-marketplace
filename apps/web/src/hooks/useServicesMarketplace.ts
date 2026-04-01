@@ -92,7 +92,8 @@ export function useServicesMarketplace({
                     cover_image_url,
                     rating,
                     slug,
-                    status
+                    status,
+                    is_sponsored
                 )
             `, { count: 'exact' })
             .eq('is_active', true)
@@ -116,6 +117,8 @@ export function useServicesMarketplace({
             query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,category_tag.ilike.%${searchQuery}%`);
         }
 
+        query = query.order('is_sponsored', { ascending: false });
+        query = query.order('is_sponsored', { ascending: false, referencedTable: 'companies' });
         query = query.order('rating', { ascending: false, referencedTable: 'companies' });
         query = query.order('created_at', { ascending: false }).limit(limit);
 
@@ -133,6 +136,7 @@ export function useServicesMarketplace({
             company_cover_url: s.companies?.cover_image_url,
             company_rating: s.companies?.rating,
             company_slug: s.companies?.slug,
+            company_is_sponsored: s.companies?.is_sponsored,
         }));
     }, [category, searchQuery, serviceFilter, limit, h3Indexes]);
 
@@ -223,11 +227,22 @@ export function useServicesMarketplace({
                 return true;
             });
 
-            // If not purely semantic, sort by rating
+            // If not purely semantic, sort by sponsorship then rating
             if (!semanticResultsFound) {
                 unique.sort((a, b) => {
+                    // 1. Sponsored first
+                    if (a.is_sponsored && !b.is_sponsored) return -1;
+                    if (!a.is_sponsored && b.is_sponsored) return 1;
+                    
+                    // 2. Company sponsored next
+                    if (a.company_is_sponsored && !b.company_is_sponsored) return -1;
+                    if (!a.company_is_sponsored && b.company_is_sponsored) return 1;
+
+                    // 3. Rating
                     const ratingDiff = (b.company_rating ?? 0) - (a.company_rating ?? 0);
                     if (ratingDiff !== 0) return ratingDiff;
+
+                    // 4. Recency
                     const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
                     const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
                     return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);

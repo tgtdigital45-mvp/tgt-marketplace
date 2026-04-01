@@ -8,6 +8,7 @@ import { AnimatedElement, ProtectedRoute, ExternalRedirect, ExternalRedirectWith
 // ------------------------------
 const ClientLandingPage = lazy(() => import('@/pages/ClientLandingPage'));
 const CompaniesListPage = lazy(() => import('@/pages/LandingPage'));
+const DiscoverCategoriesPage = lazy(() => import('@/pages/DiscoverCategoriesPage'));
 const ServicesMarketplacePage = lazy(() => import('@/pages/ServicesMarketplacePage'));
 const CompanyProfilePage = lazy(() => import('@/pages/CompanyProfilePage'));
 const BookingConfirmationPage = lazy(() => import('@/pages/BookingConfirmationPage'));
@@ -22,7 +23,8 @@ export const PublicRoutes = (
     <React.Fragment>
         <Route path="/" element={<AnimatedElement><ClientLandingPage /></AnimatedElement>} />
         <Route path="/empresas" element={<AnimatedElement><CompaniesListPage /></AnimatedElement>} />
-        <Route path="/servicos" element={<AnimatedElement><ServicesMarketplacePage /></AnimatedElement>} />
+        <Route path="/servicos" element={<AnimatedElement><DiscoverCategoriesPage /></AnimatedElement>} />
+        <Route path="/servicos/busca" element={<AnimatedElement><ServicesMarketplacePage /></AnimatedElement>} />
         <Route path="/empresa/:slug" element={<AnimatedElement><CompanyProfilePage /></AnimatedElement>} />
         <Route path="/servico/:id" element={<AnimatedElement><ServiceDetailsPage /></AnimatedElement>} />
         <Route path="/agendar/:serviceId" element={<AnimatedElement><BookingPage /></AnimatedElement>} />

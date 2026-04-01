@@ -79,10 +79,7 @@ async function processEvent(event: Stripe.Event) {
             })
 
             if (!metadata || !metadata.order_id) {
-                logStructured('error', `Missing order_id in ${event.type} metadata`, {
-                    id: object.id,
-                    metadata: metadata
-                })
+                logStructured('info', `Event ${event.type} ignored (no order_id)`, { id: object.id })
                 return
             }
 
@@ -184,17 +181,12 @@ async function processEvent(event: Stripe.Event) {
             }
 
             // COMMISSION SPLIT & WALLET
-            // Hierarquia de resolução da taxa de comissão:
-            // 1. metadata do Stripe (definido no checkout — mais preciso)
-            // 2. companies.commission_rate do vendedor (taxa contratual atual)
-            // 3. Fallback de segurança: 0.20
             const seller_id = metadata.seller_id;
             let commissionRate: number | null = metadata.commission_rate
                 ? parseFloat(metadata.commission_rate)
                 : null;
 
             if (commissionRate === null || isNaN(commissionRate)) {
-                // Fallback: buscar taxa diretamente da empresa vendedora
                 const { data: companyData } = await supabaseClient
                     .from('companies')
                     .select('commission_rate')
@@ -202,31 +194,14 @@ async function processEvent(event: Stripe.Event) {
                     .maybeSingle();
 
                 commissionRate = companyData?.commission_rate ?? null;
-
-                if (commissionRate !== null) {
-                    logStructured('info', 'commission_rate lido da tabela companies', {
-                        order_id,
-                        seller_id,
-                        commission_rate: commissionRate
-                    });
-                }
             }
 
-            // Segurança final: nunca processar sem taxa definida
             if (commissionRate === null || isNaN(commissionRate)) {
                 commissionRate = 0.20;
-                logStructured('warn', 'commission_rate não encontrado, usando fallback 0.20', {
-                    order_id,
-                    seller_id: metadata.seller_id
-                });
             }
 
-            // CRITICAL SPRINT 4 FIX: Use the actual amounts transacted, not the theoretical full project amount.
-            // When paying a 30% proposal, the order.agreed_price logic would've given the seller 100% of the money!
             const realAmountPaid = amountTotal / 100;
-            // Prefer the exact fee amount we computed in the checkout metadata to avoid micro-cent rounding mismatches
             const exactFeeAmount = metadata.application_fee_amount ? Number(metadata.application_fee_amount) / 100 : (realAmountPaid * commissionRate);
-            
             const sellerNetIncome = realAmountPaid - exactFeeAmount;
 
             // Get/Create Wallet
@@ -236,7 +211,7 @@ async function processEvent(event: Stripe.Event) {
                 wallet = newWallet
             }
 
-            // Create Transaction (com idempotência)
+            // Create Transaction
             const { data: existingTx } = await supabaseClient
                 .from('transactions')
                 .select('id')
@@ -254,28 +229,15 @@ async function processEvent(event: Stripe.Event) {
                     description: `Venda #${order.id.slice(0, 8)}`
                 })
 
-                // Atualizar saldo via RPC segura (verifica ownership da carteira)
-                const { error: balanceError } = await supabaseClient.rpc('increment_pending_balance', {
+                await supabaseClient.rpc('increment_pending_balance', {
                     p_wallet_id: wallet.id,
                     p_amount: sellerNetIncome,
                     p_order_id: order.id
                 })
-
-                if (balanceError) {
-                    logStructured('error', 'increment_pending_balance falhou, usando fallback direto', {
-                        error: balanceError.message,
-                        wallet_id: wallet.id
-                    });
-                    await supabaseClient
-                        .from('wallets')
-                        .update({ pending_balance: (wallet.pending_balance || 0) + sellerNetIncome })
-                        .eq('id', wallet.id)
-                }
             }
 
-            // SAGA: WAITING_ACCEPTANCE or ORDER_ACTIVE automatically if upfront
             const newSagaStatus = metadata.proposal_id && metadata.payment_phase === 'upfront' 
-                ? 'ORDER_ACTIVE' // If it's a proposal upfront payment, activate order directly
+                ? 'ORDER_ACTIVE' 
                 : 'WAITING_ACCEPTANCE';
 
             await supabaseClient.rpc('transition_saga_status', {
@@ -284,7 +246,6 @@ async function processEvent(event: Stripe.Event) {
                 p_log_data: { wallet_tx: existingTx ? existingTx.id : 'new' }
             });
 
-            // Log Job completion
             await supabaseClient.from('saga_jobs').insert({
                 order_id: order.id,
                 event_type: 'ACTIVATE_ORDER',
@@ -302,14 +263,13 @@ async function processEvent(event: Stripe.Event) {
             const status = subscription.status
             const priceId = subscription.items.data[0].price.id
 
-            logStructured('info', `Processing ${event.type}`, { customer_id: customerId, status, price_id: priceId })
+            logStructured('info', `Processing subscription event ${event.type}`, { customer_id: customerId, status, price_id: priceId })
 
             let planTier = 'starter'
             let commissionRate = 0.20
             
-            // New recurring price IDs
-            const PRO_PRICES = ['price_1TCON9E72T1QHvIb9sWMS11c', 'price_1TCONBE72T1QHvIbzBzuu5MA']; // Monthly, Annual
-            const AGENCY_PRICES = ['price_1TCON9E72T1QHvIbU94cmdBj', 'price_1TCONCE72T1QHvIbh3DazzwM']; // Monthly, Annual
+            const PRO_PRICES = ['price_1TCON9E72T1QHvIb9sWMS11c', 'price_1TCONBE72T1QHvIbzBzuu5MA'];
+            const AGENCY_PRICES = ['price_1TCON9E72T1QHvIbU94cmdBj', 'price_1TCONCE72T1QHvIbh3DazzwM'];
 
             if (['active', 'trialing'].includes(status)) {
                 if (AGENCY_PRICES.includes(priceId)) {
@@ -317,13 +277,9 @@ async function processEvent(event: Stripe.Event) {
                 } else if (PRO_PRICES.includes(priceId)) {
                     planTier = 'pro'; commissionRate = 0.12
                 }
-            } else if (['past_due', 'canceled', 'unpaid'].includes(status)) {
-                // Handling resilience: downgrade to free/starter
-                planTier = 'starter'
-                commissionRate = 0.20
-                logStructured('warn', `Subscription ${status} - downgrading company`, { customer_id: customerId })
             }
 
+            // Update standard company plan info
             const { error: updateError } = await supabaseClient
                 .from('companies')
                 .update({
@@ -335,12 +291,30 @@ async function processEvent(event: Stripe.Event) {
                 .eq('stripe_customer_id', customerId)
 
             if (updateError) logStructured('error', 'Company update failed', { error: updateError.message })
+
+            // --- TRATAMENTO DE BOOST (SPONSORSHIP) --- 
+            const boostType = subscription.metadata?.boost_type || null;
+            const boostServiceId = subscription.metadata?.service_id || null;
+            const isBoostActive = ['active', 'trialing'].includes(status);
+
+            if (boostType === 'service' && boostServiceId) {
+                logStructured('info', `Atualizando status de Boost de Serviço: ${isBoostActive} para ${boostServiceId}`, { boost_type: boostType, service_id: boostServiceId });
+                await supabaseClient
+                    .from('services')
+                    .update({ is_sponsored: isBoostActive })
+                    .eq('id', boostServiceId);
+            } else if (boostType === 'company') {
+                logStructured('info', `Atualizando status de Boost de Perfil da Empresa: ${isBoostActive}`, { boost_type: boostType });
+                await supabaseClient
+                    .from('companies')
+                    .update({ is_sponsored: isBoostActive })
+                    .eq('stripe_customer_id', customerId);
+            }
         }
 
     } catch (err: any) {
         logStructured('error', 'Background processing failed', { error: err.message })
         
-        // --- DLQ DEAD LETTER QUEUE ---
         try {
             await supabaseClient.from('stripe_webhook_dlq').insert({
                 stripe_event_id: event.id,
@@ -369,16 +343,10 @@ serve(async (req) => {
         const body = await req.text()
         let event
 
-        // Check if this is an internal retry (Service Role)
         const isInternalRetry = req.headers.get('Authorization') === `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`;
 
         if (isInternalRetry) {
-            logStructured('info', 'Internal DLQ retry received', {});
-            try {
-                event = JSON.parse(body);
-            } catch (err) {
-                return new Response(JSON.stringify({ error: 'Invalid JSON for internal retry' }), { status: 400 });
-            }
+            event = JSON.parse(body);
         } else {
             const signature = req.headers.get('stripe-signature')
             const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
@@ -390,30 +358,19 @@ serve(async (req) => {
             try {
                 event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret)
             } catch (err: any) {
-                logStructured('error', 'Signature verification failed', { error: err.message })
                 return new Response(JSON.stringify({ error: 'Invalid signature' }), { status: 400 })
             }
         }
 
-        // Return 200 OK immediately
         const response = new Response(JSON.stringify({ received: true }), {
             status: 200,
             headers: { 'Content-Type': 'application/json' }
         })
 
-        // Process in background
         const processingPromise = processEvent(event)
 
         if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime.waitUntil) {
             EdgeRuntime.waitUntil(processingPromise)
-        } else {
-            // In dev environment or if waitUntil misses, we might await it to ensure it runs
-            // But to satisfy "Return 200 OK immediately", we don't await.
-            // Note: Deno deploy might kill it if not waited. 
-            // We assume this is deployed to Supabase which supports waitUntil.
-            // For safety in local dev, we log that we are not awaiting.
-            console.log('EdgeRuntime.waitUntil not found, processing in background (may be killed)')
-            // processingPromise; 
         }
 
         return response
@@ -422,4 +379,3 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: 'Server error' }), { status: 500 })
     }
 })
-

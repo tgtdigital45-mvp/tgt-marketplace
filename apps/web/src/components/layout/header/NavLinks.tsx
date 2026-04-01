@@ -5,7 +5,7 @@ const NavLinks: React.FC = () => {
     const location = useLocation();
 
     const getLinkClass = (path: string) => {
-        const isActive = location.pathname === path;
+        const isActive = path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
         return `${isActive ? 'text-brand-primary font-bold' : 'text-gray-600 hover:text-brand-primary'} text-sm font-medium transition-colors duration-200`;
     };
 

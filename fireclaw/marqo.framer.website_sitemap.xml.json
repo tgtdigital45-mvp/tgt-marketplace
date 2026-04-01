@@ -1,0 +1,17 @@
+{
+  "metadata": {
+    "scrapeId": "019d4719-9ada-7319-a224-367836df109f",
+    "sourceURL": "https://marqo.framer.website/sitemap.xml",
+    "url": "https://marqo.framer.website/sitemap.xml",
+    "statusCode": 200,
+    "contentType": "text/xml",
+    "proxyUsed": "basic",
+    "cacheState": "hit",
+    "cachedAt": "2026-04-01T03:13:24.750Z",
+    "creditsUsed": 5
+  },
+  "json": {
+    "company_name": "Marqo",
+    "company_description": "A platform that leverages AI technology to optimize and enhance various aspects of marketing and content creation."
+  }
+}

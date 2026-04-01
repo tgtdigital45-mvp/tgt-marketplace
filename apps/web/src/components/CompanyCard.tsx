@@ -27,9 +27,9 @@ const CompanyCard: React.FC<CompanyCardProps> = ({ company }) => {
     };
 
     return (
-        <article className="group relative flex flex-col bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 ring-1 ring-gray-100/80 hover:ring-brand-primary overflow-hidden h-full border border-gray-100">
+        <article className="group relative flex flex-col bg-white dark:bg-slate-900 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 ring-1 ring-gray-100/80 dark:ring-white/5 hover:ring-brand-primary overflow-hidden h-full border border-gray-100 dark:border-white/5">
             <Link to={company.slug ? `/empresa/${company.slug}` : '#'} className="flex flex-col h-full cursor-pointer">
-                <div className="relative w-full aspect-video bg-gray-100 overflow-hidden">
+                <div className="relative w-full aspect-video bg-gray-100 dark:bg-slate-800 overflow-hidden">
                     <OptimizedImage
                         src={company.coverImage || (company as any).cover_image_url}
                         alt={company.companyName}
@@ -54,7 +54,7 @@ const CompanyCard: React.FC<CompanyCardProps> = ({ company }) => {
                             optimizedWidth={100}
                             quality={80}
                             fallbackSrc="https://placehold.co/100x100/f1f5f9/94a3b8?text=Logo"
-                            className="w-12 h-12 rounded-full border-2 border-white shadow-md object-cover bg-white"
+                            className="w-12 h-12 rounded-full border-2 border-white dark:border-slate-800 shadow-md object-cover bg-white dark:bg-slate-900"
                         />
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 max-w-full">
@@ -76,7 +76,7 @@ const CompanyCard: React.FC<CompanyCardProps> = ({ company }) => {
 
                 <div className="p-4 flex flex-col flex-grow">
                     {/* Bio / Teaser */}
-                    <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+                    <p className="text-sm text-gray-600 dark:text-slate-400 line-clamp-2 mb-3">
                         {(company as any).description 
                             ? (company as any).description 
                             : `O melhor serviço de ${company.category || 'qualidade'} para suas necessidades.`}
@@ -84,8 +84,8 @@ const CompanyCard: React.FC<CompanyCardProps> = ({ company }) => {
 
                     {/* Metrics and Location */}
                     <div className="flex flex-col gap-2 mt-auto">
-                        <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                            <MapPin size={16} className="text-brand-primary shrink-0" />
+                        <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-slate-500">
+                            <MapPin size={16} className="text-brand-primary dark:text-indigo-400 shrink-0" />
                             <span className="truncate">
                                 {company.address?.city 
                                     ? `${company.address.city}${company.address.state ? ` - ${company.address.state}` : ''}` 
@@ -95,23 +95,23 @@ const CompanyCard: React.FC<CompanyCardProps> = ({ company }) => {
                                 }
                             </span>
                             {company.distance != null && (
-                                <span className="ml-auto font-medium text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md">
+                                <span className="ml-auto font-medium text-xs bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 px-2 py-0.5 rounded-md">
                                     {company.distance < 1 ? '< 1km' : `${company.distance.toFixed(1)}km`}
                                 </span>
                             )}
                         </div>
 
-                        <div className="flex items-center justify-between mt-2 pt-3 border-t border-gray-100">
+                        <div className="flex items-center justify-between mt-2 pt-3 border-t border-gray-100 dark:border-white/5">
                             <div className="flex items-center gap-1.5">
                                 <Star size={18} className="text-brand-accent fill-brand-accent" />
-                                <span className="font-bold text-gray-900 leading-none">{(company.rating || 0).toFixed(1)}</span>
-                                <span className="text-xs text-gray-500 leading-none">({company.reviewCount ?? (company as any).review_count ?? 0})</span>
+                                <span className="font-bold text-gray-900 dark:text-white leading-none">{(company.rating || 0).toFixed(1)}</span>
+                                <span className="text-xs text-gray-500 dark:text-slate-500 leading-none">({company.reviewCount ?? (company as any).review_count ?? 0})</span>
                             </div>
 
                             {company.services && company.services.length > 0 && company.services[0].price != null && (
                                 <div className="text-right">
-                                    <span className="text-xs text-gray-400 block leading-none">A partir de</span>
-                                    <span className="font-bold text-brand-primary">
+                                    <span className="text-xs text-gray-400 dark:text-slate-500 block leading-none">A partir de</span>
+                                    <span className="font-bold text-brand-primary dark:text-indigo-400">
                                         {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(company.services[0].price)}
                                     </span>
                                 </div>
@@ -127,8 +127,8 @@ const CompanyCard: React.FC<CompanyCardProps> = ({ company }) => {
                     style={{ zIndex: 10 }}
                     className={`absolute top-3 right-3 p-2.5 rounded-full border transition-all ${
                         favorited 
-                            ? 'bg-red-50 border-red-100 text-red-500' 
-                            : 'bg-white/90 border-transparent text-gray-400 hover:text-red-500 hover:bg-white'
+                            ? 'bg-red-50 border-red-100 text-red-500 dark:bg-red-500/20 dark:border-red-500/30 dark:text-red-400' 
+                            : 'bg-white/90 dark:bg-slate-900/90 border-transparent dark:border-white/5 text-gray-400 dark:text-slate-500 hover:text-red-500 hover:bg-white dark:hover:bg-slate-800'
                     } shadow-sm backdrop-blur-sm`}
                     aria-label={favorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                 >

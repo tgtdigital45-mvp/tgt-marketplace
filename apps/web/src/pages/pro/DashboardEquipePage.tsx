@@ -22,7 +22,7 @@ const ROADMAP = [
 
 const DashboardEquipePage: React.FC = () => {
   return (
-    <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6">
+    <div className="w-full space-y-5 sm:space-y-6">
 
       {/* ─── Page Header ─────────────────────────────────────────────── */}
       <motion.div

@@ -8,6 +8,7 @@ import { LoadingSpinner, PageTransition, ErrorBoundary } from '@tgt/ui-web';
 // Layouts & Global Components
 
 import InstitutionalLayout from '@/components/layout/InstitutionalLayout';
+import ClientPublicLayout from '@/components/layout/ClientPublicLayout';
 
 // Pro/Admin pages live in apps/web-pro (port 3002 / contrattoex.com/parceiros)
 // Do NOT add pro or admin routes here — they belong in apps/web-pro/src/routes.tsx
@@ -15,6 +16,7 @@ import InstitutionalLayout from '@/components/layout/InstitutionalLayout';
 // Marketplace / Public Pages
 const ClientLandingPage = lazy(() => import('@/pages/ClientLandingPage'));
 const CompaniesListPage = lazy(() => import('@/pages/LandingPage'));
+const DiscoverCategoriesPage = lazy(() => import('@/pages/DiscoverCategoriesPage'));
 const ServicesMarketplacePage = lazy(() => import('@/pages/ServicesMarketplacePage'));
 const CompanyProfilePage = lazy(() => import('@/pages/CompanyProfilePage'));
 const BookingConfirmationPage = lazy(() => import('@/pages/BookingConfirmationPage'));
@@ -61,6 +63,8 @@ const NewsPage = lazy(() => import('@/pages/institucional/NewsPage'));
 const BlogPage = lazy(() => import('@/pages/institucional/BlogPage'));
 const BlogDetailPage = lazy(() => import('@/pages/institucional/BlogDetailPage'));
 const NewsDetailPage = lazy(() => import('@/pages/NewsDetailPage'));
+const UpdatesPage = lazy(() => import('@/pages/institucional/UpdatesPage'));
+const CasesPage = lazy(() => import('@/pages/institucional/CasesPage'));
 const BipPostPage = lazy(() => import('@/pages/info/BipPostPage'));
 
 // Animated route wrapper
@@ -128,7 +132,8 @@ const MainRoutes = () => {
                         {/* Public / Marketplace */}
                         <Route path="/" element={<AnimatedElement><ClientLandingPage /></AnimatedElement>} />
                         <Route path="/empresas" element={<AnimatedElement><CompaniesListPage /></AnimatedElement>} />
-                        <Route path="/servicos" element={<AnimatedElement><ServicesMarketplacePage /></AnimatedElement>} />
+                        <Route path="/servicos" element={<AnimatedElement><DiscoverCategoriesPage /></AnimatedElement>} />
+                        <Route path="/servicos/busca" element={<AnimatedElement><ServicesMarketplacePage /></AnimatedElement>} />
                         <Route path="/empresa/:slug" element={<AnimatedElement><CompanyProfilePage /></AnimatedElement>} />
                         <Route path="/servico/:id" element={<AnimatedElement><ServiceDetailsPage /></AnimatedElement>} />
                         <Route path="/agendar/:serviceId" element={<AnimatedElement><BookingPage /></AnimatedElement>} />
@@ -161,29 +166,32 @@ const MainRoutes = () => {
                         <Route path="/dashboard/empresa/:slug/*" element={<ExternalRedirectWithParams to={`${PRO_APP_URL}/dashboard/empresa/:slug`} />} />
                         <Route path="/dashboard/*" element={<Navigate to="/login/empresa" replace />} />
 
-                        {/* Info Pages */}
-                        <Route path="/para-empresas" element={<AnimatedElement><ForCompaniesPage /></AnimatedElement>} />
-                        <Route path="/para-clientes" element={<AnimatedElement><ForClientsPage /></AnimatedElement>} />
-                        <Route path="/ajuda" element={<AnimatedElement><HelpPage /></AnimatedElement>} />
-                        <Route path="/contato" element={<AnimatedElement><ContactPage /></AnimatedElement>} />
+                        {/* Pages that use the Premium Dark Layout (Consumer Side) */}
+                        <Route element={<ClientPublicLayout />}>
+                            <Route path="/planos" element={<AnimatedElement><PlansPage /></AnimatedElement>} />
+                            <Route path="/updates" element={<AnimatedElement><UpdatesPage /></AnimatedElement>} />
+                            <Route path="/cases" element={<AnimatedElement><CasesPage /></AnimatedElement>} />
+                            <Route path="/blog" element={<AnimatedElement><BlogPage /></AnimatedElement>} />
+                            <Route path="/institucional/blog/:slug" element={<AnimatedElement><BlogDetailPage /></AnimatedElement>} />
+                            <Route path="/ajuda" element={<AnimatedElement><HelpPage /></AnimatedElement>} />
+                            <Route path="/contato" element={<AnimatedElement><ContactPage /></AnimatedElement>} />
+                            <Route path="/sobre" element={<AnimatedElement><AboutPage /></AnimatedElement>} />
+                        </Route>
 
-                        {/* Institutional */}
+                        {/* Institutional Old Links (Backward Compatibility or specific light layout) */}
                         <Route path="/institucional" element={<InstitutionalLayout />}>
                             <Route path="sobre" element={<AnimatedElement><AboutPage /></AnimatedElement>} />
                             <Route path="noticias" element={<AnimatedElement><NewsPage /></AnimatedElement>} />
-                            <Route path="blog" element={<AnimatedElement><BlogPage /></AnimatedElement>} />
+                            {/* Blog redirect to the new Dark layout is already handled below or can be direct */}
                         </Route>
-                        <Route path="/sobre" element={<Navigate to="/institucional/sobre" replace />} />
+
                         <Route path="/noticias" element={<Navigate to="/institucional/noticias" replace />} />
                         <Route path="/noticias/:slug" element={<AnimatedElement><NewsDetailPage /></AnimatedElement>} />
                         <Route path="/bip/como-funciona" element={<AnimatedElement><BipPostPage /></AnimatedElement>} />
-                        <Route path="/blog" element={<Navigate to="/institucional/blog" replace />} />
-                        <Route path="/institucional/blog/:slug" element={<AnimatedElement><BlogDetailPage /></AnimatedElement>} />
 
                         <Route path="/carreiras" element={<AnimatedElement><CareersPage /></AnimatedElement>} />
                         <Route path="/privacidade" element={<AnimatedElement><PrivacyPage /></AnimatedElement>} />
                         <Route path="/termos" element={<AnimatedElement><TermsPage /></AnimatedElement>} />
-                        <Route path="/planos" element={<AnimatedElement><PlansPage /></AnimatedElement>} />
 
                         {/* 404 */}
                         <Route path="*" element={<AnimatedElement><NotFoundPage /></AnimatedElement>} />

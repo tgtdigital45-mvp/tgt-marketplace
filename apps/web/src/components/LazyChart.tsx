@@ -1,6 +1,7 @@
 import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import SkeletonChart from '@/components/ui/SkeletonChart';
 import { logLazyLoad } from '@/utils/performanceAudit';
+import { useTheme } from '@/contexts/ThemeContext';
 
 // Lazy load Recharts components
 const AreaChart = lazy(() => import('recharts').then(module => ({ default: module.AreaChart })));
@@ -36,8 +37,16 @@ const LazyChart: React.FC<LazyChartProps> = ({
     color = "var(--color-brand-secondary)",
     gradientId = "colorLazy"
 }) => {
+    const { theme } = useTheme();
     const [shouldLoad, setShouldLoad] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
+    const isDark = theme === 'dark';
+
+    // Cores adaptativas
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : '#E2E8F0';
+    const tickColor = isDark ? '#64748b' : '#A0AEC0';
+    const tooltipBg = isDark ? '#0F172A' : '#FFFFFF';
+    const tooltipBorder = isDark ? 'rgba(255, 255, 255, 0.1)' : 'transparent';
 
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -73,7 +82,7 @@ const LazyChart: React.FC<LazyChartProps> = ({
         <div ref={containerRef} className={className} style={{ height: `${height}px` }}>
             {shouldLoad ? (
                 <Suspense fallback={<SkeletonChart height={height} className={className} />}>
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={height}>
                         {type === 'area' ? (
                             <AreaChart data={data}>
                                 <defs>
@@ -82,16 +91,46 @@ const LazyChart: React.FC<LazyChartProps> = ({
                                         <stop offset="95%" stopColor={color} stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#A0AEC0', fontSize: 12 }} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#A0AEC0', fontSize: 12 }} />
-                                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
+                                <XAxis 
+                                    dataKey="name" 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    tick={{ fill: tickColor, fontSize: 10, fontWeight: 500 }} 
+                                />
+                                <YAxis 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    tick={{ fill: tickColor, fontSize: 10, fontWeight: 500 }} 
+                                />
+                                <Tooltip 
+                                    contentStyle={{ 
+                                        backgroundColor: tooltipBg,
+                                        borderRadius: '12px', 
+                                        border: `1px solid ${tooltipBorder}`, 
+                                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                                        fontSize: '12px',
+                                        fontWeight: '600',
+                                        color: isDark ? '#fff' : '#1e293b'
+                                    }} 
+                                    itemStyle={{ color: isDark ? '#94a3b8' : '#64748b' }}
+                                    cursor={{ stroke: gridColor, strokeWidth: 2 }}
+                                />
                                 <Area type="monotone" dataKey={dataKey} stroke={color} strokeWidth={3} fillOpacity={1} fill={`url(#${gradientId})`} />
                             </AreaChart>
                         ) : (
                             <BarChart data={data}>
                                 <Bar dataKey={dataKey} fill={color} radius={[4, 4, 0, 0]} barSize={8} />
-                                <Tooltip cursor={{ fill: 'rgba(255,255,255,0.1)' }} contentStyle={{ backgroundColor: '#333', border: 'none', borderRadius: '8px', color: '#fff' }} />
+                                <Tooltip 
+                                    cursor={{ fill: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)' }} 
+                                    contentStyle={{ 
+                                        backgroundColor: tooltipBg, 
+                                        border: `1px solid ${tooltipBorder}`, 
+                                        borderRadius: '12px', 
+                                        fontSize: '12px',
+                                        fontWeight: '600'
+                                    }} 
+                                />
                             </BarChart>
                         )}
                     </ResponsiveContainer>
